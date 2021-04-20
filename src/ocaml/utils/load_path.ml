@@ -14,13 +14,13 @@
 
 open Local_store
 
-module SMap = Misc.String.Map
+module STbl = Misc.String.Tbl
 
 (* Mapping from basenames to full filenames *)
-type registry = string SMap.t ref
+type registry = string STbl.t
 
-let files : registry = s_ref SMap.empty
-let files_uncap : registry = s_ref SMap.empty
+let files : registry ref = s_table STbl.create 42
+let files_uncap : registry ref = s_table STbl.create 42
 
 module Dir = struct
   type t = {
