@@ -95,15 +95,14 @@ last_commands = []
 
 def merlin_exec(args, input=""):
     global last_commands
-    env = os.environ
+    env = os.environ.copy()
     path = vim.eval("merlin#SelectBinary()")
     if vim.eval("exists('b:merlin_env')") == '1':
-        env = env.copy()
         newenv = vim.eval("b:merlin_env")
         for key in newenv:
             env[key] = newenv[key]
-    else:
-        env = os.environ
+    # Set up PATH so `ocamlmerlin` can find `dot-merlin-reader`
+    env['PATH'] = os.path.dirname(path) + ':' + env['PATH']
     try:
         cmd = [path] + list(args)
         last_commands.insert(0, cmd)
