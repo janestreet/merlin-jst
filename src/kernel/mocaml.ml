@@ -25,12 +25,11 @@ let is_current_state state = match !current_state with
 
 (* Build settings *)
 
-let setup_config config = (
+let setup_reader_config config = (
   assert Local_store.(is_bound ());
   let open Mconfig in
   let open Clflags in
   let ocaml = config.ocaml in
-  Load_path.init (Mconfig.build_path config);
   Env.set_unit_name (Mconfig.unitname config);
   Location.input_name  := config.query.filename;
   fast                 := ocaml.unsafe ;
@@ -47,6 +46,11 @@ let setup_config config = (
   config.merlin.extensions |> List.iter (fun ext ->
     try Clflags.Extension.enable ext
     with _ -> () (* ignore merlin-only extensions *));
+)
+
+let setup_typer_config config = (
+  setup_reader_config config;
+  Load_path.init (Mconfig.build_path config);
 )
 
 (** Switchable implementation of Oprint *)
