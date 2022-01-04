@@ -65,7 +65,7 @@
     structure_item (test.ml[1,0+0]..test.ml[1,0+14])
       Tstr_type Rec
       [
-        type_declaration t/81 (test.ml[1,0+0]..test.ml[1,0+14])
+        type_declaration t/261 (test.ml[1,0+0]..test.ml[1,0+14])
           ptype_params =
             []
           ptype_cstrs =
@@ -74,11 +74,11 @@
             Ttype_variant
               [
                 (test.ml[1,0+9]..test.ml[1,0+10])
-                  A/82
+                  A/262
                   []
                   None
                 (test.ml[1,0+11]..test.ml[1,0+14])
-                  B/83
+                  B/263
                   []
                   None
               ]
@@ -91,25 +91,29 @@
       [
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
-            Tpat_var \"f/84\"
+            Tpat_var \"f/264\"
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
+            value_mode global
             Texp_function
+            region true
             Nolabel
             [
               <case>
                 pattern (test.ml[2,15+7]..test.ml[2,15+8])
                   Tpat_extra_constraint
                   core_type (test.ml[2,15+11]..test.ml[2,15+12])
-                    Ttyp_constr \"t/81\"
+                    Ttyp_constr \"t/261\"
                     []
                   pattern (test.ml[2,15+7]..test.ml[2,15+8])
-                    Tpat_alias \"x/86\"
+                    Tpat_alias \"x/266\"
                     pattern (test.ml[2,15+7]..test.ml[2,15+8])
                       Tpat_any
                 expression (test.ml[3,31+2]..test.ml[6,69+12])
+                  value_mode <modevar>
                   Texp_match
                   expression (test.ml[3,31+8]..test.ml[3,31+9])
-                    Texp_ident \"x/86\"
+                    value_mode <modevar>
+                    Texp_ident \"x/266\"
                   [
                     <case>
                       pattern (test.ml[4,46+4]..test.ml[4,46+5])
@@ -120,6 +124,7 @@
                       expression (test.ml[4,46+9]..test.ml[4,46+11])
                         attribute \"merlin.loc\"
                           []
+                        value_mode <modevar>
                         Texp_construct \"()\"
                         []
                     <case>
@@ -138,7 +143,8 @@
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
                                 Pexp_constant PConst_int (2,None)
                           ]
-                        Texp_ident \"*type-error*/87\"
+                        value_mode <modevar>
+                        Texp_ident \"*type-error*/267\"
                     <case>
                       pattern (test.ml[6,69+4]..test.ml[6,69+5])
                         Tpat_value
@@ -163,7 +169,8 @@
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
                                 Pexp_constant PConst_int (3,None)
                           ]
-                        Texp_ident \"*type-error*/88\"
+                        value_mode <modevar>
+                        Texp_ident \"*type-error*/268\"
                   ]
             ]
       ]
@@ -223,7 +230,7 @@
     structure_item (test2.ml[1,0+0]..test2.ml[1,0+14])
       Tstr_type Rec
       [
-        type_declaration t/81 (test2.ml[1,0+0]..test2.ml[1,0+14])
+        type_declaration t/261 (test2.ml[1,0+0]..test2.ml[1,0+14])
           ptype_params =
             []
           ptype_cstrs =
@@ -232,11 +239,11 @@
             Ttype_variant
               [
                 (test2.ml[1,0+9]..test2.ml[1,0+10])
-                  A/82
+                  A/262
                   []
                   None
                 (test2.ml[1,0+11]..test2.ml[1,0+14])
-                  B/83
+                  B/263
                   []
                   None
               ]
@@ -249,9 +256,11 @@
       [
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
-            Tpat_var \"f/84\"
+            Tpat_var \"f/264\"
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
+            value_mode global
             Texp_function
+            region true
             Nolabel
             [
               <case>
@@ -260,7 +269,7 @@
                     []
                   Tpat_extra_constraint
                   core_type (test2.ml[2,15+11]..test2.ml[2,15+12])
-                    Ttyp_constr \"t/81\"
+                    Ttyp_constr \"t/261\"
                     []
                   pattern (test2.ml[2,15+7]..test2.ml[2,15+8])
                     attribute \"merlin.incorrect\"
@@ -280,7 +289,8 @@
                   core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
                     Ttyp_constr \"int/1!\"
                     []
-                    Texp_ident \"*type-error*/86\"
+                    value_mode <modevar>
+                    Texp_ident \"*type-error*/266\"
             ]
       ]
   ]

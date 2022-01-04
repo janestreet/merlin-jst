@@ -19,6 +19,11 @@ val nopervasives         : bool ref
 val strict_formats       : bool ref
 val open_modules         : string list ref
 
+type extension = Comprehensions
+val extensions : extension list ref
+val is_extension_enabled: extension -> bool
+val string_of_extension: extension -> string
+
 (** {1 Dummy values}
     Ignored by merlin but kept for compatibility with upstream code. *)
 val annotations          : bool ref

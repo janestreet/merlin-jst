@@ -285,6 +285,16 @@ let of_exp_record_field obj lid_loc lbl =
 let of_pat_record_field obj loc lbl =
   of_record_field (`Pattern obj) loc lbl
 
+let of_comprehension_clause = function
+  | From_to (_, _p, e1, e2, _) ->
+     of_expression e2 ** of_expression e2
+  | In (p, e) ->
+     of_pattern p ** of_expression e
+
+let of_comprehension {clauses; guard} =
+  list_fold of_comprehension_clause clauses **
+    option_fold of_expression guard
+
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
@@ -316,11 +326,11 @@ let of_expression_desc loc = function
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { cases; _ } ->
     list_fold of_case cases
-  | Texp_apply (e,ls) ->
+  | Texp_apply (e,ls,_) ->
     of_expression e **
     list_fold (function
-        | (_,None) -> id_fold
-        | (_,Some e) -> of_expression e)
+        | (_,Omitted _) -> id_fold
+        | (_,Arg e) -> of_expression e)
       ls
   | Texp_match (e,cs,_) ->
     of_expression e **
@@ -350,7 +360,9 @@ let of_expression_desc loc = function
     of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
     of_expression e1 ** of_expression e2 ** of_expression e3
-  | Texp_send (e,meth,eo) ->
+  | Texp_list_comprehension (e, cs) | Texp_arr_comprehension (e, cs) ->
+    of_expression e ** list_fold of_comprehension cs
+  | Texp_send (e,meth,eo,_) ->
     of_expression e **
     of_method_call e meth eo loc **
     option_fold of_expression eo
@@ -376,6 +388,10 @@ let of_expression_desc loc = function
     of_case body
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
+  | Texp_probe p ->
+    of_expression p.handler
+  | Texp_probe_is_enabled _ ->
+    id_fold
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
@@ -388,8 +404,8 @@ and of_class_expr_desc = function
     app (Class_expr ce)
   | Tcl_apply (ce,es) ->
     list_fold (function
-        | (_,None) -> id_fold
-        | (_,Some e) -> of_expression e)
+        | (_,Omitted _) -> id_fold
+        | (_,Arg e) -> of_expression e)
       es **
     app (Class_expr ce)
   | Tcl_let (_,vbs,es,ce) ->
@@ -770,8 +786,8 @@ let module_expr_paths { Typedtree. mod_desc } =
 
 let expression_paths { Typedtree. exp_desc; _ } =
   match exp_desc with
-  | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]
-  | Texp_new (path,loc,_) -> [reloc path loc, Some loc.txt]
+  | Texp_ident (path,loc,_,_) -> [reloc path loc, Some loc.txt]
+  | Texp_new (path,loc,_,_) -> [reloc path loc, Some loc.txt]
   | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
   | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
   | Texp_override (_,ps) ->

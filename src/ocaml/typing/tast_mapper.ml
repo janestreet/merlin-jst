@@ -240,6 +240,19 @@ let expr sub x =
   in
   let exp_extra = List.map (tuple3 extra id id) x.exp_extra in
   let exp_env = sub.env sub x.exp_env in
+  let map_comprehension comp_types=
+      List.map (fun {clauses; guard}  ->
+        let clauses =
+          List.map (fun comp_type ->
+            match comp_type with
+            | From_to (id, p, e2, e3, dir) ->
+              From_to(id, p, sub.expr sub e2, sub.expr sub e3, dir)
+            | In (p, e2) -> In(sub.pat sub p, sub.expr sub e2)
+          ) clauses
+        in
+        {clauses; guard=(Option.map (sub.expr sub) guard)}
+      ) comp_types
+  in
   let exp_desc =
     match x.exp_desc with
     | Texp_ident _
@@ -247,13 +260,17 @@ let expr sub x =
     | Texp_let (rec_flag, list, exp) ->
         let (rec_flag, list) = sub.value_bindings sub (rec_flag, list) in
         Texp_let (rec_flag, list, sub.expr sub exp)
-    | Texp_function { arg_label; param; cases; partial; } ->
+    | Texp_function { arg_label; param; cases; partial; region; } ->
         let cases = List.map (sub.case sub) cases in
-        Texp_function { arg_label; param; cases; partial; }
-    | Texp_apply (exp, list) ->
+        Texp_function { arg_label; param; cases; partial; region; }
+    | Texp_apply (exp, list, pos) ->
         Texp_apply (
           sub.expr sub exp,
-          List.map (tuple2 id (Option.map (sub.expr sub))) list
+          List.map (function
+            | (lbl, Arg exp) -> (lbl, Arg (sub.expr sub exp))
+            | (lbl, Omitted o) -> (lbl, Omitted o))
+            list,
+          pos
         )
     | Texp_match (exp, cases, p) ->
         Texp_match (
@@ -310,6 +327,16 @@ let expr sub x =
           sub.expr sub exp1,
           sub.expr sub exp2
         )
+    | Texp_list_comprehension(e1, type_comp) ->
+        Texp_list_comprehension(
+          sub.expr sub e1,
+          map_comprehension type_comp
+        )
+    | Texp_arr_comprehension(e1, type_comp) ->
+      Texp_arr_comprehension(
+        sub.expr sub e1,
+        map_comprehension type_comp
+      )
     | Texp_for (id, p, exp1, exp2, dir, exp3) ->
         Texp_for (
           id,
@@ -319,12 +346,13 @@ let expr sub x =
           dir,
           sub.expr sub exp3
         )
-    | Texp_send (exp, meth, expo) ->
+    | Texp_send (exp, meth, expo, pos) ->
         Texp_send
           (
             sub.expr sub exp,
             meth,
-            Option.map (sub.expr sub) expo
+            Option.map (sub.expr sub) expo,
+            pos
           )
     | Texp_new _
     | Texp_instvar _ as d -> d
@@ -375,6 +403,9 @@ let expr sub x =
         e
     | Texp_open (od, e) ->
         Texp_open (sub.open_declaration sub od, sub.expr sub e)
+    | Texp_probe {name; handler} ->
+      Texp_probe {name; handler = sub.expr sub handler }
+    | Texp_probe_is_enabled _ as e -> e
     | Texp_hole ->
         Texp_hole
   in
@@ -546,7 +577,10 @@ let class_expr sub x =
     | Tcl_apply (cl, args) ->
         Tcl_apply (
           sub.class_expr sub cl,
-          List.map (tuple2 id (Option.map (sub.expr sub))) args
+          List.map (function
+            | (lbl, Arg exp) -> (lbl, Arg (sub.expr sub exp))
+            | (lbl, Omitted o) -> (lbl, Omitted o))
+            args
         )
     | Tcl_let (rec_flag, value_bindings, ivars, cl) ->
         let (rec_flag, value_bindings) =

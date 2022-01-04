@@ -27,7 +27,7 @@ type type_expr =
 
 and type_desc =
     Tvar of string option
-  | Tarrow of arg_label * type_expr * type_expr * commutable
+  | Tarrow of arrow_desc * type_expr * type_expr * commutable
   | Ttuple of type_expr list
   | Tconstr of Path.t * type_expr list * abbrev_memo ref
   | Tobject of type_expr * (Path.t * type_expr list) option ref
@@ -39,6 +39,22 @@ and type_desc =
   | Tunivar of string option
   | Tpoly of type_expr * type_expr list
   | Tpackage of Path.t * Longident.t list * type_expr list
+
+and arrow_desc =
+  arg_label * alloc_mode * alloc_mode
+
+and alloc_mode_const = Global | Local
+
+and alloc_mode_var = {
+  mutable upper: alloc_mode_const;
+  mutable lower: alloc_mode_const;
+  mutable vlower: alloc_mode_var list;
+  mvid: int;
+}
+
+and alloc_mode =
+  | Amode of alloc_mode_const
+  | Amodevar of alloc_mode_var
 
 and row_desc =
     { row_fields: (label * row_field) list;
@@ -250,10 +266,16 @@ and record_representation =
   | Record_inlined of int               (* Inlined record *)
   | Record_extension of Path.t          (* Inlined record under extension *)
 
+and global_flag =
+  | Global
+  | Nonlocal
+  | Unrestricted
+
 and label_declaration =
   {
     ld_id: Ident.t;
     ld_mutable: mutable_flag;
+    ld_global: global_flag;
     ld_type: type_expr;
     ld_loc: Location.t;
     ld_attributes: Parsetree.attributes;
@@ -435,15 +457,21 @@ let equal_tag t1 t2 =
       Path.same path1 path2 && b1 = b2
   | (Cstr_constant _|Cstr_block _|Cstr_unboxed|Cstr_extension _), _ -> false
 
-let may_equal_constr c1 c2 = match c1.cstr_tag,c2.cstr_tag with
-| Cstr_extension _,Cstr_extension _ -> c1.cstr_arity = c2.cstr_arity
-| tag1,tag2 -> equal_tag tag1 tag2
+let may_equal_constr c1 c2 =
+  c1.cstr_arity = c2.cstr_arity
+  && (match c1.cstr_tag,c2.cstr_tag with
+     | Cstr_extension _,Cstr_extension _ ->
+         (* extension constructors may be rebindings of each other *)
+         true
+     | tag1, tag2 ->
+         equal_tag tag1 tag2)
 
 type label_description =
   { lbl_name: string;                   (* Short name *)
     lbl_res: type_expr;                 (* Type of the result *)
     lbl_arg: type_expr;                 (* Type of the argument *)
     lbl_mut: mutable_flag;              (* Is this a mutable field? *)
+    lbl_global: global_flag;        (* Is this a global field? *)
     lbl_pos: int;                       (* Position in block *)
     lbl_all: label_description array;   (* All the labels in this type *)
     lbl_repres: record_representation;  (* Representation for this record *)
@@ -472,6 +500,10 @@ let signature_item_id = function
   | Sig_class (id, _, _, _)
   | Sig_class_type (id, _, _, _)
     -> id
+
+type value_mode =
+  { r_as_l : alloc_mode;
+    r_as_g : alloc_mode; }
 
 (* Merlin specific *)
 

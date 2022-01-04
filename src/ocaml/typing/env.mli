@@ -84,6 +84,9 @@ val find_modtype: Path.t -> t -> modtype_declaration
 val find_class: Path.t -> t -> class_declaration
 val find_cltype: Path.t -> t -> class_type_declaration
 
+val find_strengthened_module:
+  aliasable:bool -> Path.t -> t -> module_type
+
 val find_ident_constructor: Ident.t -> t -> constructor_description
 val find_ident_label: Ident.t -> t -> label_description
 
@@ -94,6 +97,7 @@ val find_type_expansion_opt:
 (* Find the manifest type information associated to a type for the sake
    of the compiler's type-based optimisations. *)
 val find_modtype_expansion: Path.t -> t -> module_type
+val find_modtype_expansion_lazy: Path.t -> t -> Subst.Lazy.modtype
 
 val find_hash_type: Path.t -> t -> type_declaration
 (* Find the "#t" type given the path for "t" *)
@@ -125,6 +129,10 @@ val normalize_modtype_path: t -> Path.t -> Path.t
 val reset_required_globals: unit -> unit
 val get_required_globals: unit -> Ident.t list
 val add_required_global: Ident.t -> unit
+
+val reset_probes: unit -> unit
+val add_probe: string -> unit
+val has_probe: string -> bool
 
 val has_local_constraints: t -> bool
 
@@ -168,6 +176,8 @@ type lookup_error =
   | Generative_used_as_applicative of Longident.t
   | Illegal_reference_to_recursive_module
   | Cannot_scrape_alias of Longident.t * Path.t
+  | Local_value_escapes of Longident.t * [`Regionality | `Locality]
+  | Local_value_used_in_closure of Longident.t
 
 val lookup_error: Location.t -> t -> lookup_error -> 'a
 
@@ -185,7 +195,7 @@ val lookup_error: Location.t -> t -> lookup_error -> 'a
 
 val lookup_value:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
-  Path.t * value_description
+  Path.t * value_description * Types.value_mode
 val lookup_type:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
   Path.t * type_declaration
@@ -204,6 +214,8 @@ val lookup_cltype:
 
 val lookup_module_path:
   ?use:bool -> loc:Location.t -> load:bool -> Longident.t -> t -> Path.t
+val lookup_modtype_path:
+  ?use:bool -> loc:Location.t -> Longident.t -> t -> Path.t
 
 val lookup_constructor:
   ?use:bool -> loc:Location.t -> constructor_usage -> Longident.t -> t ->
@@ -263,7 +275,8 @@ val make_copy_of_types: t -> (t -> t)
 (* Insertion by identifier *)
 
 val add_value:
-    ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
+    ?check:(string -> Warnings.t) -> ?mode:(Types.value_mode) ->
+    Ident.t -> value_description -> t -> t
 val add_type: check:bool -> Ident.t -> type_declaration -> t -> t
 val add_extension:
   check:bool -> rebind:bool -> Ident.t -> extension_constructor -> t -> t
@@ -271,7 +284,11 @@ val add_module:
   ?arg:bool -> Ident.t -> module_presence -> module_type -> t -> t
 val add_module_declaration: ?arg:bool -> check:bool -> Ident.t ->
   module_presence -> module_declaration -> t -> t
+val add_module_declaration_lazy: update_summary:bool ->
+  Ident.t -> module_presence -> Subst.Lazy.module_decl -> t -> t
 val add_modtype: Ident.t -> modtype_declaration -> t -> t
+val add_modtype_lazy: update_summary:bool ->
+   Ident.t -> Subst.Lazy.modtype_declaration -> t -> t
 val add_class: Ident.t -> class_declaration -> t -> t
 val add_cltype: Ident.t -> class_type_declaration -> t -> t
 val add_local_type: Path.t -> type_declaration -> t -> t
@@ -339,6 +356,10 @@ val enter_signature: scope:int -> signature -> t -> signature * t
 val enter_unbound_value : string -> value_unbound_reason -> t -> t
 
 val enter_unbound_module : string -> module_unbound_reason -> t -> t
+
+(* Lock the environment *)
+val add_lock : Types.value_mode -> t -> t
+val add_region_lock : t -> t
 
 (* Initialize the cache of in-core module interfaces. *)
 val reset_cache: unit -> unit
@@ -431,7 +452,8 @@ val check_well_formed_module:
 val add_delayed_check_forward: ((unit -> unit) -> unit) ref
 (* Forward declaration to break mutual recursion with Mtype. *)
 val strengthen:
-    (aliasable:bool -> t -> module_type -> Path.t -> module_type) ref
+    (aliasable:bool -> t -> Subst.Lazy.modtype ->
+     Path.t -> Subst.Lazy.modtype) ref
 (* Forward declaration to break mutual recursion with Ctype. *)
 val same_constr: (t -> type_expr -> type_expr -> bool) ref
 (* Forward declaration to break mutual recursion with Printtyp. *)

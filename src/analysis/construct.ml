@@ -101,7 +101,7 @@ module Util = struct
           Some params
         | None -> 
           begin match type_expr.desc with
-          | Tarrow (arg_label, _, te, _) -> check_type te (arg_label::params)
+          | Tarrow ((arg_label,_,_), _, te, _) -> check_type te (arg_label::params)
           | _ -> None
       end
       in
@@ -269,7 +269,7 @@ module Gen = struct
     [depth] regulates the deep construction of recursive values. If
     [values_scope] is set to [Local] the returned list will also contains
     local values to choose from *)
-  let rec expression ~idents_table values_scope ~depth =
+  let rec expression ~idents_table (values_scope : values_scope) ~depth =
     let exp_or_hole env typ =
       if depth > 1 then
         (* If max_depth has not been reached we recurse *)
@@ -436,7 +436,7 @@ module Gen = struct
             | [], labels -> record env rtyp path labels
             | _ -> []
           end
-        | Tarrow (label, tyleft, tyright, _) ->
+        | Tarrow ((label,_,_), tyleft, tyright, _) ->
           let argument, name = make_arg env label tyleft in
           let value_description = {
               val_type = tyleft;

@@ -29,3 +29,5 @@ val view : ('a, 'b) t -> ('a, 'b) eval
 (* For compatibility with 4.08 and 4.09 *)
 val force_logged_408 :
   log -> ('a -> 'b option) -> ('a,'b option) t -> 'b option
+
+val get_contents : ('a,'b) t -> ('a,'b) Either.t

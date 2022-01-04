@@ -387,9 +387,23 @@ let value_binding sub vb =
 let expression sub exp =
   let loc = sub.location sub exp.exp_loc in
   let attrs = sub.attributes sub exp.exp_attributes in
+  let map_comprehension comp_types=
+      List.map (fun {clauses; guard}  ->
+        let clauses =
+          List.map (fun comp_type ->
+            match comp_type with
+            | From_to (_, p, e2, e3, dir) ->
+              Extensions.From_to(p, sub.expr sub e2, sub.expr sub e3, dir)
+            | In (p, e2) -> Extensions.In(sub.pat sub p, sub.expr sub e2)
+          ) clauses
+        in
+        ({clauses; guard=(Option.map (sub.expr sub) guard)}
+            : Extensions.comprehension )
+      ) comp_types
+  in
   let desc =
     match exp.exp_desc with
-      Texp_ident (_path, lid, _) -> Pexp_ident (map_loc sub lid)
+      Texp_ident (_path, lid, _, _) -> Pexp_ident (map_loc sub lid)
     | Texp_constant cst -> Pexp_constant (constant cst)
     | Texp_let (rec_flag, list, exp) ->
         Pexp_let (rec_flag,
@@ -411,12 +425,12 @@ let expression sub exp =
         Pexp_fun (label, None, Pat.var ~loc {loc;txt = name },
           Exp.match_ ~loc (Exp.ident ~loc {loc;txt= Lident name})
                           (List.map (sub.case sub) cases))
-    | Texp_apply (exp, list) ->
+    | Texp_apply (exp, list, _) ->
         Pexp_apply (sub.expr sub exp,
-          List.fold_right (fun (label, expo) list ->
-              match expo with
-                None -> list
-              | Some exp -> (label, sub.expr sub exp) :: list
+          List.fold_right (fun (label, arg) list ->
+              match arg with
+              | Omitted _ -> list
+              | Arg exp -> (label, sub.expr sub exp) :: list
           ) list [])
     | Texp_match (exp, cases, _) ->
       Pexp_match (sub.expr sub exp, List.map (sub.case sub) cases)
@@ -457,15 +471,25 @@ let expression sub exp =
         Pexp_sequence (sub.expr sub exp1, sub.expr sub exp2)
     | Texp_while (exp1, exp2) ->
         Pexp_while (sub.expr sub exp1, sub.expr sub exp2)
+    | Texp_list_comprehension(exp1, type_comp) ->
+      Pexp_extension
+      (Extensions.payload_of_extension_expr ~loc
+        (Extensions.Eexp_list_comprehension(
+          sub.expr sub exp1, map_comprehension type_comp)))
+    | Texp_arr_comprehension(exp1, type_comp) ->
+      Pexp_extension
+        (Extensions.payload_of_extension_expr ~loc
+          (Extensions.Eexp_arr_comprehension(
+            sub.expr sub exp1, map_comprehension type_comp)))
     | Texp_for (_id, name, exp1, exp2, dir, exp3) ->
         Pexp_for (name,
           sub.expr sub exp1, sub.expr sub exp2,
           dir, sub.expr sub exp3)
-    | Texp_send (exp, meth, _) ->
+    | Texp_send (exp, meth, _, _) ->
         Pexp_send (sub.expr sub exp, match meth with
             Tmeth_name name -> mkloc name loc
           | Tmeth_val id -> mkloc (Ident.name id) loc)
-    | Texp_new (_path, lid, _) -> Pexp_new (map_loc sub lid)
+    | Texp_new (_path, lid, _, _) -> Pexp_new (map_loc sub lid)
     | Texp_instvar (_, path, name) ->
       Pexp_ident ({loc = sub.location sub name.loc ; txt = lident_of_path path})
     | Texp_setinstvar (_, _path, lid, exp) ->
@@ -504,6 +528,42 @@ let expression sub exp =
     | Texp_open (od, exp) ->
         Pexp_open (sub.open_declaration sub od, sub.expr sub exp)
     | Texp_hole -> Pexp_hole
+    | Texp_probe {name; handler} ->
+        Pexp_extension
+          ({ txt = "ocaml.probe"; loc}
+          , PStr ([
+              { pstr_desc=
+                  Pstr_eval
+                    ( { pexp_desc=(Pexp_apply (
+                        { pexp_desc=(Pexp_constant
+                                       (Pconst_string(name,loc,None)))
+                        ; pexp_loc=loc
+                        ; pexp_loc_stack =[]
+                        ; pexp_attributes=[]
+                        }
+                      , [Nolabel, sub.expr sub handler]))
+                      ; pexp_loc=loc
+                      ; pexp_loc_stack =[]
+                      ; pexp_attributes=[]
+                      }
+                    , [])
+              ; pstr_loc = loc
+              }]))
+    | Texp_probe_is_enabled {name} ->
+        Pexp_extension
+          ({ txt = "ocaml.probe_is_enabled"; loc}
+          , PStr([
+               { pstr_desc=
+                   Pstr_eval
+                     ( { pexp_desc=(Pexp_constant
+                                      (Pconst_string(name,loc,None)))
+                       ; pexp_loc=loc
+                       ; pexp_loc_stack =[]
+                       ; pexp_attributes=[]
+                       }
+                     , [])
+               ; pstr_loc = loc
+               }]))
   in
   List.fold_right (exp_extra sub) exp.exp_extra
     (Exp.mk ~loc ~attrs desc)
@@ -678,8 +738,8 @@ let class_expr sub cexpr =
         Pcl_apply (sub.class_expr sub cl,
           List.fold_right (fun (label, expo) list ->
               match expo with
-                None -> list
-              | Some exp -> (label, sub.expr sub exp) :: list
+              | Omitted _ -> list
+              | Arg exp -> (label, sub.expr sub exp) :: list
           ) args [])
 
     | Tcl_let (rec_flat, bindings, _ivars, cl) ->

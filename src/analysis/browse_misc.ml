@@ -38,7 +38,9 @@ let print_constructor c =
     Printtyp.tree_of_type_scheme
       (dummy_type_scheme c.cstr_res.desc)
   | args ->
-    let desc = Tarrow (Ast_helper.no_label,
+    let desc = Tarrow ((Ast_helper.no_label,
+                        Btype.Alloc_mode.global,
+                        Btype.Alloc_mode.global),
                        dummy_type_scheme (Ttuple args),
                        c.cstr_res, Cok)
     in

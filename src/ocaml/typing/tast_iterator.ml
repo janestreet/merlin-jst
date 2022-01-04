@@ -195,9 +195,12 @@ let expr sub {exp_extra; exp_desc; exp_env; _} =
       sub.expr sub exp
   | Texp_function {cases; _} ->
      List.iter (sub.case sub) cases
-  | Texp_apply (exp, list) ->
+  | Texp_apply (exp, list, _) ->
       sub.expr sub exp;
-      List.iter (fun (_, o) -> Option.iter (sub.expr sub) o) list
+      List.iter (function
+        | (_, Arg exp) -> sub.expr sub exp
+        | (_, Omitted _) -> ())
+        list
   | Texp_match (exp, cases, _) ->
       sub.expr sub exp;
       List.iter (sub.case sub) cases
@@ -228,11 +231,22 @@ let expr sub {exp_extra; exp_desc; exp_env; _} =
   | Texp_while (exp1, exp2) ->
       sub.expr sub exp1;
       sub.expr sub exp2
+  | Texp_list_comprehension (exp1, type_comps)
+  | Texp_arr_comprehension (exp1, type_comps) ->
+    sub.expr sub exp1;
+    List.iter (fun  {clauses; guard} ->
+        List.iter (fun type_comp ->
+          match type_comp with
+          | From_to (_, _,e2,e3, _) -> sub.expr sub e2; sub.expr sub e3
+          | In (_, e2) -> sub.expr sub e2
+          ) clauses;
+        Option.iter (fun g -> sub.expr sub g) guard)
+      type_comps
   | Texp_for (_, _, exp1, exp2, _, exp3) ->
       sub.expr sub exp1;
       sub.expr sub exp2;
       sub.expr sub exp3
-  | Texp_send (exp, _, expo) ->
+  | Texp_send (exp, _, expo, _) ->
       sub.expr sub exp;
       Option.iter (sub.expr sub) expo
   | Texp_new _ -> ()
@@ -259,6 +273,8 @@ let expr sub {exp_extra; exp_desc; exp_env; _} =
   | Texp_open (od, e) ->
       sub.open_declaration sub od;
       sub.expr sub e
+  | Texp_probe {handler;_} -> sub.expr sub handler
+  | Texp_probe_is_enabled _ -> ()
   | Texp_hole -> ()
 
 
@@ -371,7 +387,10 @@ let class_expr sub {cl_desc; cl_env; _} =
       sub.class_expr sub cl
   | Tcl_apply (cl, args) ->
       sub.class_expr sub cl;
-      List.iter (fun (_, e) -> Option.iter (sub.expr sub) e) args
+      List.iter (function
+        | (_, Arg exp) -> sub.expr sub exp
+        | (_, Omitted _) -> ())
+        args
   | Tcl_let (rec_flag, value_bindings, ivars, cl) ->
       sub.value_bindings sub (rec_flag, value_bindings);
       List.iter (fun (_, e) -> sub.expr sub e) ivars;

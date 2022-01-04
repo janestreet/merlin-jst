@@ -31,6 +31,7 @@ type type_forcing_context =
   | If_no_else_branch
   | While_loop_conditional
   | While_loop_body
+  | In_comprehension_argument
   | For_loop_start_index
   | For_loop_stop_index
   | For_loop_body
@@ -77,6 +78,12 @@ type existential_restriction =
   | In_class_def (** or in [class c = let ... in ...] *)
   | In_self_pattern (** or in self pattern *)
 
+type escaping_context =
+  | Return
+  | Tailcall_argument
+  | Tailcall_function
+  | Partial_application
+
 val type_binding:
         Env.t -> rec_flag ->
           Parsetree.value_binding list ->
@@ -103,7 +110,6 @@ val check_partial:
         ?lev:int -> Env.t -> type_expr ->
         Location.t -> Typedtree.value Typedtree.case list -> Typedtree.partial
 val type_expect:
-        ?in_function:(Location.t * type_expr) ->
         Env.t -> Parsetree.expression -> type_expected -> Typedtree.expression
 val type_exp:
         Env.t -> Parsetree.expression -> Typedtree.expression
@@ -113,8 +119,10 @@ val type_argument:
         Env.t -> Parsetree.expression ->
         type_expr -> type_expr -> Typedtree.expression
 
-val option_some: Env.t -> Typedtree.expression -> Typedtree.expression
-val option_none: Env.t -> type_expr -> Location.t -> Typedtree.expression
+val option_some:
+  Env.t -> Typedtree.expression -> value_mode -> Typedtree.expression
+val option_none:
+  Env.t -> type_expr -> value_mode -> Location.t -> Typedtree.expression
 val extract_option_type: Env.t -> type_expr -> type_expr
 val generalizable: int -> type_expr -> bool
 type delayed_check
@@ -122,8 +130,14 @@ val delayed_checks: delayed_check list ref
 val reset_delayed_checks: unit -> unit
 val force_delayed_checks: unit -> unit
 
+val reset_allocations: unit -> unit
+val optimise_allocations: unit -> unit
+
+
 val name_pattern : string -> Typedtree.pattern list -> Ident.t
 val name_cases : string -> Typedtree.value Typedtree.case list -> Ident.t
+
+val escape : loc:Location.t -> env:Env.t -> value_mode -> unit
 
 val self_coercion : (Path.t * Location.t list ref) list ref
 
@@ -180,6 +194,13 @@ type error =
   | Unrefuted_pattern of Typedtree.pattern
   | Invalid_extension_constructor_payload
   | Not_an_extension_constructor
+  | Probe_format
+  | Probe_name_too_long of string
+  | Probe_name_format of string
+  | Probe_name_undefined of string
+  (* CR-soon mshinwell: Use an inlined record *)
+  | Probe_is_enabled_format
+  | Extension_not_enabled of Clflags.extension
   | Literal_overflow of string
   | Unknown_literal of string * char
   | Illegal_letrec_pat
@@ -188,6 +209,10 @@ type error =
   | Letop_type_clash of string * Ctype.Unification_trace.t
   | Andop_type_clash of string * Ctype.Unification_trace.t
   | Bindings_type_clash of Ctype.Unification_trace.t
+  | Local_value_escapes of Btype.Value_mode.error * escaping_context option
+  | Param_mode_mismatch of type_expr
+  | Uncurried_function_escapes
+  | Local_return_annotation_mismatch of Location.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error

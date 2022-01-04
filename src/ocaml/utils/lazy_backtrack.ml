@@ -91,3 +91,9 @@ let force_logged_408 log f x =
     | exception e ->
         x := Raise e;
         raise e
+
+let get_contents x =
+  match !x with
+  | Thunk a -> Either.Left a
+  | Done b -> Either.Right b
+  | Raise e -> raise e

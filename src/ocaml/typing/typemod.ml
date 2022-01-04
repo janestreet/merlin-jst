@@ -20,7 +20,7 @@ open Asttypes
 open Parsetree
 open Types
 open Format
-
+module Value_mode = Btype.Value_mode
 module String = Misc.String
 
 module Sig_component_kind = struct
@@ -696,8 +696,8 @@ let map_ext fn exts rem =
 let rec approx_modtype env smty =
   match smty.pmty_desc with
     Pmty_ident lid ->
-      let (path, _info) =
-        Env.lookup_modtype ~use:false ~loc:smty.pmty_loc lid.txt env
+      let path =
+        Env.lookup_modtype_path ~use:false ~loc:smty.pmty_loc lid.txt env
       in
       Mty_ident path
   | Pmty_alias lid ->
@@ -736,9 +736,11 @@ let rec approx_modtype env smty =
           | Pwith_module (_, lid') ->
               (* Lookup the module to make sure that it is not recursive.
                  (GPR#1626) *)
-              ignore (Env.lookup_module ~use:false ~loc:lid'.loc lid'.txt env)
+              ignore (Env.lookup_module_path ~use:false ~load:false
+                        ~loc:lid'.loc lid'.txt env)
           | Pwith_modsubst (_, lid') ->
-              ignore (Env.lookup_module ~use:false ~loc:lid'.loc lid'.txt env))
+              ignore (Env.lookup_module_path ~use:false ~load:false
+                        ~loc:lid'.loc lid'.txt env))
         constraints;
       body
   | Pmty_typeof smod ->
@@ -1106,8 +1108,7 @@ let has_remove_aliases_attribute attr =
 (* Check and translate a module type expression *)
 
 let transl_modtype_longident loc env lid =
-  let (path, _info) = Env.lookup_modtype ~loc lid env in
-  path
+  Env.lookup_modtype_path ~loc lid env
 
 let transl_module_alias loc env lid =
   Env.lookup_module_path ~load:false ~loc lid env
@@ -1582,10 +1583,10 @@ and transl_signature ?(keep_warnings = false) env sg =
             Msupport.raise_error exn;
             transl_sig env srem
           end
-        | Psig_attribute x ->
-            Builtin_attributes.warning_attribute x;
+        | Psig_attribute attr ->
+            Builtin_attributes.parse_standard_interface_attributes attr;
             let (trem,rem, final_env) = transl_sig env srem in
-            mksig (Tsig_attribute x) env loc :: trem, rem, final_env
+            mksig (Tsig_attribute attr) env loc :: trem, rem, final_env
         | Psig_extension (ext, _attrs) ->
             Msupport.raise_error
               (Error_forward (Builtin_attributes.error_of_extension ext));
@@ -1726,13 +1727,13 @@ let path_of_module mexp =
 
 (* Check that all core type schemes in a structure are closed *)
 
-let rec closed_modtype env = function
+let rec check_modtype env f = function
     Mty_ident _ -> true
   | Mty_alias _ -> true
   | Mty_for_hole -> true
   | Mty_signature sg ->
       let env = Env.add_signature sg env in
-      List.for_all (closed_signature_item env) sg
+      List.for_all (check_signature_item env f) sg
   | Mty_functor(arg_opt, body) ->
       let env =
         match arg_opt with
@@ -1741,25 +1742,36 @@ let rec closed_modtype env = function
         | Named (Some id, param) ->
             Env.add_module ~arg:true id Mp_present param env
       in
-      closed_modtype env body
+      check_modtype env f body
 
-and closed_signature_item env = function
-    Sig_value(_id, desc, _) -> Ctype.closed_schema env desc.val_type
-  | Sig_module(_id, _, md, _, _) -> closed_modtype env md.md_type
+and check_signature_item env f = function
+    Sig_value(_id, desc, _) -> f desc.val_type
+  | Sig_module(_id, _, md, _, _) -> check_modtype env f md.md_type
   | _ -> true
 
 let check_nongen_scheme env sig_item =
+  let check ty =
+    Ctype.remove_mode_variables ty; Ctype.closed_schema env ty
+  in
+  let ok = check_signature_item env check sig_item in
   match sig_item with
-    Sig_value(_id, vd, _) ->
-      if not (Ctype.closed_schema env vd.val_type) then
-        raise (Error (vd.val_loc, env, Non_generalizable vd.val_type))
-  | Sig_module (_id, _, md, _, _) ->
-      if not (closed_modtype env md.md_type) then
-        raise(Error(md.md_loc, env, Non_generalizable_module md.md_type))
+    Sig_value(_id, vd, _) when not ok ->
+     raise (Error (vd.val_loc, env, Non_generalizable vd.val_type))
+  | Sig_module (_id, _, md, _, _) when not ok ->
+     raise(Error(md.md_loc, env, Non_generalizable_module md.md_type))
   | _ -> ()
 
 let check_nongen_schemes env sg =
   List.iter (check_nongen_scheme env) sg
+
+let closed_modtype env mty =
+  let check ty =
+    Ctype.remove_mode_variables ty; Ctype.closed_schema env ty
+  in check_modtype env check mty
+
+let remove_mode_variables env sg =
+  let rm ty = Ctype.remove_mode_variables ty; true in
+  List.for_all (check_signature_item env rm) sg |> ignore
 
 (* Helpers for typing recursive modules *)
 
@@ -2006,27 +2018,28 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                  mod_attributes = smod.pmod_attributes;
                  mod_loc = smod.pmod_loc } in
       let aliasable = not (Env.is_functor_arg path env) in
-      let md =
-        if alias && aliasable then
-          (Env.add_required_global (Path.head path); md)
-        else match (Env.find_module path env).md_type with
+      if alias && aliasable then
+        (Env.add_required_global (Path.head path); md)
+      else begin
+        let mty =
+          if sttn then
+            Env.find_strengthened_module ~aliasable path env
+          else
+            (Env.find_module path env).md_type
+        in
+        match mty with
         | Mty_alias p1 when not alias ->
             let p1 = Env.normalize_module_path (Some smod.pmod_loc) env p1 in
-            let mty = Includemod.expand_module_alias env [] p1 in
+            let mty = Includemod.expand_module_alias
+                        ~strengthen:sttn env [] p1 in
             { md with
               mod_desc =
                 Tmod_constraint (md, mty, Tmodtype_implicit,
                                  Tcoerce_alias (env, path, Tcoerce_none));
-              mod_type =
-                if sttn then Mtype.strengthen ~aliasable:true env mty p1
-                else mty }
+              mod_type = mty }
         | mty ->
-            let mty =
-              if sttn then Mtype.strengthen ~aliasable env mty path
-              else mty
-            in
             { md with mod_type = mty }
-      in md
+      end
   | Pmod_structure sstr ->
       let (str, sg, names, _finalenv) =
         type_structure funct_body anchor env sstr in
@@ -2067,6 +2080,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
           in
           Named (id, param, mty), Types.Named (id, mty.mty_type), newenv, true
       in
+      let newenv = Env.add_lock Value_mode.global newenv in
       let body = type_module sttn funct_body None newenv sbody in
       { mod_desc = Tmod_functor(t_arg, body);
         mod_type = Mty_functor(ty_arg, body.mod_type);
@@ -2307,10 +2321,14 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         (* Note: Env.find_value does not trigger the value_used event. Values
            will be marked as being used during the signature inclusion test. *)
         Tstr_value(rec_flag, defs),
-        List.map (fun (id, { Asttypes.loc; _ }, _typ)->
-          Signature_names.check_value names loc id;
+        List.map (fun (id, modes) ->
+          List.iter
+            (fun (loc, mode) -> Typecore.escape ~loc ~env:newenv mode)
+            modes;
+          let (first_loc, _) = List.hd modes in
+          Signature_names.check_value names first_loc id;
           Sig_value(id, Env.find_value (Pident id) newenv, Exported)
-        ) (let_bound_idents_full defs),
+        ) (let_bound_idents_with_modes defs),
         newenv
     | Pstr_primitive sdesc ->
         let (desc, newenv) = Typedecl.transl_value_decl env loc sdesc in
@@ -2576,9 +2594,9 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         Tstr_include incl, sg, new_env
     | Pstr_extension (ext, _attrs) ->
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
-    | Pstr_attribute x ->
-        Builtin_attributes.warning_attribute x;
-        Tstr_attribute x, [], env
+    | Pstr_attribute attr ->
+        Builtin_attributes.parse_standard_implementation_attributes attr;
+        Tstr_attribute attr, [], env
   in
   let rec type_struct env sstr =
     match sstr with
@@ -2604,10 +2622,28 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
       let str = { str_items = items; str_type = sg; str_final_env = final_env } in
       str, sg, names, final_env)
 
+(* The toplevel will print some types not present in the signature *)
+let remove_mode_variables_for_toplevel str =
+  match str.str_items with
+  | [{ str_desc =
+         ( Tstr_eval (exp, _)
+         | Tstr_value (Nonrecursive,
+                       [{vb_pat = {pat_desc=Tpat_any};
+                         vb_expr = exp}])) }] ->
+     (* These types are printed by the toplevel,
+        even though they do not appear in sg *)
+     Ctype.remove_mode_variables exp.exp_type
+  | _ -> ()
+
 let type_toplevel_phrase env s =
   Env.reset_required_globals ();
+  Env.reset_probes ();
+  Typecore.reset_allocations ();
   let (str, sg, _to_remove_from_sg, env) =
     type_structure ~toplevel:true false None env s in
+  remove_mode_variables env sg;
+  remove_mode_variables_for_toplevel str;
+  Typecore.optimise_allocations ();
   (str, sg, (* to_remove_from_sg, *) env)
 
 let type_module_alias = type_module ~alias:true true false None
@@ -2788,7 +2824,9 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
   Cmt_format.clear ();
   Misc.try_finally (fun () ->
       Typecore.reset_delayed_checks ();
+      Typecore.reset_allocations ();
       Env.reset_required_globals ();
+      Env.reset_probes ();
       if !Clflags.print_types then (* #7656 *)
         Warnings.parse_options false "-32-34-37-38-60";
       let (str, sg, names, finalenv) =
@@ -2796,6 +2834,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       let simple_sg = Signature_names.simplify finalenv names sg in
       if !Clflags.print_types then begin
         Typecore.force_delayed_checks ();
+        Typecore.optimise_allocations ();
         Printtyp.wrap_printing_env ~error:false initial_env
           (fun () -> fprintf std_formatter "%a@."
               (Printtyp.printed_signature sourcefile) simple_sg
@@ -2817,6 +2856,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
               sourcefile sg intf_file dclsig
           in
           Typecore.force_delayed_checks ();
+          Typecore.optimise_allocations ();
           (* It is important to run these checks after the inclusion test above,
              so that value declarations which are not used internally but
              exported are not reported as being unused. *)
@@ -2832,6 +2872,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           check_nongen_schemes finalenv simple_sg;
           normalize_signature simple_sg;
           Typecore.force_delayed_checks ();
+          Typecore.optimise_allocations ();
           (* See comment above. Here the target signature contains all
              the value being exported. We can still capture unused
              declarations like "let x = true;; let x = 1;;", because in this

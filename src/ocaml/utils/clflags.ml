@@ -23,6 +23,12 @@ let nopervasives        = ref false
 let strict_formats      = ref false
 let open_modules        = ref []
 
+type extension = Comprehensions
+let extensions = ref ([] : extension list) (* -extensions *)
+let is_extension_enabled ext = List.mem ext !extensions
+let string_of_extension = function
+| Comprehensions -> "comprehensions"
+
 let annotations         = ref false
 let binary_annotations  = ref true
 let print_types         = ref false

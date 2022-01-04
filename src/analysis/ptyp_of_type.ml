@@ -35,7 +35,7 @@ and core_type type_expr =
   match type_expr.desc with
   | Tvar None | Tunivar None -> Typ.any ()
   | Tvar (Some s) | Tunivar (Some s) -> Typ.var s
-  | Tarrow (label, type_expr, type_expr_out, _commutable) ->
+  | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
     Typ.arrow label
       (core_type type_expr)
       (core_type type_expr_out)
