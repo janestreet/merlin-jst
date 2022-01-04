@@ -26,6 +26,7 @@ let nullable (type a) : a MenhirInterpreter.nonterminal -> bool =
   | N_option_BAR_ -> true
   | N_opt_ampersand -> true
   | N_mutable_virtual_flags -> true
+  | N_mutable_or_global_flag -> true
   | N_mutable_flag -> true
   | N_list_use_file_element_ -> true
   | N_list_text_str_structure_item__ -> true
