@@ -145,7 +145,7 @@ type error =
   | Probe_name_format of string
   | Probe_name_undefined of string
   | Probe_is_enabled_format
-  | Extension_not_enabled of Clflags.extension
+  | Extension_not_enabled of Clflags.Extension.t
   | Literal_overflow of string
   | Unknown_literal of string * char
   | Illegal_letrec_pat
@@ -456,9 +456,11 @@ let register_allocation (expected_mode : expected_mode) =
     (Value_mode.regional_to_global_alloc expected_mode.mode)
 
 let optimise_allocations () =
-  List.iter
-    (fun mode -> ignore (Alloc_mode.constrain_upper mode))
-    !allocations;
+  if Clflags.Extension.is_enabled Local then begin
+    List.iter
+      (fun mode -> ignore (Alloc_mode.constrain_upper mode))
+      !allocations
+  end;
   reset_allocations ()
 
 (* Typing of constants *)
@@ -3645,6 +3647,13 @@ and type_expect_
         wrap_trace_gadt_instances env (lower_args []) ty;
         funct
       in
+      let type_sfunct_args sfunct extra_args =
+        match sfunct.pexp_desc with
+        | Pexp_apply (sfunct, args) ->
+           type_sfunct sfunct, args @ extra_args
+        | _ ->
+           type_sfunct sfunct, extra_args
+      in
       let funct, sargs =
         let funct = type_sfunct sfunct in
         match funct.exp_desc, sargs with
@@ -3652,22 +3661,22 @@ and type_expect_
                       Id_prim _),
           [Nolabel, sarg; Nolabel, actual_sfunct]
           when is_inferred actual_sfunct ->
-            type_sfunct actual_sfunct, [Nolabel, sarg]
+            type_sfunct_args actual_sfunct [Nolabel, sarg]
         | Texp_ident (_, _, {val_kind = Val_prim {prim_name = "%apply"}},
                       Id_prim _),
           [Nolabel, actual_sfunct; Nolabel, sarg] ->
-            type_sfunct actual_sfunct, [Nolabel, sarg]
+            type_sfunct_args actual_sfunct [Nolabel, sarg]
         | _ ->
             funct, sargs
       in
       begin_def ();
-      let (args, ty_res) =
+      let (args, ty_res, position) =
         type_application env loc expected_mode funct funct_mode sargs
       in
       end_def ();
       unify_var env (newvar()) funct.exp_type;
       let exp =
-        { exp_desc = Texp_apply(funct, args, expected_mode.position);
+        { exp_desc = Texp_apply(funct, args, position);
           exp_loc = loc; exp_extra = [];
           exp_type = ty_res;
           exp_mode = expected_mode.mode;
@@ -4841,12 +4850,12 @@ and type_expect_
   | Pexp_extension (({ txt = ("extension.list_comprehension"
                             | "extension.arr_comprehension"); _ },
                     _ ) as extension)  ->
-    if Clflags.is_extension_enabled Clflags.Comprehensions then
+    if Clflags.Extension.(is_enabled Comprehensions) then
       let ext_expr = Extensions.extension_expr_of_payload ~loc extension in
       type_extension ~loc ~env ~ty_expected ~expected_mode ~sexp ext_expr
     else
       raise
-        (error (loc, env, Extension_not_enabled(Clflags.Comprehensions)))
+        (error (loc, env, Extension_not_enabled(Clflags.Extension.Comprehensions)))
   | Pexp_extension ext ->
     raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
@@ -5016,10 +5025,11 @@ and type_function ?in_function loc attrs env (expected_mode : expected_mode)
     Location.prerr_warning (List.hd cases).c_lhs.pat_loc
       Warnings.Unerasable_optional_argument;
   let param = name_cases "param" cases in
+  let region = region_locked && not uncurried_function in
   re {
     exp_desc =
       Texp_function
-        { arg_label = l; param; cases; partial; region = region_locked };
+        { arg_label = l; param; cases; partial; region };
     exp_loc = loc; exp_extra = [];
     exp_type =
       instance (newgenty (Tarrow((l,arg_mode,ret_mode), ty_arg, ty_res, Cok)));
@@ -5534,7 +5544,7 @@ and type_application env app_loc expected_mode funct funct_mode sargs =
       in
       let exp = type_expect env marg sarg (mk_expected ty_arg) in
       check_partial_application false exp;
-      ([Nolabel, Arg exp], ty_res)
+      ([Nolabel, Arg exp], ty_res, expected_mode.position)
   | _ ->
       let ty = funct.exp_type in
       let ignore_labels =
@@ -5558,8 +5568,8 @@ and type_application env app_loc expected_mode funct funct_mode sargs =
         collect_apply_args env funct ignore_labels ty (instance ty)
           (Value_mode.regional_to_global_alloc funct_mode) sargs
       in
-      let position = expected_mode.position in
       let partial_app = is_partial_apply args in
+      let position = if partial_app then Nontail else expected_mode.position in
       let args =
         List.mapi (fun index arg ->
             type_apply_arg env ~funct ~index ~position ~partial_app arg)
@@ -5571,7 +5581,7 @@ and type_application env app_loc expected_mode funct funct_mode sargs =
       in
       submode ~loc:app_loc ~env
         (Value_mode.of_alloc mode_ret) expected_mode;
-      args, ty_ret
+      args, ty_ret, position
 
 and type_construct env (expected_mode : expected_mode) loc lid sarg
       ty_expected_explained attrs =
@@ -6908,8 +6918,8 @@ let report_error ~loc env = function
       Location.errorf ~loc
         "%%probe_is_enabled points must specify a single probe name as a \
          string literal"
-  | Extension_not_enabled(ext) ->
-    let name = Clflags.string_of_extension ext in
+  | Extension_not_enabled ext ->
+    let name = Clflags.Extension.to_string ext in
     Location.errorf ~loc
         "Extension %s must be enabled to use this feature." name
   | Literal_overflow ty ->

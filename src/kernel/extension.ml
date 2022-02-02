@@ -99,8 +99,28 @@ let ext_meta = {
   packages = [];
 }
 
+let ext_local = {
+  name = "local";
+  private_def = [];
+  public_def = [];
+  keywords = [
+    "local_", LOCAL;
+    "global_", GLOBAL;
+    "nonlocal_", NONLOCAL;
+  ];
+  packages = [];
+}
+
+let ext_comprehensions = {
+  name = "comprehensions";
+  private_def = [];
+  public_def = [];
+  keywords = [];
+  packages = [];
+}
+
 (* Known extensions *)
-let registry = [ext_lwt;ext_meta]
+let registry = [ext_lwt;ext_meta;ext_local;ext_comprehensions]
 let registry =
   List.fold_left registry ~init:String.Map.empty
     ~f:(fun map ext -> String.Map.add map ~key:ext.name ~data:ext)

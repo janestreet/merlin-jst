@@ -29,24 +29,24 @@ let version = Sys.ocaml_version
 let flambda = false
 
 let exec_magic_number = "Caml1999X029"
-and cmi_magic_number = "Caml1999I029"
-and cmo_magic_number = "Caml1999O029"
-and cma_magic_number = "Caml1999A029"
+and cmi_magic_number = "Caml1999I500"
+and cmo_magic_number = "Caml1999O500"
+and cma_magic_number = "Caml1999A500"
 and cmx_magic_number =
   if flambda then
-    "Caml1999y029"
+    "Caml1999y500"
   else
-    "Caml1999Y029"
+    "Caml1999Y500"
 and cmxa_magic_number =
   if flambda then
-    "Caml1999z029"
+    "Caml1999z500"
   else
-    "Caml1999Z029"
+    "Caml1999Z500"
 and ast_impl_magic_number = "Caml1999M029"
 and ast_intf_magic_number = "Caml1999N029"
-and cmxs_magic_number = "Caml1999D029"
+and cmxs_magic_number = "Caml1999D500"
     (* cmxs_magic_number is duplicated in otherlibs/dynlink/natdynlink.ml *)
-and cmt_magic_number = "Caml1999T029"
+and cmt_magic_number = "Caml1999T500"
 
 let interface_suffix = ref ".mli"
 

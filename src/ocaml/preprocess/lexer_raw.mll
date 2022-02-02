@@ -98,7 +98,6 @@ let keyword_table : keywords =
     "fun", FUN;
     "function", FUNCTION;
     "functor", FUNCTOR;
-    "global_", GLOBAL;
     "if", IF;
     "in", IN;
     "include", INCLUDE;
@@ -106,13 +105,11 @@ let keyword_table : keywords =
     "initializer", INITIALIZER;
     "lazy", LAZY;
     "let", LET;
-    "local_", LOCAL;
     "match", MATCH;
     "method", METHOD;
     "module", MODULE;
     "mutable", MUTABLE;
     "new", NEW;
-    "nonlocal_", NONLOCAL;
     "nonrec", NONREC;
     "object", OBJECT;
     "of", OF;

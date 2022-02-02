@@ -23,11 +23,33 @@ let nopervasives        = ref false
 let strict_formats      = ref false
 let open_modules        = ref []
 
-type extension = Comprehensions
-let extensions = ref ([] : extension list) (* -extensions *)
-let is_extension_enabled ext = List.mem ext !extensions
-let string_of_extension = function
-| Comprehensions -> "comprehensions"
+module Extension = struct
+  type t = Comprehensions | Local
+
+  let all = [ Comprehensions; Local ]
+
+  let extensions = ref ([] : t list)   (* -extension *)
+  let equal (a : t) (b : t) = (a = b)
+
+  let disable_all_extensions = ref false             (* -disable-all-extensions *)
+  let disable_all () = disable_all_extensions := true
+
+  let to_string = function
+    | Comprehensions -> "comprehensions"
+    | Local -> "local"
+
+  let of_string = function
+    | "comprehensions" -> Comprehensions
+    | "local" -> Local
+    | extn -> raise (Arg.Bad(Printf.sprintf "Extension %s is not known" extn))
+
+  let enable extn =
+    let t = of_string (String.lowercase_ascii extn) in
+    if not (List.exists (equal t) !extensions) then
+      extensions := t :: !extensions
+
+  let is_enabled ext = not !disable_all_extensions && List.mem ext !extensions
+end
 
 let annotations         = ref false
 let binary_annotations  = ref true

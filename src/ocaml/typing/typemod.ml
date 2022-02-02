@@ -2318,6 +2318,12 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         let () = if rec_flag = Recursive then
           Typecore.check_recursive_bindings env defs
         in
+        if toplevel then begin
+          (* Values bound by '_' still escape in the toplevel, because
+              they may be printed even though they are not named *)
+          defs |> List.iter (fun vb ->
+            Typecore.escape ~loc:vb.vb_pat.pat_loc ~env:newenv vb.vb_expr.exp_mode);
+        end;
         (* Note: Env.find_value does not trigger the value_used event. Values
            will be marked as being used during the signature inclusion test. *)
         Tstr_value(rec_flag, defs),
@@ -3140,3 +3146,7 @@ let () =
       | _ ->
         None
     )
+
+let reset () =
+  Env.reset_cache ();
+  Typetexp.reset_type_variables ()
