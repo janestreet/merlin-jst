@@ -358,9 +358,9 @@ let allocations : Alloc_mode.t list ref = Local_store.s_ref []
 let reset_allocations () = allocations := []
 
 let register_allocation_mode alloc_mode =
-  match Alloc_mode.check_const alloc_mode with
-  | Some _ -> ()
-  | None -> allocations := alloc_mode :: !allocations
+  match alloc_mode with
+  | Amode _const -> ()
+  | Amodevar _ -> allocations := alloc_mode :: !allocations
 
 let register_allocation (expected_mode : expected_mode) =
   register_allocation_mode
@@ -461,9 +461,17 @@ let extract_label_names env ty =
   with Not_found ->
     assert false
 
-let has_local_attr_pat ppat = Builtin_attributes.has_local ppat.ppat_attributes
+let has_local_attr loc attrs =
+  match Builtin_attributes.has_local attrs with
+  | Ok l -> l
+  | Error () ->
+     raise(Typetexp.Error(loc, Env.empty, Local_not_enabled))
 
-let has_local_attr_exp pexp = Builtin_attributes.has_local pexp.pexp_attributes
+let has_local_attr_pat ppat =
+  has_local_attr ppat.ppat_loc ppat.ppat_attributes
+
+let has_local_attr_exp pexp =
+  has_local_attr pexp.pexp_loc pexp.pexp_attributes
 
 (* Typing of patterns *)
 
@@ -3452,6 +3460,8 @@ and type_expect_
   | Pexp_apply
       ({ pexp_desc = Pexp_extension({txt = "extension.local"}, PStr []) },
        [Nolabel, sbody]) ->
+      if not (Clflags.Extension.is_enabled Local) then
+        raise (Typetexp.Error (loc, Env.empty, Local_not_enabled));
       submode ~loc ~env Value_mode.local expected_mode;
       let exp =
         type_expect ?in_function ~recarg env mode_local sbody
@@ -5273,8 +5283,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
 and type_apply_arg env ~funct ~index ~position ~partial_app (lbl, arg) =
   match arg with
   | Arg (Unknown_arg { sarg; ty_arg; mode_arg }) ->
-      let mode = Alloc_mode.newvar () in
-      Alloc_mode.submode_exn mode mode_arg;
+      let mode = Alloc_mode.newvar_below mode_arg in
       let expected_mode =
         mode_argument ~funct ~index ~position ~partial_app mode in
       let arg = type_expect env expected_mode sarg (mk_expected ty_arg) in
@@ -5282,8 +5291,7 @@ and type_apply_arg env ~funct ~index ~position ~partial_app (lbl, arg) =
         unify_exp env arg (type_option(newvar()));
       (lbl, Arg arg)
   | Arg (Known_arg { sarg; ty_arg; ty_arg0; mode_arg; wrapped_in_some }) ->
-      let mode = Alloc_mode.newvar () in
-      Alloc_mode.submode_exn mode mode_arg;
+      let mode = Alloc_mode.newvar_below mode_arg in
       let expected_mode =
         mode_argument ~funct ~index ~position ~partial_app mode in
       let arg =
