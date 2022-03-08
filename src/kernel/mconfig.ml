@@ -379,6 +379,40 @@ let ocaml_ignored_flags = [
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
   "-verbose"; "-where";
+
+  (* flambda-backend specific *)
+  "-ocamlcfg";
+  "-no-ocamlcfg";
+  "-gcpp-mangling";
+  "-flambda2-backend-cse-at-toplevel";
+  "-flambda2-debug-concrete-types-only-on-canonicals";
+  "-flambda2-debug-keep-invalid-handlers";
+  "-flambda2-debug-permute-every-name";
+  "-flambda2-expert-can-inline-recursive-functions";
+  "-flambda2-expert-code-id-and-symbol-scoping-checks";
+  "-flambda2-expert-fallback-inlining-heuristic";
+  "-flambda2-expert-inline-effects-in-cmm";
+  "-flambda2-expert-phantom-lets";
+  "-flambda2-inlining-report-bin";
+  "-flambda2-join-points";
+  "-flambda2-result-types";
+  "-flambda2-result-types-all-functions";
+  "-flambda2-result-types-functors-only";
+  "-flambda2-speculative-inlining-only-if-arguments-useful";
+  "-flambda2-unbox-along-intra-function-control-flow";
+  "-flambda2-unicode";
+  "-no-flambda2-backend-cse-at-toplevel";
+  "-no-flambda2-debug-concrete-types-only-on-canonicals";
+  "-no-flambda2-debug-keep-invalid-handlers";
+  "-no-flambda2-debug-permute-every-name";
+  "-no-flambda2-expert-can-inline-recursive-functions";
+  "-no-flambda2-expert-code-id-and-symbol-scoping-checks";
+  "-no-flambda2-expert-fallback-inlining-heuristic";
+  "-no-flambda2-expert-inline-effects-in-cmm";
+  "-no-flambda2-expert-phantom-lets";
+  "-no-flambda2-join-points";
+  "-no-flambda2-speculative-inlining-only-if-arguments-useful";
+  "-no-flambda2-unbox-along-intra-function-control-flow";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -389,6 +423,24 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
+
+  (* flambda-backend specific *)
+  "-heap-reduction-threshold";
+  "-flambda2-cse-depth";
+  "-flambda2-expert-max-block-size-for-projections";
+  "-flambda2-expert-max-unboxing-depth";
+  "-flambda2-join-depth";
+  "-flambda2-inline-alloc-cost";
+  "-flambda2-inline-branch-cost";
+  "-flambda2-inline-call-cost";
+  "-flambda2-inline-indirect-cost";
+  "-flambda2-inline-large-function-size";
+  "-flambda2-inline-max-depth";
+  "-flambda2-inline-max-rec-depth";
+  "-flambda2-inline-poly-compare-cost";
+  "-flambda2-inline-prim-cost";
+  "-flambda2-inline-small-function-size";
+  "-flambda2-inline-threshold";
 ]
 
 let ocaml_warnings_spec ~error =
