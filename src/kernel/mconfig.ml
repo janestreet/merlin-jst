@@ -383,7 +383,6 @@ let ocaml_ignored_flags = [
   (* flambda-backend specific *)
   "-ocamlcfg";
   "-no-ocamlcfg";
-  "-gcpp-mangling";
   "-flambda2-backend-cse-at-toplevel";
   "-flambda2-debug-concrete-types-only-on-canonicals";
   "-flambda2-debug-keep-invalid-handlers";
@@ -425,6 +424,7 @@ let ocaml_ignored_parametrized_flags = [
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
 
   (* flambda-backend specific *)
+  "-reorder-blocks-random"
   "-heap-reduction-threshold";
   "-flambda2-cse-depth";
   "-flambda2-expert-max-block-size-for-projections";
