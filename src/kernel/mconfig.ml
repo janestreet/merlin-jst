@@ -424,7 +424,7 @@ let ocaml_ignored_parametrized_flags = [
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
 
   (* flambda-backend specific *)
-  "-reorder-blocks-random"
+  "-reorder-blocks-random";
   "-heap-reduction-threshold";
   "-flambda2-cse-depth";
   "-flambda2-expert-max-block-size-for-projections";

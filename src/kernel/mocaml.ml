@@ -44,7 +44,7 @@ let setup_config config = (
   nopervasives         := ocaml.nopervasives ;
   strict_formats       := ocaml.strict_formats ;
   open_modules         := ocaml.open_modules ;
-  config.merlin.extensions |> List.iter (fun ext ->
+  config.merlin.extensions |> List.iter ~f:(fun ext ->
     try Clflags.Extension.enable ext
     with _ -> () (* ignore merlin-only extensions *));
 )
