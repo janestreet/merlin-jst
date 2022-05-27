@@ -5344,7 +5344,7 @@ and type_application env app_loc expected_mode funct funct_mode sargs =
       submode ~loc:app_loc ~env
         (Value_mode.of_alloc mres) expected_mode;
       let marg =
-        mode_argument ~funct ~index:0 ~position:expected_mode.position 
+        mode_argument ~funct ~index:0 ~position:expected_mode.position
           ~partial_app:false marg
       in
       let exp = type_expect env marg sarg (mk_expected ty_arg) in

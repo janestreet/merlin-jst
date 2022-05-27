@@ -23,6 +23,7 @@ git version
       - handle multi-line paths
     - Handle `Persistent_env.Error` in `Typemod.initial_env` (#1355)
     - locate: reset global state from all entry points (#1364)
+    - improve load path performance (#1323)
   + editor modes
     - vim: add a simple interface to the new `construct` command:
       `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`

@@ -6,7 +6,6 @@ type parsetree = [
 type comment = (string * Location.t)
 
 type result = {
-  config        : Mconfig.t;
   lexer_keywords: string list;
   lexer_errors  : exn list;
   parser_errors : exn list;
@@ -29,7 +28,7 @@ val with_ambient_reader : Mconfig.t -> Msource.t -> (unit -> 'a) -> 'a
 (* Main functions *)
 
 val parse :
-  ?for_completion:Msource.position -> Mconfig.t -> Msource.t -> result
+  ?for_completion:Msource.position -> Mconfig.t -> Msource.t * parsetree option -> result
 
 val print_pretty :
   Mconfig.t -> Msource.t -> pretty_parsetree -> string
@@ -42,7 +41,3 @@ val print_batch_outcome :
 
 val reconstruct_identifier:
   Mconfig.t -> Msource.t -> Lexing.position -> string Location.loc list
-
-(* Update config after parse *)
-
-val apply_directives: Mconfig.t -> parsetree -> Mconfig.t

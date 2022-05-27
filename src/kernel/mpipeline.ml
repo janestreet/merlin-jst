@@ -81,7 +81,7 @@ type t = {
   config : Mconfig.t;
   state  : Mocaml.typer_state;
   raw_source : Msource.t;
-  source : Msource.t lazy_t;
+  source : (Msource.t * Mreader.parsetree option) lazy_t;
   reader : (Mreader.result * Mconfig.t) lazy_t;
   ppx    : Ppx.t lazy_t;
   typer  : Typer.t lazy_t;
@@ -96,7 +96,7 @@ type t = {
 let raw_source t = t.raw_source
 
 let input_config t = t.config
-let input_source t = Lazy.force t.source
+let input_source t = fst (Lazy.force t.source)
 
 let with_pipeline t f =
   Mocaml.with_state t.state @@ fun () ->
@@ -143,33 +143,35 @@ let process
   in
   let source = timed_lazy pp_time (lazy (
       match Mconfig.(config.ocaml.pp) with
-      | None -> raw_source
+      | None -> raw_source, None
       | Some { workdir; workval } ->
         let source = Msource.text raw_source in
-        let source =
+        match
           Pparse.apply_pp
             ~workdir ~filename:Mconfig.(config.query.filename)
             ~source ~pp:workval
-        in
-        Msource.make source
+        with
+        | `Source source -> Msource.make source, None
+        | (`Interface _ | `Implementation _) as ast ->
+          raw_source, Some ast
     )) in
   let reader = timed_lazy reader_time (lazy (
       let lazy source = source in
-      let result = Mreader.parse ?for_completion config source in
-      let config = result.Mreader.config in
-      let config = Mreader.apply_directives config result.Mreader.parsetree in
       let config = Mconfig.normalize config in
+      Mocaml.setup_reader_config config;
+      let result = Mreader.parse ?for_completion config source in
       result, config
     )) in
   let ppx = timed_lazy ppx_time (lazy (
       let lazy ({Mreader.parsetree; _}, config) = reader in
       let caught = ref [] in
       Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
-      let config, parsetree = Mppx.rewrite config parsetree in
+      let parsetree = Mppx.rewrite config parsetree in
       { Ppx. config; parsetree; errors = !caught }
     )) in
   let typer = timed_lazy typer_time (lazy (
       let lazy { Ppx. config; parsetree; _ } = ppx in
+      Mocaml.setup_typer_config config;
       let result = Mtyper.run config parsetree in
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
       { Typer. errors; result }
