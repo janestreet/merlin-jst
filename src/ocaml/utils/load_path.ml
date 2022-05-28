@@ -55,10 +55,10 @@ let get_paths () = List.rev_map Dir.path !dirs
    order. *)
 let prepend_add dir =
   List.iter (fun base ->
-      let fn = Filename.concat dir.Dir.path base in
-      STbl.replace !files base fn;
-      STbl.replace !files_uncap (String.uncapitalize_ascii base) fn
-    ) dir.Dir.files
+    let fn = Filename.concat dir.Dir.path base in
+    STbl.replace !files base fn;
+    STbl.replace !files_uncap (String.uncapitalize_ascii base) fn
+  ) dir.Dir.files
 
 let init l =
   assert (not Config.merlin || Local_store.is_bound ());

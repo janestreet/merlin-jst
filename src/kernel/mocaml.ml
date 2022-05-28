@@ -53,6 +53,11 @@ let setup_typer_config config = (
   Load_path.init (Mconfig.build_path config);
 )
 
+let setup_typer_config config = (
+  setup_reader_config config;
+  Load_path.init (Mconfig.build_path config);
+)
+
 (** Switchable implementation of Oprint *)
 
 let default_out_value          = !Oprint.out_value

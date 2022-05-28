@@ -41,20 +41,21 @@ let report_error = function
 external merlin_system_command : string -> int = "ml_merlin_system_command"
 
 let ppx_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s %s 1>&2"
+  Printf.sprintf "%s %s %s%s"
     cmd (Filename.quote fn_in) (Filename.quote fn_out)
+    (if Sys.win32 then "" else " 1>&2")
 
 let apply_rewriter magic ppx (fn_in, failures) =
   let title = "apply_rewriter" in
-  log ~title "running %S from directory %S" ppx.workval ppx.workdir;
-  Logger.log_flush ();
   let fn_out = Filename.temp_file "camlppx" "" in
+  let comm = ppx_commandline ppx.workval fn_in fn_out in
+  log ~title "running %s from directory %S" comm ppx.workdir;
+  Logger.log_flush ();
   begin
     try Sys.chdir ppx.workdir
     with exn ->
       log ~title "cannot change directory %S: %a" ppx.workdir Logger.exn exn
   end;
-  let comm = ppx_commandline ppx.workval fn_in fn_out in
   let failure =
     let ok = merlin_system_command comm = 0 in
     if not ok then Some (CannotRun comm)
@@ -176,9 +177,9 @@ let apply_pp ~workdir ~filename ~source ~pp =
 
 let decode_potential_ast source =
   let decoder =
-    if Backport.String.starts_with ~prefix:Config.ast_impl_magic_number source then
+    if Std.String.is_prefixed ~by:Config.ast_impl_magic_number source then
       Some (fun x -> `Implementation (Obj.obj x : Parsetree.structure))
-    else if Backport.String.starts_with ~prefix:Config.ast_intf_magic_number source then
+    else if Std.String.is_prefixed ~by:Config.ast_intf_magic_number source then
       Some (fun x -> `Interface (Obj.obj x : Parsetree.signature))
     else
       None

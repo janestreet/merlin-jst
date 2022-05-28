@@ -422,6 +422,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
+  "-error-style";
 
   (* flambda-backend specific *)
   "-reorder-blocks-random";
@@ -449,6 +450,15 @@ let ocaml_warnings_spec ~error =
       Warnings.restore ocaml.warnings;
       Misc.try_finally (fun () ->
           Warnings.parse_options error spec;
+          { ocaml with warnings = Warnings.backup () })
+        ~always:(fun () -> Warnings.restore b'))
+
+let ocaml_alert_spec =
+  Marg.param "alert specification" (fun spec ocaml ->
+      let b' = Warnings.backup () in
+      Warnings.restore ocaml.warnings;
+      Misc.try_finally (fun () ->
+          Warnings.parse_alert_option spec;
           { ocaml with warnings = Warnings.backup () })
         ~always:(fun () -> Warnings.restore b'))
 
@@ -581,6 +591,17 @@ let ocaml_flags = [
       \     to <list>.  See option -w for the syntax of <list>.\n\
       \     Default setting is %S"
       Warnings.defaults_warn_error
+  );
+  ( "-alert",
+    ocaml_alert_spec,
+    Printf.sprintf
+      "<list>  Enable or disable alerts according to <list>:\n\
+      \        +<alertname>  enable alert <alertname>\n\
+      \        -<alertname>  disable alert <alertname>\n\
+      \        ++<alertname> treat <alertname> as fatal error\n\
+      \        --<alertname> treat <alertname> as non-fatal\n\
+      \        @<alertname>  enable <alertname> and treat it as fatal error\n\
+      \    <alertname> can be 'all' to refer to all alert names"
   );
 ]
 

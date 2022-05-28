@@ -70,7 +70,8 @@
   "The function takes four arguments:
    - the path to the merlin binary
    - the name of the command
-   - the total time spent in the server (or -1 if that information is not available)
+   - the total time spent in the server (or -1 if that information
+     is not available)
    - the resulting state (\"return\", \"failure\" or \"interrupted\")
 Its return value is ignored."
   :group 'merlin :type 'symbol)
@@ -91,11 +92,13 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
                                 (const :tag "Use current opam switch" opam)))
 
 (defcustom merlin-completion-with-doc nil
-  "If non-nil, tries to retrieve ocamldoc comments associated with each completion candidate"
+  "If non-nil, tries to retrieve ocamldoc comments associated with each
+completion candidate."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-completion-dwim t
-  "If non-nil, fallback to fuzzier completion when normal completion gives no result."
+  "If non-nil, fallback to fuzzier completion when normal completion gives
+no result."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-completion-types t
@@ -103,11 +106,13 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-completion-arg-type t
-  "If non-nil, print the type of the expected argument during completion on an application."
+  "If non-nil, print the type of the expected argument during completion
+on an application."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-debug nil
-  "If non-nil, log the data sent and received from merlin into `merlin-log-buffer-name' buffer."
+  "If non-nil, log the data sent and received from merlin into
+`merlin-log-buffer-name' buffer."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-report-warnings t
@@ -115,15 +120,21 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-occurrences-buffer-name "*merlin-occurrences*"
-  "The name of the buffer listing occurrences of an identifier after a call to `merlin-occurrences'."
+  "The name of the buffer listing occurrences of an identifier after
+a call to `merlin-occurrences'."
   :group 'merlin :type 'string)
 
 (defcustom merlin-type-buffer-name "*merlin-types*"
   "The name of the buffer storing module signatures."
   :group 'merlin :type 'string)
 
+(defcustom merlin-error-buffer-name "*merlin-errors*"
+  "The name of the buffer storing module signatures."
+  :group 'merlin :type 'string)
+
 (defcustom merlin-log-buffer-name "*merlin-log*"
-  "The name of the buffer storing log messages and debug information. See `merlin-debug'."
+  "The name of the buffer storing log messages and debug information.
+See `merlin-debug'."
   :group 'merlin :type 'string)
 
 (defcustom merlin-favourite-caml-mode nil
@@ -134,7 +145,8 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
   "Determines whether merlin should check for errors after saving.
 If t, always check for errors after saving.
 If nil, never check.
-If a string list, check only if the extension of the buffer-file-name is in the list."
+If a string list, check only if the extension of the buffer-file-name
+ is in the list."
   :group 'merlin :type '(choice (repeat string) boolean))
 
 (defcustom merlin-error-in-fringe (>= emacs-major-version 24)
@@ -146,7 +158,8 @@ If a string list, check only if the extension of the buffer-file-name is in the 
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-error-check-then-move t
-  "If t, merlin-error-next and merlin-error-prev first update the errors then move the cursor.
+  "If t, merlin-error-next and merlin-error-prev first update the errors
+then move the cursor.
 If nil, they both update and move at the same time."
   :group 'merlin :type 'boolean)
 
@@ -155,13 +168,15 @@ If nil, they both update and move at the same time."
   :group 'merlin :type '(repeat string))
 
 (defcustom merlin-occurrences-show-buffer 'other
-  "Determine how to display the occurrences list after a call to `merlin-occurrences'."
+  "Determine how to display the occurrences list after a call to
+`merlin-occurrences'."
   :group 'merlin :type '(choice (const :tag "Don't show list" never)
                                 (const :tag "Show in the current window" same)
                                 (const :tag "Show in another window" other)))
 
 (defcustom merlin-locate-in-new-window 'diff
-  "Determine whether to display results of `merlin-locate' in a new window or not."
+  "Determine whether to display results of `merlin-locate' in
+a new window or not."
   :group 'merlin :type '(choice (const :tag "Always open a new window" always)
                                 (const :tag "Never open a new window" never)
                                 (const :tag "Open a new window only if the target file is different from current buffer." diff)))
@@ -180,7 +195,9 @@ If nil, they both update and move at the same time."
   :group 'merlin :type 'filename)
 
 (defcustom merlin-arrow-keys-type-enclosing t
-  "If non-nil, after a type enclosing, C+up and C+down arrow are used to go up and down the AST. As well, C+w copy the type to the kill ring and C+d destructure the expression."
+  "If non-nil, after a type enclosing, C-up and C-down are used
+to go up and down the AST. In addition, C-w copies the type to the
+kill ring and C-d destructures the expression."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-type-after-locate nil
@@ -188,7 +205,8 @@ If nil, they both update and move at the same time."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-allow-sit-for t
-  "When user attention is required, merlin will use `sit-for' only if `merlin-allow-sit-for' is `t'."
+  "When user attention is required, merlin will use `sit-for' only if
+`merlin-allow-sit-for' is `t'."
   :group 'merlin :type 'boolean)
 
 (defalias 'merlin-find-file 'find-file-other-window
@@ -200,7 +218,8 @@ merlin-locate, see `merlin-locate-in-new-window').")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar-local merlin-buffer-configuration nil
-  "An association list describing the configuration of merlin binary for the current buffer.  Customize `merlin-configuration-function` to initialize it.
+  "An association list describing the configuration of merlin binary for the
+current buffer.  Customize `merlin-configuration-function` to initialize it.
 The association list can contain the following optional keys:
 - `flags': extra flags to give merlin
 
@@ -215,8 +234,7 @@ The association list can contain the following optional keys:
 
 - `name': a short name for this configuration, displayed in user notifications.
 
-- `do-not-cache-config': if set, refreshes the config on every command"
-)
+- `do-not-cache-config': if set, refreshes the config on every command")
 
 (defvar-local merlin-buffer-packages nil
    "List of packages loaded in the buffer")
@@ -286,14 +304,16 @@ The association list can contain the following optional keys:
 ;;;;;;;;;;;
 
 (defun merlin--completion-map-with-space (&optional map)
-  "Return a map suitable for `minibuffer-local-completion-map' but not overriding SPC binding"
+  "Return a map suitable for `minibuffer-local-completion-map'
+but not overriding SPC binding."
   (unless map (setq map minibuffer-local-completion-map ))
   (setq map (make-composed-keymap nil map))
   (define-key map (kbd "SPC") nil)
   map)
 
 (defun merlin-debug (message &rest args)
-  "Output S to `merlin-log-buffer-name' if `merlin-debug' is non-nil in the current buffer."
+  "Output S to `merlin-log-buffer-name' if `merlin-debug' is non-nil
+in the current buffer."
   (when merlin-debug
     (with-current-buffer (get-buffer-create merlin-log-buffer-name)
       (goto-char (point-max))
@@ -324,7 +344,8 @@ The association list can contain the following optional keys:
              (mapconcat 'identity buf "\n"))))
 
 (defun merlin-buffer-substring (start end)
-  "Return content of buffer between two points or empty string if points are not valid"
+  "Return content of buffer between two points or empty string
+if points are not valid."
   (if (< start end) (buffer-substring-no-properties start end) ""))
 
 (defsubst merlin-lookup (key list &optional default)
@@ -391,15 +412,16 @@ containing fields file, line and col."
     (overlay-put overlay 'face face)
     (overlay-put overlay 'merlin-kind 'highlight)
     (if merlin-allow-sit-for
-        (unwind-protect (sit-for 60) (delete-overlay overlay)))
+        (unwind-protect (sit-for 60) (delete-overlay overlay))
       (run-with-idle-timer 0.5 nil
-        (lambda () (delete-overlay overlay)))))
+        (lambda () (delete-overlay overlay))))))
 
 ;; Position management
 
 (defun merlin--goto-point (data)
   "Go to the point indicated by DATA which must be an assoc list with fields
-line and col. If narrowing is in effect, widen if DATA is outside the visible region."
+line and col. If narrowing is in effect, widen if DATA is outside the visible
+region."
   (let ((target-pos (merlin--point-of-pos data)))
     ;; If our target position is outside the narrowed region, we'll
     ;; have to widen.
@@ -479,7 +501,8 @@ return (LOC1 . LOC2)."
       result)))
 
 (defun merlin--call-merlin (command &rest args)
-  "Invoke merlin binary with the proper setup to execute the command passed as argument (lookup appropriate binary, setup logging, pass global settings)"
+  "Invoke merlin binary with the proper setup to execute the command passed as
+argument (lookup appropriate binary, setup logging, pass global settings)"
   ;; Really start process
   (let ((binary      (merlin-command))
         ;; (flags       (merlin-lookup 'flags merlin-buffer-configuration))
@@ -596,26 +619,67 @@ return (LOC1 . LOC2)."
     (when file (merlin-find-file file))))
 
 (defun merlin-switch-to-ml (name)
-  "Switch to the ML file corresponding to the module NAME (fallback to MLI if no ML is provided)."
+  "Switch to the ML file corresponding to the module NAME
+(fallback to MLI if no ML is provided)."
   (interactive (list (ido-completing-read "Module: "
                                           (merlin-switch-list-by-ext '(".ml" ".mli")))))
   (merlin-switch-to name '(".ml" ".mli")))
 
 (defun merlin-switch-to-mli (name)
-  "Switch to the MLI file corresponding to the module NAME (fallback to ML if no MLI is provided)."
+  "Switch to the MLI file corresponding to the module NAME
+(fallback to ML if no MLI is provided)."
   (interactive (list (ido-completing-read "Module: "
                                           (merlin-switch-list-by-ext '(".mli" ".ml")))))
   (merlin-switch-to name '(".mli" ".ml")))
+
+;;;;;;;;;;;;;;;;;;
+;; ERROR BUFFER ;;
+;;;;;;;;;;;;;;;;;;
+
+(defvar merlin-error-buffer-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map special-mode-map)
+    (define-key map "g" nil)
+    map)
+  "Keymap for error buffer.")
+
+(defun merlin-display-in-error-buffer (text)
+  "Change content of error-buffer."
+  (let ((curr-dir default-directory))
+    (with-current-buffer (get-buffer-create merlin-error-buffer-name)
+      (read-only-mode 0)
+      (erase-buffer)
+      (insert text)
+      (goto-char (point-min))
+      (read-only-mode 1)
+      (use-local-map merlin-error-buffer-map)
+      ;; finally make sure that the error buffer directory is the same as the
+      ;; last (ml) buffer we were in.
+      ;; Indeed if people move to that buffer and start looking for a file we
+      ;; want them to be in the directory they were in when they last requested a
+      ;; type, not in the directory they were in when they first requested a
+      ;; type (for long lived emacs sessions that directory might not even exist
+      ;; anymore).
+      (setq default-directory curr-dir))))
+
+(defun merlin--error-display (err)
+  "Display the error ERR."
+  (if (not err)
+      (message "<no information>")
+    (merlin-display-in-error-buffer err)
+    (message "%s" err)))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
 ;;;;;;;;;;;;;;;;;;
 
 (defvar-local merlin--last-edit nil
-  "Coordinates (start . end) of last edition or nil, to prevent error messages from flickering when cursor is around edition.")
+  "Coordinates (start . end) of last edit or nil, to prevent error messages
+from flickering when cursor is around the edit.")
 
 (defun merlin--on-edit (start end _length)
-  "Memorize coordinates of last edition to avoid flickering error messages around the cursor"
+  "Memorize coordinates of last edition to avoid flickering error messages
+around the cursor"
   (setq merlin--last-edit (cons start end)))
 
 (defun merlin--error-position-delta (point err)
@@ -635,7 +699,8 @@ return (LOC1 . LOC2)."
           (setq d d-) (setq err err-))))))
 
 (defun merlin-show-error-on-current-line ()
-  "Show the error of the current line in the echo area.  If there is no error, do nothing."
+  "Show the error of the current line in the echo area.
+If there is no error, do nothing."
   (when (and merlin-mode (not (current-message)))
     (let* ((errors (overlays-in (line-beginning-position) (line-end-position)))
            (err nil))
@@ -644,17 +709,19 @@ return (LOC1 . LOC2)."
                          (= (point) (cdr merlin--last-edit)))))
         (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
         (setq err (merlin--error-at-position (point) errors))
-        (when err (message "%s" (cdr (assoc 'message err))))))))
+        (when err (merlin--error-display (cdr (assoc 'message err))))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
-  "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
+  "Find next point where PROP is set.
+(Like `next-single-char-property-change' but ensure that prop is not-nil)."
   (setq point (next-single-char-property-change point prop nil limit))
   (unless (cl-find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
     (setq point (next-single-char-property-change point prop nil limit)))
   point)
 
 (defun merlin--overlay-previous-property-set (point prop &optional limit)
-  "Find previous point where PROP is set (like previous-single-char-property-change but ensure that prop is not-nil)."
+  "Find previous point where PROP is set.
+(Like `previous-single-char-property-change' but ensure that prop is not-nil)."
   (setq point (previous-single-char-property-change point prop nil limit))
   (unless (cl-find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
     (setq point (previous-single-char-property-change point prop nil limit)))
@@ -855,7 +922,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
           (message "%sNo errors" prefix))))))
 
 (defun merlin-error-after-save ()
-  "Determine whether the buffer should be checked for errors depending on the value of merlin-error-after-save setting."
+  "Determine whether the buffer should be checked for errors depending on
+the value of merlin-error-after-save setting."
   (cond
     ((equal merlin-error-after-save t) t)
     ((equal merlin-error-after-save nil) nil)
@@ -1384,9 +1452,9 @@ strictly within, or nil if there is no such element."
       (if (= (length results) 1)
         (insert-choice 0 0 (car results))
         (with-output-to-temp-buffer "*Constructions*"
-          (progn 
+          (progn
             (with-current-buffer "*Constructions*"
-              (setq-local 
+              (setq-local
                 completion-list-insert-choice-function
                 #'insert-choice))
             (display-completion-list results)))))))
@@ -1394,7 +1462,7 @@ strictly within, or nil if there is no such element."
 (defun merlin--construct-point (point)
   "Execute a construct on POINT"
   (progn
-    (ignore point) ; Without this Emacs bytecode compiler complains about an    
+    (ignore point) ; Without this Emacs bytecode compiler complains about an
                    ; unused variable. This may be a bug in the compiler
     (let ((result (merlin-call "construct"
                               "-position" (merlin-unmake-point (point)))))
@@ -1494,7 +1562,7 @@ loading"
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
-      (error "%S" result))
+      (user-error "%s" result))
     result))
 
 (defun merlin--locate-result (result)
@@ -1507,20 +1575,25 @@ loading"
   (interactive "s> ")
   (merlin--locate-result (merlin-call-locate ident)))
 
-(defun merlin-locate ()
+(defun merlin-locate (prefix)
   "Locate the identifier under point"
-  (interactive)
-  (merlin--locate-result (merlin-call-locate)))
+  (interactive "P")
+  (cl-letf ((merlin-locate-in-new-window
+    (cond
+     ((equal prefix '(4)) 'never)
+     ((equal prefix '(16)) 'always)
+     (t 'merlin-locate-in-new-window))))
+    (merlin--locate-result (merlin-call-locate))))
 
 (defun merlin-locate-type ()
   "Locate the type of the expression under point."
   (interactive)
-  (let ((result (merlin/call "locate-type"
-                             "-position" (merlin/unmake-point (point)))))
+  (let ((result (merlin-call "locate-type"
+                             "-position" (merlin-unmake-point (point)))))
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
-      (error "%S" result))
+      (user-error "%s" result))
     (merlin--goto-file-and-point result)))
 
 (defun merlin-pop-stack ()
@@ -1549,7 +1622,7 @@ loading"
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
-      (error result))
+      (user-error "%s" result))
     result))
 
 (defun merlin-jump (&optional target)
@@ -1748,9 +1821,10 @@ Empty string defaults to jumping to all these."
                                    "-action" mode)))
       (let ((bounds (merlin--make-bounds occurrence))
             (content (cdr (assoc 'content occurrence))))
-        (goto-char (car bounds))
-        (delete-char (- (cdr bounds) (car bounds)))
-        (insert content)))))
+        (unless (equal content (buffer-substring (car bounds) (cdr bounds)))
+          (goto-char (car bounds))
+          (delete-char (- (cdr bounds) (car bounds)))
+          (insert content))))))
 
 (defun merlin-refactor-open ()
   "Refactor open statement under cursor: unqualify paths"
@@ -1904,8 +1978,7 @@ Empty string defaults to jumping to all these."
       '(menu-item "Version" merlin-version
                   :help "Print version of the merlin binary."))
     (define-key merlin-map [menu-bar merlin] (cons "Merlin" merlin-menu-map))
-    merlin-map
-    ))
+    merlin-map))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
@@ -1949,7 +2022,7 @@ Runs a merlin process in the background and perform queries on it.
 
 Short cuts:
 \\{merlin-mode-map}"
-  nil
+  :init-value nil
   :lighter (:eval (merlin-lighter))
   :keymap merlin-mode-map
   (if merlin-mode

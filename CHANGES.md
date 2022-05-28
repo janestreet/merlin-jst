@@ -1,5 +1,56 @@
-git version
-===========
+merlin 4.5
+==========
+Tue Apr  5 21:12:42 CEST 2022
+
+  + merlin binary
+    - don't reset the environment when running merlin in single mode so that the
+      parent environement is forwarded the the child processes (#1425)
+    - locate: look for original source files before looking for preprocessed
+      files (#1219 by @ddickstein, fixes #894)
+    - fix handlink of ppx's under Windows (#1413)
+    - handle `=` syntax in compiler flags (#1409)
+    - fix superfluous break in error reporting (#1432)
+    - recognise binding operators in locate and occurrences (#1398, @mattiase)
+    - improve load path performance (#1323)
+    - remove dependency on Result (#1441, @kit-ty-kate)
+  + editor modes
+    - fix an issue in Neovim where the current line jumps to the top of the
+      window on repeated calls to `MerlinTypeOf` (#1433 by @ddickstein, fixes
+      #1221)
+    - add module, module type, and class imenu items for emacs (#1244, @ivg)
+    - add prefix argument to force or prevent opening in a new buffer in locate
+      command (#1426, @panglesd)
+    - add type-on-hover functionality for vim (#1439, @nilsbecker)
+    - add a dedicated buffer `*merlin-errors*` containing the last viewed error
+      (#1414, @panglesd)
+  + test suite
+    - make `merlin-wrapper` create a default `.merlin` file  only when there is
+      no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
+
+merlin 4.4
+==========
+Mon Jul 26 11:12:21 PM CET 2021
+
+  + merlin binary
+    - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
+    - enable `occurences` to work when looking for locally abstract types
+      (#1382)
+    - handle `-alert` compiler flag (#1401)
+    - avoid a race condition when the process started to read a configuration
+      file crashes/is not found (#1378, @antalsz)
+    - log the backtrace even when the exception is a Failure (#1377, @antalsz)
+    - ignore `-error-style` compiler flag (#1402, @nojb)
+    - fix handling of record field expressions (#1375)
+    - allow -pp to return an AST (#1394)
+    - fix merlin crashing due to short-paths (#1334, fixes #1322)
+  + editor modes
+    - update quick setup instructions for emacs (#1380, @ScriptDevil)
+  + test suite
+    - improve record field destruction testing (#1375)
+
+merlin 4.3.1
+============
+Mon Jul 26 04:45:37 PM CET 2021
 
   + merlin binary
     - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
@@ -11,30 +62,38 @@ git version
     - add new module holes that can replace module expressions (#1333)
     - add a new command `construct` that builds a list of possible terms when
       called on a typed hole (#1318)
-    - `refactor-open qualify` improvements (#1313, #1314, #1366)
-      - do not make paths absolute, simply prefix with the identifier under the cursor
+    - `refactor-open` improvements (#1313, #1314, #1366, #1372)
+      - do not make paths absolute, simply prefix with the identifier under
+      the cursor
         ```ocaml
         open Foo (* calling refactor-open qualify on this open *)
         let _ = Foo.bar (* previously could result in [Dune__exe.Foo.bar] *)
         ```
       - do not return identical (duplicate) edits
-      - do not return unnecessary edits that when applied do not change the document
+      - do not return unnecessary edits that when applied do not change
+        the document
       - handle record fields properly
       - handle multi-line paths
+      - `unqualify` should not qualify
     - Handle `Persistent_env.Error` in `Typemod.initial_env` (#1355)
     - locate: reset global state from all entry points (#1364)
     - improve load path performance (#1323)
+    - Windows: replace user name by its SID in socketnames (#1345, @ttamttam)
   + editor modes
     - vim: add a simple interface to the new `construct` command:
-      `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
-      to show more or less deep results. (#1318)
+      `MerlinConstruct`. When several results are suggested, `<c-i>`
+      and `<c-u>` can be use to change the depth of the recursive
+      construction. (#1318)
     - vim: add support for the `merlin-locate-type` command:
       `MerlinLocateType` (#1359)
     - emacs: add a simple interface to the new `construct` command:
       `merlin-construct`. (#1352)
     - emacs: add support for the `merlin-locate-type` command. (#1359)
+    - emacs: fix issue with `merlin--highlight` and  various minor improvements
+        (#1367, @mattiase)
   + test suite
     - cover the new `construct` command (#1318)
+    - disable tests failing in Opam's CI due to nested dune projects (#1373)
 
 merlin 4.2
 ==========
@@ -108,7 +167,7 @@ Tue Feb  2 03:13:37 PM CET 2021
     - emacs: add missing mandatory argument for define-obsolete-function-alias
       (#1250, by Atharva Shukla, fixes #1234)
     - emacs: use "opam var" instead of "opam config var" (#1249, by Raja Boujbel)
-    - vim: fix CursorMoved semantics (#1213, by Daniel Dickstein)
+    - vim: fix CursorMoved semantics (#1213, by @ddickstein)
     - vim: add :MerlinLocateImpl and :MerlinLocateIntf (#1208 by Matthew Ryan)
   + test suite
     - replace mdx usage by dune's cram mechanism

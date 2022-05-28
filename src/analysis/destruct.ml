@@ -49,6 +49,8 @@ let () =
   )
 
 module Path_utils : sig
+  val is_opened : Env.t -> Path.t -> bool
+
   val to_shortest_lid :
     env:Env.t ->
     ?name:string ->
@@ -62,6 +64,8 @@ end = struct
         |> Option.value ~default:acc
     in
     aux [] env
+
+  let is_opened env path = List.mem path ~set:(opens (Env.summary env))
 
   let rec to_shortest_lid ~(opens : Path.t list) = function
     | Path.Pdot (path, name) when List.exists ~f:(Path.same path) opens ->
@@ -508,13 +512,24 @@ let find_branch patterns sub =
   in
   aux [] patterns
 
-let node config source node parents =
+let rec node config source selected_node parents =
   let open Extend_protocol.Reader in
-  let loc = Mbrowse.node_loc node in
-  match node with
+  let loc = Mbrowse.node_loc selected_node in
+  match selected_node with
+  | Record_field (`Expression _, _, _) ->
+    begin match parents with
+    | Expression { exp_desc = Texp_field _ } as parent :: rest ->
+      node config source parent rest
+    | Expression e :: rest ->
+      node config source (Expression e) rest
+    | _ ->
+      raise (Not_allowed (string_of_node selected_node))
+    end
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
     let pexp = filter_expr_attr (Untypeast.untype_expression expr) in
+    log ~title:"node_expression" "%a"
+      Logger.fmt (fun fmt -> Printast.expression 0 fmt pexp);
     let needs_parentheses, result =
       if is_package ty then (
         let mode = Ast_helper.Mod.unpack pexp in
