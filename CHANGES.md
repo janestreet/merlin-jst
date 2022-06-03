@@ -1,3 +1,11 @@
+unreleased
+==========
+
+  + editor modes
+    - emacs: Make the prefix argument to `merlin-locate` optional, both for
+      consistency with Emacs convention and for backwards compatibility. (#1476,
+      @antalsz)
+
 merlin 4.5
 ==========
 Tue Apr  5 21:12:42 CEST 2022
