@@ -1575,7 +1575,7 @@ loading"
   (interactive "s> ")
   (merlin--locate-result (merlin-call-locate ident)))
 
-(defun merlin-locate (prefix)
+(defun merlin-locate (&optional prefix)
   "Locate the identifier under point"
   (interactive "P")
   (cl-letf ((merlin-locate-in-new-window
