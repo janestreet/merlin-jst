@@ -181,7 +181,8 @@ and expression_desc =
             let rec P1 = E1 and ... and Pn = EN in E   (flag = Recursive)
          *)
   | Texp_function of { arg_label : arg_label; param : Ident.t;
-      cases : value case list; partial : partial; region : bool }
+      cases : value case list; partial : partial;
+      region : bool; warnings : Warnings.state; }
         (** [Pexp_fun] and [Pexp_function] both translate to [Texp_function].
             See {!Parsetree} for more details.
 
@@ -278,6 +279,7 @@ and expression_desc =
       param : Ident.t;
       body : value case;
       partial : partial;
+      warnings : Warnings.state;
     }
   | Texp_unreachable
   | Texp_extension_constructor of Longident.t loc * Path.t
@@ -286,7 +288,7 @@ and expression_desc =
   | Texp_probe of { name:string; handler:expression; }
   | Texp_probe_is_enabled of { name:string }
 
-and ident_kind = Id_value | Id_prim of Types.alloc_mode
+and ident_kind = Id_value | Id_prim of Types.alloc_mode option
 
 and meth =
     Tmeth_name of string
@@ -338,8 +340,9 @@ and omitted_parameter =
 and apply_arg = (expression, omitted_parameter) arg_or_omitted
 
 and apply_position =
-  | Tail
-  | Nontail
+  | Tail          (* must be tail-call optimised *)
+  | Nontail       (* must not be tail-call optimised *)
+  | Default       (* tail-call optimised if in tail position *)
 
 (* Value expressions for the class language *)
 
@@ -503,7 +506,7 @@ and primitive_coercion =
   {
     pc_desc: Primitive.description;
     pc_type: Types.type_expr;
-    pc_poly_mode: Types.alloc_mode;
+    pc_poly_mode: Types.alloc_mode option;
     pc_env: Env.t;
     pc_loc : Location.t;
   }
