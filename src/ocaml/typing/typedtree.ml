@@ -104,7 +104,8 @@ and expression_desc =
   | Texp_constant of constant
   | Texp_let of rec_flag * value_binding list * expression
   | Texp_function of { arg_label : arg_label; param : Ident.t;
-      cases : value case list; partial : partial; region : bool; }
+      cases : value case list; partial : partial;
+      region : bool; warnings : Warnings.state; }
   | Texp_apply of expression * (arg_label * apply_arg) list * apply_position
   | Texp_match of expression * computation case list * partial
   | Texp_try of expression * value case list
@@ -151,6 +152,7 @@ and expression_desc =
       param : Ident.t;
       body : value case;
       partial : partial;
+      warnings : Warnings.state;
     }
   | Texp_unreachable
   | Texp_extension_constructor of Longident.t loc * Path.t
@@ -159,7 +161,7 @@ and expression_desc =
   | Texp_probe_is_enabled of { name:string }
   | Texp_hole
 
-and ident_kind = Id_value | Id_prim of Types.alloc_mode
+and ident_kind = Id_value | Id_prim of Types.alloc_mode option
 
 and meth =
     Tmeth_name of string
@@ -211,6 +213,7 @@ and apply_arg = (expression, omitted_parameter) arg_or_omitted
 and apply_position =
   | Tail
   | Nontail
+  | Default
 
 (* Value expressions for the class language *)
 
@@ -370,7 +373,7 @@ and primitive_coercion =
   {
     pc_desc: Primitive.description;
     pc_type: type_expr;
-    pc_poly_mode: alloc_mode;
+    pc_poly_mode: alloc_mode option;
     pc_env: Env.t;
     pc_loc : Location.t;
   }
