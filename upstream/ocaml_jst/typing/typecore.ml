@@ -5216,14 +5216,13 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
   let inferred = is_inferred sarg in
   let rec loosen_ret_modes ty' ty =
     match expand_head env ty', expand_head env ty with
-    | {desc = Tarrow((l', marg', mret'), ty_arg', ty_res', _); level = lv'},
-      {desc = Tarrow((l,  marg,  mret ), ty_arg,  ty_res,  _); level = lv }
+    | {desc = Tarrow((l, marg, mret), ty_arg', ty_res', _); level = lv'},
+      {desc = Tarrow(_, ty_arg,  ty_res,  _); level = lv }
       when lv' = generic_level || not !Clflags.principal ->
       let ty_res', ty_res = loosen_ret_modes ty_res' ty_res in
-      let mret', _ = Alloc_mode.newvar_below mret' in
-      let mret,  _ = Alloc_mode.newvar_below mret in
-      newty2 lv' (Tarrow((l', marg', mret'), ty_arg', ty_res', Cok)),
-      newty2 lv  (Tarrow((l,  marg,  mret),  ty_arg,  ty_res,  Cok))
+      let mret, _ = Alloc_mode.newvar_below mret in
+      newty2 lv' (Tarrow((l, marg, mret), ty_arg', ty_res', Cok)),
+      newty2 lv  (Tarrow((l, marg,  mret),  ty_arg,  ty_res,  Cok))
     | _ ->
       ty', ty
   in
@@ -5397,7 +5396,7 @@ and type_application env app_loc expected_mode position funct funct_mode sargs =
       in
       let ty_ret, mode_ret, args =
         collect_apply_args env funct ignore_labels ty (instance ty)
-          (Value_mode.regional_to_global_alloc funct_mode) sargs
+          (Value_mode.regional_to_local_alloc funct_mode) sargs
       in
       let partial_app = is_partial_apply args in
       let position = if partial_app then Default else position in
