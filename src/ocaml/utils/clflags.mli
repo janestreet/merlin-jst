@@ -20,7 +20,7 @@ val strict_formats       : bool ref
 val open_modules         : string list ref
 
 module Extension : sig
-  type t = Comprehensions | Local
+  type t = Comprehensions | Local | Include_functor
   val enable : string -> unit
   val is_enabled : t -> bool
   val to_string : t -> string
