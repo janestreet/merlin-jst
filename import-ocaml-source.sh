@@ -27,7 +27,7 @@ function repository-commit () {
 }
 
 case "$1" in
-  -h|--help|-\?)
+  -h|-help|--help|-\?)
     usage
     exit 0
     ;;
