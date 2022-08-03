@@ -248,9 +248,10 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
       Env.with_cmis @@ fun () ->
       Typemod.type_toplevel_phrase
         env
-        [] (* TODO: This parameter is the list of toplevel definitions that are
-              available to [include functor].  It's not clear what to put here,
-              so we're going with [[]] for now. *)
+        [] (* This parameter is the list of toplevel definitions that are
+              available to [include functor].  It seems that this is handled
+              safely by Merlin as it stands, so we don't need to add anything
+              here. *)
         [Ast_helper.Str.eval expression]
     in
     let open Typedtree in
