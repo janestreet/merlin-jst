@@ -62,7 +62,7 @@ cd ../..
 git commit -m "Import ocaml sources for $(repository-commit "$(git describe --always $rev)")"
 
 # Then patch src/ocaml using the changes you just imported
-for file in $(git diff --name-only HEAD^ HEAD); do
+for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
   base=${file#upstream/ocaml_jst/}
   case $base in
     parsing/lexer.mll) tgt=preprocess/lexer_raw.mll;;
@@ -75,7 +75,7 @@ for file in $(git diff --name-only HEAD^ HEAD); do
   # Not all files are necessary
   if [ ! -e $tgt ]; then continue; fi
 
-  err=$(patch --merge $tgt <(git diff HEAD^ HEAD -- $file))
+  err=$(patch --merge $tgt <(git diff --no-ext-diff HEAD^ HEAD -- $file))
   # ignore patch output if it worked
   if [ $? = 0 ]; then
     git add -u $tgt
