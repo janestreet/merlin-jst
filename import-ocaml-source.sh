@@ -65,6 +65,8 @@ git commit -m "Import ocaml sources for $(repository-commit "$(git describe --al
 for file in $(git diff --name-only HEAD^ HEAD); do
   base=${file#upstream/ocaml_jst/}
   case $base in
+    # If you add new files here, you need to apply the full diff manually once,
+    # otherwise the merge won't pick up on old changes!
     parsing/lexer.mll) tgt=preprocess/lexer_raw.mll;;
     parsing/parser.mly) tgt=preprocess/parser_raw.mly;;
     utils/clflags.ml*) echo "Ignoring changes to $base"; continue;;
