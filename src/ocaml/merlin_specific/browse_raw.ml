@@ -357,9 +357,11 @@ let of_expression_desc loc = function
   | Texp_setfield (e1,lid_loc,lbl,e2) ->
     of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
   | Texp_ifthenelse (e1,e2,None)
-  | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
+  | Texp_sequence (e1,e2)
+  | Texp_while { wh_cond = e1; wh_body = e2; _ } ->
     of_expression e1 ** of_expression e2
-  | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
+  | Texp_ifthenelse (e1,e2,Some e3)
+  | Texp_for { for_from = e1; for_to = e2; for_body = e3; _ } ->
     of_expression e1 ** of_expression e2 ** of_expression e3
   | Texp_list_comprehension (e, cs) | Texp_arr_comprehension (e, cs) ->
     of_expression e ** list_fold of_comprehension cs
@@ -805,7 +807,10 @@ let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
       ) ps
     | Texp_letmodule (Some id,loc,_,_,_) ->
       [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
-    | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
+    | Texp_for {
+        for_id = id;
+        for_pat = {Parsetree.ppat_loc = loc; ppat_desc};
+        _ } ->
       let lid =
         match ppat_desc with
         | Ppat_any -> None
