@@ -489,6 +489,7 @@ module MenhirInterpreter : sig
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
     | N_index_mod : (string) nonterminal
+    | N_include_and_functor_attr : (Parsetree.attribute list) nonterminal
     | N_implementation : (Parsetree.structure) nonterminal
     | N_ident : (string) nonterminal
     | N_generic_type_declaration_nonrec_flag_type_kind_ : ((Asttypes.rec_flag * string Location.loc option) *
