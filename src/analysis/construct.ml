@@ -22,7 +22,7 @@ let () =
       let txt = Format.sprintf "Module not found: %s" s in
       Some (Location.error txt)
     | No_constraint ->
-      Some (Location.error 
+      Some (Location.error
         "Could not find a module type to construct from. \
         Check that you used a correct constraint.")
     | _ -> None
@@ -62,7 +62,7 @@ module Util = struct
     in
     tbl
 
-  let prefix env ~env_check path name = 
+  let prefix env ~env_check path name =
     to_shortest_lid ~env ~env_check ~name path
 
   let var_of_id id = Location.mknoloc @@ Ident.name id
@@ -71,18 +71,18 @@ module Util = struct
     Printtyp.type_expr (Format.str_formatter) t;
     Format.flush_str_formatter ()
 
-  let unifiable env type_expr type_expected = 
+  let unifiable env type_expr type_expected =
     let snap = Btype.snapshot () in
     try
-      Ctype.unify env type_expected type_expr |> ignore; 
+      Ctype.unify env type_expected type_expr |> ignore;
       Some snap
-    with Ctype.Unify _  -> 
-      (* Unification failure *) 
+    with Ctype.Unify _  ->
+      (* Unification failure *)
       Btype.backtrack snap;
       None
-  
+
   let is_in_stdlib path =
-    Path.head path |> Ident.name = "Stdlib" 
+    Path.head path |> Ident.name = "Stdlib"
 
   (** [find_values_for_type env typ] searches the environment [env] for
   {i values} with a return type compatible with [typ] *)
@@ -98,7 +98,7 @@ module Util = struct
               See c-simple, test 6.2b for an example *)
           Btype.backtrack snap;
           Some params
-        | None -> 
+        | None ->
           begin match type_expr.desc with
           | Tarrow ((arg_label,_,_), _, te, _) -> check_type te (arg_label::params)
           | _ -> None
@@ -115,13 +115,13 @@ module Util = struct
     let fold_values path acc = Env.fold_values aux path env acc in
     let init = fold_values None Path.Map.empty in
     Env.fold_modules (fun name path _module_decl acc ->
-      if not (is_in_stdlib path) && not (is_opened env path) then 
+      if not (is_in_stdlib path) && not (is_opened env path) then
         (* We ignore opened modules. That means that is a value of an opened
           module has been shadowed we won't suggest the one in the opened
-          module. *) 
+          module. *)
         fold_values (Some (Untypeast.lident_of_path path)) acc
       else acc) None env init
-      
+
 
   (** The idents_table is used to keep track of already used names when
   generating function arguments in the same expression *)
@@ -221,7 +221,7 @@ module Gen = struct
           let name = Ident.name (Path.head path) in
           raise (Modtype_not_found (Mod, name))
       end
-    | Mty_for_hole -> Mod.mk Pmod_hole
+    | Mty_for_hole -> Mod.hole ()
   and structure_item env =
     let open Ast_helper in
     function
@@ -522,8 +522,8 @@ let needs_parentheses e = match e.Parsetree.pexp_desc with
   -> true
   | _ -> false
 
-let to_string_with_parentheses exp = 
-  let f : _ format6 = 
+let to_string_with_parentheses exp =
+  let f : _ format6 =
     if needs_parentheses exp then "(%a)"
     else "%a"
   in
@@ -535,14 +535,14 @@ let node ?(depth = 1) ~keywords ~values_scope node =
       let idents_table = Util.idents_table ~keywords in
       Gen.expression ~idents_table values_scope ~depth exp_env exp_type
       |> List.map ~f:to_string_with_parentheses
-  | Browse_raw.Module_expr 
+  | Browse_raw.Module_expr
       { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
-  | Browse_raw.Module_expr 
+  | Browse_raw.Module_expr
       {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
       let m = Gen.module_ mod_env mod_type in
       [ Format.asprintf "%a" Pprintast.module_ m ]
   | Browse_raw.Module_expr _
-  | Browse_raw.Module_binding _ -> 
+  | Browse_raw.Module_binding _ ->
       (* Constructible modules have an explicit constraint or are functor
         applications. In other cases we do not know what to construct.  *)
       raise No_constraint

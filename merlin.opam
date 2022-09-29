@@ -16,6 +16,7 @@ depends: [
   "dot-merlin-reader" {>= "4.0"}
   "yojson" {>= "1.6.0"}
   "conf-jq" {with-test}
+  "ppxlib" {with-test}
   "csexp" {>= "1.2.3"}
   "menhir" {dev}
   "menhirLib" {dev}

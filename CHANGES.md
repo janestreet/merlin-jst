@@ -6,6 +6,11 @@ unreleased
       consistency with Emacs convention and for backwards compatibility. (#1476,
       @antalsz)
 
+  + merlin binary
+    - Replace custom "holes" AST nodes by extensions. This restores binary
+      compatibility and fixes issues with PPXs when using typed-holes.
+      (#1503)
+
 merlin 4.5
 ==========
 Tue Apr  5 21:12:42 CEST 2022
