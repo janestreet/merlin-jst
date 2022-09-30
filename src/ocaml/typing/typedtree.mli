@@ -174,6 +174,16 @@ and exp_extra =
   OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
   files. By adding a new constructor, we can still safely uses these. *)
 
+and fun_curry_state =
+  | More_args of { partial_mode : Types.alloc_mode }
+        (** [partial_mode] is the mode of the resulting closure
+            if this function is partially applied *)
+  | Final_arg of { partial_mode : Types.alloc_mode }
+        (** [partial_mode] is relevant for the final arg only
+            because of an optimisation that Simplif does to merge
+            functions, which might result in this arg no longer being
+            final *)
+
 and expression_desc =
     Texp_ident of
       Path.t * Longident.t loc * Types.value_description * ident_kind
@@ -188,7 +198,8 @@ and expression_desc =
          *)
   | Texp_function of { arg_label : arg_label; param : Ident.t;
       cases : value case list; partial : partial;
-      region : bool; warnings : Warnings.state; }
+      region : bool; curry : fun_curry_state;
+      warnings : Warnings.state; }
         (** [Pexp_fun] and [Pexp_function] both translate to [Texp_function].
             See {!Parsetree} for more details.
 
@@ -198,6 +209,9 @@ and expression_desc =
             partial =
               [Partial] if the pattern match is partial
               [Total] otherwise.
+
+            partial_mode is the mode of the resulting closure if this function
+            is partially applied to a single argument.
          *)
   | Texp_apply of expression * (arg_label * apply_arg) list * apply_position
         (** E0 ~l1:E1 ... ~ln:En
@@ -315,16 +329,16 @@ and meth =
   | Tmeth_val of Ident.t
 
   and comprehension =
-  { 
+  {
      clauses: comprehension_clause list;
-     guard : expression option 
+     guard : expression option
   }
 
-and comprehension_clause = 
- | From_to of Ident.t * Parsetree.pattern * 
+and comprehension_clause =
+ | From_to of Ident.t * Parsetree.pattern *
      expression * expression * direction_flag
  | In of pattern * expression
- 
+
 and 'k case =
     {
      c_lhs: 'k general_pattern;
