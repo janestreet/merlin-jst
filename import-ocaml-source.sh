@@ -11,10 +11,10 @@ Usage: $0 [COMMITISH [REPO [SUBDIRECTORY]]]
 
 Fetch the new compiler sources and patch Merlin to keep Merlin's local copies of
 things in sync.  By default, this will pull the "$commitish" branch from
-<$repository> and look in "$subdirectory/" for the compiler
-source, but the branch can be overridden by any commitish (branch, tag, commit,
-etc.), the repository can be overridden by any URL, and the subdirectory can be
-overriden by any path (including ".").
+<$repository> and look in "$subdirectory/" for the compiler source, but the
+branch can be overridden by any commitish (branch, tag, full (not abbreviated!)
+commit hash, etc.), the repository can be overridden by any URL, and the
+subdirectory can be overriden by any path (including ".").
 USAGE
 }
 
