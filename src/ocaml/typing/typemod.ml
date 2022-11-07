@@ -2181,19 +2181,19 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
           mod_attributes = smod.pmod_attributes;
         }
       with exn ->
-       (* [merlin] For better Construct error messages we need to keep holes
-          in the recovered typedtree *)
-       match sarg.pmod_desc with
-       | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
-           Msupport.raise_error exn;
-           {
-             mod_desc = Tmod_hole;
-             mod_type = Mty_for_hole;
-             mod_loc = sarg.pmod_loc;
-             mod_env = env;
-             mod_attributes = sarg.pmod_attributes;
-           }
-       | _ -> raise exn
+        (* [merlin] For better Construct error messages we need to keep holes
+           in the recovered typedtree *)
+        match sarg.pmod_desc with
+        | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
+            Msupport.raise_error exn;
+            {
+              mod_desc = Tmod_hole;
+              mod_type = Mty_for_hole;
+              mod_loc = sarg.pmod_loc;
+              mod_env = env;
+              mod_attributes = sarg.pmod_attributes;
+            }
+        | _ -> raise exn
       end
 
   | Pmod_unpack sexp ->
