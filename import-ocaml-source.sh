@@ -77,7 +77,7 @@ for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
   # Not all files are necessary
   if [ ! -e $tgt ]; then continue; fi
 
-  err=$(patch --merge $tgt <(git diff --no-ext-diff HEAD^ HEAD -- $file))
+  err=$(patch --merge=diff3 $tgt <(git diff --no-ext-diff HEAD^ HEAD -- $file))
   # ignore patch output if it worked
   if [ $? = 0 ]; then
     git add -u $tgt
