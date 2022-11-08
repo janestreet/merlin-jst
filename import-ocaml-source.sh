@@ -49,6 +49,10 @@ if ! git diff --quiet; then
   exit 1
 fi
 
+# Used for patch output
+old_base_rev="$(cat upstream/ocaml_jst/base-rev.txt)"
+current_head="$(git symbolic-ref --short HEAD)"
+
 # First, fetch the new ocaml-jst sources and copy into upstream/ocaml_jst
 git fetch "$repository" "$commitish"
 rev=$(git rev-parse FETCH_HEAD)
@@ -60,6 +64,13 @@ done
 git add -u .
 cd ../..
 git commit -m "Import ocaml sources for $(repository-commit "$(git describe --always $rev)")"
+
+# Annotations for diff3 regions; "@" would be more natural than ":" but confuses
+# smerge-mode's highlighting
+short_ocaml_repo="${repository#https://github.com/}"
+old_marker="janestreet/merlin-jst:$current_head"
+parent_marker="$short_ocaml_repo:$old_base_rev"
+new_marker="$short_ocaml_repo:$commitish"
 
 # Then patch src/ocaml using the changes you just imported
 for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
@@ -82,8 +93,12 @@ for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
   if [ $? = 0 ]; then
     git add -u $tgt
   else
+    sed -i \
+        -e 's!^<<<<<<<$!& '"$old_marker"'!'    \
+        -e 's!^|||||||$!& '"$parent_marker"'!' \
+        -e 's!^>>>>>>>$!& '"$new_marker"'!'    \
+        $tgt
     echo "$err"
   fi
   rm -f $tgt.orig
 done
-
