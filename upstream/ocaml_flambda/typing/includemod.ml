@@ -19,27 +19,6 @@ open Misc
 open Typedtree
 open Types
 
-type symptom =
-    Missing_field of Ident.t * Location.t * string (* kind *)
-  | Value_descriptions of Ident.t * value_description * value_description
-                          * Includecore.value_mismatch
-  | Type_declarations of Ident.t * type_declaration
-        * type_declaration * Includecore.type_mismatch
-  | Extension_constructors of Ident.t * extension_constructor
-        * extension_constructor * Includecore.extension_constructor_mismatch
-  | Module_types of module_type * module_type
-  | Modtype_infos of Ident.t * modtype_declaration * modtype_declaration
-  | Modtype_permutation of Types.module_type * Typedtree.module_coercion
-  | Interface_mismatch of string * string
-  | Class_type_declarations of
-      Ident.t * class_type_declaration * class_type_declaration *
-      Ctype.class_match_failure list
-  | Class_declarations of
-      Ident.t * class_declaration * class_declaration *
-      Ctype.class_match_failure list
-  | Unbound_module_path of Path.t
-  | Invalid_module_alias of Path.t
-
 type pos =
   | Module of Ident.t
   | Modtype of Ident.t
@@ -103,8 +82,6 @@ module Error = struct
     env: Env.t;
     missings: signature_item list;
     incompatibles: (Ident.t * sigitem_symptom) list;
-    oks: (int * module_coercion) list;
-    leftovers: (signature_item * signature_item * int) list;
   }
   and sigitem_symptom =
     | Core of core_sigitem_symptom
@@ -123,6 +100,7 @@ module Error = struct
   type all =
     | In_Compilation_unit of (string, signature_symptom) diff
     | In_Signature of signature_symptom
+    | In_Include_functor_signature of signature_symptom
     | In_Module_type of module_type_diff
     | In_Module_type_substitution of
         Ident.t * (Types.module_type,module_type_declaration_symptom) diff
@@ -165,7 +143,7 @@ let value_descriptions ~loc env ~mark subst id vd1 vd2 =
 
 (* Inclusion between type declarations *)
 
-let type_declarations ~loc env ~mark ?old_env:_ subst id decl1 decl2 =
+let type_declarations ~loc env ~mark subst id decl1 decl2 =
   let mark = mark_positive mark in
   if mark then
     Env.mark_type_used decl1.type_uid;
@@ -190,14 +168,14 @@ let extension_constructors ~loc env ~mark  subst id ext1 ext2 =
 
 (* Inclusion between class declarations *)
 
-let class_type_declarations ~loc ~old_env:_ env  subst decl1 decl2 =
+let class_type_declarations ~loc env subst decl1 decl2 =
   let decl2 = Subst.cltype_declaration subst decl2 in
   match Includeclass.class_type_declarations ~loc env decl1 decl2 with
     []     -> Ok Tcoerce_none
   | reason ->
       Error Error.(Core(Class_type_declarations(diff decl1 decl2 reason)))
 
-let class_declarations ~old_env:_ env  subst decl1 decl2 =
+let class_declarations env subst decl1 decl2 =
   let decl2 = Subst.class_declaration subst decl2 in
   match Includeclass.class_declarations env decl1 decl2 with
     []     -> Ok Tcoerce_none
@@ -340,6 +318,77 @@ let simplify_structure_coercion cc id_pos_list =
   then Tcoerce_none
   else Tcoerce_structure (cc, id_pos_list)
 
+
+(* Build a table of the components of sig1, along with their positions.
+   The table is indexed by kind and name of component *)
+let build_component_table pos_rep sg =
+  let rec build_table nb_exported pos tbl = function
+    [] -> nb_exported, pos, tbl
+  | item :: rem ->
+      let pos, nextpos =
+        if is_runtime_component item then pos, pos + 1
+        else -1, pos
+      in
+      match item_visibility item with
+      | Hidden ->
+          (* do not pair private items. *)
+          build_table nb_exported nextpos tbl rem
+      | Exported ->
+          let (id, _loc, name) = item_ident_name item in
+          build_table (nb_exported + 1) nextpos
+            (FieldMap.add name (id, item, pos_rep pos id) tbl) rem
+  in
+  build_table 0 0 FieldMap.empty sg
+
+
+(* Pair each component of sig2 with a component of sig1,
+   identifying the names along the way.
+   Return a coercion list indicating, for all run-time components
+   of sig2, the position of the matching run-time components of sig1
+   and the coercion to be applied to it. *)
+let pair_components subst sig1_comps sig2 =
+  let rec pair subst paired unpaired = function
+    | [] ->
+      paired, unpaired, subst
+  | item2 :: rem ->
+      let (id2, _loc, name2) = item_ident_name item2 in
+      let name2, report =
+        match item2, name2 with
+          Sig_type (_, {type_manifest=None}, _, _), {name=s; kind=Field_type}
+          when Btype.is_row_name s ->
+            (* Do not report in case of failure,
+               as the main type will generate an error *)
+            { kind=Field_type; name=String.sub s 0 (String.length s - 4) },
+            false
+        | _ -> name2, true
+      in
+      begin match FieldMap.find name2 sig1_comps with
+      | (id1, item1, pos1) ->
+        let new_subst =
+          match item2 with
+            Sig_type _ ->
+              Subst.add_type id2 (Path.Pident id1) subst
+          | Sig_module _ ->
+              Subst.add_module id2 (Path.Pident id1) subst
+          | Sig_modtype _ ->
+              Subst.add_modtype id2 (Mty_ident (Path.Pident id1)) subst
+          | Sig_value _ | Sig_typext _
+          | Sig_class _ | Sig_class_type _ ->
+              subst
+        in
+        pair new_subst
+          ((item1, item2, pos1) :: paired) unpaired rem
+      | exception Not_found ->
+        let unpaired =
+          if report then
+            item2 :: unpaired
+          else unpaired in
+        pair subst paired unpaired rem
+      end
+  in
+  pair subst [] [] sig2
+
+
 let retrieve_functor_params env mty =
   let rec retrieve_functor_params before env =
     function
@@ -375,12 +424,12 @@ let mark_error_as_unrecoverable r =
 
 
 module Sign_diff = struct
-  type t = {
-    runtime_coercions: (int * Typedtree.module_coercion) list;
+  type 'a t = {
+    runtime_coercions: ('a * Typedtree.module_coercion) list;
     shape_map: Shape.Map.t;
     deep_modifications:bool;
     errors: (Ident.t * Error.sigitem_symptom) list;
-    leftovers: ((Types.signature_item as 'it) * 'it * int) list
+    leftovers: ((Types.signature_item as 'it) * 'it * 'a) list
   }
 
   let empty = {
@@ -601,7 +650,7 @@ and strengthened_module_decl ~loc ~aliasable env ~mark
 
 (* Inclusion between signatures *)
 
-and signatures  ~in_eq ~loc env ~mark subst sig1 sig2 mod_shape =
+and signatures ~in_eq ~loc env ~mark subst sig1 sig2 mod_shape =
   (* Environment used to check inclusion of components *)
   let new_env =
     Env.add_signature sig1 (Env.in_signature true env) in
@@ -613,26 +662,8 @@ and signatures  ~in_eq ~loc env ~mark subst sig1 sig2 mod_shape =
             ((id,pos,Tcoerce_none)::l , pos+1)
         | item -> (l, if is_runtime_component item then pos+1 else pos))
       ([], 0) sig1 in
-  (* Build a table of the components of sig1, along with their positions.
-     The table is indexed by kind and name of component *)
-  let rec build_component_table nb_exported pos tbl = function
-      [] -> nb_exported, pos, tbl
-    | item :: rem ->
-        let pos, nextpos =
-          if is_runtime_component item then pos, pos + 1
-          else -1, pos
-        in
-        match item_visibility item with
-        | Hidden ->
-            (* do not pair private items. *)
-            build_component_table nb_exported nextpos tbl rem
-        | Exported ->
-            let (id, _loc, name) = item_ident_name item in
-            build_component_table (nb_exported + 1) nextpos
-              (FieldMap.add name (id, item, pos) tbl) rem
-  in
   let exported_len1, runtime_len1, comps1 =
-    build_component_table 0 0 FieldMap.empty sig1
+    build_component_table (fun pos _name -> pos) sig1
   in
   let exported_len2, runtime_len2 =
     List.fold_left (fun (el, rl) i ->
@@ -641,81 +672,36 @@ and signatures  ~in_eq ~loc env ~mark subst sig1 sig2 mod_shape =
       el, rl
     ) (0, 0) sig2
   in
-  (* Pair each component of sig2 with a component of sig1,
-     identifying the names along the way.
-     Return a coercion list indicating, for all run-time components
-     of sig2, the position of the matching run-time components of sig1
-     and the coercion to be applied to it. *)
-  let rec pair_components subst paired unpaired = function
-      [] ->
-        let open Sign_diff in
-        let d =
-          signature_components ~in_eq ~loc env ~mark new_env subst mod_shape
-            Shape.Map.empty
-            (List.rev paired)
-        in
-        begin match unpaired, d.errors, d.runtime_coercions, d.leftovers with
-            | [], [], cc, [] ->
-                let shape =
-                  if not d.deep_modifications && exported_len1 = exported_len2
-                  then mod_shape
-                  else Shape.str ?uid:mod_shape.Shape.uid d.shape_map
-                in
-                if runtime_len1 = runtime_len2 then (* see PR#5098 *)
-                  Ok (simplify_structure_coercion cc id_pos_list, shape)
-                else
-                  Ok (Tcoerce_structure (cc, id_pos_list), shape)
-            | missings, incompatibles, runtime_coercions, leftovers ->
-                Error {
-                  Error.env=new_env;
-                  missings;
-                  incompatibles;
-                  oks=runtime_coercions;
-                  leftovers;
-                }
-        end
-    | item2 :: rem ->
-        let (id2, _loc, name2) = item_ident_name item2 in
-        let name2, report =
-          match item2, name2 with
-            Sig_type (_, {type_manifest=None}, _, _), {name=s; kind=Field_type}
-            when Btype.is_row_name s ->
-              (* Do not report in case of failure,
-                 as the main type will generate an error *)
-              { kind=Field_type; name=String.sub s 0 (String.length s - 4) },
-              false
-          | _ -> name2, true
-        in
-        begin match FieldMap.find name2 comps1 with
-        | (id1, item1, pos1) ->
-          let new_subst =
-            match item2 with
-              Sig_type _ ->
-                Subst.add_type id2 (Path.Pident id1) subst
-            | Sig_module _ ->
-                Subst.add_module id2 (Path.Pident id1) subst
-            | Sig_modtype _ ->
-                Subst.add_modtype id2 (Mty_ident (Path.Pident id1)) subst
-            | Sig_value _ | Sig_typext _
-            | Sig_class _ | Sig_class_type _ ->
-                subst
-          in
-          pair_components new_subst
-            ((item1, item2, pos1) :: paired) unpaired rem
-        | exception Not_found ->
-          let unpaired =
-            if report then
-              item2 :: unpaired
-            else unpaired in
-          pair_components subst paired unpaired rem
-        end in
   (* Do the pairing and checking, and return the final coercion *)
-  pair_components subst [] [] sig2
+  let paired, unpaired, subst = pair_components subst comps1 sig2 in
+  let d =
+    signature_components ~in_eq ~loc ~mark new_env subst mod_shape
+      Shape.Map.empty
+      (List.rev paired)
+  in
+  let open Sign_diff in
+  match unpaired, d.errors, d.runtime_coercions, d.leftovers with
+    | [], [], cc, [] ->
+        let shape =
+          if not d.deep_modifications && exported_len1 = exported_len2
+          then mod_shape
+          else Shape.str ?uid:mod_shape.Shape.uid d.shape_map
+        in
+        if runtime_len1 = runtime_len2 then (* see PR#5098 *)
+          Ok (simplify_structure_coercion cc id_pos_list, shape)
+        else
+          Ok (Tcoerce_structure (cc, id_pos_list), shape)
+    | missings, incompatibles, _, _leftovers ->
+        Error {
+          Error.env=new_env;
+          missings;
+          incompatibles;
+        }
 
 (* Inclusion between signature components *)
-
-and signature_components  ~in_eq ~loc old_env ~mark env subst
-    orig_shape shape_map paired =
+and signature_components :
+  'a. in_eq:_ -> loc:_ -> mark:_ -> _ -> _ -> _ -> _ -> (_ * _ * 'a) list -> 'a Sign_diff.t =
+  fun ~in_eq ~loc ~mark env subst orig_shape shape_map paired ->
   match paired with
   | [] -> Sign_diff.{ empty with shape_map }
   | (sigi1, sigi2, pos) :: rem ->
@@ -735,7 +721,7 @@ and signature_components  ~in_eq ~loc old_env ~mark env subst
             id1, item, shape_map, present_at_runtime
         | Sig_type(id1, tydec1, _, _), Sig_type(_id2, tydec2, _, _) ->
             let item =
-              type_declarations ~loc ~old_env env ~mark subst id1 tydec1 tydec2
+              type_declarations ~loc env ~mark subst id1 tydec1 tydec2
             in
             let item = mark_error_as_unrecoverable item in
             let shape_map = Shape.Map.add_type_proj shape_map id1 orig_shape in
@@ -793,7 +779,7 @@ and signature_components  ~in_eq ~loc old_env ~mark env subst
             id1, item, shape_map, false
         | Sig_class(id1, decl1, _, _), Sig_class(_id2, decl2, _, _) ->
             let item =
-              class_declarations ~old_env env subst decl1 decl2
+              class_declarations env subst decl1 decl2
             in
             let shape_map =
               Shape.Map.add_class_proj shape_map id1 orig_shape
@@ -802,7 +788,7 @@ and signature_components  ~in_eq ~loc old_env ~mark env subst
             id1, item, shape_map, true
         | Sig_class_type(id1, info1, _, _), Sig_class_type(_id2, info2, _, _) ->
             let item =
-              class_type_declarations ~loc ~old_env env subst info1 info2
+              class_type_declarations ~loc env subst info1 info2
             in
             let item = mark_error_as_unrecoverable item in
             let shape_map =
@@ -829,7 +815,7 @@ and signature_components  ~in_eq ~loc old_env ~mark env subst
       in
       let rest =
         if continue then
-          signature_components ~in_eq ~loc old_env ~mark env subst
+          signature_components ~in_eq ~loc ~mark env subst
             orig_shape shape_map rem
         else Sign_diff.{ empty with leftovers=rem }
        in
@@ -899,8 +885,19 @@ and check_modtype_equiv ~in_eq ~loc env ~mark mty1 mty2 =
   | Error less_than, Some Error greater_than ->
       Error Error.(Incomparable {less_than; greater_than})
 
-
-(* Simplified inclusion check between module types (for Env) *)
+let include_functor_signatures ~loc env ~mark subst sig1 sig2 mod_shape =
+  let _, _, comps1 = build_component_table (fun _pos name -> name) sig1 in
+  let paired, unpaired, subst = pair_components subst comps1 sig2 in
+  let d = signature_components ~in_eq:false ~loc ~mark env subst mod_shape
+            Shape.Map.empty
+            (List.rev paired)
+  in
+  let open Sign_diff in
+  match unpaired, d.errors, d.leftovers with
+  | [], [], [] ->
+     Ok d.runtime_coercions
+  | missings, incompatibles, _leftovers ->
+     Error Error.{ env; missings; incompatibles }
 
 let can_alias env path =
   let rec no_apply = function
@@ -1208,6 +1205,13 @@ let signatures env ~mark sig1 sig2 =
   with
   | Ok (cc, _) -> cc
   | Error reason -> raise (Error(env,Error.(In_Signature reason)))
+
+let include_functor_signatures env ~mark sig1 sig2 =
+  match include_functor_signatures ~loc:Location.none env ~mark
+          Subst.identity sig1 sig2 Shape.dummy_mod
+  with
+  | Ok cc -> cc
+  | Error reason -> raise (Error(env,Error.(In_Include_functor_signature reason)))
 
 let type_declarations ~loc env ~mark id decl1 decl2 =
   match type_declarations ~loc env ~mark Subst.identity id decl1 decl2 with

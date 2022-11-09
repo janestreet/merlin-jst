@@ -97,6 +97,8 @@ let rec split_last = function
 
 module Stdlib = struct
   module List = struct
+    include List
+
     type 'a t = 'a list
 
     let rec compare cmp l1 l2 =
@@ -145,6 +147,14 @@ module Stdlib = struct
           | t::q -> aux (n-1) (t::acc) q
       in
       aux n [] l
+
+    let rec map_sharing f l0 =
+      match l0 with
+      | a :: l ->
+        let a' = f a in
+        let l' = map_sharing f l in
+        if a' == a && l' == l then l0 else a' :: l'
+      | [] -> []
 
     let rec is_prefix ~equal t ~of_ =
       match t, of_ with
@@ -227,10 +237,76 @@ module Stdlib = struct
 
     let print ppf t =
       Format.pp_print_string ppf t
+
+    let begins_with ?(from = 0) str ~prefix =
+      let rec helper idx =
+        if idx < 0 then true
+        else
+          String.get str (from + idx) = String.get prefix idx && helper (idx-1)
+      in
+      let n = String.length str in
+      let m = String.length prefix in
+      if n >= from + m then helper (m-1) else false
+
+    let split_on_string str ~split_on =
+      let n = String.length str in
+      let m = String.length split_on in
+      let rec helper acc last_idx idx =
+        if idx = n then
+          let cur = String.sub str last_idx (idx - last_idx) in
+          List.rev (cur :: acc)
+        else if begins_with ~from:idx str ~prefix:split_on then
+          let cur = String.sub str last_idx (idx - last_idx) in
+          helper (cur :: acc) (idx + m) (idx + m)
+        else
+          helper acc last_idx (idx + 1)
+      in
+      helper [] 0 0
+
+    let split_on_chars str ~split_on:chars =
+      let rec helper chars_left s acc =
+        match chars_left with
+        | [] -> s :: acc
+        | c :: cs ->
+          List.fold_right (helper cs) (String.split_on_char c s) acc
+      in
+      helper chars str []
+
+    let split_last_exn str ~split_on =
+      let n = String.length str in
+      let ridx = String.rindex str split_on in
+      String.sub str 0 ridx, String.sub str (ridx + 1) (n - ridx - 1)
+
+    let starts_with ~prefix s =
+      let len_s = length s
+      and len_pre = length prefix in
+      let rec aux i =
+        if i = len_pre then true
+        else if unsafe_get s i <> unsafe_get prefix i then false
+        else aux (i + 1)
+      in len_s >= len_pre && aux 0
+
+    let ends_with ~suffix s =
+      let len_s = length s
+      and len_suf = length suffix in
+      let diff = len_s - len_suf in
+      let rec aux i =
+        if i = len_suf then true
+        else if unsafe_get s (diff + i) <> unsafe_get suffix i then false
+        else aux (i + 1)
+      in diff >= 0 && aux 0
+  end
+
+  module Int = struct
+    include Int
+    let min (a : int) (b : int) = min a b
+    let max (a : int) (b : int) = max a b
   end
 
   external compare : 'a -> 'a -> int = "%compare"
 end
+
+module Int = Stdlib.Int
 
 (* File functions *)
 
@@ -873,12 +949,60 @@ type crcs = (modname * Digest.t option) list
 
 type alerts = string Stdlib.String.Map.t
 
+module Bitmap = struct
+  type t = {
+    length: int;
+    bits: bytes
+  }
+
+  let length_bytes len =
+    (len + 7) lsr 3
+
+  let make n =
+    { length = n;
+      bits = Bytes.make (length_bytes n) '\000' }
+
+  let unsafe_get_byte t n =
+    Char.code (Bytes.unsafe_get t.bits n)
+
+  let unsafe_set_byte t n x =
+    Bytes.unsafe_set t.bits n (Char.unsafe_chr x)
+
+  let check_bound t n =
+    if n < 0 || n >= t.length then invalid_arg "Bitmap.check_bound"
+
+  let set t n =
+    check_bound t n;
+    let pos = n lsr 3 and bit = 1 lsl (n land 7) in
+    unsafe_set_byte t pos (unsafe_get_byte t pos lor bit)
+
+  let clear t n =
+    check_bound t n;
+    let pos = n lsr 3 and nbit = 0xff lxor (1 lsl (n land 7)) in
+    unsafe_set_byte t pos (unsafe_get_byte t pos land nbit)
+
+  let get t n =
+    check_bound t n;
+    let pos = n lsr 3 and bit = 1 lsl (n land 7) in
+    (unsafe_get_byte t pos land bit) <> 0
+
+  let iter f t =
+    for i = 0 to length_bytes t.length - 1 do
+      let c = unsafe_get_byte t i in
+      let pos = i lsl 3 in
+      for j = 0 to 7 do
+        if c land (1 lsl j) <> 0 then
+          f (pos + j)
+      done
+    done
+end
+
 module Magic_number = struct
   type native_obj_config = {
     flambda : bool;
   }
   let native_obj_config = {
-    flambda = Config.flambda;
+    flambda = Config.flambda || Config.flambda2;
   }
 
   type version = int
@@ -920,10 +1044,10 @@ module Magic_number = struct
     | "Caml1999I" -> Some Cmi
     | "Caml1999O" -> Some Cmo
     | "Caml1999A" -> Some Cma
-    | "Caml1999y" -> Some (Cmx {flambda = true})
-    | "Caml1999Y" -> Some (Cmx {flambda = false})
-    | "Caml1999z" -> Some (Cmxa {flambda = true})
-    | "Caml1999Z" -> Some (Cmxa {flambda = false})
+    | "Caml2021y" -> Some (Cmx {flambda = true})
+    | "Caml2021Y" -> Some (Cmx {flambda = false})
+    | "Caml2021z" -> Some (Cmxa {flambda = true})
+    | "Caml2021Z" -> Some (Cmxa {flambda = false})
 
     (* Caml2007D and Caml2012T were used instead of the common Caml1999 prefix
        between the introduction of those magic numbers and October 2017
@@ -948,12 +1072,12 @@ module Magic_number = struct
     | Cma -> "Caml1999A"
     | Cmx config ->
        if config.flambda
-       then "Caml1999y"
-       else "Caml1999Y"
+       then "Caml2021y"
+       else "Caml2021Y"
     | Cmxa config ->
        if config.flambda
-       then "Caml1999z"
-       else "Caml1999Z"
+       then "Caml2021z"
+       else "Caml2021Z"
     | Cmxs -> "Caml1999D"
     | Cmt -> "Caml1999T"
     | Ast_impl -> "Caml1999M"

@@ -131,6 +131,8 @@ let dump_linear = ref false             (* -dlinear *)
 let dump_interval = ref false           (* -dinterval *)
 let keep_startup_file = ref false       (* -dstartup *)
 let dump_combine = ref false            (* -dcombine *)
+let default_timings_precision  = 3
+let timings_precision = ref default_timings_precision (* -dtimings-precision *)
 let profile_columns : Profile.column list ref = ref [] (* -dprofile/-dtimings *)
 
 let native_code = ref false             (* set to true under ocamlopt *)
@@ -182,7 +184,7 @@ let afl_instrument = ref Config.afl_instrument (* -afl-instrument *)
 let afl_inst_ratio = ref 100           (* -afl-inst-ratio *)
 
 let function_sections = ref false      (* -function-sections *)
-
+let probes = ref Config.probes         (* -probes *)
 let simplify_rounds = ref None        (* -rounds *)
 let default_simplify_rounds = ref 1        (* -rounds *)
 let rounds () =
@@ -374,6 +376,54 @@ let set_dumped_pass s enabled =
     dumped_passes_list := dumped_passes
   end
 
+module Extension = struct
+  type t = Comprehensions | Local | Include_functor
+
+  let all = [ Comprehensions; Local; Include_functor ]
+  let default_extensions = [ Local; Include_functor ]
+
+  let extensions = ref ([] : t list)   (* -extension *)
+  let equal (a : t) (b : t) = (a = b)
+
+  let to_string = function
+    | Comprehensions -> "comprehensions"
+    | Local -> "local"
+    | Include_functor -> "include_functor"
+
+  let of_string = function
+    | "comprehensions" -> Comprehensions
+    | "local" -> Local
+    | "include_functor" -> Include_functor
+    | extn -> raise (Arg.Bad(Printf.sprintf "Extension %s is not known" extn))
+
+  let disable_all_extensions = ref false             (* -disable-all-extensions *)
+
+  let disable_all () =
+    disable_all_extensions := true;
+    match !extensions with
+    | [] -> ()
+    | ls ->
+      raise (Arg.Bad(Printf.sprintf
+        "Compiler flag -disable-all-extensions is incompatible with \
+         the enabled extensions: %s"
+        (String.concat "," (List.map to_string ls))))
+
+  let enable extn =
+    if !disable_all_extensions then
+      raise (Arg.Bad(Printf.sprintf
+        "Cannot enable extension %s: \
+         incompatible with compiler flag -disable-all-extensions"
+        extn));
+    let t = of_string (String.lowercase_ascii extn) in
+    if not (List.exists (equal t) !extensions) then
+      extensions := t :: !extensions
+
+  let is_enabled ext =
+    not !disable_all_extensions
+    && (List.mem ext default_extensions
+        || List.mem ext !extensions)
+end
+
 let dump_into_file = ref false (* -dump-into-file *)
 let dump_dir: string option ref = ref None (* -dump-dir *)
 
@@ -418,18 +468,17 @@ let unboxed_types = ref false
 
 (* This is used by the -save-ir-after option. *)
 module Compiler_ir = struct
-  type t = Linear
+  type t = Linear | Cfg
 
   let all = [
-    Linear;
+    Linear; Cfg
   ]
 
-  let extension t =
-    let ext =
-    match t with
-      | Linear -> "linear"
-    in
-    ".cmir-" ^ ext
+  let to_string = function
+    | Linear -> "linear"
+    | Cfg -> "cfg"
+
+  let extension t = ".cmir-" ^ (to_string t)
 
   (** [extract_extension_with_pass filename] returns the IR whose extension
       is a prefix of the extension of [filename], and the suffix,
@@ -458,6 +507,46 @@ module Compiler_ir = struct
     end
 end
 
+let is_flambda2 () =
+  Config.flambda2 && !native_code
+
+module Opt_flag_handler = struct
+  type t = {
+    set_oclassic : unit -> unit;
+    set_o2 : unit -> unit;
+    set_o3 : unit -> unit;
+  }
+
+  let default =
+    let set_oclassic () =
+      classic_inlining := true;
+      default_simplify_rounds := 1;
+      use_inlining_arguments_set classic_arguments;
+      unbox_free_vars_of_closures := false;
+      unbox_specialised_args := false
+    in
+    let set_o2 () =
+      default_simplify_rounds := 2;
+      use_inlining_arguments_set o2_arguments;
+      use_inlining_arguments_set ~round:0 o1_arguments
+    in
+    let set_o3 () =
+      default_simplify_rounds := 3;
+      use_inlining_arguments_set o3_arguments;
+      use_inlining_arguments_set ~round:1 o2_arguments;
+      use_inlining_arguments_set ~round:0 o1_arguments
+    in
+    { set_oclassic; set_o2; set_o3 }
+
+  let current = ref default
+
+  let set t = current := t
+end
+
+let set_oclassic () = (!Opt_flag_handler.current).set_oclassic ()
+let set_o2 () = (!Opt_flag_handler.current).set_o2 ()
+let set_o3 () = (!Opt_flag_handler.current).set_o3 ()
+
 (* This is used by the -stop-after option. *)
 module Compiler_pass = struct
   (* If you add a new pass, the following must be updated:
@@ -465,24 +554,30 @@ module Compiler_pass = struct
      - the manpages in man/ocaml{c,opt}.m
      - the manual manual/src/cmds/unified-options.etex
   *)
-  type t = Parsing | Typing | Scheduling | Emit
+  type t = Parsing | Typing | Scheduling | Emit | Simplify_cfg | Selection
 
   let to_string = function
     | Parsing -> "parsing"
     | Typing -> "typing"
     | Scheduling -> "scheduling"
     | Emit -> "emit"
+    | Simplify_cfg -> "simplify_cfg"
+    | Selection -> "selection"
 
   let of_string = function
     | "parsing" -> Some Parsing
     | "typing" -> Some Typing
     | "scheduling" -> Some Scheduling
     | "emit" -> Some Emit
+    | "simplify_cfg" -> Some Simplify_cfg
+    | "selection" -> Some Selection
     | _ -> None
 
   let rank = function
     | Parsing -> 0
     | Typing -> 1
+    | Selection -> 20
+    | Simplify_cfg -> 49
     | Scheduling -> 50
     | Emit -> 60
 
@@ -491,17 +586,23 @@ module Compiler_pass = struct
     Typing;
     Scheduling;
     Emit;
+    Simplify_cfg;
+    Selection;
   ]
   let is_compilation_pass _ = true
   let is_native_only = function
     | Scheduling -> true
     | Emit -> true
-    | _ -> false
+    | Simplify_cfg -> true
+    | Selection -> true
+    | Parsing | Typing -> false
 
   let enabled is_native t = not (is_native_only t) || is_native
   let can_save_ir_after = function
     | Scheduling -> true
-    | _ -> false
+    | Simplify_cfg -> true
+    | Selection -> true
+    | Parsing | Typing | Emit -> false
 
   let available_pass_names ~filter ~native =
     passes
@@ -515,11 +616,14 @@ module Compiler_pass = struct
   let to_output_filename t ~prefix =
     match t with
     | Scheduling -> prefix ^ Compiler_ir.(extension Linear)
-    | _ -> Misc.fatal_error "Not supported"
+    | Simplify_cfg -> prefix ^ Compiler_ir.(extension Cfg)
+    | Selection -> prefix ^ Compiler_ir.(extension Cfg) ^ "-sel"
+    | Emit | Parsing | Typing -> Misc.fatal_error "Not supported"
 
   let of_input_filename name =
     match Compiler_ir.extract_extension_with_pass name with
     | Some (Linear, _) -> Some Emit
+    | Some (Cfg, _) -> None
     | None -> None
 end
 

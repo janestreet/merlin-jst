@@ -277,6 +277,7 @@ let label_declaration copy_scope s l =
   {
     ld_id = l.ld_id;
     ld_mutable = l.ld_mutable;
+    ld_global = l.ld_global;
     ld_type = typexp copy_scope s l.ld_type;
     ld_loc = loc s l.ld_loc;
     ld_attributes = attrs s l.ld_attributes;
@@ -420,7 +421,6 @@ let extension_constructor s ext =
 
 (* For every binding k |-> d of m1, add k |-> f d to m2
    and return resulting merged map. *)
-
 let merge_path_maps f m1 m2 =
   Path.Map.fold (fun k d accu -> Path.Map.add k (f d) accu) m1 m2
 

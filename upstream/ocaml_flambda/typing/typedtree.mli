@@ -49,6 +49,7 @@ and 'a pattern_data =
     pat_loc: Location.t;
     pat_extra : (pat_extra * Location.t * attributes) list;
     pat_type: Types.type_expr;
+    pat_mode: Types.value_mode;
     pat_env: Env.t;
     pat_attributes: attributes;
    }
@@ -154,6 +155,7 @@ and expression =
     exp_loc: Location.t;
     exp_extra: (exp_extra * Location.t * attributes) list;
     exp_type: Types.type_expr;
+    exp_mode: Types.value_mode;
     exp_env: Env.t;
     exp_attributes: attributes;
    }
@@ -170,8 +172,19 @@ and exp_extra =
   | Texp_newtype of string
         (** fun (type t) ->  *)
 
+and fun_curry_state =
+  | More_args of { partial_mode : Types.alloc_mode }
+        (** [partial_mode] is the mode of the resulting closure
+            if this function is partially applied *)
+  | Final_arg of { partial_mode : Types.alloc_mode }
+        (** [partial_mode] is relevant for the final arg only
+            because of an optimisation that Simplif does to merge
+            functions, which might result in this arg no longer being
+            final *)
+
 and expression_desc =
-    Texp_ident of Path.t * Longident.t loc * Types.value_description
+    Texp_ident of
+      Path.t * Longident.t loc * Types.value_description * ident_kind
         (** x
             M.x
          *)
@@ -182,7 +195,9 @@ and expression_desc =
             let rec P1 = E1 and ... and Pn = EN in E   (flag = Recursive)
          *)
   | Texp_function of { arg_label : arg_label; param : Ident.t;
-      cases : value case list; partial : partial; }
+      cases : value case list; partial : partial;
+      region : bool; curry : fun_curry_state;
+      warnings : Warnings.state; }
         (** [Pexp_fun] and [Pexp_function] both translate to [Texp_function].
             See {!Parsetree} for more details.
 
@@ -192,11 +207,14 @@ and expression_desc =
             partial =
               [Partial] if the pattern match is partial
               [Total] otherwise.
+
+            partial_mode is the mode of the resulting closure if this function
+            is partially applied to a single argument.
          *)
-  | Texp_apply of expression * (arg_label * expression option) list
+  | Texp_apply of expression * (arg_label * apply_arg) list * apply_position
         (** E0 ~l1:E1 ... ~ln:En
 
-            The expression can be None if the expression is abstracted over
+            The expression can be Omitted if the expression is abstracted over
             this argument. It currently appears when a label is applied.
 
             For example:
@@ -205,7 +223,7 @@ and expression_desc =
 
             The resulting typedtree for the application is:
             Texp_apply (Texp_ident "f/1037",
-                        [(Nolabel, None);
+                        [(Nolabel, Omitted _);
                          (Labelled "y", Some (Texp_constant Const_int 3))
                         ])
          *)
@@ -251,12 +269,30 @@ and expression_desc =
   | Texp_array of expression list
   | Texp_ifthenelse of expression * expression * expression option
   | Texp_sequence of expression * expression
-  | Texp_while of expression * expression
-  | Texp_for of
-      Ident.t * Parsetree.pattern * expression * expression * direction_flag *
-        expression
-  | Texp_send of expression * meth
-  | Texp_new of Path.t * Longident.t loc * Types.class_declaration
+  | Texp_while of {
+      wh_cond : expression;
+      wh_cond_region : bool; (* False means allocates in outer region *)
+      wh_body : expression;
+      wh_body_region : bool  (* False means allocates in outer region *)
+    }
+  | Texp_list_comprehension of
+      expression * comprehension list
+  | Texp_arr_comprehension of
+      expression * comprehension list
+  | Texp_for of {
+      for_id  : Ident.t;
+      for_pat : Parsetree.pattern;
+      for_from : expression;
+      for_to   : expression;
+      for_dir  : direction_flag;
+      for_body : expression;
+      for_region : bool;
+      (* for_region = true means we create a region for the body.  false means
+         it may allocated in the containing region *)
+    }
+  | Texp_send of expression * meth * apply_position
+  | Texp_new of
+      Path.t * Longident.t loc * Types.class_declaration * apply_position
   | Texp_instvar of Path.t * Path.t * string loc
   | Texp_setinstvar of Path.t * Path.t * string loc * expression
   | Texp_override of Path.t * (Ident.t * string loc * expression) list
@@ -274,16 +310,32 @@ and expression_desc =
       param : Ident.t;
       body : value case;
       partial : partial;
+      warnings : Warnings.state;
     }
   | Texp_unreachable
   | Texp_extension_constructor of Longident.t loc * Path.t
   | Texp_open of open_declaration * expression
         (** let open[!] M in e *)
+  | Texp_probe of { name:string; handler:expression; }
+  | Texp_probe_is_enabled of { name:string }
+
+and ident_kind = Id_value | Id_prim of Types.alloc_mode option
 
 and meth =
     Tmeth_name of string
   | Tmeth_val of Ident.t
   | Tmeth_ancestor of Ident.t * Path.t
+
+  and comprehension =
+  {
+     clauses: comprehension_clause list;
+     guard : expression option
+  }
+
+and comprehension_clause =
+ | From_to of Ident.t * Parsetree.pattern *
+     expression * expression * direction_flag
+ | In of pattern * expression
 
 and 'k case =
     {
@@ -308,6 +360,22 @@ and binding_op =
     bop_loc : Location.t;
   }
 
+and ('a, 'b) arg_or_omitted =
+  | Arg of 'a
+  | Omitted of 'b
+
+and omitted_parameter =
+  { mode_closure : Types.alloc_mode;
+    mode_arg : Types.alloc_mode;
+    mode_ret : Types.alloc_mode }
+
+and apply_arg = (expression, omitted_parameter) arg_or_omitted
+
+and apply_position =
+  | Tail          (* must be tail-call optimised *)
+  | Nontail       (* must not be tail-call optimised *)
+  | Default       (* tail-call optimised if in tail position *)
+
 (* Value expressions for the class language *)
 
 and class_expr =
@@ -325,7 +393,7 @@ and class_expr_desc =
   | Tcl_fun of
       arg_label * pattern * (Ident.t * expression) list
       * class_expr * partial
-  | Tcl_apply of class_expr * (arg_label * expression option) list
+  | Tcl_apply of class_expr * (arg_label * apply_arg) list
   | Tcl_let of rec_flag * value_binding list *
                   (Ident.t * expression) list * class_expr
   | Tcl_constraint of
@@ -471,6 +539,7 @@ and primitive_coercion =
   {
     pc_desc: Primitive.description;
     pc_type: Types.type_expr;
+    pc_poly_mode: Types.alloc_mode option;
     pc_env: Env.t;
     pc_loc : Location.t;
   }
@@ -546,12 +615,19 @@ and open_description = (Path.t * Longident.t loc) open_infos
 
 and open_declaration = module_expr open_infos
 
+and include_kind =
+  | Tincl_structure
+  | Tincl_functor of (Ident.t * module_coercion) list
+      (* S1 -> S2 *)
+  | Tincl_gen_functor of (Ident.t * module_coercion) list
+      (* S1 -> () -> S2 *)
 
 and 'a include_infos =
     {
      incl_mod: 'a;
      incl_type: Types.signature;
      incl_loc: Location.t;
+     incl_kind: include_kind;
      incl_attributes: attribute list;
     }
 
@@ -809,6 +885,9 @@ val exists_pattern: (pattern -> bool) -> pattern -> bool
 val let_bound_idents: value_binding list -> Ident.t list
 val let_bound_idents_full:
     value_binding list -> (Ident.t * string loc * Types.type_expr) list
+val let_bound_idents_with_modes:
+  value_binding list
+  -> (Ident.t * (Location.t * Types.value_mode) list) list
 
 (** Alpha conversion of patterns *)
 val alpha_pat:

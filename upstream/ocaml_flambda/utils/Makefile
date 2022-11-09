@@ -19,6 +19,12 @@ ROOTDIR = ..
 
 include $(ROOTDIR)/Makefile.common
 
+domainstate.ml: domainstate.ml.c ../runtime/caml/domain_state.tbl
+	$(CPP) -I ../runtime/caml $< > $@
+
+domainstate.mli: domainstate.mli.c ../runtime/caml/domain_state.tbl
+	$(CPP) -I ../runtime/caml $< > $@
+
 ifeq "$(BOOTSTRAPPING_FLEXDLL)" "false"
   FLEXDLL_DIR =
 else
@@ -53,6 +59,7 @@ config.ml: config.mlp $(ROOTDIR)/Makefile.config Makefile
 	    $(call SUBST_STRING,EXT_LIB) \
 	    $(call SUBST_STRING,EXT_OBJ) \
 	    $(call SUBST,FLAMBDA) \
+	    $(call SUBST,FLAMBDA2) \
 	    $(call SUBST,WITH_FLAMBDA_INVARIANTS) \
 	    $(call SUBST,WITH_CMM_INVARIANTS) \
 	    $(call SUBST_STRING,FLEXLINK_FLAGS) \
@@ -73,7 +80,6 @@ config.ml: config.mlp $(ROOTDIR)/Makefile.config Makefile
 	    $(call SUBST_STRING,OCAMLOPT_CPPFLAGS) \
 	    $(call SUBST_STRING,PACKLD) \
 	    $(call SUBST,PROFINFO_WIDTH) \
-	    $(call SUBST_STRING,RANLIBCMD) \
 	    $(call SUBST_STRING,RPATH) \
 	    $(call SUBST_STRING,MKSHAREDLIBRPATH) \
 	    $(call SUBST,FORCE_SAFE_STRING) \
@@ -85,11 +91,14 @@ config.ml: config.mlp $(ROOTDIR)/Makefile.config Makefile
 	    $(call SUBST,SYSTHREAD_SUPPORT) \
 	    $(call SUBST,TARGET) \
 	    $(call SUBST,WITH_FRAME_POINTERS) \
+	    $(call SUBST,WITH_CPP_MANGLING) \
 	    $(call SUBST,WITH_PROFINFO) \
 	    $(call SUBST,FLAT_FLOAT_ARRAY) \
 	    $(call SUBST,FUNCTION_SECTIONS) \
+	    $(call SUBST,PROBES) \
 	    $(call SUBST,CC_HAS_DEBUG_PREFIX_MAP) \
 	    $(call SUBST,AS_HAS_DEBUG_PREFIX_MAP) \
+	    $(call SUBST,STACK_ALLOCATION) \
 	    $< > $@
 
 # Test for the substitution functions above

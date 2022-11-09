@@ -112,6 +112,33 @@ let protect_longident ppf print_longident longprefix txt =
     else "%a.(%s)" in
   fprintf ppf format print_longident longprefix txt
 
+let is_curry_attr attr =
+  match attr.attr_name.txt with
+  | "extension.curry" -> true
+  | _ -> false
+
+let filter_curry_attrs attrs =
+  List.filter (fun attr -> not (is_curry_attr attr)) attrs
+
+let has_non_curry_attr attrs =
+  List.exists (fun attr -> not (is_curry_attr attr)) attrs
+
+let check_local_attr attrs =
+  match
+    List.partition (fun attr ->
+        attr.attr_name.txt = "extension.local") attrs
+  with
+  | [], _ -> attrs, false
+  | _::_, rest -> rest, true
+
+let check_include_functor_attr attrs =
+  match
+    List.partition (fun attr ->
+        attr.attr_name.txt = "extension.include_functor") attrs
+  with
+  | [], _ -> attrs, false
+  | _::_, rest -> rest, true
+
 type space_formatter = (unit, Format.formatter, unit) format
 
 let override = function
@@ -279,6 +306,17 @@ let tyvar ppf s =
 let tyvar_loc f str = tyvar f str.txt
 let string_quot f x = pp f "`%s" x
 
+let maybe_local_type pty ctxt f c =
+  let cattrs, is_local = check_local_attr c.ptyp_attributes in
+  let c = { c with ptyp_attributes = cattrs } in
+  if is_local then
+    pp f "local_ %a" (pty ctxt) c
+  else
+    pty ctxt f c
+
+let maybe_functor f has_functor_attr =
+  if has_functor_attr then pp f "@ functor" else ()
+
 (* c ['a,'b] *)
 let rec class_params_def ctxt f =  function
   | [] -> ()
@@ -288,19 +326,20 @@ let rec class_params_def ctxt f =  function
 
 and type_with_label ctxt f (label, c) =
   match label with
-  | Nolabel    -> core_type1 ctxt f c (* otherwise parenthesize *)
-  | Labelled s -> pp f "%s:%a" s (core_type1 ctxt) c
-  | Optional s -> pp f "?%s:%a" s (core_type1 ctxt) c
+  | Nolabel    -> maybe_local_type core_type1 ctxt f c (* otherwise parenthesize *)
+  | Labelled s -> pp f "%s:%a" s (maybe_local_type core_type1 ctxt) c
+  | Optional s -> pp f "?%s:%a" s (maybe_local_type core_type1 ctxt) c
 
 and core_type ctxt f x =
-  if x.ptyp_attributes <> [] then begin
+  let filtered_attrs = filter_curry_attrs x.ptyp_attributes in
+  if filtered_attrs <> [] then begin
     pp f "((%a)%a)" (core_type ctxt) {x with ptyp_attributes=[]}
-      (attributes ctxt) x.ptyp_attributes
+      (attributes ctxt) filtered_attrs
   end
   else match x.ptyp_desc with
     | Ptyp_arrow (l, ct1, ct2) ->
         pp f "@[<2>%a@;->@;%a@]" (* FIXME remove parens later *)
-          (type_with_label ctxt) (l,ct1) (core_type ctxt) ct2
+          (type_with_label ctxt) (l,ct1) (return_type ctxt) ct2
     | Ptyp_alias (ct, s) ->
         pp f "@[<2>%a@;as@;%a@]" (core_type1 ctxt) ct tyvar s
     | Ptyp_poly ([], ct) ->
@@ -319,7 +358,7 @@ and core_type ctxt f x =
     | _ -> pp f "@[<2>%a@]" (core_type1 ctxt) x
 
 and core_type1 ctxt f x =
-  if x.ptyp_attributes <> [] then core_type ctxt f x
+  if has_non_curry_attr x.ptyp_attributes then core_type ctxt f x
   else match x.ptyp_desc with
     | Ptyp_any -> pp f "_";
     | Ptyp_var s -> tyvar f  s;
@@ -395,6 +434,10 @@ and core_type1 ctxt f x =
                (list aux  ~sep:"@ and@ ")  cstrs)
     | Ptyp_extension e -> extension ctxt f e
     | _ -> paren true (core_type ctxt) f x
+
+and return_type ctxt f x =
+  if x.ptyp_attributes <> [] then maybe_local_type core_type1 ctxt f x
+  else maybe_local_type core_type ctxt f x
 
 (********************pattern********************)
 (* be cautious when use [pattern], [pattern1] is preferred *)
@@ -507,30 +550,43 @@ and simple_pattern ctxt (f:Format.formatter) (x:pattern) : unit =
           (paren with_paren @@ pattern1 ctxt) p
     | _ -> paren true (pattern ctxt) f x
 
+and maybe_local_pat ctxt is_local f p =
+  if is_local then
+    pp f "(local_ %a)" (simple_pattern ctxt) p
+  else
+    pp f "%a" (simple_pattern ctxt) p
+
 and label_exp ctxt f (l,opt,p) =
+  let pattrs, is_local = check_local_attr p.ppat_attributes in
+  let p = { p with ppat_attributes = pattrs } in
   match l with
   | Nolabel ->
       (* single case pattern parens needed here *)
-      pp f "%a@ " (simple_pattern ctxt) p
+      pp f "%a" (maybe_local_pat ctxt is_local) p
   | Optional rest ->
       begin match p with
       | {ppat_desc = Ppat_var {txt;_}; ppat_attributes = []}
-        when txt = rest ->
+        when txt = rest && not is_local ->
           (match opt with
-           | Some o -> pp f "?(%s=@;%a)@;" rest  (expression ctxt) o
-           | None -> pp f "?%s@ " rest)
+           | Some o -> pp f "?(%s=@;%a)" rest  (expression ctxt) o
+           | None -> pp f "?%s" rest)
       | _ ->
           (match opt with
            | Some o ->
-               pp f "?%s:(%a=@;%a)@;"
-                 rest (pattern1 ctxt) p (expression ctxt) o
-           | None -> pp f "?%s:%a@;" rest (simple_pattern ctxt) p)
+               pp f "?%s:(%s%a=@;%a)"
+                 rest
+                 (if is_local then "local_ " else "")
+                 (pattern1 ctxt) p (expression ctxt) o
+           | None -> pp f "?%s:%a" rest (maybe_local_pat ctxt is_local) p)
       end
   | Labelled l -> match p with
     | {ppat_desc  = Ppat_var {txt;_}; ppat_attributes = []}
       when txt = l ->
-        pp f "~%s@;" l
-    | _ ->  pp f "~%s:%a@;" l (simple_pattern ctxt) p
+        if is_local then
+          pp f "~(local_ %s)" l
+        else
+          pp f "~%s" l
+    | _ ->  pp f "~%s:%a" l (maybe_local_pat ctxt is_local) p
 
 and sugar_expr ctxt f e =
   if e.pexp_attributes <> [] then false
@@ -624,12 +680,12 @@ and expression ctxt f x =
         when ctxt.semi ->
         paren true (expression reset_ctxt) f x
     | Pexp_fun (l, e0, p, e) ->
-        pp f "@[<2>fun@;%a->@;%a@]"
+        pp f "@[<2>fun@;%a@;%a@]"
           (label_exp ctxt) (l, e0, p)
-          (expression ctxt) e
+          (pp_print_pexp_function ctxt "->") e
     | Pexp_newtype (lid, e) ->
-        pp f "@[<2>fun@;(type@;%s)@;->@;%a@]" lid.txt
-          (expression ctxt) e
+        pp f "@[<2>fun@;(type@;%s)@;%a@]" lid.txt
+          (pp_print_pexp_function ctxt "->") e
     | Pexp_function l ->
         pp f "@[<hv>function%a@]" (case_list ctxt) l
     | Pexp_match (e, l) ->
@@ -647,6 +703,10 @@ and expression ctxt f x =
         pp f "@[<2>%a in@;<1 -2>%a@]"
           (bindings reset_ctxt) (rf,l)
           (expression ctxt) e
+    | Pexp_apply
+      ({ pexp_desc = Pexp_extension({txt = "extension.local"}, PStr []) },
+       [Nolabel, sbody]) ->
+        pp f "@[<2>local_ %a@]" (expression ctxt) sbody
     | Pexp_apply (e, l) ->
         begin if not (sugar_expr ctxt f x) then
             match view_fixity_of_exp e with
@@ -1161,9 +1221,12 @@ and signature_item ctxt f x : unit =
         longident_loc od.popen_expr
         (item_attributes ctxt) od.popen_attributes
   | Psig_include incl ->
-      pp f "@[<hov2>include@ %a@]%a"
+      (* Print "include functor" rather than attribute *)
+      let attrs, incl_fun = check_include_functor_attr incl.pincl_attributes in
+      pp f "@[<hov2>include%a@ %a@]%a"
+        maybe_functor incl_fun
         (module_type ctxt) incl.pincl_mod
-        (item_attributes ctxt) incl.pincl_attributes
+        (item_attributes ctxt) attrs
   | Psig_modtype {pmtd_name=s; pmtd_type=md; pmtd_attributes=attrs} ->
       pp f "@[<hov2>module@ type@ %s%a@]%a"
         s.txt
@@ -1247,22 +1310,23 @@ and payload ctxt f = function
       pp f "?@ "; pattern ctxt f x;
       pp f " when "; expression ctxt f e
 
+and pp_print_pexp_function ctxt sep f x =
+  (* do not print [@extension.local] on expressions *)
+  let attrs, _ = check_local_attr x.pexp_attributes in
+  let x = { x with pexp_attributes = attrs } in
+  if x.pexp_attributes <> [] then pp f "%s@;%a" sep (expression ctxt) x
+  else match x.pexp_desc with
+    | Pexp_fun (label, eo, p, e) ->
+      pp f "%a@ %a"
+        (label_exp ctxt) (label,eo,p) (pp_print_pexp_function ctxt sep) e
+    | Pexp_newtype (str,e) ->
+      pp f "(type@ %s)@ %a" str.txt (pp_print_pexp_function ctxt sep) e
+    | _ ->
+       pp f "%s@;%a" sep (expression ctxt) x
+
 (* transform [f = fun g h -> ..] to [f g h = ... ] could be improved *)
 and binding ctxt f {pvb_pat=p; pvb_expr=x; _} =
   (* .pvb_attributes have already been printed by the caller, #bindings *)
-  let rec pp_print_pexp_function f x =
-    if x.pexp_attributes <> [] then pp f "=@;%a" (expression ctxt) x
-    else match x.pexp_desc with
-      | Pexp_fun (label, eo, p, e) ->
-          if label=Nolabel then
-            pp f "%a@ %a" (simple_pattern ctxt) p pp_print_pexp_function e
-          else
-            pp f "%a@ %a"
-              (label_exp ctxt) (label,eo,p) pp_print_pexp_function e
-      | Pexp_newtype (str,e) ->
-          pp f "(type@ %s)@ %a" str.txt pp_print_pexp_function e
-      | _ -> pp f "=@;%a" (expression ctxt) x
-  in
   let tyvars_str tyvars = List.map (fun v -> v.txt) tyvars in
   let is_desugared_gadt p e =
     let gadt_pattern =
@@ -1320,7 +1384,8 @@ and binding ctxt f {pvb_pat=p; pvb_expr=x; _} =
                 (core_type ctxt) ty (expression ctxt) x
           end
       | {ppat_desc=Ppat_var _; ppat_attributes=[]} ->
-          pp f "%a@ %a" (simple_pattern ctxt) p pp_print_pexp_function x
+          pp f "%a@ %a" (simple_pattern ctxt) p
+            (pp_print_pexp_function ctxt "=") x
       | _ ->
           pp f "%a@;=@;%a" (pattern ctxt) p (expression ctxt) x
     end
@@ -1328,7 +1393,19 @@ and binding ctxt f {pvb_pat=p; pvb_expr=x; _} =
 (* [in] is not printed *)
 and bindings ctxt f (rf,l) =
   let binding kwd rf f x =
-    pp f "@[<2>%s %a%a@]%a" kwd rec_flag rf
+    let x, is_local =
+      match x.pvb_expr.pexp_desc with
+      | Pexp_apply
+        ({ pexp_desc = Pexp_extension({txt = "extension.local"}, PStr []) },
+         [Nolabel, sbody]) ->
+         let sattrs, _ = check_local_attr sbody.pexp_attributes in
+         let sbody = {sbody with pexp_attributes = sattrs} in
+         let pattrs, _ = check_local_attr x.pvb_pat.ppat_attributes in
+         let pat = {x.pvb_pat with ppat_attributes = pattrs} in
+         {x with pvb_pat = pat; pvb_expr = sbody}, "local_ "
+      | _ -> x, ""
+    in
+    pp f "@[<2>%s %a%s%a@]%a" kwd rec_flag rf is_local
       (binding ctxt) x (item_attributes ctxt) x.pvb_attributes
   in
   match l with
@@ -1428,7 +1505,7 @@ and structure_item ctxt f x =
         pp f "@[<2>%s %a%a%s %a%a=@;%a@]%a" kwd
           virtual_flag x.pci_virt
           (class_params_def ctxt) ls txt
-          (list (label_exp ctxt)) args
+          (list (label_exp ctxt) ~last:"@ ") args
           (option class_constraint) constr
           (class_expr ctxt) cl
           (item_attributes ctxt) x.pci_attributes
@@ -1448,9 +1525,12 @@ and structure_item ctxt f x =
         (value_description ctxt) vd
         (item_attributes ctxt) vd.pval_attributes
   | Pstr_include incl ->
-      pp f "@[<hov2>include@ %a@]%a"
+      (* Print "include functor" rather than attribute *)
+      let attrs, incl_fun = check_include_functor_attr incl.pincl_attributes in
+      pp f "@[<hov2>include%a@ %a@]%a"
+        maybe_functor incl_fun
         (module_expr ctxt) incl.pincl_mod
-        (item_attributes ctxt) incl.pincl_attributes
+        (item_attributes ctxt) attrs
   | Pstr_recmodule decls -> (* 3.07 *)
       let aux f = function
         | ({pmb_expr={pmod_desc=Pmod_constraint (expr, typ)}} as pmb) ->
@@ -1516,12 +1596,26 @@ and type_def_list ctxt f (rf, exported, l) =
                  (list ~sep:"@," (type_decl "and" Recursive)) xs
 
 and record_declaration ctxt f lbls =
+  let has_attr pld name =
+    List.exists (fun attr -> attr.attr_name.txt = name) pld.pld_attributes
+  in
+  let field_flag f pld =
+    pp f "%a" mutable_flag pld.pld_mutable;
+    if has_attr pld "extension.nonlocal" then pp f "nonlocal_ ";
+    if has_attr pld "extension.global" then pp f "global_ "
+  in
   let type_record_field f pld =
+    let pld_attributes =
+      List.filter (fun attr ->
+        match attr.attr_name.txt with
+        | "extension.nonlocal" | "extension.global" -> false
+        | _ -> true) pld.pld_attributes
+    in
     pp f "@[<2>%a%s:@;%a@;%a@]"
-      mutable_flag pld.pld_mutable
+      field_flag pld
       pld.pld_name.txt
       (core_type ctxt) pld.pld_type
-      (attributes ctxt) pld.pld_attributes
+      (attributes ctxt) pld_attributes
   in
   pp f "{@\n%a}"
     (list type_record_field ~sep:";@\n" )  lbls

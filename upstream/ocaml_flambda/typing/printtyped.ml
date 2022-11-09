@@ -317,6 +317,22 @@ and expression_extra i ppf (x,_,attrs) =
       line i ppf "Texp_newtype \"%s\"\n" s;
       attributes i ppf attrs;
 
+and comprehension i ppf comp_types=
+  List.iter (fun {clauses; guard}  ->
+    List.iter (fun comp_type ->
+      match comp_type with
+      | From_to (s, _, e2, e3, df) ->
+        line i ppf "From_to \"%a\" %a\n" fmt_ident s fmt_direction_flag df;
+        expression i ppf e2;
+        expression i ppf e3
+      | In (p, e2) ->
+        line i ppf "In\n" ;
+        pattern i ppf p;
+        expression i ppf e2)
+    clauses;
+    Option.iter (expression i ppf) guard
+  ) comp_types
+
 and expression i ppf x =
   line i ppf "expression %a\n" fmt_location x.exp_loc;
   attributes i ppf x.exp_attributes;
@@ -327,22 +343,33 @@ and expression i ppf x =
     line i ppf "extra\n";
     List.iter (expression_extra (i+1) ppf) extra;
   end;
+  (match Types.Value_mode.check_const x.exp_mode with
+  | Some Global -> line i ppf "value_mode global\n"
+  | Some Regional -> line i ppf "value_mode regional\n"
+  | Some Local -> line i ppf "value_mode local\n"
+  | None -> line i ppf "value_mode <modevar>\n");
   match x.exp_desc with
-  | Texp_ident (li,_,_) -> line i ppf "Texp_ident %a\n" fmt_path li;
+  | Texp_ident (li,_,_,_) -> line i ppf "Texp_ident %a\n" fmt_path li;
   | Texp_instvar (_, li,_) -> line i ppf "Texp_instvar %a\n" fmt_path li;
   | Texp_constant (c) -> line i ppf "Texp_constant %a\n" fmt_constant c;
   | Texp_let (rf, l, e) ->
       line i ppf "Texp_let %a\n" fmt_rec_flag rf;
       list i value_binding ppf l;
       expression i ppf e;
-  | Texp_function { arg_label = p; param = _; cases; partial = _; } ->
+  | Texp_function { arg_label = p; param = _; cases; partial = _; region } ->
       line i ppf "Texp_function\n";
+      line i ppf "region %b\n" region;
       arg_label i ppf p;
       list i case ppf cases;
-  | Texp_apply (e, l) ->
+  | Texp_apply (e, l, m) ->
       line i ppf "Texp_apply\n";
+      line i ppf "apply_mode %s\n"
+        (match m with
+         | Tail -> "Tail"
+         | Nontail -> "Nontail"
+         | Default -> "Default");
       expression i ppf e;
-      list i label_x_expression ppf l;
+      list i label_x_apply_arg ppf l;
   | Texp_match (e, l, _partial) ->
       line i ppf "Texp_match\n";
       expression i ppf e;
@@ -390,25 +417,37 @@ and expression i ppf x =
       line i ppf "Texp_sequence\n";
       expression i ppf e1;
       expression i ppf e2;
-  | Texp_while (e1, e2) ->
+  | Texp_while {wh_cond; wh_cond_region; wh_body; wh_body_region} ->
       line i ppf "Texp_while\n";
-      expression i ppf e1;
-      expression i ppf e2;
-  | Texp_for (s, _, e1, e2, df, e3) ->
-      line i ppf "Texp_for \"%a\" %a\n" fmt_ident s fmt_direction_flag df;
-      expression i ppf e1;
-      expression i ppf e2;
-      expression i ppf e3;
-  | Texp_send (e, Tmeth_name s) ->
+      line i ppf "cond_region %b\n" wh_cond_region;
+      expression i ppf wh_cond;
+      line i ppf "body_region %b\n" wh_body_region;
+      expression i ppf wh_body;
+  | Texp_list_comprehension(e1, type_comp) ->
+    line i ppf "Texp_list_comprehension\n";
+    expression i ppf e1;
+    comprehension i ppf type_comp
+  | Texp_arr_comprehension(e1, type_comp) ->
+    line i ppf "Texp_arr_comprehension\n";
+    expression i ppf e1;
+    comprehension i ppf type_comp
+  | Texp_for {for_id; for_from; for_to; for_dir; for_body; for_region} ->
+      line i ppf "Texp_for \"%a\" %a\n"
+        fmt_ident for_id fmt_direction_flag for_dir;
+      expression i ppf for_from;
+      expression i ppf for_to;
+      line i ppf "region %b\n" for_region;
+      expression i ppf for_body
+  | Texp_send (e, Tmeth_name s, _) ->
       line i ppf "Texp_send \"%s\"\n" s;
       expression i ppf e
-  | Texp_send (e, Tmeth_val s) ->
+  | Texp_send (e, Tmeth_val s, _) ->
       line i ppf "Texp_send \"%a\"\n" fmt_ident s;
       expression i ppf e
-  | Texp_send (e, Tmeth_ancestor(s, _)) ->
+  | Texp_send (e, Tmeth_ancestor(s, _), _) ->
       line i ppf "Texp_send \"%a\"\n" fmt_ident s;
       expression i ppf e
-  | Texp_new (li, _, _) -> line i ppf "Texp_new %a\n" fmt_path li;
+  | Texp_new (li, _, _, _) -> line i ppf "Texp_new %a\n" fmt_path li;
   | Texp_setinstvar (_, s, _, e) ->
       line i ppf "Texp_setinstvar %a\n" fmt_path s;
       expression i ppf e;
@@ -450,6 +489,11 @@ and expression i ppf x =
       module_expr i ppf o.open_expr;
       attributes i ppf o.open_attributes;
       expression i ppf e;
+  | Texp_probe {name;handler} ->
+      line i ppf "Texp_probe \"%s\"\n" name;
+      expression i ppf handler;
+  | Texp_probe_is_enabled {name} ->
+      line i ppf "Texp_probe_is_enabled \"%s\"\n" name;
 
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_ident x.val_id fmt_location
@@ -621,7 +665,7 @@ and class_expr i ppf x =
   | Tcl_apply (ce, l) ->
       line i ppf "Tcl_apply\n";
       class_expr i ppf ce;
-      list i label_x_expression ppf l;
+      list i label_x_apply_arg ppf l;
   | Tcl_let (rf, l1, l2, ce) ->
       line i ppf "Tcl_let %a\n" fmt_rec_flag rf;
       list i value_binding ppf l1;
@@ -944,10 +988,10 @@ and record_field i ppf = function
   | _, Kept _ ->
       line i ppf "<kept>"
 
-and label_x_expression i ppf (l, e) =
+and label_x_apply_arg i ppf (l, e) =
   line i ppf "<arg>\n";
   arg_label (i+1) ppf l;
-  (match e with None -> () | Some e -> expression (i+1) ppf e)
+  (match e with Omitted _ -> () | Arg e -> expression (i+1) ppf e)
 
 and ident_x_expression_def i ppf (l, e) =
   line i ppf "<def> \"%a\"\n" fmt_ident l;

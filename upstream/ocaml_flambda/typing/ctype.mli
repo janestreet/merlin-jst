@@ -176,6 +176,12 @@ val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * bool
 val instance_label:
         bool -> label_description -> type_expr list * type_expr * type_expr
         (* Same, for a label *)
+val prim_mode :
+        alloc_mode option -> (Primitive.mode * Primitive.native_repr)
+        -> alloc_mode
+val instance_prim_mode:
+        Primitive.description -> type_expr -> type_expr * alloc_mode option
+
 val apply:
         Env.t -> type_expr list -> type_expr -> type_expr list -> type_expr
         (* [apply [p1...pN] t [a1...aN]] match the arguments [ai] to
@@ -230,7 +236,8 @@ val unify_gadt:
 val unify_var: Env.t -> type_expr -> type_expr -> unit
         (* Same as [unify], but allow free univars when first type
            is a variable. *)
-val filter_arrow: Env.t -> type_expr -> arg_label -> type_expr * type_expr
+val filter_arrow: Env.t -> type_expr -> arg_label ->
+                  alloc_mode * type_expr * alloc_mode * type_expr
         (* A special case of unification with [l:'a -> 'b].  Raises
            [Filter_arrow_failed] instead of [Unify]. *)
 val filter_method: Env.t -> string -> type_expr -> type_expr
@@ -385,6 +392,9 @@ val nondep_cltype_declaration:
 (*val correct_abbrev: Env.t -> Path.t -> type_expr list -> type_expr -> unit*)
 val is_contractive: Env.t -> Path.t -> bool
 val normalize_type: type_expr -> unit
+
+val remove_mode_variables: type_expr -> unit
+        (* Ensure mode variables are fully determined *)
 
 val nongen_schema: Env.t -> type_expr -> bool
         (* Check whether the given type scheme contains no non-generic

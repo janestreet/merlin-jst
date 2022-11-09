@@ -116,6 +116,10 @@ module Stdlib : sig
         the [n] first elements of [l] and [after] the remaining ones.
         If [l] has less than [n] elements, raises Invalid_argument. *)
 
+    val map_sharing : ('a -> 'a) -> 'a t -> 'a t
+    (** [map_sharing f l] is [map f l]. If for all elements of the list
+        [f e == e] then [map_sharing f l == l] *)
+
     val is_prefix
        : equal:('a -> 'a -> bool)
       -> 'a list
@@ -171,6 +175,25 @@ module Stdlib : sig
     val print : Format.formatter -> t -> unit
 
     val for_all : (char -> bool) -> t -> bool
+
+    val begins_with : ?from:int -> string -> prefix:string -> bool
+
+    val split_on_string : string -> split_on:string -> string list
+
+    val split_on_chars : string -> split_on:char list -> string list
+
+    (** Splits on the last occurrence of the given character. *)
+    val split_last_exn : string -> split_on:char -> string * string
+
+    val starts_with : prefix:string -> string -> bool
+    val ends_with : suffix:string -> string -> bool
+  end
+
+  module Int : sig
+    include module type of Int
+
+    val min : t -> t -> t
+    val max : t -> t -> t
   end
 
   external compare : 'a -> 'a -> int = "%compare"
@@ -465,11 +488,22 @@ val print_if :
 
 
 type filepath = string
+
+(* CR-someday lmaurer: Retire [modname] in favor of [Compilation_unit.Name.t]
+   and alter [crcs] accordingly (move it into [Compilation_unit] somewhere?). *)
 type modname = string
 type crcs = (modname * Digest.t option) list
 
 type alerts = string Stdlib.String.Map.t
 
+module Bitmap : sig
+  type t
+  val make : int -> t
+  val set : t -> int -> unit
+  val clear : t -> int -> unit
+  val get : t -> int -> bool
+  val iter : (int -> unit) -> t -> unit
+end
 
 module Magic_number : sig
   (** a typical magic number is "Caml1999I011"; it is formed of an
