@@ -50,13 +50,14 @@ if ! git diff --quiet; then
 fi
 
 # Used for patch output
-old_base_rev="$(cat upstream/ocaml_jst/base-rev.txt)"
+old_base_rev="$(cat upstream/ocaml_flambda/base-rev.txt)"
 current_head="$(git symbolic-ref --short HEAD)"
 
-# First, fetch the new ocaml-jst sources and copy into upstream/ocaml_jst
+# First, fetch the new flambda-backend sources (which include ocaml-jst) and
+# copy into upstream/ocaml_flambda
 git fetch "$repository" "$commitish"
 rev=$(git rev-parse FETCH_HEAD)
-cd upstream/ocaml_jst
+cd upstream/ocaml_flambda
 echo $rev > base-rev.txt
 for file in $(git ls-tree --name-only -r HEAD | grep -v base-rev.txt); do
   git show "FETCH_HEAD:$subdirectory/$file" > "$file";
@@ -74,7 +75,7 @@ new_marker="$short_ocaml_repo:$commitish"
 
 # Then patch src/ocaml using the changes you just imported
 for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
-  base=${file#upstream/ocaml_jst/}
+  base=${file#upstream/ocaml_flambda/}
   case $base in
     # If you add new files here, you need to apply the full diff manually once,
     # otherwise the merge won't pick up on old changes!
