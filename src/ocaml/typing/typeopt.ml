@@ -163,21 +163,182 @@ let bigarray_type_kind_and_layout env typ =
       (Pbigarray_unknown, Pbigarray_unknown_layout)
 
 let value_kind env ty =
-  let ty = scrape_ty env ty in
-  if is_immediate (Ctype.immediacy env ty) then Pintval
-  else begin
-    match get_desc ty with
+  let rec loop env ~visited ~depth ~num_nodes_visited ty
+      : int * Lambda.value_kind =
+    let[@inline] cannot_proceed () =
+      Numbers.Int.Set.mem (get_id ty) visited
+        || depth >= 2
+        || num_nodes_visited >= 30
+    in
+    let scty = scrape_ty env ty in
+    match get_desc scty with
+    | _ when is_immediate (Ctype.immediacy env scty) ->
+      num_nodes_visited, Pintval
+    | Tconstr(p, _, _) when Path.same p Predef.path_int ->
+      num_nodes_visited, Pintval
+    | Tconstr(p, _, _) when Path.same p Predef.path_char ->
+      num_nodes_visited, Pintval
     | Tconstr(p, _, _) when Path.same p Predef.path_float ->
-        Pfloatval
+      num_nodes_visited, Pfloatval
     | Tconstr(p, _, _) when Path.same p Predef.path_int32 ->
-        Pboxedintval Pint32
+      num_nodes_visited, Pboxedintval Pint32
     | Tconstr(p, _, _) when Path.same p Predef.path_int64 ->
-        Pboxedintval Pint64
+      num_nodes_visited, Pboxedintval Pint64
     | Tconstr(p, _, _) when Path.same p Predef.path_nativeint ->
-        Pboxedintval Pnativeint
+      num_nodes_visited, Pboxedintval Pnativeint
+    | Tconstr(p, _, _)
+        when (Path.same p Predef.path_array
+              || Path.same p Predef.path_floatarray) ->
+      num_nodes_visited, Parrayval (array_type_kind env ty)
+    | Tconstr(p, _, _) ->
+      if cannot_proceed () then
+        num_nodes_visited, Pgenval
+      else begin
+        let visited = Numbers.Int.Set.add (get_id ty) visited in
+        match (Env.find_type p env).type_kind with
+        | exception Not_found ->
+          num_nodes_visited, Pgenval
+        | Type_variant (constructors, _rep) ->
+          let is_constant (constructor : Types.constructor_declaration) =
+            match constructor.cd_args with
+            | Cstr_tuple [] -> true
+            | _ -> false
+          in
+          if List.for_all is_constant constructors then
+            num_nodes_visited, Pintval
+          else
+            let depth = depth + 1 in
+            let for_one_constructor
+                  (constructor : Types.constructor_declaration)
+                  ~depth ~num_nodes_visited =
+              let num_nodes_visited = num_nodes_visited + 1 in
+              match constructor.cd_args with
+              | Cstr_tuple fields ->
+                let num_nodes_visited, fields =
+                  List.fold_left_map
+                    (fun num_nodes_visited field ->
+                      let num_nodes_visited = num_nodes_visited + 1 in
+                      loop env ~visited ~depth ~num_nodes_visited field)
+                    num_nodes_visited fields
+                in
+                (false, num_nodes_visited), fields
+              | Cstr_record labels ->
+                List.fold_left_map
+                  (fun (is_mutable, num_nodes_visited)
+                       (label:Types.label_declaration) ->
+                      let is_mutable =
+                        match label.ld_mutable with
+                        | Mutable -> true
+                        | Immutable -> is_mutable
+                      in
+                      let num_nodes_visited = num_nodes_visited + 1 in
+                      let num_nodes_visited, field =
+                        loop env ~visited ~depth ~num_nodes_visited
+                          label.ld_type
+                      in
+                      (is_mutable, num_nodes_visited), field)
+                  (false, num_nodes_visited) labels
+            in
+            let result =
+              List.fold_left (fun result constructor ->
+                  match result with
+                  | None -> None
+                  | Some (num_nodes_visited,
+                          next_const, consts, next_tag, non_consts) ->
+                    let (is_mutable, num_nodes_visited), fields =
+                      for_one_constructor constructor ~depth ~num_nodes_visited
+                    in
+                    if is_mutable then None
+                    else if List.compare_length_with fields 0 = 0 then
+                      let consts = next_const :: consts in
+                      Some (num_nodes_visited,
+                        next_const + 1, consts, next_tag, non_consts)
+                    else
+                      let non_consts = (next_tag, fields) :: non_consts in
+                      Some (num_nodes_visited,
+                        next_const, consts, next_tag + 1, non_consts))
+                (Some (num_nodes_visited, 0, [], 0, []))
+                constructors
+            in
+            begin match result with
+            | None -> num_nodes_visited, Pgenval
+            | Some (num_nodes_visited, _, consts, _, non_consts) ->
+              match non_consts with
+              | [] -> assert false  (* See [List.for_all is_constant], above *)
+              | _::_ ->
+                num_nodes_visited, Pvariant { consts; non_consts }
+            end
+        | Type_record (labels, record_representation) ->
+          let depth = depth + 1 in
+          let (is_mutable, num_nodes_visited), fields =
+            List.fold_left_map
+              (fun (is_mutable, num_nodes_visited)
+                   (label:Types.label_declaration) ->
+                 let is_mutable =
+                   match label.ld_mutable with
+                   | Mutable -> true
+                   | Immutable -> is_mutable
+                 in
+                 let num_nodes_visited = num_nodes_visited + 1 in
+                 let num_nodes_visited, field =
+                   loop env ~visited ~depth ~num_nodes_visited label.ld_type
+                  in
+                 (is_mutable, num_nodes_visited), field)
+              (false, num_nodes_visited) labels
+          in
+          if is_mutable then
+            num_nodes_visited, Pgenval
+          else begin match record_representation with
+            | Record_regular ->
+              num_nodes_visited,
+                Pvariant { consts = []; non_consts = [0, fields] }
+            | Record_float ->
+              num_nodes_visited,
+                Pvariant {
+                  consts = [];
+                  non_consts = [
+                    Obj.double_array_tag,
+                    List.map (fun _ -> Pfloatval) fields
+                  ] }
+            | Record_inlined tag ->
+              num_nodes_visited,
+                Pvariant { consts = []; non_consts = [tag, fields] }
+            | Record_unboxed _ ->
+              begin match fields with
+              | [field] -> num_nodes_visited, field
+              | [] | _::_ ->
+                Misc.fatal_error "Records that are [Record_unboxed] should \
+                  have exactly one field"
+              end
+            | Record_extension _ ->
+              num_nodes_visited, Pgenval
+          end
+        | Type_abstract | Type_open -> num_nodes_visited, Pgenval
+      end
+    | Ttuple fields ->
+      if cannot_proceed () then
+        num_nodes_visited, Pgenval
+      else begin
+        let visited = Numbers.Int.Set.add (get_id ty) visited in
+        let depth = depth + 1 in
+        let num_nodes_visited, fields =
+          List.fold_left_map (fun num_nodes_visited field ->
+              let num_nodes_visited = num_nodes_visited + 1 in
+              loop env ~visited ~depth ~num_nodes_visited field)
+            num_nodes_visited
+            fields
+        in
+        num_nodes_visited,
+          Pvariant { consts = []; non_consts = [0, fields] }
+      end
     | _ ->
-        Pgenval
-  end
+      num_nodes_visited, Pgenval
+  in
+  let _num_nodes_visited, value_kind =
+    loop env ~visited:Numbers.Int.Set.empty ~depth:0
+      ~num_nodes_visited:0 ty
+  in
+  value_kind
 
 let function_return_value_kind env ty =
   match is_function_type env ty with
@@ -220,7 +381,7 @@ let classify_lazy_argument : Typedtree.expression ->
        `Other
 
 (*
-let value_kind_union k1 k2 =
-  if k1 = k2 then k1
+let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
+  if Lambda.equal_value_kind k1 k2 then k1
   else Pgenval
 *)

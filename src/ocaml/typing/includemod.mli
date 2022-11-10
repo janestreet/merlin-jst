@@ -92,8 +92,6 @@ module Error: sig
     env: Env.t;
     missings: Types.signature_item list;
     incompatibles: (Ident.t * sigitem_symptom) list;
-    oks: (int * Typedtree.module_coercion) list;
-    leftovers: ((Types.signature_item as 'it) * 'it * int) list
     (** signature items that could not be compared due to type divergence *)
   }
   and sigitem_symptom =
@@ -113,6 +111,7 @@ module Error: sig
   type all =
     | In_Compilation_unit of (string, signature_symptom) diff
     | In_Signature of signature_symptom
+    | In_Include_functor_signature of signature_symptom
     | In_Module_type of module_type_diff
     | In_Module_type_substitution of
         Ident.t * (Types.module_type,module_type_declaration_symptom) diff
@@ -173,6 +172,9 @@ val check_modtype_equiv:
 val signatures: Env.t -> mark:mark ->
   signature -> signature -> module_coercion
 
+val include_functor_signatures : Env.t -> mark:mark ->
+  signature -> signature -> (Ident.t * module_coercion) list
+
 val compunit:
       Env.t -> mark:mark -> string -> signature ->
       string -> signature -> Shape.t -> module_coercion * Shape.t
@@ -182,28 +184,6 @@ val type_declarations:
   Ident.t -> type_declaration -> type_declaration -> unit
 
 val print_coercion: Format.formatter -> module_coercion -> unit
-
-type symptom =
-    Missing_field of Ident.t * Location.t * string (* kind *)
-  | Value_descriptions of
-      Ident.t * value_description * value_description
-      * Includecore.value_mismatch
-  | Type_declarations of Ident.t * type_declaration
-        * type_declaration * Includecore.type_mismatch
-  | Extension_constructors of Ident.t * extension_constructor
-        * extension_constructor * Includecore.extension_constructor_mismatch
-  | Module_types of module_type * module_type
-  | Modtype_infos of Ident.t * modtype_declaration * modtype_declaration
-  | Modtype_permutation of Types.module_type * Typedtree.module_coercion
-  | Interface_mismatch of string * string
-  | Class_type_declarations of
-      Ident.t * class_type_declaration * class_type_declaration *
-      Ctype.class_match_failure list
-  | Class_declarations of
-      Ident.t * class_declaration * class_declaration *
-      Ctype.class_match_failure list
-  | Unbound_module_path of Path.t
-  | Invalid_module_alias of Path.t
 
 type pos =
   | Module of Ident.t

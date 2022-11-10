@@ -177,6 +177,13 @@ let check_virtual loc env virt kind sign =
       | meths, vars ->
           raise(Error(loc, env, Virtual_class(kind, meths, vars)))
 
+let rec check_virtual_clty loc env virt kind clty =
+  match clty with
+  | Cty_constr(_, _, clty) | Cty_arrow(_, _, clty) ->
+      check_virtual_clty loc env virt kind clty
+  | Cty_signature sign ->
+      check_virtual loc env virt kind sign
+
 (* Return the constructor type associated to a class type *)
 let rec constructor_type constr cty =
   match cty with
@@ -185,7 +192,8 @@ let rec constructor_type constr cty =
   | Cty_signature _ ->
       constr
   | Cty_arrow (l, ty, cty) ->
-      Ctype.newty (Tarrow (l, ty, constructor_type constr cty, commu_ok))
+      Ctype.newty (Tarrow ((l, Alloc_mode.global, Alloc_mode.global),
+                           ty, constructor_type constr cty, commu_ok))
 
                 (***********************************)
                 (*  Primitives for typing classes  *)
@@ -248,9 +256,9 @@ let unify_delayed_method_type loc env label ty expected_ty=
       raise(Error(loc, env, Field_type_mismatch ("method", label, trace)))
 
 let type_constraint val_env sty sty' loc =
-  let cty  = transl_simple_type val_env false sty in
+  let cty  = transl_simple_type val_env false Global sty in
   let ty = cty.ctyp_type in
-  let cty' = transl_simple_type val_env false sty' in
+  let cty' = transl_simple_type val_env false Global sty' in
   let ty' = cty'.ctyp_type in
   begin
     try Ctype.unify val_env ty ty' with Ctype.Unify err ->
@@ -290,7 +298,7 @@ let rec class_type_field env sign self_scope ctf =
   | Pctf_val ({txt=lab}, mut, virt, sty) ->
       mkctf_with_attrs
         (fun () ->
-          let cty = transl_simple_type env false sty in
+          let cty = transl_simple_type env false Global sty in
           let ty = cty.ctyp_type in
           add_instance_variable ~strict:false loc env lab mut virt ty sign;
           Tctf_val (lab, mut, virt, cty))
@@ -314,7 +322,7 @@ let rec class_type_field env sign self_scope ctf =
                  ) :: !delayed_meth_specs;
                Tctf_method (lab, priv, virt, returned_cty)
            | _ ->
-               let cty = transl_simple_type env false sty in
+               let cty = transl_simple_type env false Global sty in
                let ty = cty.ctyp_type in
                add_method loc env lab priv virt ty sign;
                Tctf_method (lab, priv, virt, cty))
@@ -338,7 +346,7 @@ and class_signature virt env pcsig self_scope loc =
   (* Introduce a dummy method preventing self type from being closed. *)
   Ctype.add_dummy_method env ~scope:self_scope sign;
 
-  let self_cty = transl_simple_type env false sty in
+  let self_cty = transl_simple_type env false Global sty in
   let self_type = self_cty.ctyp_type in
   begin try
     Ctype.unify env self_type sign.csig_self
@@ -388,7 +396,7 @@ and class_type_aux env virt self_scope scty =
                                                    List.length styl)));
       let ctys = List.map2
         (fun sty ty ->
-          let cty' = transl_simple_type env false sty in
+          let cty' = transl_simple_type env false Global sty in
           let ty' = cty'.ctyp_type in
           begin
            try Ctype.unify env ty' ty with Ctype.Unify err ->
@@ -398,6 +406,8 @@ and class_type_aux env virt self_scope scty =
         )       styl params
       in
       let typ = Cty_constr (path, params, clty) in
+      (* Check for unexpected virtual methods *)
+      check_virtual_clty scty.pcty_loc env virt Class_type typ;
       cltyp (Tcty_constr ( path, lid , ctys)) typ
 
   | Pcty_signature pcsig ->
@@ -406,7 +416,7 @@ and class_type_aux env virt self_scope scty =
       cltyp (Tcty_signature clsig) typ
 
   | Pcty_arrow (l, sty, scty) ->
-      let cty = transl_simple_type env false sty in
+      let cty = transl_simple_type env false Global sty in
       let ty = cty.ctyp_type in
       let ty =
         if Btype.is_optional l
@@ -552,12 +562,11 @@ type first_pass_accummulater =
     concrete_vals : VarSet.t;
     local_meths : MethSet.t;
     local_vals : VarSet.t;
-    vars : Ident.t Vars.t;
-    meths : Ident.t Meths.t; }
+    vars : Ident.t Vars.t; }
 
 let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
   let { rev_fields; val_env; par_env; concrete_meths; concrete_vals;
-        local_meths; local_vals; vars; meths } = acc
+        local_meths; local_vals; vars } = acc
   in
   let loc = cf.pcf_loc in
   let attributes = cf.pcf_attributes in
@@ -612,13 +621,6 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
                   (val_env, par_env, inherited_vars, vars))
                parent_sign.csig_vars (val_env, par_env, [], vars)
            in
-           let meths =
-             Meths.fold
-               (fun label _ meths ->
-                  if Meths.mem label meths then meths
-                  else Meths.add label (Ident.create_local label) meths)
-               parent_sign.csig_meths meths
-           in
            (* Methods available through super *)
            let super_meths =
              MethSet.fold
@@ -641,12 +643,12 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
            in
            let rev_fields = field :: rev_fields in
            { acc with rev_fields; val_env; par_env;
-                      concrete_meths; concrete_vals; vars; meths })
+                      concrete_meths; concrete_vals; vars })
   | Pcf_val (label, mut, Cfk_virtual styp) ->
       with_attrs
         (fun () ->
            if !Clflags.principal then Ctype.begin_def ();
-           let cty = Typetexp.transl_simple_type val_env false styp in
+           let cty = Typetexp.transl_simple_type val_env false Global styp in
            let ty = cty.ctyp_type in
            if !Clflags.principal then begin
              Ctype.end_def ();
@@ -720,18 +722,14 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
       with_attrs
         (fun () ->
            let sty = Ast_helper.Typ.force_poly sty in
-           let cty = transl_simple_type val_env false sty in
+           let cty = transl_simple_type val_env false Global sty in
            let ty = cty.ctyp_type in
            add_method loc val_env label.txt priv Virtual ty sign;
-           let meths =
-             if Meths.mem label.txt meths then meths
-             else Meths.add label.txt (Ident.create_local label.txt) meths
-           in
            let field =
              Virtual_method { label; priv; cty; loc; attributes }
            in
            let rev_fields = field :: rev_fields in
-           { acc with rev_fields; meths })
+           { acc with rev_fields })
 
   | Pcf_method (label, priv, Cfk_concrete (override, expr)) ->
       with_attrs
@@ -764,7 +762,7 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
              | Some sty ->
                  let sty = Ast_helper.Typ.force_poly sty in
                  let cty' =
-                   Typetexp.transl_simple_type val_env false sty
+                   Typetexp.transl_simple_type val_env false Global sty
                  in
                  cty'.ctyp_type
            in
@@ -785,10 +783,6 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
                raise(Error(loc, val_env,
                            Field_type_mismatch ("method", label.txt, err)))
            end;
-           let meths =
-             if Meths.mem label.txt meths then meths
-             else Meths.add label.txt (Ident.create_local label.txt) meths
-           in
            let sdefinition = make_method self_loc cl_num expr in
            let warning_state = Warnings.backup () in
            let field =
@@ -799,7 +793,7 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
            let rev_fields = field :: rev_fields in
            let concrete_meths = MethSet.add label.txt concrete_meths in
            let local_meths = MethSet.add label.txt local_meths in
-           { acc with rev_fields; concrete_meths; local_meths; meths })
+           { acc with rev_fields; concrete_meths; local_meths })
 
   | Pcf_constraint (sty1, sty2) ->
       with_attrs
@@ -837,11 +831,10 @@ and class_fields_first_pass self_loc cl_num sign self_scope
   let local_meths = MethSet.empty in
   let local_vals = VarSet.empty in
   let vars = Vars.empty in
-  let meths = Meths.empty in
   let init_acc =
     { rev_fields; val_env; par_env;
       concrete_meths; concrete_vals;
-      local_meths; local_vals; vars; meths }
+      local_meths; local_vals; vars }
   in
   let acc =
     Builtin_attributes.warning_scope []
@@ -850,7 +843,7 @@ and class_fields_first_pass self_loc cl_num sign self_scope
           (class_field_first_pass self_loc cl_num sign self_scope)
           init_acc cfs)
   in
-  List.rev acc.rev_fields, acc.vars, acc.meths
+  List.rev acc.rev_fields, acc.vars
 
 and class_field_second_pass cl_num sign met_env field =
   let mkcf desc loc attrs =
@@ -916,7 +909,8 @@ and class_field_second_pass cl_num sign met_env field =
            let self_type = sign.Types.csig_self in
            let meth_type =
              mk_expected
-               (Btype.newgenty (Tarrow(Nolabel, self_type, ty, commu_ok)))
+               (Btype.newgenty (Tarrow((Nolabel, Alloc_mode.global, Alloc_mode.global),
+                                       self_type, ty, commu_ok)))
            in
            Ctype.raise_nongen_level ();
            let texp = type_expect met_env sdefinition meth_type in
@@ -935,7 +929,8 @@ and class_field_second_pass cl_num sign met_env field =
            let self_type = sign.Types.csig_self in
            let meth_type =
              mk_expected
-               (Ctype.newty (Tarrow (Nolabel, self_type, unit_type, commu_ok)))
+               (Ctype.newty (Tarrow ((Nolabel, Alloc_mode.global, Alloc_mode.global),
+                                     self_type, unit_type, commu_ok)))
            in
            let texp = type_expect met_env sexpr meth_type in
            Ctype.end_def ();
@@ -969,6 +964,8 @@ and class_fields_second_pass cl_num sign met_env fields =
 and class_structure cl_num virt self_scope final val_env met_env loc
   { pcstr_self = spat; pcstr_fields = str } =
   (* Environment for substructures *)
+  let val_env = Env.add_lock Value_mode.global val_env in
+  let met_env = Env.add_lock Value_mode.global met_env in
   let par_env = met_env in
 
   (* Location of self. Used for locations of self arguments *)
@@ -1003,7 +1000,7 @@ and class_structure cl_num virt self_scope final val_env met_env loc
   end;
 
   (* Typing of class fields *)
-  let (fields, vars, meths) =
+  let (fields, vars) =
     class_fields_first_pass self_loc cl_num sign self_scope
            val_env par_env str
   in
@@ -1015,6 +1012,13 @@ and class_structure cl_num virt self_scope final val_env met_env loc
   (* Update the class signature *)
   update_class_signature loc val_env
     ~warn_implicit_public:false virt kind sign;
+
+  let meths =
+    Meths.fold
+      (fun label _ meths ->
+         Meths.add label (Ident.create_local label) meths)
+      sign.csig_meths Meths.empty
+  in
 
   (* Close the signature if it is final *)
   begin match final with
@@ -1066,7 +1070,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
       if Path.same decl.cty_path unbound_class then
         raise(Error(scl.pcl_loc, val_env, Unbound_class_2 lid.txt));
       let tyl = List.map
-          (fun sty -> transl_simple_type val_env false sty)
+          (fun sty -> transl_simple_type val_env false Global sty)
           styl
       in
       let (params, clty) =
@@ -1087,6 +1091,8 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
            try Ctype.unify val_env ty' ty with Ctype.Unify err ->
              raise(Error(cty'.ctyp_loc, val_env, Parameter_mismatch err)))
         tyl params;
+      (* Check for unexpected virtual methods *)
+      check_virtual_clty scl.pcl_loc val_env virt Class clty';
       let cl =
         rc {cl_desc = Tcl_ident (path, lid, tyl);
             cl_loc = scl.pcl_loc;
@@ -1161,9 +1167,11 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
             let vd = Env.find_value path val_env' in
             (id,
              {exp_desc =
-              Texp_ident(path, mknoloc (Longident.Lident (Ident.name id)), vd);
+              Texp_ident(path, mknoloc (Longident.Lident (Ident.name id)), vd,
+                         Id_value);
               exp_loc = Location.none; exp_extra = [];
               exp_type = Ctype.instance vd.val_type;
+              exp_mode = Value_mode.global;
               exp_attributes = []; (* check *)
               exp_env = val_env'})
           end
@@ -1179,6 +1187,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
         Typecore.check_partial val_env pat.pat_type pat.pat_loc
           [{c_lhs = pat; c_guard = None; c_rhs = dummy}]
       in
+      let val_env' = Env.add_lock Value_mode.global val_env' in
       Ctype.raise_nongen_level ();
       let cl = class_expr cl_num val_env' met_env virt self_scope scl' in
       Ctype.end_def ();
@@ -1229,18 +1238,18 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
             let name = Btype.label_name l
             and optional = Btype.is_optional l in
             let use_arg sarg l' =
-              Some (
+              Arg (
                 if not optional || Btype.is_optional l' then
                   type_argument val_env sarg ty ty0
                 else
                   let ty' = extract_option_type val_env ty
                   and ty0' = extract_option_type val_env ty0 in
                   let arg = type_argument val_env sarg ty' ty0' in
-                  option_some val_env arg
+                  option_some val_env arg Value_mode.global
               )
             in
             let eliminate_optional_arg () =
-              Some (option_none val_env ty0 Location.none)
+              Arg (option_none val_env ty0 Value_mode.global Location.none)
             in
             let remaining_sargs, arg =
               if ignore_labels then begin
@@ -1271,10 +1280,18 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                     sargs,
                     if Btype.is_optional l && List.mem_assoc Nolabel sargs then
                       eliminate_optional_arg ()
-                    else
-                      None
+                    else begin
+                      let mode_closure = Alloc_mode.global in
+                      let mode_arg = Alloc_mode.global in
+                      let mode_ret = Alloc_mode.global in
+                      Omitted { mode_closure; mode_arg; mode_ret }
+                    end
             in
-            let omitted = if arg = None then (l,ty0) :: omitted else omitted in
+            let omitted =
+              match arg with
+              | Omitted _ -> (l,ty0) :: omitted
+              | Arg _ -> omitted
+            in
             type_args ((l,arg)::args) omitted ty_fun ty_fun0 remaining_sargs
         | _ ->
             match sargs with
@@ -1304,16 +1321,21 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
         Typecore.type_let In_class_def val_env rec_flag sdefs in
       let (vals, met_env) =
         List.fold_right
-          (fun (id, _id_loc, _typ) (vals, met_env) ->
+          (fun (id, modes) (vals, met_env) ->
+             List.iter
+               (fun (loc, mode) -> Typecore.escape ~loc ~env:val_env mode)
+               modes;
              let path = Pident id in
              (* do not mark the value as used *)
              let vd = Env.find_value path val_env in
              Ctype.begin_def ();
              let expr =
                {exp_desc =
-                Texp_ident(path, mknoloc(Longident.Lident (Ident.name id)),vd);
+                Texp_ident(path, mknoloc(Longident.Lident (Ident.name id)),vd,
+                           Id_value);
                 exp_loc = Location.none; exp_extra = [];
                 exp_type = Ctype.instance vd.val_type;
+                exp_mode = Value_mode.global;
                 exp_attributes = [];
                 exp_env = val_env;
                }
@@ -1332,7 +1354,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
              ((id', expr)
               :: vals,
               Env.add_value id' desc met_env))
-          (let_bound_idents_full defs)
+          (let_bound_idents_with_modes defs)
           ([], met_env)
       in
       let cl = class_expr cl_num val_env met_env virt self_scope scl' in
@@ -1407,7 +1429,8 @@ let rec approx_declaration cl =
       let arg =
         if Btype.is_optional l then Ctype.instance var_option
         else Ctype.newvar () in
-      Ctype.newty (Tarrow (l, arg, approx_declaration cl, commu_ok))
+      Ctype.newty (Tarrow ((l, Alloc_mode.global, Alloc_mode.global),
+                           arg, approx_declaration cl, commu_ok))
   | Pcl_let (_, _, cl) ->
       approx_declaration cl
   | Pcl_constraint (cl, _) ->
@@ -1420,7 +1443,8 @@ let rec approx_description ct =
       let arg =
         if Btype.is_optional l then Ctype.instance var_option
         else Ctype.newvar () in
-      Ctype.newty (Tarrow (l, arg, approx_description ct, commu_ok))
+      Ctype.newty (Tarrow ((l, Alloc_mode.global, Alloc_mode.global),
+                           arg, approx_description ct, commu_ok))
   | _ -> Ctype.newvar ()
 
 (*******************************)

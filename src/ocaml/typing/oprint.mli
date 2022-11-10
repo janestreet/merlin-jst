@@ -18,7 +18,7 @@ open Outcometree
 
 val out_ident : (formatter -> out_ident -> unit) ref
 val out_value : (formatter -> out_value -> unit) ref
-val out_label : (formatter -> string * bool * out_type -> unit) ref
+val out_label : (formatter -> string * out_mutable_or_global * out_type -> unit) ref
 val out_type : (formatter -> out_type -> unit) ref
 val out_constr : (formatter -> out_constructor -> unit) ref
 val out_class_type : (formatter -> out_class_type -> unit) ref

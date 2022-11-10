@@ -710,7 +710,16 @@ let rec module_type ~expansion_token ~eqmode ~env ~before ~ctx diff =
       functor_params ~expansion_token ~env ~before ~ctx d
   | _ ->
       let inner = if eqmode then eq_module_types else module_types in
-      let next = dwith_context_and_elision ctx inner diff in
+      let next =
+        match diff.symptom with
+        | Mt_core _ ->
+            (* In those cases, the refined error messages for the current error
+               will at most add some minor comments on the current error.
+               It is thus better to avoid eliding the current error message.
+            *)
+            dwith_context ctx (inner diff)
+        | _ -> dwith_context_and_elision ctx inner diff
+      in
       let before = next :: before in
       module_type_symptom ~eqmode ~expansion_token ~env ~before ~ctx
         diff.symptom
@@ -866,6 +875,8 @@ let all env = function
   | In_Module_type_substitution (id,diff) ->
       module_type_subst ~env id diff
   | In_Signature diff ->
+      signature ~expansion_token:true ~before:[] ~env ~ctx:[] diff
+  | In_Include_functor_signature diff ->
       signature ~expansion_token:true ~before:[] ~env ~ctx:[] diff
   | In_Expansion cmts ->
       match core_module_type_symptom cmts with

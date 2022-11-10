@@ -99,6 +99,7 @@ let keyword_table : keywords =
     "fun", FUN;
     "function", FUNCTION;
     "functor", FUNCTOR;
+    "global_", GLOBAL;
     "if", IF;
     "in", IN;
     "include", INCLUDE;
@@ -106,11 +107,13 @@ let keyword_table : keywords =
     "initializer", INITIALIZER;
     "lazy", LAZY;
     "let", LET;
+    "local_", LOCAL;
     "match", MATCH;
     "method", METHOD;
     "module", MODULE;
     "mutable", MUTABLE;
     "new", NEW;
+    "nonlocal_", NONLOCAL;
     "nonrec", NONREC;
     "object", OBJECT;
     "of", OF;
@@ -142,6 +145,14 @@ let keyword_table : keywords =
 ]
 
 let keywords l = create_hashtable 11 l
+
+let lookup_keyword name =
+  match Hashtbl.find keyword_table name with
+  | kw -> kw
+  | exception Not_found ->
+     LIDENT name
+
+(* To buffer string literals *)
 
 let list_keywords =
   let add_kw str _tok kws = str :: kws in
@@ -262,7 +273,10 @@ let keyword_or state s default =
       with Not_found -> try Hashtbl.find keyword_table s
   with Not_found -> default
 
-let is_keyword name = Hashtbl.mem keyword_table name
+let is_keyword name =
+  match lookup_keyword name with
+  | LIDENT _ -> false
+  | _ -> true
 
 let check_label_name lexbuf name =
   if is_keyword name
@@ -438,9 +452,7 @@ rule token state = parse
   | lowercase identchar * as name
     { return (try Hashtbl.find state.keywords name
               with Not_found ->
-              try Hashtbl.find keyword_table name
-              with Not_found ->
-                LIDENT name) }
+              lookup_keyword name) }
   | lowercase_latin1 identchar_latin1 * as name
       { warn_latin1 lexbuf; return (LIDENT name) }
   | uppercase identchar * as name

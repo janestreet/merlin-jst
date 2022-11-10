@@ -33,12 +33,12 @@ val instance_poly_univars :
      type scheme (i.e. variables become Tvar rather than Tunivar) *)
 
 val transl_simple_type:
-        Env.t -> ?univars:poly_univars -> bool -> Parsetree.core_type
-        -> Typedtree.core_type
+        Env.t -> ?univars:poly_univars -> bool -> alloc_mode_const
+        -> Parsetree.core_type -> Typedtree.core_type
 val transl_simple_type_univars:
         Env.t -> Parsetree.core_type -> Typedtree.core_type
 val transl_simple_type_delayed
-  :  Env.t
+  :  Env.t -> alloc_mode_const
   -> Parsetree.core_type
   -> Typedtree.core_type * type_expr * (unit -> unit)
         (* Translate a type, but leave type variables unbound. Returns
@@ -77,6 +77,7 @@ type error =
   | Method_mismatch of string * type_expr * type_expr
   | Opened_object of Path.t option
   | Not_an_object of type_expr
+  | Local_not_enabled
 
 exception Error of Location.t * Env.t * error
 

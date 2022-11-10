@@ -24,6 +24,9 @@ type primitive_mismatch =
   | Name
   | Arity
   | No_alloc of position
+  | Builtin
+  | Effects
+  | Coeffects
   | Native_name
   | Result_repr
   | Argument_repr of int
@@ -46,6 +49,7 @@ type privacy_mismatch =
 type label_mismatch =
   | Type of Errortrace.equality_error
   | Mutability of position
+  | Nonlocality of position * bool
 
 type record_change =
   (Types.label_declaration as 'ld, 'ld, label_mismatch) Diffing_with_keys.change

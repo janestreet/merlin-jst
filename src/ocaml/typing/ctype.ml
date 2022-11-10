@@ -22,6 +22,7 @@ open Btype
 open Errortrace
 
 open Local_store
+module Int = Misc.Stdlib.Int
 
 (*
    Type manipulation after type inference
@@ -414,6 +415,22 @@ let rec filter_row_fields erase = function
           link_row_field_ext ~inside:f rf_absent; fi
       | _ -> p :: fi
 
+
+(* Ensure all mode variables are fully determined *)
+let remove_mode_variables ty =
+  let visited = ref TypeSet.empty in
+  let rec go ty =
+    if TypeSet.mem ty !visited then () else begin
+      visited := TypeSet.add ty !visited;
+      match get_desc ty with
+      | Tarrow ((_,marg,mret),targ,tret,_) ->
+         let _ = Alloc_mode.constrain_lower marg in
+         let _ = Alloc_mode.constrain_lower mret in
+         go targ; go tret
+      | _ -> iter_type_expr go ty
+    end
+  in go ty
+
                     (**************************************)
                     (*  Check genericity of type schemes  *)
                     (**************************************)
@@ -486,6 +503,7 @@ let free_variables ?env ty =
   tl
 
 let closed_type ty =
+  remove_mode_variables ty;
   match free_vars ty with
       []           -> ()
   | (v, real) :: _ -> raise (Non_closed (v, real))
@@ -1406,6 +1424,42 @@ let instance_label fixed lbl =
     (vars, ty_arg, ty_res)
   )
 
+let prim_mode mvar = function
+  | Primitive.Prim_global, _ -> Alloc_mode.global
+  | Primitive.Prim_local, _ -> Alloc_mode.local
+  | Primitive.Prim_poly, _ ->
+    match mvar with
+    | Some mvar -> mvar
+    | None -> assert false
+
+let rec instance_prim_locals locals mvar macc finalret ty =
+  match locals, get_desc ty with
+  | l :: locals, Tarrow ((lbl,_,mret),arg,ret,commu) ->
+     let marg = prim_mode (Some mvar) l in
+     let macc = Alloc_mode.join [marg; mret; macc] in
+     let mret =
+       match locals with
+       | [] -> finalret
+       | _ :: _ -> macc (* curried arrow *)
+     in
+     let ret = instance_prim_locals locals mvar macc finalret ret in
+     newty2 ~level:(get_level ty) (Tarrow ((lbl,marg,mret),arg,ret, commu))
+  | _ :: _, _ -> assert false
+  | [], _ ->
+     ty
+
+let instance_prim_mode (desc : Primitive.description) ty =
+  let is_poly = function Primitive.Prim_poly, _ -> true | _ -> false in
+  if is_poly desc.prim_native_repr_res ||
+       List.exists is_poly desc.prim_native_repr_args then
+    let mode = Alloc_mode.newvar () in
+    let finalret = prim_mode (Some mode) desc.prim_native_repr_res in
+    instance_prim_locals desc.prim_native_repr_args
+      mode Alloc_mode.global finalret ty,
+    Some mode
+  else
+    ty, None
+
 (**** Instantiation with parameter substitution ****)
 
 (* NB: since this is [unify_var], it raises [Unify], not [Unify_trace] *)
@@ -1540,7 +1594,7 @@ let expand_abbrev_gen kind find_type_expansion env ty =
             (* For gadts, remember type as non exportable *)
             (* The ambiguous level registered for ty' should be the highest *)
             (* if !trace_gadt_instances then begin *)
-            let scope = Int.max lv (get_scope ty) in
+            let scope = Misc.Stdlib.Int.max lv (get_scope ty) in
             update_scope scope ty;
             update_scope scope ty';
             ty'
@@ -2232,7 +2286,7 @@ let rec mcomp type_pairs env t1 t2 =
         | (Tvar _, _)
         | (_, Tvar _)  ->
             ()
-        | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _))
+        | (Tarrow ((l1,_,_), t1, u1, _), Tarrow ((l2,_,_), t2, u2, _))
           when l1 = l2 || not (is_optional l1 || is_optional l2) ->
             mcomp type_pairs env t1 t2;
             mcomp type_pairs env u1 u2;
@@ -2395,7 +2449,8 @@ and mcomp_record_description type_pairs env =
     | l1 :: xs, l2 :: ys ->
         mcomp type_pairs env l1.ld_type l2.ld_type;
         if Ident.name l1.ld_id = Ident.name l2.ld_id &&
-           l1.ld_mutable = l2.ld_mutable
+           l1.ld_mutable = l2.ld_mutable &&
+           l1.ld_global = l2.ld_global
         then iter xs ys
         else raise Incompatible
     | [], [] -> ()
@@ -2530,6 +2585,10 @@ let unify_package env unify_list lv1 p1 fl1 lv2 p2 fl2 =
   || !package_subtype env p1 fl1 p2 fl2
   && !package_subtype env p2 fl2 p1 fl1 then () else raise Not_found
 
+let unify_alloc_mode_for tr_exn a b =
+  match Alloc_mode.equate a b with
+  | Ok () -> ()
+  | Error () -> raise_unexplained_for tr_exn
 
 (* force unification in Reither when one side has a non-conjunctive type *)
 let rigid_variants = ref false
@@ -2711,9 +2770,14 @@ and unify3 env t1 t1' t2 t2' =
     end;
     try
       begin match (d1, d2) with
-        (Tarrow (l1, t1, u1, c1), Tarrow (l2, t2, u2, c2)) when l1 = l2 ||
-        (!Clflags.classic || !umode = Pattern) &&
-        not (is_optional l1 || is_optional l2) ->
+        (Tarrow ((l1,a1,r1), t1, u1, c1),
+         Tarrow ((l2,a2,r2), t2, u2, c2))
+           when
+             (l1 = l2 ||
+              (!Clflags.classic || !umode = Pattern) &&
+               not (is_optional l1 || is_optional l2)) ->
+          unify_alloc_mode_for Unify a1 a2;
+          unify_alloc_mode_for Unify r1 r2;
           unify  env t1 t2; unify env  u1 u2;
           begin match is_commu_ok c1, is_commu_ok c2 with
           | false, true -> set_commu_ok c1
@@ -3206,13 +3270,15 @@ exception Filter_arrow_failed of filter_arrow_failure
 let filter_arrow env t l =
   let function_type level =
     let t1 = newvar2 level and t2 = newvar2 level in
-    let t' = newty2 ~level (Tarrow (l, t1, t2, commu_ok)) in
-    t', t1, t2
+    let marg = Alloc_mode.newvar () in
+    let mret = Alloc_mode.newvar () in
+    let t' = newty2 ~level (Tarrow ((l,marg,mret), t1, t2, commu_ok)) in
+    t', marg, t1, mret, t2
   in
   let t =
     try expand_head_trace env t
     with Unify_trace trace ->
-      let t', _, _ = function_type (get_level t) in
+      let t', _, _, _, _ = function_type (get_level t) in
       raise (Filter_arrow_failed
                (Unification_error
                   (expand_to_unification_error
@@ -3220,13 +3286,13 @@ let filter_arrow env t l =
                      (Diff { got = t'; expected = t } :: trace))))
   in
   match get_desc t with
-  | Tvar _ ->
-      let t', t1, t2 = function_type (get_level t) in
+    Tvar _ ->
+      let t', marg, t1, mret, t2 = function_type (get_level t) in
       link_type t t';
-      (t1, t2)
-  | Tarrow(l', t1, t2, _) ->
+      (marg, t1, mret, t2)
+  | Tarrow((l', marg, mret), t1, t2, _) ->
       if l = l' || !Clflags.classic && l = Nolabel && not (is_optional l')
-      then (t1, t2)
+      then (marg, t1, mret, t2)
       else raise (Filter_arrow_failed
                     (Label_mismatch
                        { got = l; expected = l'; expected_type = t }))
@@ -3619,12 +3685,65 @@ let moregen_occur env level ty =
   occur_univar_for Moregen env ty;
   update_level_for Moregen env level ty
 
+type moregen_pairs =
+  { invariant_pairs : TypePairs.t;
+    covariant_pairs : TypePairs.t;
+    contravariant_pairs : TypePairs.t;
+    bivariant_pairs : TypePairs.t; }
+
+let fresh_moregen_pairs () =
+  { invariant_pairs = TypePairs.create 13;
+    covariant_pairs = TypePairs.create 13;
+    contravariant_pairs = TypePairs.create 13;
+    bivariant_pairs = TypePairs.create 13; }
+
+type moregen_variance =
+  | Invariant
+  | Covariant
+  | Contravariant
+  | Bivariant
+
+let neg_variance = function
+  | Invariant -> Invariant
+  | Covariant -> Contravariant
+  | Contravariant -> Covariant
+  | Bivariant -> Bivariant
+
+let compose_variance variance v =
+  match variance with
+  | Invariant -> Invariant
+  | Bivariant -> Bivariant
+  | Covariant | Contravariant ->
+    match Variance.get_upper v with
+    | true, true -> Invariant
+    | false, false -> Bivariant
+    | false, true -> neg_variance variance
+    | true, false -> variance
+
+let relevant_pairs pairs v =
+  match v with
+  | Invariant -> pairs.invariant_pairs
+  | Covariant -> pairs.covariant_pairs
+  | Contravariant -> pairs.contravariant_pairs
+  | Bivariant -> pairs.bivariant_pairs
+
+let moregen_alloc_mode v a1 a2 =
+  match
+    match v with
+    | Invariant -> Alloc_mode.equate a1 a2
+    | Covariant -> Alloc_mode.submode a1 a2
+    | Contravariant -> Alloc_mode.submode a2 a1
+    | Bivariant -> Ok ()
+  with
+  | Ok () -> ()
+  | Error () -> raise_unexplained_for Moregen
+
 let may_instantiate inst_nongen t1 =
   let level = get_level t1 in
   if inst_nongen then level <> generic_level - 1
                  else level =  generic_level
 
-let rec moregen inst_nongen type_pairs env t1 t2 =
+let rec moregen inst_nongen variance type_pairs env t1 t2 =
   if eq_type t1 t2 then () else
 
   try
@@ -3641,44 +3760,59 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
         let t2' = expand_head env t2 in
         (* Expansion may have changed the representative of the types... *)
         if eq_type t1' t2' then () else
-        if not (TypePairs.mem type_pairs (t1', t2')) then begin
-          TypePairs.add type_pairs (t1', t2');
+        let pairs = relevant_pairs type_pairs variance in
+        if not (TypePairs.mem pairs (t1', t2')) then begin
+          TypePairs.add pairs (t1', t2');
           match (get_desc t1', get_desc t2') with
             (Tvar _, _) when may_instantiate inst_nongen t1' ->
               moregen_occur env (get_level t1') t2;
               update_scope_for Moregen (get_scope t1') t2;
               link_type t1' t2
-          | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
-            || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
-              moregen inst_nongen type_pairs env t1 t2;
-              moregen inst_nongen type_pairs env u1 u2
+          | (Tarrow ((l1,a1,r1), t1, u1, _),
+             Tarrow ((l2,a2,r2), t2, u2, _)) when
+               (l1 = l2
+                || !Clflags.classic && not (is_optional l1 || is_optional l2)) ->
+              moregen inst_nongen (neg_variance variance) type_pairs env t1 t2;
+              moregen inst_nongen variance type_pairs env u1 u2;
+              moregen_alloc_mode (neg_variance variance) a1 a2;
+              moregen_alloc_mode variance r1 r2
           | (Ttuple tl1, Ttuple tl2) ->
-              moregen_list inst_nongen type_pairs env tl1 tl2
+              moregen_list inst_nongen variance type_pairs env tl1 tl2
           | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _))
-                when Path.same p1 p2 ->
-              moregen_list inst_nongen type_pairs env tl1 tl2
+                when Path.same p1 p2 -> begin
+              match variance with
+              | Invariant | Bivariant ->
+                  moregen_list inst_nongen variance type_pairs env tl1 tl2
+              | _ ->
+                match Env.find_type p1 env with
+                | decl ->
+                    moregen_param_list inst_nongen variance type_pairs env
+                      decl.type_variance tl1 tl2
+                | exception Not_found ->
+                    moregen_list inst_nongen Invariant type_pairs env tl1 tl2
+            end
           | (Tpackage (p1, fl1), Tpackage (p2, fl2)) ->
               begin try
-                unify_package env (moregen_list inst_nongen type_pairs env)
+                unify_package env (moregen_list inst_nongen variance type_pairs env)
                   (get_level t1') p1 fl1 (get_level t2') p2 fl2
               with Not_found -> raise_unexplained_for Moregen
               end
           | (Tnil,  Tconstr _ ) -> raise_for Moregen (Obj (Abstract_row Second))
           | (Tconstr _,  Tnil ) -> raise_for Moregen (Obj (Abstract_row First))
           | (Tvariant row1, Tvariant row2) ->
-              moregen_row inst_nongen type_pairs env row1 row2
+              moregen_row inst_nongen variance type_pairs env row1 row2
           | (Tobject (fi1, _nm1), Tobject (fi2, _nm2)) ->
-              moregen_fields inst_nongen type_pairs env fi1 fi2
+              moregen_fields inst_nongen variance type_pairs env fi1 fi2
           | (Tfield _, Tfield _) ->           (* Actually unused *)
-              moregen_fields inst_nongen type_pairs env
+              moregen_fields inst_nongen variance type_pairs env
                 t1' t2'
           | (Tnil, Tnil) ->
               ()
           | (Tpoly (t1, []), Tpoly (t2, [])) ->
-              moregen inst_nongen type_pairs env t1 t2
+              moregen inst_nongen variance type_pairs env t1 t2
           | (Tpoly (t1, tl1), Tpoly (t2, tl2)) ->
               enter_poly_for Moregen env univar_pairs t1 tl1 t2 tl2
-                (moregen inst_nongen type_pairs env)
+                (moregen inst_nongen variance type_pairs env)
           | (Tunivar _, Tunivar _) ->
               unify_univar_for Moregen t1' t2' !univar_pairs
           | (_, _) ->
@@ -3688,12 +3822,21 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
     raise_trace_for Moregen (Diff {got = t1; expected = t2} :: trace)
 
 
-and moregen_list inst_nongen type_pairs env tl1 tl2 =
+and moregen_list inst_nongen variance type_pairs env tl1 tl2 =
   if List.length tl1 <> List.length tl2 then
     raise_unexplained_for Moregen;
-  List.iter2 (moregen inst_nongen type_pairs env) tl1 tl2
+  List.iter2 (moregen inst_nongen variance type_pairs env) tl1 tl2
 
-and moregen_fields inst_nongen type_pairs env ty1 ty2 =
+and moregen_param_list inst_nongen variance type_pairs env vl tl1 tl2 =
+  match vl, tl1, tl2 with
+  | [], [], [] -> ()
+  | v :: vl, t1 :: tl1, t2 :: tl2 ->
+    let param_variance = compose_variance variance v in
+    moregen inst_nongen param_variance type_pairs env t1 t2;
+    moregen_param_list inst_nongen variance type_pairs env vl tl1 tl2
+  | _, _, _ -> raise_unexplained_for Moregen
+
+and moregen_fields inst_nongen variance type_pairs env ty1 ty2 =
   let (fields1, rest1) = flatten_fields ty1
   and (fields2, rest2) = flatten_fields ty2 in
   let (pairs, miss1, miss2) = associate_fields fields1 fields2 in
@@ -3702,13 +3845,13 @@ and moregen_fields inst_nongen type_pairs env ty1 ty2 =
     | (n, _, _) :: _ -> raise_for Moregen (Obj (Missing_field (Second, n)))
     | [] -> ()
   end;
-  moregen inst_nongen type_pairs env rest1
+  moregen inst_nongen variance type_pairs env rest1
     (build_fields (get_level ty2) miss2 rest2);
   List.iter
     (fun (name, k1, t1, k2, t2) ->
        (* The below call should never throw [Public_method_to_private_method] *)
        moregen_kind k1 k2;
-       try moregen inst_nongen type_pairs env t1 t2 with Moregen_trace trace ->
+       try moregen inst_nongen variance type_pairs env t1 t2 with Moregen_trace trace ->
          raise_trace_for Moregen
            (incompatible_fields ~name ~got:t1 ~expected:t2 :: trace)
     )
@@ -3721,7 +3864,7 @@ and moregen_kind k1 k2 =
   | (Fpublic, Fprivate)              -> raise Public_method_to_private_method
   | (Fabsent, _) | (_, Fabsent)      -> assert false
 
-and moregen_row inst_nongen type_pairs env row1 row2 =
+and moregen_row inst_nongen variance type_pairs env row1 row2 =
   let Row {fields = row1_fields; more = rm1; closed = row1_closed} =
     row_repr row1 in
   let Row {fields = row2_fields; more = rm2; closed = row2_closed;
@@ -3762,7 +3905,7 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
       (* This [link_type] has to be undone if the rest of the function fails *)
       link_type rm1 ext
   | Tconstr _, Tconstr _ ->
-      moregen inst_nongen type_pairs env rm1 rm2
+      moregen inst_nongen variance type_pairs env rm1 rm2
   | _ -> raise_unexplained_for Moregen
   end;
   try
@@ -3773,7 +3916,7 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
          (* Both matching [Rpresent]s *)
          | Rpresent(Some t1), Rpresent(Some t2) -> begin
              try
-               moregen inst_nongen type_pairs env t1 t2
+               moregen inst_nongen variance type_pairs env t1 t2
              with Moregen_trace trace ->
                raise_trace_for Moregen
                  (Variant (Incompatible_types_for l) :: trace)
@@ -3788,11 +3931,11 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
                    rf_either [] ~use_ext_of:f2 ~no_arg:c2 ~matched:m2 in
                  link_row_field_ext ~inside:f1 f2';
                  if List.length tl1 = List.length tl2 then
-                   List.iter2 (moregen inst_nongen type_pairs env) tl1 tl2
+                   List.iter2 (moregen inst_nongen variance type_pairs env) tl1 tl2
                  else match tl2 with
                    | t2 :: _ ->
                      List.iter
-                       (fun t1 -> moregen inst_nongen type_pairs env t1 t2)
+                       (fun t1 -> moregen inst_nongen variance type_pairs env t1 t2)
                        tl1
                    | [] -> if tl1 <> [] then raise_unexplained_for Moregen
                end
@@ -3805,7 +3948,7 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
              try
                link_row_field_ext ~inside:f1 f2;
                List.iter
-                 (fun t1 -> moregen inst_nongen type_pairs env t1 t2)
+                 (fun t1 -> moregen inst_nongen variance type_pairs env t1 t2)
                  tl1
              with Moregen_trace trace ->
                raise_trace_for Moregen
@@ -3838,11 +3981,6 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
     (* Undo [link_type] if we failed *)
     set_type_desc rm1 md1; raise exn
 
-(* Must empty univar_pairs first *)
-let moregen inst_nongen type_pairs env patt subj =
-  univar_pairs := [];
-  moregen inst_nongen type_pairs env patt subj
-
 (*
    Non-generic variable can be instantiated only if [inst_nongen] is
    true. So, [inst_nongen] should be set to false if the subject might
@@ -3865,11 +4003,12 @@ let moregeneral env inst_nongen pat_sch subj_sch =
   current_level := generic_level;
   (* Duplicate generic variables *)
   let patt = instance pat_sch in
-
   Misc.try_finally
     (fun () ->
        try
-         moregen inst_nongen (TypePairs.create 13) env patt subj
+         univar_pairs := [];
+         let type_pairs = fresh_moregen_pairs () in
+         moregen inst_nongen Covariant type_pairs env patt subj
        with Moregen_trace trace ->
          (* Moregen splits the generic level into two finer levels:
             [generic_level] and [generic_level - 1].  In order to properly
@@ -3998,10 +4137,14 @@ let rec eqtype rename type_pairs subst env t1 t2 =
           match (get_desc t1', get_desc t2') with
             (Tvar _, Tvar _) when rename ->
               eqtype_subst type_pairs subst t1' t2'
-          | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
-            || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
+          | (Tarrow ((l1,a1,r1), t1, u1, _),
+             Tarrow ((l2,a2,r2), t2, u2, _)) when
+               (l1 = l2
+                || !Clflags.classic && not (is_optional l1 || is_optional l2)) ->
               eqtype rename type_pairs subst env t1 t2;
               eqtype rename type_pairs subst env u1 u2;
+              eqtype_alloc_mode a1 a2;
+              eqtype_alloc_mode r1 r2
           | (Ttuple tl1, Ttuple tl2) ->
               eqtype_list rename type_pairs subst env tl1 tl2
           | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _))
@@ -4163,6 +4306,10 @@ and eqtype_row rename type_pairs subst env row1 row2 =
            raise_for Equality (Variant (No_tags (Second, [l, f1]))))
     pairs
 
+and eqtype_alloc_mode m1 m2 =
+  (* FIXME implement properly *)
+  unify_alloc_mode_for Equality m1 m2
+
 (* Must empty univar_pairs first *)
 let eqtype_list rename type_pairs subst env tl1 tl2 =
   univar_pairs := [];
@@ -4280,7 +4427,7 @@ let rec moregen_clty trace type_pairs env cty1 cty2 =
         moregen_clty true type_pairs env cty1 cty2
     | Cty_arrow (l1, ty1, cty1'), Cty_arrow (l2, ty2, cty2') when l1 = l2 ->
         begin
-          try moregen true type_pairs env ty1 ty2 with Moregen_trace trace ->
+          try moregen true Covariant type_pairs env ty1 ty2 with Moregen_trace trace ->
             raise (Failure [
               CM_Parameter_mismatch (env, expand_to_moregen_error env trace)])
         end;
@@ -4294,7 +4441,7 @@ let rec moregen_clty trace type_pairs env cty1 cty2 =
                   all methods in sign2 are present in sign1. *)
                assert false
              | (_, _, ty') ->
-                 match moregen true type_pairs env ty' ty with
+                 match moregen true Covariant type_pairs env ty' ty with
                  | () -> ()
                  | exception Moregen_trace trace ->
                      raise (Failure [
@@ -4312,7 +4459,7 @@ let rec moregen_clty trace type_pairs env cty1 cty2 =
                   all instance variables in sign2 are present in sign1. *)
                assert false
              | (_, _, ty') ->
-                 match moregen true type_pairs env ty' ty with
+                 match moregen true Covariant type_pairs env ty' ty with
                  | () -> ()
                  | exception Moregen_trace trace ->
                      raise (Failure [
@@ -4347,16 +4494,16 @@ let match_class_types ?(trace=true) env pat_sch subj_sch =
       current_level := generic_level;
       (* Duplicate generic variables *)
       let (_, patt) = instance_class [] pat_sch in
-      let type_pairs = TypePairs.create 53 in
+      let type_pairs = fresh_moregen_pairs () in
       let sign1 = signature_of_class_type patt in
       let sign2 = signature_of_class_type subj in
       let self1 = sign1.csig_self in
       let self2 = sign2.csig_self in
       let row1 = sign1.csig_self_row in
       let row2 = sign2.csig_self_row in
-      TypePairs.add type_pairs (self1, self2);
+      TypePairs.add type_pairs.invariant_pairs (self1, self2);
       (* Always succeeds *)
-      moregen true type_pairs env row1 row2;
+      moregen true Covariant type_pairs env row1 row2;
       let res =
         match moregen_clty trace type_pairs env patt subj with
         | () -> []
@@ -4511,6 +4658,17 @@ let find_cltype_for_path env p =
 let has_constr_row' env t =
   has_constr_row (expand_abbrev env t)
 
+let build_submode posi m =
+  if posi then begin
+    let m', changed = Alloc_mode.newvar_below m in
+    let c = if changed then Changed else Unchanged in
+    m', c
+  end else begin
+    let m', changed = Alloc_mode.newvar_above m in
+    let c = if changed then Changed else Unchanged in
+    m', c
+  end
+
 let rec build_subtype env (visited : transient_expr list)
     (loops : (int * type_expr) list) posi level t =
   match get_desc t with
@@ -4524,15 +4682,21 @@ let rec build_subtype env (visited : transient_expr list)
           (t, Unchanged)
       else
         (t, Unchanged)
-  | Tarrow(l, t1, t2, _) ->
+  | Tarrow((l,a,r), t1, t2, _) ->
       let tt = Transient_expr.repr t in
       if memq_warn tt visited then (t, Unchanged) else
       let visited = tt :: visited in
       let (t1', c1) = build_subtype env visited loops (not posi) level t1 in
       let (t2', c2) = build_subtype env visited loops posi level t2 in
-      let c = max_change c1 c2 in
+      let (a', c3) =
+        if level > 2 then build_submode (not posi) a else a, Unchanged
+      in
+      let (r', c4) =
+        if level > 2 then build_submode posi r else r, Unchanged
+      in
+      let c = max_change c1 (max_change c2 (max_change c3 c4)) in
       if c > Unchanged
-      then (newty (Tarrow(l, t1', t2', commu_ok)), c)
+      then (newty (Tarrow((l,a',r'), t1', t2', commu_ok)), c)
       else (t, Unchanged)
   | Ttuple tlist ->
       let tt = Transient_expr.repr t in
@@ -4709,6 +4873,11 @@ let subtype_error ~env ~trace ~unification_trace =
                     ~trace:(expand_subtype_trace env (List.rev trace))
                     ~unification_trace))
 
+let subtype_alloc_mode env trace a1 a2 =
+  match Alloc_mode.submode a1 a2 with
+  | Ok () -> ()
+  | Error () -> subtype_error ~env ~trace ~unification_trace:[]
+
 let rec subtype_rec env trace t1 t2 cstrs =
   if eq_type t1 t2 then cstrs else
 
@@ -4719,7 +4888,8 @@ let rec subtype_rec env trace t1 t2 cstrs =
     match (get_desc t1, get_desc t2) with
       (Tvar _, _) | (_, Tvar _) ->
         (trace, t1, t2, !univar_pairs)::cstrs
-    | (Tarrow(l1, t1, u1, _), Tarrow(l2, t2, u2, _)) when l1 = l2
+    | (Tarrow((l1,a1,r1), t1, u1, _),
+       Tarrow((l2,a2,r2), t2, u2, _)) when l1 = l2
       || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
         let cstrs =
           subtype_rec
@@ -4728,6 +4898,8 @@ let rec subtype_rec env trace t1 t2 cstrs =
             t2 t1
             cstrs
         in
+        subtype_alloc_mode env trace a2 a1;
+        subtype_alloc_mode env trace r1 r2;
         subtype_rec
           env
           (Subtype.Diff {got = u1; expected = u2} :: trace)

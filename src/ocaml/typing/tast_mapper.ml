@@ -96,7 +96,18 @@ let module_declaration sub x =
 
 let module_substitution _ x = x
 
-let include_infos f x = {x with incl_mod = f x.incl_mod}
+let include_kind sub = function
+  | Tincl_structure -> Tincl_structure
+  | Tincl_functor ccs ->
+      Tincl_functor
+        (List.map (fun (nm, cc) -> (nm, sub.module_coercion sub cc)) ccs)
+  | Tincl_gen_functor ccs ->
+      Tincl_gen_functor
+        (List.map (fun (nm, cc) -> (nm, sub.module_coercion sub cc)) ccs)
+
+let str_include_infos sub x =
+  { x with incl_mod = sub.module_expr sub x.incl_mod;
+           incl_kind = include_kind sub x.incl_kind }
 
 let class_type_declaration sub x =
   class_infos sub (sub.class_type sub) x
@@ -129,7 +140,7 @@ let structure_item sub {str_desc; str_loc; str_env} =
         Tstr_class_type
           (List.map (tuple3 id id (sub.class_type_declaration sub)) list)
     | Tstr_include incl ->
-        Tstr_include (include_infos (sub.module_expr sub) incl)
+        Tstr_include (str_include_infos sub incl)
     | Tstr_open od -> Tstr_open (sub.open_declaration sub od)
     | Tstr_attribute _ as d -> d
   in
@@ -242,6 +253,19 @@ let expr sub x =
   in
   let exp_extra = List.map (tuple3 extra id id) x.exp_extra in
   let exp_env = sub.env sub x.exp_env in
+  let map_comprehension comp_types=
+      List.map (fun {clauses; guard}  ->
+        let clauses =
+          List.map (fun comp_type ->
+            match comp_type with
+            | From_to (id, p, e2, e3, dir) ->
+              From_to(id, p, sub.expr sub e2, sub.expr sub e3, dir)
+            | In (p, e2) -> In(sub.pat sub p, sub.expr sub e2)
+          ) clauses
+        in
+        {clauses; guard=(Option.map (sub.expr sub) guard)}
+      ) comp_types
+  in
   let exp_desc =
     match x.exp_desc with
     | Texp_ident _
@@ -249,13 +273,19 @@ let expr sub x =
     | Texp_let (rec_flag, list, exp) ->
         let (rec_flag, list) = sub.value_bindings sub (rec_flag, list) in
         Texp_let (rec_flag, list, sub.expr sub exp)
-    | Texp_function { arg_label; param; cases; partial; } ->
+    | Texp_function { arg_label; param; cases;
+                      partial; region; curry; warnings } ->
         let cases = List.map (sub.case sub) cases in
-        Texp_function { arg_label; param; cases; partial; }
-    | Texp_apply (exp, list) ->
+        Texp_function { arg_label; param; cases;
+                        partial; region; curry; warnings }
+    | Texp_apply (exp, list, pos) ->
         Texp_apply (
           sub.expr sub exp,
-          List.map (tuple2 id (Option.map (sub.expr sub))) list
+          List.map (function
+            | (lbl, Arg exp) -> (lbl, Arg (sub.expr sub exp))
+            | (lbl, Omitted o) -> (lbl, Omitted o))
+            list,
+          pos
         )
     | Texp_match (exp, cases, p) ->
         Texp_match (
@@ -307,25 +337,30 @@ let expr sub x =
           sub.expr sub exp1,
           sub.expr sub exp2
         )
-    | Texp_while (exp1, exp2) ->
-        Texp_while (
-          sub.expr sub exp1,
-          sub.expr sub exp2
+    | Texp_while wh ->
+        Texp_while { wh with wh_cond = sub.expr sub wh.wh_cond;
+                             wh_body = sub.expr sub wh.wh_body
+                   }
+    | Texp_list_comprehension(e1, type_comp) ->
+        Texp_list_comprehension(
+          sub.expr sub e1,
+          map_comprehension type_comp
         )
-    | Texp_for (id, p, exp1, exp2, dir, exp3) ->
-        Texp_for (
-          id,
-          p,
-          sub.expr sub exp1,
-          sub.expr sub exp2,
-          dir,
-          sub.expr sub exp3
-        )
-    | Texp_send (exp, meth) ->
+    | Texp_arr_comprehension(e1, type_comp) ->
+      Texp_arr_comprehension(
+        sub.expr sub e1,
+        map_comprehension type_comp
+      )
+    | Texp_for tf ->
+        Texp_for {tf with for_from = sub.expr sub tf.for_from;
+                          for_to = sub.expr sub tf.for_to;
+                          for_body = sub.expr sub tf.for_body}
+    | Texp_send (exp, meth, ap) ->
         Texp_send
           (
             sub.expr sub exp,
-            meth
+            meth,
+            ap
           )
     | Texp_new _
     | Texp_instvar _ as d -> d
@@ -362,13 +397,14 @@ let expr sub x =
         Texp_object (sub.class_structure sub cl, sl)
     | Texp_pack mexpr ->
         Texp_pack (sub.module_expr sub mexpr)
-    | Texp_letop {let_; ands; param; body; partial} ->
+    | Texp_letop {let_; ands; param; body; partial; warnings} ->
         Texp_letop{
           let_ = sub.binding_op sub let_;
           ands = List.map (sub.binding_op sub) ands;
           param;
           body = sub.case sub body;
           partial;
+          warnings
         }
     | Texp_unreachable ->
         Texp_unreachable
@@ -376,6 +412,9 @@ let expr sub x =
         e
     | Texp_open (od, e) ->
         Texp_open (sub.open_declaration sub od, sub.expr sub e)
+    | Texp_probe {name; handler} ->
+      Texp_probe {name; handler = sub.expr sub handler }
+    | Texp_probe_is_enabled _ as e -> e
     | Texp_hole ->
         Texp_hole
   in
@@ -393,6 +432,10 @@ let signature sub x =
   let sig_final_env = sub.env sub x.sig_final_env in
   let sig_items = List.map (sub.signature_item sub) x.sig_items in
   {x with sig_items; sig_final_env}
+
+let sig_include_infos sub x =
+  { x with incl_mod = sub.module_type sub x.incl_mod;
+           incl_kind = include_kind sub x.incl_kind }
 
 let signature_item sub x =
   let sig_env = sub.env sub x.sig_env in
@@ -418,10 +461,10 @@ let signature_item sub x =
         Tsig_recmodule (List.map (sub.module_declaration sub) list)
     | Tsig_modtype x ->
         Tsig_modtype (sub.module_type_declaration sub x)
-   | Tsig_modtypesubst x ->
+    | Tsig_modtypesubst x ->
         Tsig_modtypesubst (sub.module_type_declaration sub x)
-   | Tsig_include incl ->
-        Tsig_include (include_infos (sub.module_type sub) incl)
+    | Tsig_include incl ->
+        Tsig_include (sig_include_infos sub incl)
     | Tsig_class list ->
         Tsig_class (List.map (sub.class_description sub) list)
     | Tsig_class_type list ->
@@ -461,10 +504,10 @@ let module_type sub x =
 let with_constraint sub = function
   | Twith_type decl -> Twith_type (sub.type_declaration sub decl)
   | Twith_typesubst decl -> Twith_typesubst (sub.type_declaration sub decl)
+  | Twith_modtype mty -> Twith_modtype (sub.module_type sub mty)
+  | Twith_modtypesubst mty -> Twith_modtypesubst (sub.module_type sub mty)
   | Twith_module _
-  | Twith_modsubst _
-  | Twith_modtype _
-  | Twith_modtypesubst _ as d -> d
+  | Twith_modsubst _ as d -> d
 
 let open_description sub od =
   {od with open_env = sub.env sub od.open_env}
@@ -551,7 +594,10 @@ let class_expr sub x =
     | Tcl_apply (cl, args) ->
         Tcl_apply (
           sub.class_expr sub cl,
-          List.map (tuple2 id (Option.map (sub.expr sub))) args
+          List.map (function
+            | (lbl, Arg exp) -> (lbl, Arg (sub.expr sub exp))
+            | (lbl, Omitted o) -> (lbl, Omitted o))
+            args
         )
     | Tcl_let (rec_flag, value_bindings, ivars, cl) ->
         let (rec_flag, value_bindings) =
