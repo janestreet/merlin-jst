@@ -664,12 +664,6 @@ and sugar_expr ctxt f e =
     end
   | _ -> false
 
-and uncurry params e =
-  match e.pexp_desc with
-  | Pexp_fun (l, e0, p, e) ->
-    uncurry ((l, e0, p) :: params) e
-  | _ -> List.rev params, e
-
 and expression ctxt f x =
   if x.pexp_attributes <> [] then
     pp f "((%a)@,%a)" (expression ctxt) {x with pexp_attributes=[]}

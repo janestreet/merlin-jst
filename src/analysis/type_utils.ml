@@ -245,7 +245,12 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
   let print_expr expression =
     let (str, _sg, _shape, _) =
       Env.with_cmis @@ fun () ->
-      Typemod.type_toplevel_phrase env
+      Typemod.type_toplevel_phrase
+        env
+        [] (* This parameter is the list of toplevel definitions that are
+              available to [include functor].  It seems that this is handled
+              safely by Merlin as it stands, so we don't need to add anything
+              here. *)
         [Ast_helper.Str.eval expression]
     in
     let open Typedtree in
@@ -288,7 +293,7 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
           end;
           true
         with _ ->
-        (* Fallback to contextless typing attempts *)
+        (* Fallback to contextless typing attemps *)
         try
           print_expr e;
           true

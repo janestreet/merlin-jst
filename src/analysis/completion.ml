@@ -163,13 +163,17 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | `Cons c  -> (`Constructor, `Constructor c)
     | `Label label_descr ->
       let desc =
-        Types.(Tarrow (Ast_helper.no_label,
+        Types.(Tarrow ((Ast_helper.no_label,
+                        Types.Alloc_mode.global,
+                        Types.Alloc_mode.global),
                        label_descr.lbl_res, label_descr.lbl_arg, commu_ok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Label_decl (ty,label_decl) ->
       let desc =
-        Types.(Tarrow (Ast_helper.no_label,
+        Types.(Tarrow ((Ast_helper.no_label,
+                        Types.Alloc_mode.global,
+                        Types.Alloc_mode.global),
                        ty, label_decl.ld_type, commu_ok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
@@ -232,6 +236,11 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
 
 let item_for_global_module name =
   {name; kind = `Module; desc = `None; info = `None; deprecated = false}
+
+let fold_constructors f id env acc =
+  Env.fold_constructors
+    (fun constr acc -> f constr.Types.cstr_name constr acc)
+    id env acc
 
 let fold_variant_constructors ~env ~init ~f =
   let rec aux acc t =
@@ -722,10 +731,10 @@ let expand_prefix ~global_modules ?(kinds=[]) env prefix =
 open Typedtree
 
 let labels_of_application ~prefix = function
-  | {exp_desc = Texp_apply (f, args); exp_env; _} ->
+  | {exp_desc = Texp_apply (f, args, _); exp_env; _} ->
     let rec labels t =
       match Types.get_desc t with
-      | Types.Tarrow (label, lhs, rhs, _) ->
+      | Types.Tarrow ((label,_,_), lhs, rhs, _) ->
         (label, lhs) :: labels rhs
       | _ ->
         let t' = Ctype.full_expand ~may_forget_scope:true exp_env t in
@@ -740,12 +749,12 @@ let labels_of_application ~prefix = function
     let labels = labels f.exp_type in
     let is_application_of label (label',expr) =
       match expr with
-      | Some {exp_loc = {Location. loc_ghost; loc_start; loc_end}; _} ->
+      | Arg {exp_loc = {Location. loc_ghost; loc_start; loc_end}; _} ->
         label = label'
         && (Btype.prefixed_label_name label <> prefix)
         && not loc_ghost
         && not (loc_start = loc_end)
-      | None -> false
+      | Omitted _ -> false
     in
     List.filter_map ~f:(fun (label, ty) ->
         match label with
@@ -774,7 +783,7 @@ let application_context ~prefix path =
   in
   let context = match path with
     | (_, Expression earg) ::
-      (_, Expression ({ exp_desc = Texp_apply (efun, _); _ } as app)) :: _
+      (_, Expression ({ exp_desc = Texp_apply (efun, _, _); _ } as app)) :: _
       when earg != efun ->
       (* Type variables shared across arguments should all be
          printed with the same name.

@@ -580,7 +580,7 @@ let expression sub exp =
     | Texp_hole ->
         let id = Location.mkloc hole_txt loc in
         Pexp_extension (id, PStr [])
-|  in
+  in
   List.fold_right (exp_extra sub) exp.exp_extra
     (Exp.mk ~loc ~attrs desc)
 

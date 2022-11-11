@@ -36,3 +36,13 @@ val opaque               : bool ref
 val unboxed_types        : bool ref
 
 val locations            : bool ref
+
+(** {1 Language extensions} *)
+module Extension : sig
+  type t = Comprehensions | Local | Include_functor
+  val enable : string -> unit
+  val is_enabled : t -> bool
+  val to_string : t -> string
+  val all : t list
+  val disable_all : unit -> unit
+end

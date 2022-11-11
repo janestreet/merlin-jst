@@ -22,7 +22,6 @@ open Btype
 open Errortrace
 
 open Local_store
-module Int = Misc.Stdlib.Int
 
 (*
    Type manipulation after type inference
@@ -1594,7 +1593,7 @@ let expand_abbrev_gen kind find_type_expansion env ty =
             (* For gadts, remember type as non exportable *)
             (* The ambiguous level registered for ty' should be the highest *)
             (* if !trace_gadt_instances then begin *)
-            let scope = Misc.Stdlib.Int.max lv (get_scope ty) in
+            let scope = Int.max lv (get_scope ty) in
             update_scope scope ty;
             update_scope scope ty';
             ty'

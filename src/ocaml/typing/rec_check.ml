@@ -550,6 +550,11 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_list_comprehension(body, comp_types) ->
       join ((expression body << Guard)::(comprehension comp_types))
     | Texp_arr_comprehension(body, comp_types) ->
+      (* merlin-jst: We don't expose [Typeopt.array_kind], so we have to comment this
+         match out.  The replacement code is incorrect, but it won't report a false
+         positive, so it should do for now. *)
+      let array_mode = Guard
+      (*
       let array_mode = match Typeopt.array_kind exp with
         | Lambda.Pfloatarray ->
             (* (flat) float arrays unbox their elements *)
@@ -561,6 +566,7 @@ let rec expression : Typedtree.expression -> term_judg =
         | Lambda.Paddrarray | Lambda.Pintarray ->
             (* non-generic, non-float arrays act as constructors *)
             Guard
+      *)
       in
       join ((expression body << array_mode)::(comprehension comp_types))
     | Texp_for tf ->

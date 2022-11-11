@@ -2002,6 +2002,7 @@ let rec type_pat
              pat_loc = loc;
              pat_extra = [];
              pat_type = expected_ty;
+             pat_mode = alloc_mode.mode;
              pat_env = !env;
              pat_attributes = Msupport.recovery_attributes sp.ppat_attributes;
            }
@@ -2880,7 +2881,7 @@ let collect_unknown_apply_args env funct ty_fun mode_fun rev_args sargs =
                   (error(funct.exp_loc, env, Apply_non_function
                               (expand_head env funct.exp_type)))
     with Msupport.Resume ->
-      newvar(), ty_fun
+      Alloc_mode.newvar (), newvar(), Alloc_mode.newvar (), ty_fun
     in
     let arg = Unknown_arg { sarg; ty_arg; mode_arg } in
     loop ty_res mode_res ((lbl, Arg arg) :: rev_args) rest
@@ -3699,10 +3700,12 @@ and type_expect ?in_function ?recarg env
                             val_loc = loc;
                             val_attributes = [];
                             val_uid = Uid.internal_not_actually_unique;
-                          });
+                          },
+                          Id_value);
             exp_loc = loc;
             exp_extra = [];
             exp_type = ty_expected_explained.ty;
+            exp_mode = expected_mode.mode;
             exp_env = env;
             exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
           })
@@ -4263,6 +4266,7 @@ and type_expect_
           };
         exp_loc = loc; exp_extra = [];
         exp_type = instance ty_expected;
+        exp_mode = expected_mode.mode;
         exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
         exp_env = env }
     end
@@ -4535,7 +4539,7 @@ and type_expect_
       begin try
         let (meth, typ) =
           match obj.exp_desc with
-          | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}) ->
+          | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _) ->
               let id, typ =
                 match meths with
                 | Self_concrete meths ->
@@ -4665,7 +4669,7 @@ and type_expect_
           exp_desc = Texp_send(obj, Tmeth_name met, ap_pos);
           exp_loc = loc; exp_extra = [];
           exp_type = ty_expected;
-          exp_mode = expected_mode.mode
+          exp_mode = expected_mode.mode;
           exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
           exp_env = env;
         }
@@ -5371,6 +5375,7 @@ and type_label_access env srecord usage lid =
       lbl_res = ty_exp;
       lbl_arg = newvar ();
       lbl_mut = Mutable;
+      lbl_global = Unrestricted;
       lbl_pos = 0;
       lbl_all = [||];
       lbl_repres = Record_regular;

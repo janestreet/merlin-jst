@@ -35,16 +35,16 @@ let tail_operator = function
                   (_,_, {Types.val_kind =
                            Types.Val_prim
                              {Primitive.prim_name = "%sequand"|"%sequor"; _ }
-                        ; _ })
+                        ; _ }, _)
     ; _ }
     -> true
   | _ -> false
 
 let expr_tail_positions = function
-  | Texp_apply (callee, args) when tail_operator callee ->
+  | Texp_apply (callee, args, _) when tail_operator callee ->
     begin match List.last args with
-      | None | Some (_, None)-> []
-      | Some (_, Some expr) -> [Expression expr]
+      | None | Some (_, Omitted _)-> []
+      | Some (_, Arg expr) -> [Expression expr]
     end
   | Texp_instvar _ | Texp_setinstvar _ | Texp_override _ | Texp_assert _
   | Texp_lazy _ | Texp_object _ | Texp_pack _
@@ -54,6 +54,8 @@ let expr_tail_positions = function
   | Texp_field _ | Texp_setfield _ | Texp_array _
   | Texp_while _ | Texp_for _ | Texp_send _ | Texp_new _
   | Texp_unreachable | Texp_extension_constructor _ | Texp_letop _ | Texp_hole
+  | Texp_list_comprehension _ | Texp_arr_comprehension _
+  | Texp_probe _ | Texp_probe_is_enabled _
     -> []
   | Texp_match (_,cs,_)
     -> List.map cs ~f:(fun c -> Case c)

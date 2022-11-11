@@ -2980,19 +2980,19 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
     | pstr :: srem ->
         let previous_saved_types = Cmt_format.get_saved_types () in
         match type_str_item env shape_map pstr sig_acc_include_functor with
-        | desc, sg, shape_map, new_env =
-          let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
-          Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
-                                      :: previous_saved_types);
-          type_struct new_env shape_map srem (str :: str_acc) (List.rev_append sg sig_acc)
-            (List.rev_append sg sig_acc_include_functor)
+        | desc, sg, shape_map, new_env ->
+            let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+            Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+                                        :: previous_saved_types);
+            type_struct new_env shape_map srem (str :: str_acc) (List.rev_append sg sig_acc)
+              (List.rev_append sg sig_acc_include_functor)
         | exception exn ->
             Msupport.raise_error exn;
             type_struct env shape_map srem str_acc sig_acc sig_acc_include_functor;
   in
   Msupport.with_saved_types
     ?warning_attribute:(if Option.is_some toplevel || keep_warnings then None else Some [])
-    ~save_part:(fun (str,_,_,_) -> Cmt_format.Partial_structure str)
+    ~save_part:(fun (str,_,_,_,_) -> Cmt_format.Partial_structure str)
     (fun () ->
        let (items, sg, shape_map, final_env) = type_struct env Shape.Map.empty sstr [] [] toplevel_sig in
        let str = { str_items = items; str_type = sg; str_final_env = final_env } in

@@ -208,12 +208,12 @@ let instance_poly_univars env loc vars =
 
 type policy = Fixed | Extensible | Univars
 
-let rec transl_type env policy styp =
+let rec transl_type env policy mode styp =
   Msupport.with_saved_types
     ~warning_attribute:styp.ptyp_attributes ?save_part:None
     (fun () ->
        try
-         transl_type_aux env policy styp
+         transl_type_aux env policy mode styp
        with exn ->
          Msupport.raise_error exn;
            { ctyp_desc = Ttyp_any;
@@ -223,12 +223,6 @@ let rec transl_type env policy styp =
              ctyp_attributes = [];
            }
     )
-
-type policy = Fixed | Extensible | Univars
-
-let rec transl_type env policy mode styp =
-  Builtin_attributes.warning_scope styp.ptyp_attributes
-    (fun () -> transl_type_aux env policy mode styp)
 
 and transl_type_aux env policy mode styp =
   let loc = styp.ptyp_loc in

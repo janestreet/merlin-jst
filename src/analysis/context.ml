@@ -105,7 +105,7 @@ let inspect_expression ~cursor ~lid e : t =
         Constructor (cd, lid_loc.loc)
       else Module_path
     else Module_path
-  | Texp_ident (p, lid_loc, _) ->
+  | Texp_ident (p, lid_loc, _, _) ->
     let name = Path.last p in
     if name = "*type-error*" then
       (* For type_enclosing: it is enough to return Module_path here.

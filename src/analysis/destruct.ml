@@ -240,7 +240,7 @@ let rec get_every_pattern = function
     | Pattern _ ->
       (* We are still in the same branch, going up. *)
       get_every_pattern parents
-    | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
+    | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _, _) ; _}
       when Ident.name id = "*type-error*" ->
       raise (Ill_typed)
     | Expression _ ->

@@ -445,6 +445,14 @@ let nolabels_attribute attr =
   clflags_attribute_without_payload attr
     ~name:"nolabels" Clflags.classic
 
+(* merlin-jst: {comments} The following functions check runtime configurations from
+   [ocaml-flambda/flambda-backend] that aren't upstream, so (1) Merlin doesn't need to
+   care about them, but (2) we don't want to bother to bring in all the stuff they depend
+   on (e.g., [Config.flambda], [Clflags.set_oclassic], etc.).  Thus, we comment them out
+   silencing some unused variable warnings first. *)
+let _ = clflags_attribute_with_int_payload
+
+(* merlin-jst: See {comments} above
 let flambda_oclassic_attribute attr =
   clflags_attribute_without_payload' attr
     ~name:"flambda_oclassic"
@@ -474,6 +482,7 @@ let inline_attribute attr =
 let afl_inst_ratio_attribute attr =
   clflags_attribute_with_int_payload attr
     ~name:"afl_inst_ratio" Clflags.afl_inst_ratio
+*)
 
 let parse_standard_interface_attributes attr =
   warning_attribute attr;
@@ -486,10 +495,13 @@ let parse_standard_implementation_attributes attr =
   principal_attribute attr;
   noprincipal_attribute attr;
   nolabels_attribute attr;
+  ()
+  (* merlin-jst: See {comments} above
   inline_attribute attr;
   afl_inst_ratio_attribute attr;
   flambda_o3_attribute attr;
   flambda_oclassic_attribute attr
+  *)
 
 let has_local_opt attrs =
   has_attribute ["ocaml.local_opt"; "local_opt"] attrs

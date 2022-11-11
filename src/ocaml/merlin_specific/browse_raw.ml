@@ -286,6 +286,16 @@ let of_exp_record_field obj lid_loc lbl =
 let of_pat_record_field obj loc lbl =
   of_record_field (`Pattern obj) loc lbl
 
+let of_comprehension_clause = function
+  | From_to (_, _p, e1, e2, _) ->
+     of_expression e1 ** of_expression e2
+  | In (p, e) ->
+     of_pattern p ** of_expression e
+
+let of_comprehension {clauses; guard} =
+  list_fold of_comprehension_clause clauses **
+    option_fold of_expression guard
+
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
@@ -316,11 +326,11 @@ let of_expression_desc loc = function
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { cases; _ } ->
     list_fold of_case cases
-  | Texp_apply (e,ls) ->
+  | Texp_apply (e,ls,_) ->
     of_expression e **
     list_fold (function
-        | (_,None) -> id_fold
-        | (_,Some e) -> of_expression e)
+        | (_,Omitted _) -> id_fold
+        | (_,Arg e) -> of_expression e)
       ls
   | Texp_match (e,cs,_) ->
     of_expression e **
@@ -346,11 +356,15 @@ let of_expression_desc loc = function
   | Texp_setfield (e1,lid_loc,lbl,e2) ->
     of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
   | Texp_ifthenelse (e1,e2,None)
-  | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
+  | Texp_sequence (e1,e2)
+  | Texp_while { wh_cond = e1; wh_body = e2; _ } ->
     of_expression e1 ** of_expression e2
-  | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
+  | Texp_ifthenelse (e1,e2,Some e3)
+  | Texp_for { for_from = e1; for_to = e2; for_body = e3; _ } ->
     of_expression e1 ** of_expression e2 ** of_expression e3
-  | Texp_send (e,meth) ->
+  | Texp_list_comprehension (e, cs) | Texp_arr_comprehension (e, cs) ->
+    of_expression e ** list_fold of_comprehension cs
+  | Texp_send (e,meth,_) ->
     of_expression e **
     of_method_call e meth loc (* TODO ulysse CHECK*)
   | Texp_override (_,ls) ->
@@ -375,6 +389,10 @@ let of_expression_desc loc = function
     of_case body
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
+  | Texp_probe p ->
+    of_expression p.handler
+  | Texp_probe_is_enabled _ ->
+    id_fold
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
@@ -387,8 +405,8 @@ and of_class_expr_desc = function
     app (Class_expr ce)
   | Tcl_apply (ce,es) ->
     list_fold (function
-        | (_,None) -> id_fold
-        | (_,Some e) -> of_expression e)
+        | (_,Omitted _) -> id_fold
+        | (_,Arg e) -> of_expression e)
       es **
     app (Class_expr ce)
   | Tcl_let (_,vbs,es,ce) ->
@@ -781,10 +799,10 @@ let bindop_path { bop_op_name; bop_op_path } =
 let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
   let init =
     match exp_desc with
-    | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]
+    | Texp_ident (path,loc,_,_) -> [reloc path loc, Some loc.txt]
     | Texp_letop {let_; ands} ->
       bindop_path let_ :: List.map ~f:bindop_path ands
-    | Texp_new (path,loc,_) -> [reloc path loc, Some loc.txt]
+    | Texp_new (path,loc,_,_) -> [reloc path loc, Some loc.txt]
     | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
     | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
     | Texp_override (_,ps) ->
@@ -793,7 +811,10 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
       ) ps
     | Texp_letmodule (Some id,loc,_,_,_) ->
       [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
-    | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
+    | Texp_for {
+        for_id = id;
+        for_pat = {Parsetree.ppat_loc = loc; ppat_desc};
+        _ } ->
       let lid =
         match ppat_desc with
         | Ppat_any -> None
