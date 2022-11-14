@@ -78,6 +78,7 @@ value ml_merlin_fs_exact_case_basename(value path)
 
 value ml_merlin_fs_exact_case_basename(value path)
 {
+  (void)path;
   return Val_int(0);
 }
 
