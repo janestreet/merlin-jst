@@ -412,6 +412,9 @@ let ocaml_ignored_flags = [
   "-no-flambda2-join-points";
   "-no-flambda2-speculative-inlining-only-if-arguments-useful";
   "-no-flambda2-unbox-along-intra-function-control-flow";
+
+  (* Jane Street specific *)
+  "-disable-poll-insertion";
 ]
 
 let ocaml_ignored_parametrized_flags = [
