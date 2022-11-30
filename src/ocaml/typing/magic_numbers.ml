@@ -34,19 +34,26 @@ module Cmi = struct
       begin match to_version_opt compiler_magic with
       | None ->
         fprintf ppf
-          "%a@ seems to be compiled with a version of OCaml that is not@.\
-           supported by Merlin."
+          "%a@ seems to be compiled with a version of OCaml (with magic number \
+           %s) that is not supported by Merlin.@.\
+           This instance of Merlin handles OCaml %s (which has magic number \
+           %s)."
           Location.print_filename filename
+          compiler_magic
+          (Option.get @@ to_version_opt Config.cmi_magic_number)
+          Config.cmi_magic_number
       | Some version ->
         fprintf ppf
           "%a@ seems to be compiled with OCaml %s.@.\
            But this instance of Merlin handles OCaml %s."
-          Location.print_filename filename version
+          Location.print_filename filename
+          version
           (Option.get @@ to_version_opt Config.cmi_magic_number)
       end
     | Corrupted_interface filename ->
-        fprintf ppf "Corrupted compiled interface@ %a"
-          Location.print_filename filename
+      fprintf ppf
+        "Corrupted compiled interface@ %a"
+        Location.print_filename filename
 
   let () =
     Location.register_error_of_exn
