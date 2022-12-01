@@ -81,7 +81,9 @@ for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
     # otherwise the merge won't pick up on old changes!
     parsing/lexer.mll) tgt=preprocess/lexer_raw.mll;;
     parsing/parser.mly) tgt=preprocess/parser_raw.mly;;
-    utils/clflags.ml*) echo "Ignoring changes to $base"; continue;;
+    utils/clflags.ml*|utils/config.ml*)
+      printf '\e[7mIgnoring changes to %s, inspect it manually.\e[0m\n' "$base"
+      continue;;
     *) tgt=$base;;
   esac
   tgt=src/ocaml/$tgt
