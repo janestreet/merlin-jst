@@ -119,7 +119,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
           try
             ignore (
               Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive:true (* really? *)
+                ~allow_recursive_equations:true (* really? *)
                 (ref env) type_expr typ
             );
             true

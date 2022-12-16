@@ -201,7 +201,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_STAR_atomic_type_) -> "reversed_separated_nontrivial_llist_STAR_atomic_type_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_expr_) -> "reversed_separated_nontrivial_llist_COMMA_expr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_core_type_) -> "reversed_separated_nontrivial_llist_COMMA_core_type_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_) -> "reversed_separated_nonempty_llist_STAR_atomic_type_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_) -> "reversed_separated_nonempty_llist_STAR_atomic_type_gbl_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_type_parameter_) -> "reversed_separated_nonempty_llist_COMMA_type_parameter_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_) -> "reversed_separated_nonempty_llist_COMMA_core_type_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_BAR_row_field_) -> "reversed_separated_nonempty_llist_BAR_row_field_"
@@ -560,7 +560,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_STAR_atomic_type_ -> (fun _ -> "reversed_separated_nontrivial_llist_STAR_atomic_type_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_expr_ -> (fun _ -> "reversed_separated_nontrivial_llist_COMMA_expr_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nontrivial_llist_COMMA_core_type_")
-  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_ -> (fun _ -> "reversed_separated_nonempty_llist_STAR_atomic_type_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_ -> (fun _ -> "reversed_separated_nonempty_llist_STAR_atomic_type_gbl_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_type_parameter_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_type_parameter_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_core_type_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_BAR_row_field_ -> (fun _ -> "reversed_separated_nonempty_llist_BAR_row_field_")

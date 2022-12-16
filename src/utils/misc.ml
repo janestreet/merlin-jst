@@ -13,6 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
+module CamlList = List
 module CamlString = String
 
 open Std
@@ -802,6 +803,18 @@ let modules_in_path ~ext path =
           end results (Sys.readdir dir)
       with Sys_error _ -> results
     end
+
+module List = struct
+  include CamlList
+
+  (* merlin-jst: From the compiler's `Misc.Stdlib.List` *)
+  let rec is_prefix ~equal t ~of_ =
+    match t, of_ with
+    | [], [] -> true
+    | _::_, [] -> false
+    | [], _::_ -> true
+    | x1::t, x2::of_ -> equal x1 x2 && is_prefix ~equal t ~of_
+end
 
 module String = struct
   include CamlString

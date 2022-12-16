@@ -30,7 +30,8 @@ let setup_reader_config config = (
   let open Mconfig in
   let open Clflags in
   let ocaml = config.ocaml in
-  Env.set_unit_name (Mconfig.unitname config);
+  let to_compilation_unit name = Some (Compilation_unit.of_string name) in
+  Env.set_unit_name (Mconfig.unitname config |> to_compilation_unit);
   Location.input_name  := config.query.filename;
   fast                 := ocaml.unsafe ;
   classic              := ocaml.classic ;

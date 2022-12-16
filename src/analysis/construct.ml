@@ -338,7 +338,11 @@ module Gen = struct
               path cstr_descr.cstr_name
             |> Location.mknoloc
           in
-          let args = List.map ty_args ~f:(exp_or_hole env) in
+          let args =
+            List.map
+              ty_args
+              ~f:(fun (typ, (_ : global_flag)) -> exp_or_hole env typ)
+          in
           let args_combinations = Util.combinations args in
           let exps = List.map args_combinations
             ~f:(function

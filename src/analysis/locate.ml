@@ -390,6 +390,11 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
         Format.pp_print_option Shape.Uid.print fmt shape.uid);
     Option.map ~f:(fun uid -> uid, path) shape.uid
 
+let get_current_unit_name_as_string () =
+  match Env.get_unit_name () with
+  | Some unit -> Compilation_unit.name_as_string unit
+  | None -> ""
+
 let from_uid ~ml_or_mli uid loc path =
   let loc_of_comp_unit comp_unit =
     match load_cmt comp_unit ml_or_mli with
@@ -403,7 +408,7 @@ let from_uid ~ml_or_mli uid loc path =
   match uid with
   | Some (Shape.Uid.Item { comp_unit; _ } as uid)->
     let locopt =
-      if Env.get_unit_name () = comp_unit then begin
+      if get_current_unit_name_as_string () = comp_unit then begin
         log ~title "We look for %a in the current compilation unit."
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
         let tbl = Env.get_uid_to_loc_tbl () in
@@ -939,7 +944,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     begin match uid with
     | Some (Shape.Uid.Item { comp_unit; _ } as uid)
     | Some (Shape.Uid.Compilation_unit comp_unit as uid)
-        when Env.get_unit_name () <> comp_unit ->
+        when get_current_unit_name_as_string () <> comp_unit ->
           log ~title:"get_doc" "the doc (%a) you're looking for is in another
             compilation unit (%s)"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;

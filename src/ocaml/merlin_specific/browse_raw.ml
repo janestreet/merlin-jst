@@ -269,8 +269,9 @@ let of_value_binding vb = app (Value_binding vb)
 let of_module_type mt = app (Module_type mt)
 let of_module_expr me = app (Module_expr me)
 let of_typ_param (ct,_) = of_core_type ct
+let of_constructor_arg (ct, (_ : Types.global_flag)) = of_core_type ct
 let of_constructor_arguments = function
-  | Cstr_tuple cts -> list_fold of_core_type cts
+  | Cstr_tuple cts -> list_fold of_constructor_arg cts
   | Cstr_record lbls -> list_fold of_label_declaration lbls
 
 let of_bop { bop_op_path = _; bop_op_val = _; bop_exp; _ } =

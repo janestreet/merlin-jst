@@ -373,7 +373,7 @@ module MenhirInterpreter : sig
     | N_reversed_separated_nontrivial_llist_STAR_atomic_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nontrivial_llist_COMMA_expr_ : (Parsetree.expression list) nonterminal
     | N_reversed_separated_nontrivial_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
-    | N_reversed_separated_nonempty_llist_STAR_atomic_type_ : (Parsetree.core_type list) nonterminal
+    | N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_BAR_row_field_ : (Parsetree.row_field list) nonterminal

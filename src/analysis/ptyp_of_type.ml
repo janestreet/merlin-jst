@@ -125,6 +125,8 @@ and value_description id { val_type; val_kind; val_loc; val_attributes; _ } =
     pval_attributes = val_attributes;
     pval_loc = val_loc
   }
+and constructor_argument (type_expr, (_ : global_flag)) =
+  core_type type_expr
 and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
   Ast_helper.Type.field
     ~attrs:ld_attributes
@@ -133,7 +135,7 @@ and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
     (core_type ld_type)
 and constructor_arguments = function
   | Cstr_tuple type_exprs ->
-    Parsetree.Pcstr_tuple (List.map ~f:core_type type_exprs)
+    Parsetree.Pcstr_tuple (List.map ~f:constructor_argument type_exprs)
   | Cstr_record label_decls ->
     Parsetree.Pcstr_record (List.map ~f:label_declaration label_decls)
 and constructor_declaration { cd_id; cd_args; cd_res; cd_attributes; _} =

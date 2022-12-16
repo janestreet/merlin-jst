@@ -286,6 +286,19 @@ val time_spent : unit -> float
     Sys.times/Unix.times.
     Both user and kernel cpu time is accounted.  *)
 
+module List : sig
+  include module type of List
+
+  (* merlin-jst: From the compiler's `Misc.Stdlib.List` *)
+  val is_prefix
+     : equal:('a -> 'a -> bool)
+    -> 'a list
+    -> of_:'a list
+    -> bool
+  (** Returns [true] if and only if the given list, with respect to the given
+      equality function on list members, is a prefix of the list [of_]. *)
+end
+
 module String : sig
   include module type of String
   module Map : Map.S with type key = t

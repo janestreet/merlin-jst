@@ -19,6 +19,9 @@ open Types
 open Asttypes
 open Typedtree
 
+(* Expand a type, looking through ordinary synonyms, private synonyms,
+   links, and [@@unboxed] types. The returned type will be therefore be none
+   of these cases. *)
 let scrape_ty env ty =
   match get_desc ty with
   | Tconstr _ ->
@@ -40,6 +43,7 @@ let scrape_ty env ty =
       end
   | _ -> ty
 
+(* See [scrape_ty]; this returns the [type_desc] of a scraped [type_expr]. *)
 let scrape env ty =
   get_desc (scrape_ty env ty)
 
@@ -68,13 +72,15 @@ let is_immediate = function
       !Clflags.native_code && Sys.word_size = 64
 
 type classification =
-  | Int
+  | Int   (* any immediate type *)
   | Float
   | Lazy
   | Addr  (* anything except a float or a lazy *)
   | Any
 
-let classify env ty =
+(* Classify a ty into a [classification]. Looks through synonyms, using [scrape_ty].
+   Returning [Any] is safe, though may skip some optimizations. *)
+let classify env ty : classification =
   let ty = scrape_ty env ty in
   if is_immediate (Ctype.immediacy env ty) then Int
   else match get_desc ty with
@@ -216,9 +222,9 @@ let value_kind env ty =
               | Cstr_tuple fields ->
                 let num_nodes_visited, fields =
                   List.fold_left_map
-                    (fun num_nodes_visited field ->
+                    (fun num_nodes_visited (ty, _) ->
                       let num_nodes_visited = num_nodes_visited + 1 in
-                      loop env ~visited ~depth ~num_nodes_visited field)
+                      loop env ~visited ~depth ~num_nodes_visited ty)
                     num_nodes_visited fields
                 in
                 (false, num_nodes_visited), fields
