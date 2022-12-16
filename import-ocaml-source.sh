@@ -79,11 +79,26 @@ for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
   case $base in
     # If you add new files here, you need to apply the full diff manually once,
     # otherwise the merge won't pick up on old changes!
+
+    # Renamed files
     parsing/lexer.mll) tgt=preprocess/lexer_raw.mll;;
     parsing/parser.mly) tgt=preprocess/parser_raw.mly;;
+
+    # Merlin moves the modules it depends on from this directory into `typing/`
+    # (as of the time of writing, that's `Cmi_format` and `Cmt_format`)
+    file_formats/*) tgt=${base/#file_formats/typing};;
+
+    # We can't have this module in `utils/`, it breaks Merlin's dependency
+    # structure
+    utils/compilation_unit.ml*) tgt=${base/#utils/typing};;
+
+    # We have to inspect these files by hand, we only care about a subset of the
+    # changes
     utils/clflags.ml*|utils/config.ml*)
       printf '\e[7mIgnoring changes to %s, inspect it manually.\e[0m\n' "$base"
       continue;;
+
+    # Most cases are simple
     *) tgt=$base;;
   esac
   tgt=src/ocaml/$tgt
