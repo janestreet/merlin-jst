@@ -390,10 +390,15 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
         Format.pp_print_option Shape.Uid.print fmt shape.uid);
     Option.map ~f:(fun uid -> uid, path) shape.uid
 
-let get_current_unit_name_as_string () =
+(* merlin-jst: Supports the addition of [Compilation_unit], replacing
+   comparisons of [Env.get_unit_name ()] with [comp_unit]; we don't use
+   [Option.equal] because [Std.Option] doesn't have it so the patch would be
+   less local in order to add a module alias before [open Std]. *)
+let is_current_unit comp_unit =
   match Env.get_unit_name () with
-  | Some unit -> Compilation_unit.name_as_string unit
-  | None -> ""
+  | Some current_unit ->
+    String.equal (Compilation_unit.name_as_string current_unit) comp_unit
+  | None -> false
 
 let from_uid ~ml_or_mli uid loc path =
   let loc_of_comp_unit comp_unit =
@@ -408,7 +413,7 @@ let from_uid ~ml_or_mli uid loc path =
   match uid with
   | Some (Shape.Uid.Item { comp_unit; _ } as uid)->
     let locopt =
-      if get_current_unit_name_as_string () = comp_unit then begin
+      if is_current_unit comp_unit then begin
         log ~title "We look for %a in the current compilation unit."
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
         let tbl = Env.get_uid_to_loc_tbl () in
@@ -944,7 +949,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     begin match uid with
     | Some (Shape.Uid.Item { comp_unit; _ } as uid)
     | Some (Shape.Uid.Compilation_unit comp_unit as uid)
-        when get_current_unit_name_as_string () <> comp_unit ->
+        when not (is_current_unit comp_unit) ->
           log ~title:"get_doc" "the doc (%a) you're looking for is in another
             compilation unit (%s)"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
