@@ -453,7 +453,7 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_longident_LIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
-    | N_mk_longident_mod_ext_longident___anonymous_42_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident___anonymous_46_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_LIDENT_ : (Longident.t) nonterminal
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
@@ -504,13 +504,13 @@ module MenhirInterpreter : sig
   Parsetree.type_declaration) nonterminal
     | N_generic_type_declaration_no_nonrec_flag_type_subst_kind_ : ((Asttypes.rec_flag * string Location.loc option) *
   Parsetree.type_declaration) nonterminal
-    | N_generic_constructor_declaration_epsilon_ : (Ocaml_parsing.Ast_helper.str * Ocaml_parsing.Ast_helper.str list *
+    | N_generic_constructor_declaration_epsilon_ : (Ocaml_parsing.Ast_helper.str * string Location.loc list *
   Parsetree.constructor_arguments * Parsetree.core_type option *
   Parsetree.attributes * Location.t * Ocaml_parsing.Docstrings.info) nonterminal
-    | N_generic_constructor_declaration_BAR_ : (Ocaml_parsing.Ast_helper.str * Ocaml_parsing.Ast_helper.str list *
+    | N_generic_constructor_declaration_BAR_ : (Ocaml_parsing.Ast_helper.str * string Location.loc list *
   Parsetree.constructor_arguments * Parsetree.core_type option *
   Parsetree.attributes * Location.t * Ocaml_parsing.Docstrings.info) nonterminal
-    | N_generalized_constructor_arguments : (Ocaml_parsing.Ast_helper.str list * Parsetree.constructor_arguments *
+    | N_generalized_constructor_arguments : (string Location.loc list * Parsetree.constructor_arguments *
   Parsetree.core_type option) nonterminal
     | N_functor_args : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_functor_arg : (Lexing.position * Parsetree.functor_parameter) nonterminal

@@ -126,7 +126,7 @@ val type_expect:
 val type_exp:
         Env.t -> Parsetree.expression -> Typedtree.expression
 val type_approx:
-        Env.t -> Parsetree.expression -> type_expr
+        Env.t -> Parsetree.expression -> type_expr -> unit
 val type_argument:
         Env.t -> Parsetree.expression ->
         type_expr -> type_expr -> Typedtree.expression
@@ -144,6 +144,8 @@ val force_delayed_checks: unit -> unit
 
 val reset_allocations: unit -> unit
 val optimise_allocations: unit -> unit
+
+val has_poly_constraint : Parsetree.pattern -> bool
 
 
 val name_pattern : string -> Typedtree.pattern list -> Ident.t
@@ -238,6 +240,7 @@ type error =
   | Uncurried_function_escapes
   | Local_return_annotation_mismatch of Location.t
   | Bad_tail_annotation of [`Conflict|`Not_a_tailcall]
+  | Optional_poly_param
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
