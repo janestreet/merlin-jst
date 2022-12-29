@@ -88,9 +88,10 @@ for file in $(git diff --no-ext-diff --name-only HEAD^ HEAD); do
     # (as of the time of writing, that's `Cmi_format` and `Cmt_format`)
     file_formats/*) tgt=${base/#file_formats/typing};;
 
-    # We can't have this module in `utils/`, it breaks Merlin's dependency
+    # We can't have these modules in `utils/`, it breaks Merlin's dependency
     # structure
-    utils/compilation_unit.ml*) tgt=${base/#utils/typing};;
+    utils/compilation_unit.ml*|utils/import_info.ml*)
+      tgt=${base/#utils/typing};;
 
     # We have to inspect these files by hand, we only care about a subset of the
     # changes
