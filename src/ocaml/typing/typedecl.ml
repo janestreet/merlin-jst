@@ -215,8 +215,8 @@ let transl_global_flags loc attrs =
     | Ok b -> b
     | Error () -> raise(Error(loc, Local_not_enabled))
   in
-  let global = transl_global_flag loc (Builtin_attributes.has_global attrs) in 
-  let nonlocal = transl_global_flag loc (Builtin_attributes.has_nonlocal attrs) in 
+  let global = transl_global_flag loc (Builtin_attributes.has_global attrs) in
+  let nonlocal = transl_global_flag loc (Builtin_attributes.has_nonlocal attrs) in
   match global, nonlocal with
   | true, true -> raise(Error(loc, Global_and_nonlocal))
   | true, false -> Types.Global
@@ -254,13 +254,15 @@ let transl_labels env univars closed lbls =
       (fun ld ->
          let ty = ld.ld_type.ctyp_type in
          let ty = match get_desc ty with Tpoly(t,[]) -> t | _ -> ty in
+         let ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+         Env.register_uid ld_uid ld.ld_loc;
          {Types.ld_id = ld.ld_id;
           ld_mutable = ld.ld_mutable;
           ld_global = ld.ld_global;
           ld_type = ty;
           ld_loc = ld.ld_loc;
           ld_attributes = ld.ld_attributes;
-          ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+          ld_uid;
          }
       )
       lbls in
@@ -433,12 +435,14 @@ let transl_declaration env sdecl (id, uid) =
               cd_attributes = scstr.pcd_attributes }
           in
           let cstr =
+            let cd_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+            Env.register_uid cd_uid scstr.pcd_loc;
             { Types.cd_id = name;
               cd_args = args;
               cd_res = ret_type;
               cd_loc = scstr.pcd_loc;
               cd_attributes = scstr.pcd_attributes;
-              cd_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) }
+              cd_uid; }
           in
             tcstr, cstr
         in

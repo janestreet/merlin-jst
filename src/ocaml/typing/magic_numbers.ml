@@ -36,12 +36,10 @@ module Cmi = struct
         fprintf ppf
           "%a@ seems to be compiled with a version of OCaml (with magic number \
            %s) that is not supported by Merlin.@.\
-           This instance of Merlin handles OCaml %s (which has magic number \
-           %s)."
+          This instance of Merlin handles OCaml %s."
           Location.print_filename filename
           compiler_magic
           (Option.get @@ to_version_opt Config.cmi_magic_number)
-          Config.cmi_magic_number
       | Some version ->
         fprintf ppf
           "%a@ seems to be compiled with OCaml %s.@.\
