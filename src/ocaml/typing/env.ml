@@ -43,7 +43,8 @@ let module_declarations : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
 let uid_to_loc : Location.t Types.Uid.Tbl.t ref =
   s_table Types.Uid.Tbl.create 16
 
-let register_uid uid loc = Types.Uid.Tbl.add !uid_to_loc uid loc
+let register_uid uid loc =
+  Types.Uid.Tbl.add !uid_to_loc uid loc
 
 let get_uid_to_loc_tbl () = !uid_to_loc
 
@@ -813,11 +814,11 @@ let check_functor_application =
        f0_path:Path.t -> args:(Path.t * Types.module_type) list ->
        arg_path:Path.t -> arg_mty:module_type -> param_mty:module_type ->
        t -> unit)
-let strengthen =
-  (* to be filled with Mtype.strengthen *)
-  ref ((fun ~aliasable:_ _env _mty _path -> assert false) :
-         aliasable:bool -> t -> Subst.Lazy.modtype ->
-         Path.t -> Subst.Lazy.modtype)
+
+let scrape_alias =
+  (* to be filled with Mtype.scrape_alias *)
+  ref ((fun _env _mty -> assert false) :
+        t -> Subst.Lazy.modtype -> Subst.Lazy.modtype)
 
 let shorten_module_path =
   (* to be filled with Printtyp.shorten_module_path *)
@@ -1122,7 +1123,7 @@ and find_functor_components path env =
   | Functor_comps f -> f
   | Structure_comps _ -> raise Not_found
 
-let find_module ~alias path env =
+let find_module path env =
   match path with
   | Pident id ->
       let data = find_ident_module id env in
@@ -1133,8 +1134,7 @@ let find_module ~alias path env =
       Subst.Lazy.force_module_decl data.mda_declaration
   | Papply(p1, p2) ->
       let fc = find_functor_components p1 env in
-      if alias then md (fc.fcomp_res)
-      else md (modtype_of_functor_appl fc p1 p2)
+      md (modtype_of_functor_appl fc p1 p2)
 
 let find_module_lazy ~alias path env =
   match path with
@@ -1152,11 +1152,6 @@ let find_module_lazy ~alias path env =
         else md (modtype_of_functor_appl fc p1 p2)
       in
       Subst.Lazy.of_module_decl md
-
-let find_strengthened_module ~aliasable path env =
-  let md = find_module_lazy ~alias:true path env in
-  let mty = !strengthen ~aliasable env md.mdl_type path in
-  Subst.Lazy.force_modtype mty
 
 let find_value_full path env =
   match path with
@@ -1485,9 +1480,6 @@ and expand_modtype_path env path =
   | Some (MtyL_ident path) -> normalize_modtype_path env path
   | _ | exception Not_found -> path
 
-let find_module path env =
-  find_module ~alias:false path env
-
 let find_module_lazy path env =
   find_module_lazy ~alias:false path env
 
@@ -1686,29 +1678,6 @@ let find_shadowed_types path env =
     (find_shadowed wrap_identity
        (fun env -> env.types) (fun comps -> comps.comp_types) path env)
 
-(* Expand manifest module type names at the top of the given module type *)
-
-let rec scrape_alias env ?path mty =
-  let open Subst.Lazy in
-  match mty, path with
-    MtyL_ident p, _ ->
-      begin try
-        scrape_alias env (find_modtype_expansion_lazy p env) ?path
-      with Not_found ->
-        mty
-      end
-  | MtyL_alias path, _ ->
-      begin try
-        scrape_alias env ((find_module_lazy path env).mdl_type) ~path
-      with Not_found ->
-        (*Location.prerr_warning Location.none
-          (Warnings.No_cmi_file (Path.name path));*)
-        mty
-      end
-  | mty, Some path ->
-      !strengthen ~aliasable:true env mty path
-  | _ -> mty
-
 (* Given a signature and a root path, prefix all idents in the signature
    by the root path and build the corresponding substitution. *)
 
@@ -1853,7 +1822,7 @@ let is_identchar c =
 let rec components_of_module_maker
           {cm_env; cm_prefixing_subst;
            cm_path; cm_addr; cm_mty; cm_shape} : _ result =
-  match scrape_alias cm_env cm_mty with
+  match !scrape_alias cm_env cm_mty with
     MtyL_signature sg ->
       let c =
         { comp_values = NameMap.empty;
@@ -2299,8 +2268,6 @@ and store_cltype id desc shape env =
     short_paths_additions =
       short_paths_class_type id desc env.short_paths_additions; }
 
-let scrape_alias env mty = scrape_alias env mty
-
 (* Compute the components of a functor application in a path. *)
 
 let components_of_functor_appl ~loc ~f_path ~f_comp ~arg env =
@@ -2415,10 +2382,6 @@ let add_module ?arg ?shape id presence mty env =
 let add_local_type path info env =
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
-
-(* Non-lazy version of scrape_alias *)
-let scrape_alias t mty =
-  mty |> Subst.Lazy.of_modtype |> scrape_alias t |> Subst.Lazy.force_modtype
 
 (* Insertion of bindings by name *)
 

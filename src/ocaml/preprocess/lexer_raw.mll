@@ -579,6 +579,7 @@ rule token state = parse
   | "="  { return EQUAL }
   | "["  { return LBRACKET }
   | "[|" { return LBRACKETBAR }
+  | "[:" { return LBRACKETCOLON }
   | "[<" { return LBRACKETLESS }
   | "[>" { return LBRACKETGREATER }
   | "]"  { return RBRACKET }
@@ -587,6 +588,7 @@ rule token state = parse
   | "|"  { return BAR }
   | "||" { return BARBAR }
   | "|]" { return BARRBRACKET }
+  | ":]" { return COLONRBRACKET }
   | ">"  { return GREATER }
   | ">]" { return GREATERRBRACKET }
   | "}"  { return RBRACE }

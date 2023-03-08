@@ -92,7 +92,7 @@ let rec erroneous_expr_check e =
   match e.Typedtree.exp_desc with
   | Typedtree.Texp_ident (p,_,_,_)
     when Ident.name (Path.head p) = "_" -> true
-  | Typedtree.Texp_apply (e',_,_) -> erroneous_expr_check e'
+  | Typedtree.Texp_apply (e',_,_,_) -> erroneous_expr_check e'
   | _ -> false
 
 exception Warning of Location.t * string

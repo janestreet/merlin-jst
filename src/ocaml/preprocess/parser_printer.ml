@@ -82,6 +82,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETPERCENT) -> "[%"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETLESS) -> "[<"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETGREATER) -> "[>"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETCOLON) -> "[:"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETBAR) -> "[|"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETATATAT) -> "[@@@"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETATAT) -> "[@@"
@@ -136,6 +137,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT) -> "constraint"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COMMENT) -> "COMMENT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COMMA) -> ","
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COLONRBRACKET) -> ":]"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COLONGREATER) -> ":>"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COLONEQUAL) -> ":="
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COLONCOLON) -> "::"
@@ -205,13 +207,14 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_) -> "reversed_separated_nonempty_llist_COMMA_core_type_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_BAR_row_field_) -> "reversed_separated_nonempty_llist_BAR_row_field_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_with_constraint_) -> "reversed_separated_nonempty_llist_AND_with_constraint_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_comprehension_clause_) -> "reversed_separated_nonempty_llist_AND_comprehension_clause_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_comprehension_clause_binding_) -> "reversed_separated_nonempty_llist_AND_comprehension_clause_binding_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AMPERSAND_core_type_no_attr_) -> "reversed_separated_nonempty_llist_AMPERSAND_core_type_no_attr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_preceded_or_separated_nonempty_llist_BAR_match_case_) -> "reversed_preceded_or_separated_nonempty_llist_BAR_match_case_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_typevar_) -> "reversed_nonempty_llist_typevar_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_name_tag_) -> "reversed_nonempty_llist_name_tag_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_labeled_simple_expr_) -> "reversed_nonempty_llist_labeled_simple_expr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_functor_arg_) -> "reversed_nonempty_llist_functor_arg_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_comprehension_clause_) -> "reversed_nonempty_llist_comprehension_clause_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_llist_preceded_CONSTRAINT_constrain__) -> "reversed_llist_preceded_CONSTRAINT_constrain__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_declaration_) -> "reversed_bar_llist_extension_constructor_declaration_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_) -> "reversed_bar_llist_extension_constructor_"
@@ -351,8 +354,8 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_constr_ident) -> "constr_ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_constr_extra_nonprefix_ident) -> "constr_extra_nonprefix_ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_constant) -> "constant"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_comprehension_tail_RBRACKET_) -> "comprehension_tail_RBRACKET_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_comprehension_tail_BARRBRACKET_) -> "comprehension_tail_BARRBRACKET_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_comprehension_iterator) -> "comprehension_iterator"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_comprehension_clause_binding) -> "comprehension_clause_binding"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_comprehension_clause) -> "comprehension_clause"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_clty_longident) -> "clty_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_class_type_declarations) -> "class_type_declarations"
@@ -368,6 +371,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_class_field) -> "class_field"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_class_expr) -> "class_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_attribute) -> "attribute"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_attr_payload) -> "attr_payload"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_attr_id) -> "attr_id"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_atomic_type) -> "atomic_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_any_longident) -> "any_longident"
@@ -440,6 +444,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETPERCENT -> (fun _ -> "[%")
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETLESS -> (fun _ -> "[<")
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETGREATER -> (fun _ -> "[>")
+  | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETCOLON -> (fun _ -> "[:")
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETBAR -> (fun _ -> "[|")
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETATATAT -> (fun _ -> "[@@@")
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACKETATAT -> (fun _ -> "[@@")
@@ -494,6 +499,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT -> (fun _ -> "constraint")
   | MenhirInterpreter.T MenhirInterpreter.T_COMMENT -> (fun _ -> "COMMENT")
   | MenhirInterpreter.T MenhirInterpreter.T_COMMA -> (fun _ -> ",")
+  | MenhirInterpreter.T MenhirInterpreter.T_COLONRBRACKET -> (fun _ -> ":]")
   | MenhirInterpreter.T MenhirInterpreter.T_COLONGREATER -> (fun _ -> ":>")
   | MenhirInterpreter.T MenhirInterpreter.T_COLONEQUAL -> (fun _ -> ":=")
   | MenhirInterpreter.T MenhirInterpreter.T_COLONCOLON -> (fun _ -> "::")
@@ -563,13 +569,14 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_core_type_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_BAR_row_field_ -> (fun _ -> "reversed_separated_nonempty_llist_BAR_row_field_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_with_constraint_ -> (fun _ -> "reversed_separated_nonempty_llist_AND_with_constraint_")
-  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_comprehension_clause_ -> (fun _ -> "reversed_separated_nonempty_llist_AND_comprehension_clause_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_comprehension_clause_binding_ -> (fun _ -> "reversed_separated_nonempty_llist_AND_comprehension_clause_binding_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AMPERSAND_core_type_no_attr_ -> (fun _ -> "reversed_separated_nonempty_llist_AMPERSAND_core_type_no_attr_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_preceded_or_separated_nonempty_llist_BAR_match_case_ -> (fun _ -> "reversed_preceded_or_separated_nonempty_llist_BAR_match_case_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_typevar_ -> (fun _ -> "reversed_nonempty_llist_typevar_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_name_tag_ -> (fun _ -> "reversed_nonempty_llist_name_tag_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_labeled_simple_expr_ -> (fun _ -> "reversed_nonempty_llist_labeled_simple_expr_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_functor_arg_ -> (fun _ -> "reversed_nonempty_llist_functor_arg_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reversed_nonempty_llist_comprehension_clause_ -> (fun _ -> "reversed_nonempty_llist_comprehension_clause_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_llist_preceded_CONSTRAINT_constrain__ -> (fun _ -> "reversed_llist_preceded_CONSTRAINT_constrain__")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_declaration_ -> (fun _ -> "reversed_bar_llist_extension_constructor_declaration_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_ -> (fun _ -> "reversed_bar_llist_extension_constructor_")
@@ -709,8 +716,8 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_constr_ident -> (fun _ -> "constr_ident")
   | MenhirInterpreter.N MenhirInterpreter.N_constr_extra_nonprefix_ident -> (fun _ -> "constr_extra_nonprefix_ident")
   | MenhirInterpreter.N MenhirInterpreter.N_constant -> (fun _ -> "constant")
-  | MenhirInterpreter.N MenhirInterpreter.N_comprehension_tail_RBRACKET_ -> (fun _ -> "comprehension_tail_RBRACKET_")
-  | MenhirInterpreter.N MenhirInterpreter.N_comprehension_tail_BARRBRACKET_ -> (fun _ -> "comprehension_tail_BARRBRACKET_")
+  | MenhirInterpreter.N MenhirInterpreter.N_comprehension_iterator -> (fun _ -> "comprehension_iterator")
+  | MenhirInterpreter.N MenhirInterpreter.N_comprehension_clause_binding -> (fun _ -> "comprehension_clause_binding")
   | MenhirInterpreter.N MenhirInterpreter.N_comprehension_clause -> (fun _ -> "comprehension_clause")
   | MenhirInterpreter.N MenhirInterpreter.N_clty_longident -> (fun _ -> "clty_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_class_type_declarations -> (fun _ -> "class_type_declarations")
@@ -726,6 +733,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_class_field -> (fun _ -> "class_field")
   | MenhirInterpreter.N MenhirInterpreter.N_class_expr -> (fun _ -> "class_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_attribute -> (fun _ -> "attribute")
+  | MenhirInterpreter.N MenhirInterpreter.N_attr_payload -> (fun _ -> "attr_payload")
   | MenhirInterpreter.N MenhirInterpreter.N_attr_id -> (fun _ -> "attr_id")
   | MenhirInterpreter.N MenhirInterpreter.N_atomic_type -> (fun _ -> "atomic_type")
   | MenhirInterpreter.N MenhirInterpreter.N_any_longident -> (fun _ -> "any_longident")
@@ -797,6 +805,7 @@ let print_token = function
   | LBRACKETPERCENT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETPERCENT) ()
   | LBRACKETLESS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETLESS) ()
   | LBRACKETGREATER -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETGREATER) ()
+  | LBRACKETCOLON -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETCOLON) ()
   | LBRACKETBAR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETBAR) ()
   | LBRACKETATATAT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETATATAT) ()
   | LBRACKETATAT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACKETATAT) ()
@@ -851,6 +860,7 @@ let print_token = function
   | CONSTRAINT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT) ()
   | COMMENT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COMMENT) v
   | COMMA -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COMMA) ()
+  | COLONRBRACKET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COLONRBRACKET) ()
   | COLONGREATER -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COLONGREATER) ()
   | COLONEQUAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COLONEQUAL) ()
   | COLONCOLON -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COLONCOLON) ()
@@ -936,6 +946,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_LBRACKETPERCENT -> LBRACKETPERCENT
   | MenhirInterpreter.T_LBRACKETLESS -> LBRACKETLESS
   | MenhirInterpreter.T_LBRACKETGREATER -> LBRACKETGREATER
+  | MenhirInterpreter.T_LBRACKETCOLON -> LBRACKETCOLON
   | MenhirInterpreter.T_LBRACKETBAR -> LBRACKETBAR
   | MenhirInterpreter.T_LBRACKETATATAT -> LBRACKETATATAT
   | MenhirInterpreter.T_LBRACKETATAT -> LBRACKETATAT
@@ -990,6 +1001,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_CONSTRAINT -> CONSTRAINT
   | MenhirInterpreter.T_COMMENT -> COMMENT v
   | MenhirInterpreter.T_COMMA -> COMMA
+  | MenhirInterpreter.T_COLONRBRACKET -> COLONRBRACKET
   | MenhirInterpreter.T_COLONGREATER -> COLONGREATER
   | MenhirInterpreter.T_COLONEQUAL -> COLONEQUAL
   | MenhirInterpreter.T_COLONCOLON -> COLONCOLON

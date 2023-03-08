@@ -49,4 +49,5 @@ let nullable (type a) : a MenhirInterpreter.nonterminal -> bool =
   | N_ext -> true
   | N_class_self_type -> true
   | N_class_self_pattern -> true
+  | N_attr_payload -> true
   | _ -> false

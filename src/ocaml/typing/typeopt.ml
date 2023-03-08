@@ -121,7 +121,8 @@ let classify env ty : classification =
 (*
 let array_type_kind env ty =
   match scrape_poly env ty with
-  | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_array ->
+  | Tconstr(p, [elt_ty], _)
+    when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
       begin match classify env elt_ty with
       | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
       | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
@@ -351,10 +352,17 @@ let value_kind env ty =
   in
   value_kind
 
-let function_return_value_kind env ty =
+let layout env ty = Lambda.Pvalue (value_kind env ty)
+
+let function_return_layout env ty =
   match is_function_type env ty with
-  | Some (_lhs, rhs) -> value_kind env rhs
-  | None -> Pgenval
+  | Some (_lhs, rhs) -> layout env rhs
+  | None -> Misc.fatal_errorf "function_return_layout called on non-function type"
+
+let function2_return_layout env ty =
+   match is_function_type env ty with
+  | Some (_lhs, rhs) -> function_return_layout env rhs
+  | None -> Misc.fatal_errorf "function_return_layout called on non-function type"
 *)
 
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.
@@ -378,7 +386,7 @@ let classify_lazy_argument : Typedtree.expression ->
         ( Const_int _ | Const_char _ | Const_string _
         | Const_int32 _ | Const_int64 _ | Const_nativeint _ )
     | Texp_function _
-    | Texp_construct (_, {cstr_arity = 0}, _) ->
+    | Texp_construct (_, {cstr_arity = 0}, _, _) ->
        `Constant_or_function
     | Texp_constant(Const_float _) ->
       (* TODO: handle flat float array, either at configure time or from the
@@ -395,4 +403,7 @@ let classify_lazy_argument : Typedtree.expression ->
 let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   if Lambda.equal_value_kind k1 k2 then k1
   else Pgenval
+
+let layout_union (Pvalue layout1) (Pvalue layout2) =
+  Pvalue (value_kind_union layout1 layout2)
 *)

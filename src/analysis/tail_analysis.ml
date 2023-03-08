@@ -41,7 +41,7 @@ let tail_operator = function
   | _ -> false
 
 let expr_tail_positions = function
-  | Texp_apply (callee, args, _) when tail_operator callee ->
+  | Texp_apply (callee, args, _, _) when tail_operator callee ->
     begin match List.last args with
       | None | Some (_, Omitted _)-> []
       | Some (_, Arg expr) -> [Expression expr]
@@ -54,7 +54,7 @@ let expr_tail_positions = function
   | Texp_field _ | Texp_setfield _ | Texp_array _
   | Texp_while _ | Texp_for _ | Texp_send _ | Texp_new _
   | Texp_unreachable | Texp_extension_constructor _ | Texp_letop _ | Texp_hole
-  | Texp_list_comprehension _ | Texp_arr_comprehension _
+  | Texp_list_comprehension _ | Texp_array_comprehension _
   | Texp_probe _ | Texp_probe_is_enabled _
     -> []
   | Texp_match (_,cs,_)

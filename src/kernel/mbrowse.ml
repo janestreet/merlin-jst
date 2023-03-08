@@ -223,7 +223,7 @@ let of_typedtree = function
   | `Interface sg -> of_signature sg
 
 let optional_label_sugar = function
-  | Typedtree.Texp_construct (id, _, [e])
+  | Typedtree.Texp_construct (id, _, [e], _)
     when id.Location.loc.Location.loc_ghost
       && id.Location.txt = Longident.Lident "Some" ->
     Some e
@@ -232,7 +232,7 @@ let optional_label_sugar = function
 let rec is_recovered_expression e =
   match e.Typedtree.exp_desc with
   | (* Recovery on arbitrary expressions *)
-    Texp_tuple [_] ->
+    Texp_tuple ([_], _) ->
     true
   | (* Recovery on unbound identifier *)
     Texp_ident (Path.Pident id, _, _, _)

@@ -287,23 +287,30 @@ let of_exp_record_field obj lid_loc lbl =
 let of_pat_record_field obj loc lbl =
   of_record_field (`Pattern obj) loc lbl
 
-let of_comprehension_clause = function
-  | From_to (_, _p, e1, e2, _) ->
-     of_expression e1 ** of_expression e2
-  | In (p, e) ->
-     of_pattern p ** of_expression e
+let of_comprehension_clause_binding { comp_cb_iterator; _} =
+  match comp_cb_iterator with
+  | Texp_comp_range { start; stop; _ } ->
+    of_expression start ** of_expression stop
+  | Texp_comp_in { pattern; sequence } ->
+    of_pattern pattern ** of_expression sequence
 
-let of_comprehension {clauses; guard} =
-  list_fold of_comprehension_clause clauses **
-    option_fold of_expression guard
+let of_comprehension_clause = function
+  | Texp_comp_for bindings ->
+    list_fold of_comprehension_clause_binding bindings
+  | Texp_comp_when e ->
+    of_expression e
+
+let of_comprehension {comp_body; comp_clauses} =
+  of_expression comp_body **
+  list_fold of_comprehension_clause comp_clauses
 
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
-  | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
+  | Tpat_alias (p,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
-  | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array ps ->
+  | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array (_,ps) ->
     list_fold of_pattern ps
   | Tpat_construct (_,_,ps,Some (_, ct)) ->
     list_fold of_pattern ps ** of_core_type ct
@@ -327,7 +334,7 @@ let of_expression_desc loc = function
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { cases; _ } ->
     list_fold of_case cases
-  | Texp_apply (e,ls,_) ->
+  | Texp_apply (e,ls,_,_) ->
     of_expression e **
     list_fold (function
         | (_,Omitted _) -> id_fold
@@ -339,9 +346,9 @@ let of_expression_desc loc = function
   | Texp_try (e,cs) ->
     of_expression e **
     list_fold of_case cs
-  | Texp_tuple es | Texp_construct (_,_,es) | Texp_array es ->
+  | Texp_tuple (es,_) | Texp_construct (_,_,es,_) | Texp_array (_,es,_) ->
     list_fold of_expression es
-  | Texp_variant (_,Some e)
+  | Texp_variant (_,Some (e,_))
   | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
     of_expression e
   | Texp_record { fields; extended_expression } ->
@@ -352,9 +359,9 @@ let of_expression_desc loc = function
         of_exp_record_field e lid_loc desc ** of_expression e
     in
     array_fold fold_field fields
-  | Texp_field (e,lid_loc,lbl) ->
+  | Texp_field (e,lid_loc,lbl,_) ->
     of_expression e ** of_exp_record_field e lid_loc lbl
-  | Texp_setfield (e1,lid_loc,lbl,e2) ->
+  | Texp_setfield (e1,_,lid_loc,lbl,e2) ->
     of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
   | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2)
@@ -363,9 +370,9 @@ let of_expression_desc loc = function
   | Texp_ifthenelse (e1,e2,Some e3)
   | Texp_for { for_from = e1; for_to = e2; for_body = e3; _ } ->
     of_expression e1 ** of_expression e2 ** of_expression e3
-  | Texp_list_comprehension (e, cs) | Texp_arr_comprehension (e, cs) ->
-    of_expression e ** list_fold of_comprehension cs
-  | Texp_send (e,meth,_) ->
+  | Texp_list_comprehension cs | Texp_array_comprehension (_, cs) ->
+    of_comprehension cs
+  | Texp_send (e,meth,_,_) ->
     of_expression e **
     of_method_call e meth loc (* TODO ulysse CHECK*)
   | Texp_override (_,ls) ->
@@ -772,9 +779,9 @@ let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; _ } =
     match (pat_desc : k pattern_desc) with
     | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
       fake_path lid_loc cstr_res cstr_name
-    | Tpat_var (id, {Location. loc; txt}) ->
+    | Tpat_var (id, {Location. loc; txt},_) ->
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
-    | Tpat_alias (_,id,loc) ->
+    | Tpat_alias (_,id,loc,_) ->
       [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
     | _ -> []
   in
@@ -823,7 +830,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
         | _ -> assert false
       in
       [mkloc (Path.Pident id) loc, lid]
-    | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _) ->
+    | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _, _) ->
       fake_path lid_loc cstr_res cstr_name
     | Texp_open (od,_) -> module_expr_paths od.open_expr
     | _ -> []
@@ -937,7 +944,7 @@ let node_paths_and_longident t =
 let node_is_constructor = function
   | Constructor_declaration decl ->
     Some {decl.cd_name with Location.txt = `Declaration decl}
-  | Expression {exp_desc = Texp_construct (loc, desc, _)} ->
+  | Expression {exp_desc = Texp_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
   | Pattern {pat_desc = Tpat_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}

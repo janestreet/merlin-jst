@@ -845,7 +845,7 @@ let doc_from_uid ~config ~comp_unit uid =
 
       value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
         begin match vb_pat.pat_desc with
-        | Tpat_var (id, _) ->
+        | Tpat_var (id, _, _) ->
             begin try
               let vd = Env.find_value (Pident id) env in
               test vd.val_uid vb_attributes

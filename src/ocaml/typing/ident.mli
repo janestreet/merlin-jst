@@ -33,6 +33,7 @@ val create_scoped: scope:int -> string -> t
 val create_local: string -> t
 val create_persistent: string -> t
 val create_predef: string -> t
+val create_instance: string -> string list -> t
 
 val rename: t -> t
         (** Creates an identifier with the same name as the input, a fresh
@@ -54,12 +55,15 @@ val compare: t -> t -> int
 val is_global: t -> bool
 val is_global_or_predef: t -> bool
 val is_predef: t -> bool
+val is_instance: t -> bool
 
 val scope: t -> int
 val stamp: t -> int
 
 val lowest_scope : int
 val highest_scope: int
+
+val split_instance : t -> (string * string list) option
 
 val reinit: unit -> unit
 

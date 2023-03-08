@@ -36,12 +36,18 @@ val opaque               : bool ref
 val unboxed_types        : bool ref
 
 val locations            : bool ref
+val all_ppx              : string list ref
 
 (** {1 Language extensions} *)
 module Extension : sig
-  type t = Comprehensions | Local | Include_functor | Polymorphic_parameters
+  type t = Comprehensions
+         | Local
+         | Include_functor
+         | Polymorphic_parameters
+         | Immutable_arrays
   val enable : string -> unit
   val is_enabled : t -> bool
+  val of_string : string -> t option
   val to_string : t -> string
   val all : t list
   val disable_all : unit -> unit
