@@ -58,14 +58,14 @@ module Extension = struct
   let equal (a : t) (b : t) = (a = b)
 
   let to_string = function
-    | Comprehensions -> "comprehensions"
+    | Comprehensions -> "comprehensions_experimental"
     | Local -> "local"
     | Include_functor -> "include_functor"
     | Polymorphic_parameters -> "polymorphic_parameters"
     | Immutable_arrays -> "immutable_arrays_experimental"
 
   let of_string = function
-    | "comprehensions" -> Some Comprehensions
+    | "comprehensions_experimental" -> Some Comprehensions
     | "local" -> Some Local
     | "include_functor" -> Some Include_functor
     | "polymorphic_parameters" -> Some Polymorphic_parameters

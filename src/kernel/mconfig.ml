@@ -407,6 +407,9 @@ let ocaml_ignored_flags = [
   "-verbose"; "-where";
 
   (* flambda-backend specific *)
+  "-basic-block-sections";
+  "-caml-apply-inline-fast-path";
+  "-dgc-timings";
   "-ocamlcfg";
   "-no-ocamlcfg";
   "-flambda2-backend-cse-at-toplevel";
@@ -454,6 +457,9 @@ let ocaml_ignored_parametrized_flags = [
   "-error-style"; "-dump-dir";
 
   (* flambda-backend specific *)
+  "-drawfexpr-to";
+  "-dfexpr-to";
+  "-dflexpect-to";
   "-reorder-blocks-random";
   "-heap-reduction-threshold";
   "-flambda2-cse-depth";
