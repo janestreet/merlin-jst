@@ -34,7 +34,9 @@ let flambda = false
 
 let exec_magic_number = "Caml1999X501"
     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
-and cmi_magic_number = "Caml1999I502"
+and cmi_magic_number =
+  (* When bumping this number, be sure to also update ../typing/magic_numbers.ml*)
+  "Caml1999I502"
 and cmo_magic_number = "Caml1999O502"
 and cma_magic_number = "Caml1999A502"
 and cmx_magic_number =
