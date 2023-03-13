@@ -112,14 +112,14 @@ static ssize_t recv_buffer(int fd, int fds[3])
       unbyte(buffer[0],0) | unbyte(buffer[1],1) |
       unbyte(buffer[2],2) | unbyte(buffer[3],3);
 
-    if (recvd < target)
+    if ((size_t)recvd < target)
     {
       ssize_t recvd_;
       do {
         NO_EINTR(recvd_, recv(fd, buffer + recvd, sizeof(buffer) - recvd, 0));
         if (recvd_ > 0)
           recvd += recvd_;
-      } while (recvd_ > 0 && recvd < target);
+      } while (recvd_ > 0 && (size_t)recvd < target);
     }
   }
 
@@ -134,7 +134,7 @@ static ssize_t recv_buffer(int fd, int fds[3])
   int nfds = (cm->cmsg_len - CMSG_LEN(0)) / sizeof(int);
 
   /* Check malformed packet */
-  if (nfds != 3 || recvd != target || buffer[recvd-1] != '\0')
+  if (nfds != 3 || (size_t)recvd != target || buffer[recvd-1] != '\0')
   {
     int i;
     for (i = 0; i < nfds; ++i)
