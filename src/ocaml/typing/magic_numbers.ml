@@ -32,30 +32,22 @@ module Cmi = struct
         fprintf ppf "%a@ is not a compiled interface"
           Location.print_filename filename
     | Wrong_version_interface (filename, compiler_magic) ->
-      let merlin_ocaml_version =
-        let ocaml_version =
-          match to_version_opt Config.cmi_magic_number with
-          | Some version -> "OCaml " ^ version
-          | None -> "an unknown version of OCaml"
-        in
-        sprintf "%s (with magic number %s)" ocaml_version Config.cmi_magic_number
-      in
       begin match to_version_opt compiler_magic with
       | None ->
         fprintf ppf
           "%a@ seems to be compiled with a version of OCaml (with magic number \
            %s) that is not supported by Merlin.@.\
-          This instance of Merlin handles %s."
+          This instance of Merlin handles OCaml %s."
           Location.print_filename filename
           compiler_magic
-          merlin_ocaml_version
+          (Option.get @@ to_version_opt Config.cmi_magic_number)
       | Some version ->
         fprintf ppf
           "%a@ seems to be compiled with OCaml %s.@.\
            But this instance of Merlin handles OCaml %s."
           Location.print_filename filename
           version
-          merlin_ocaml_version
+          (Option.get @@ to_version_opt Config.cmi_magic_number)
       end
     | Corrupted_interface filename ->
       fprintf ppf
