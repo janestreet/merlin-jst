@@ -52,7 +52,7 @@ module Cmi = struct
       | Some version ->
         fprintf ppf
           "%a@ seems to be compiled with OCaml %s.@.\
-           But this instance of Merlin handles OCaml %s."
+           But this instance of Merlin handles %s."
           Location.print_filename filename
           version
           merlin_ocaml_version
