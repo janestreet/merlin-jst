@@ -1389,7 +1389,7 @@ and transl_modtype_aux env smty =
       mkmty (Tmty_alias (path, lid)) (Mty_alias path) env loc
         smty.pmty_attributes
   | Pmty_signature ssg ->
-      let sg = transl_signature env ssg in
+      let sg = transl_signature env [] ssg in
       mkmty (Tmty_signature sg) (Mty_signature sg.sig_type) env loc
         smty.pmty_attributes
   | Pmty_functor(sarg_opt, sres) ->
@@ -1460,7 +1460,13 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
   let (tcstr, sg) = merge_constraint env loc sg lid with_info in
   (tcstr :: rev_tcstrs, sg)
 
-and transl_signature ?(keep_warnings = false) env (sg : Parsetree.signature) =
+(* In the real compiler, there is no notion of incrementally checking a signature,
+   as there is for structures when using the toplevel.  So this function doesn't
+   take a ~toplevel argument like its cousin type_structure.  But in merlin,
+   a signature can be incrementally checked because of the caching mechanism,
+   so we need this to take the signature of the previously checked portion
+   to support include functor. *)
+and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signature) =
   let names = Signature_names.create () in
   let transl_sig_item env sig_acc item =
     let loc = item.psig_loc in
@@ -1799,7 +1805,7 @@ and transl_signature ?(keep_warnings = false) env (sg : Parsetree.signature) =
     ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
     (fun () ->
        let (trem, rem, final_env) =
-         transl_sig (Env.in_signature true env) [] [] sg
+         transl_sig (Env.in_signature true env) [] sig_acc sg
        in
        let rem = Signature_names.simplify final_env names rem in
        { sig_items = trem; sig_type = rem; sig_final_env = final_env })
@@ -2294,7 +2300,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
       md, shape
   | Pmod_structure sstr ->
       let (str, sg, names, shape, _finalenv) =
-        type_structure funct_body anchor env sstr in
+        type_structure funct_body anchor env [] sstr in
       let md =
         { mod_desc = Tmod_structure str;
           mod_type = Mty_signature sg;
@@ -2601,7 +2607,14 @@ and type_open_decl_aux ?used_slot ?toplevel funct_body names env od =
     } in
     open_descr, sg, newenv
 
-and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor env sstr =
+(* In the real compiler, the `toplevel` argument is a `signature option` because it serves
+   two purposes: To tweak typing if we're in the toplevel, and to pass in the signature
+   for what's been typed so far in that case (needed by include functor).  But in merlin
+   we might need to pass in the signature for earlier parts of the module even though
+   we're not in the toplevel (because it can incrementally type and cache parts of the
+   module).  We don't want the typing tweaks that occur for the toplevel, so we need an
+   extra argument (sig_acc), but leave `toplevel` alone to minimize the diff *)
+and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor env sig_acc sstr =
   let names = Signature_names.create () in
 
   let type_str_item env shape_map {pstr_loc = loc; pstr_desc = desc} sig_acc =
@@ -2980,7 +2993,10 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         Builtin_attributes.mark_alert_used attr;
         Tstr_attribute attr, [], shape_map, env
   in
-  let toplevel_sig = Option.value toplevel ~default:[] in
+  let toplevel_sig =
+    (* See comment on [type_structure] above *)
+    sig_acc
+  in
   let rec type_struct env shape_map sstr str_acc sig_acc sig_acc_include_functor =
     match sstr with
     | [] ->
@@ -3024,7 +3040,7 @@ let type_toplevel_phrase env sig_acc s =
   Env.reset_probes ();
   Typecore.reset_allocations ();
   let (str, sg, _to_remove_from_sg, shape, env) =
-    type_structure ~toplevel:(Some sig_acc) false None env s in
+    type_structure ~toplevel:(Some sig_acc) false None env sig_acc s in
   remove_mode_variables env sg;
   remove_mode_variables_for_toplevel str;
   Typecore.optimise_allocations ();
@@ -3033,14 +3049,14 @@ let type_toplevel_phrase env sig_acc s =
 let type_module_alias = type_module ~alias:true true false None
 let type_module = type_module true false None
 
-let merlin_type_structure env str =
+let merlin_type_structure env sig_acc str =
   let (str, sg, _sg_names, _shape, env) =
-    type_structure ~keep_warnings:true false None env str
+    type_structure ~keep_warnings:true false None env sig_acc str
   in
   str, sg, env
-let type_structure = type_structure false None
-let merlin_transl_signature env sg = transl_signature ~keep_warnings:true env sg
-let transl_signature env sg = transl_signature env sg
+let type_structure env = type_structure false None env []
+let merlin_transl_signature env sig_acc sg = transl_signature ~keep_warnings:true env sig_acc sg
+let transl_signature env sg = transl_signature env [] sg
 
 (* Normalize types in a signature *)
 

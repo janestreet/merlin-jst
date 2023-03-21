@@ -158,8 +158,8 @@ val reset : preserve_persistent_env:bool -> unit
 val normalize_signature : Types.signature -> unit
 
 val merlin_type_structure:
-  Env.t -> Parsetree.structure ->
+  Env.t -> Types.signature -> Parsetree.structure ->
   Typedtree.structure * Types.signature * (* Signature_names.t * *) Env.t
 
 val merlin_transl_signature:
-  Env.t -> Parsetree.signature -> Typedtree.signature
+  Env.t -> Types.signature -> Parsetree.signature -> Typedtree.signature

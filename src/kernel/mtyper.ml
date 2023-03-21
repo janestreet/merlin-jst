@@ -8,6 +8,7 @@ type ('p,'t) item = {
   typedtree_items: 't list * Types.signature_item list;
   part_snapshot  : Types.snapshot;
   part_env       : Env.t;
+  part_rev_sg    : Types.signature_item list;
   part_errors    : exn list;
   part_checks    : Typecore.delayed_check list;
   part_warnings  : Warnings.state;
@@ -65,35 +66,37 @@ let compatible_prefix result_items tree_items =
   in
   aux [] (result_items, tree_items)
 
-let rec type_structure caught env = function
+let rec type_structure caught env sg = function
   | parsetree_item :: rest ->
-    let items, _, part_env =
-      Typemod.merlin_type_structure env [parsetree_item]
+    let items, sg', part_env =
+      Typemod.merlin_type_structure env sg [parsetree_item]
     in
     let typedtree_items =
       (items.Typedtree.str_items, items.Typedtree.str_type) in
+    let part_rev_sg = List.rev_append sg' sg in
     let item = {
-      parsetree_item; typedtree_items; part_env;
+      parsetree_item; typedtree_items; part_env; part_rev_sg;
       part_snapshot = Btype.snapshot ();
       part_errors   = !caught;
       part_checks   = !Typecore.delayed_checks;
       part_warnings = Warnings.backup ();
     } in
-    item :: type_structure caught part_env rest
+    item :: type_structure caught part_env part_rev_sg rest
   | [] -> []
 
-let rec type_signature caught env = function
+let rec type_signature caught env sg = function
   | parsetree_item :: rest ->
     let {Typedtree. sig_final_env = part_env; sig_items; sig_type} =
-      Typemod.merlin_transl_signature env [parsetree_item] in
+      Typemod.merlin_transl_signature env sg [parsetree_item] in
+    let part_rev_sg = List.rev_append sig_type sg in
     let item = {
-      parsetree_item; typedtree_items = (sig_items, sig_type); part_env;
+      parsetree_item; typedtree_items = (sig_items, sig_type); part_env; part_rev_sg;
       part_snapshot = Btype.snapshot ();
       part_errors   = !caught;
       part_checks   = !Typecore.delayed_checks;
       part_warnings = Warnings.backup ();
     } in
-    item :: type_signature caught part_env rest
+    item :: type_signature caught part_env part_rev_sg rest
   | [] -> []
 
 let type_implementation config caught parsetree =
@@ -103,16 +106,16 @@ let type_implementation config caught parsetree =
     | Some (`Implementation items) -> compatible_prefix items parsetree
     | Some (`Interface _) | None -> ([], parsetree)
   in
-  let env', snap', warn' = match prefix with
-    | [] -> (env0, snap0, Warnings.backup ())
+  let env', sg', snap', warn' = match prefix with
+    | [] -> (env0, [], snap0, Warnings.backup ())
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
-      (x.part_env, x.part_snapshot, x.part_warnings)
+      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';
-  let suffix = type_structure caught env' parsetree in
+  let suffix = type_structure caught env' sg' parsetree in
   return_and_cache
     (env0, snap0, `Implementation (List.rev_append prefix suffix))
 
@@ -123,16 +126,16 @@ let type_interface config caught parsetree =
     | Some (`Interface items) -> compatible_prefix items parsetree
     | Some (`Implementation _) | None -> ([], parsetree)
   in
-  let env', snap', warn' = match prefix with
-    | [] -> (env0, snap0, Warnings.backup ())
+  let env', sg', snap', warn' = match prefix with
+    | [] -> (env0, [], snap0, Warnings.backup ())
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
-      (x.part_env, x.part_snapshot, x.part_warnings)
+      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';
-  let suffix = type_signature caught env' parsetree in
+  let suffix = type_signature caught env' sg' parsetree in
   return_and_cache
     (env0, snap0, `Interface (List.rev_append prefix suffix))
 
