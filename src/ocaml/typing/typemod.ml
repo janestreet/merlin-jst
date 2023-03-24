@@ -1786,18 +1786,19 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
     | Psig_extension (ext, _attrs) ->
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
   in
-  let rec transl_sig env sig_items sig_type = function
+  let rec transl_sig env sig_items sig_type sig_type_include_functor = function
     | [] -> List.rev sig_items, List.rev sig_type, env
     | item :: srem -> begin
-        match transl_sig_item env sig_type item with
+        match transl_sig_item env sig_type_include_functor item with
         | new_item , new_types , env ->
             transl_sig env
               (new_item :: sig_items)
               (List.rev_append new_types sig_type)
+              (List.rev_append new_types sig_type_include_functor)
               srem
         | exception exn ->
             Msupport.raise_error exn;
-            transl_sig env sig_items sig_type srem
+            transl_sig env sig_items sig_type sig_type_include_functor srem
       end
   in
   Msupport.with_saved_types
@@ -1805,7 +1806,7 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
     ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
     (fun () ->
        let (trem, rem, final_env) =
-         transl_sig (Env.in_signature true env) [] sig_acc sg
+         transl_sig (Env.in_signature true env) [] [] sig_acc sg
        in
        let rem = Signature_names.simplify final_env names rem in
        { sig_items = trem; sig_type = rem; sig_final_env = final_env })
