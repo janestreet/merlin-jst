@@ -74,12 +74,6 @@ let is_always_gc_ignorable env ty =
   in
   Result.is_ok (Ctype.check_type_immediate env ty imm)
 
-let maybe_pointer_type env ty =
-  let ty = scrape_ty env ty in
-  if is_always_gc_ignorable env ty then Immediate else Pointer
-
-let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
-
 type classification =
   | Int   (* any immediate type *)
   | Float
