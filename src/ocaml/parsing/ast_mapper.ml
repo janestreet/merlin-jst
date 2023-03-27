@@ -403,12 +403,48 @@ end
 
 module E = struct
   (* Value expressions for the core language *)
+
+  module C = Extensions.Comprehensions
+  module IA = Extensions.Immutable_arrays
+
+  let map_iterator sub : C.iterator -> C.iterator = function
+    | Range { start; stop; direction } ->
+      Range { start = sub.expr sub start;
+              stop = sub.expr sub stop;
+              direction }
+    | In expr -> In (sub.expr sub expr)
+
+  let map_clause_binding sub : C.clause_binding -> C.clause_binding = function
+    | { pattern; iterator; attributes } ->
+      { pattern = sub.pat sub pattern;
+        iterator = map_iterator sub iterator;
+        attributes = sub.attributes sub attributes }
+
+  let map_clause sub : C.clause -> C.clause = function
+    | For cbs -> For (List.map (map_clause_binding sub) cbs)
+    | When expr -> When (sub.expr sub expr)
+
+  let map_comp sub : C.comprehension -> C.comprehension = function
+    | { body; clauses } -> { body = sub.expr sub body;
+                            clauses = List.map (map_clause sub) clauses }
+
+  let map_cexp sub : C.expression -> C.expression = function
+    | Cexp_list_comprehension comp ->
+      Cexp_list_comprehension (map_comp sub comp)
+    | Cexp_array_comprehension (mut, comp) ->
+      Cexp_array_comprehension (mut, map_comp sub comp)
+
+  let map_iaexp sub : IA.expression -> IA.expression = function
+    | Iaexp_immutable_array elts ->
+      Iaexp_immutable_array (List.map (sub.expr sub) elts)
+
   let map_ext sub : Extensions.Expression.t -> Extensions.Expression.t =
     function
     | Eexp_comprehension cexp -> Eexp_comprehension (map_cexp sub cexp)
     | Eexp_immutable_array iaexp -> Eexp_immutable_array (map_iaexp sub iaexp)
 
-  let map sub {pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} =
+  let map sub
+        ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as exp) =
     let open Exp in
     let loc = sub.location sub loc in
     let attrs = sub.attributes sub attrs in
@@ -508,10 +544,27 @@ end
 module P = struct
   (* Patterns *)
 
-  let map sub {ppat_desc = desc; ppat_loc = loc; ppat_attributes = attrs} =
+  module IA = Extensions.Immutable_arrays
+
+  let map_iapat sub : IA.pattern -> IA.pattern = function
+    | Iapat_immutable_array elts ->
+      Iapat_immutable_array (List.map (sub.pat sub) elts)
+
+  let map_ext sub : Extensions.Pattern.t -> Extensions.Pattern.t = function
+    | Epat_immutable_array iapat -> Epat_immutable_array (map_iapat sub iapat)
+
+  let map sub
+        ({ppat_desc = desc; ppat_loc = loc; ppat_attributes = attrs} as pat) =
     let open Pat in
     let loc = sub.location sub loc in
     let attrs = sub.attributes sub attrs in
+    match Extensions.Pattern.of_ast pat with
+    | Some epat -> begin
+        Extensions_parsing.Pattern.wrap_desc ~loc ~attrs @@
+        match sub.pat_extension sub epat with
+        | Epat_immutable_array i -> Extensions.Immutable_arrays.pat_of ~loc i
+    end
+    | None ->
     match desc with
     | Ppat_any -> any ~loc ~attrs ()
     | Ppat_var s -> var ~loc ~attrs (map_loc sub s)
@@ -543,8 +596,6 @@ end
 
 module CE = struct
   (* Value expressions for the class language *)
-  let map_ext sub : Extensions.Pattern.t -> Extensions.Pattern.t = function
-    | Epat_immutable_array iapat -> Epat_immutable_array (map_iapat sub iapat)
 
   let map sub {pcl_loc = loc; pcl_desc = desc; pcl_attributes = attrs} =
     let open Cl in
@@ -580,13 +631,6 @@ module CE = struct
     let open Cf in
     let loc = sub.location sub loc in
     let attrs = sub.attributes sub attrs in
-    match Extensions.Pattern.of_ast pat with
-    | Some epat -> begin
-        Extensions_parsing.Pattern.wrap_desc ~loc ~attrs @@
-        match sub.pat_extension sub epat with
-        | Epat_immutable_array i -> Extensions.Immutable_arrays.pat_of ~loc i
-    end
-    | None ->
     match desc with
     | Pcf_inherit (o, ce, s) ->
         inherit_ ~loc ~attrs o (sub.class_expr sub ce)
@@ -662,7 +706,9 @@ let default_mapper =
       );
 
     pat = P.map;
+    pat_extension = P.map_ext;
     expr = E.map;
+    expr_extension = E.map_ext;
     binding_op = E.map_binding_op;
 
     module_declaration =
