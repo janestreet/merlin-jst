@@ -336,7 +336,6 @@ let make_constructor env loc type_path type_params svars sargs sret_type =
       targs, Some tret_type, args, Some ret_type
   end
 let verify_unboxed_attr unboxed_attr sdecl =
-  let unboxed_attr = get_unboxed_from_attributes sdecl in
   begin match unboxed_attr with
   | (None | Some false) -> ()
   | Some true ->
