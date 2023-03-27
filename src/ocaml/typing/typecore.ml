@@ -8193,6 +8193,17 @@ let type_exp env e = type_exp env mode_global e
 let type_argument env e t1 t2 = type_argument env mode_global e t1 t2
 
 (* Merlin specific *)
-let partial_pred =
+let partial_pred ~lev ?explode env expected_ty constrs labels p =
   let splitting_mode = Refine_or {inside_nonsplit_or = false} in
-  partial_pred ~splitting_mode
+  begin_def ();
+  let scope = create_scope () in
+  let result =
+    partial_pred
+      (* Fixed *)
+      ~splitting_mode ~allow_modules:(Modules_allowed { scope })
+      (* Arguments *)
+      ~lev ?explode env expected_ty constrs labels p
+  in
+  end_def ();
+  result
+
