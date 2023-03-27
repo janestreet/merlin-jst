@@ -449,7 +449,7 @@ module Gen = struct
             match def with
             | Type_variant (constrs, _) -> constructor env rtyp path constrs
             | Type_record (labels, _) -> record env rtyp path labels
-            | Type_abstract | Type_open -> []
+            | Type_abstract _ | Type_open -> []
           end
         | Tarrow ((label,_,_), tyleft, tyright, _) ->
           let argument, name = make_arg env label tyleft in
