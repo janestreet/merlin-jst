@@ -371,9 +371,9 @@ module Generic_array = struct
 end
 
 let ppat_iarray loc elts =
-  (Extensions.Immutable_arrays.pat_of
-     ~loc:(make_loc loc)
-     (Iapat_immutable_array elts)).ppat_desc
+  Extensions.Immutable_arrays.pat_of
+    ~loc:(make_loc loc)
+    (Iapat_immutable_array elts)
 
 let expecting loc nonterm =
     raise_error Syntaxerr.(Error(Expecting(make_loc loc, nonterm)))
@@ -2748,7 +2748,7 @@ comprehension_clause:
 
 %inline comprehension_expr:
   comprehension_ext_expr
-    { (Extensions.Comprehensions.expr_of ~loc:(make_loc $sloc) $1).pexp_desc }
+    { Extensions.Comprehensions.expr_of ~loc:(make_loc $sloc) $1 }
 ;
 
 %inline array_simple(ARR_OPEN, ARR_CLOSE, contents_semi_list):
@@ -2853,9 +2853,9 @@ comprehension_clause:
       { Generic_array.expression
           "[:" ":]"
           (fun elts ->
-            (Extensions.Immutable_arrays.expr_of
+             Extensions.Immutable_arrays.expr_of
                ~loc:(make_loc $sloc)
-               (Iaexp_immutable_array elts)).pexp_desc)
+               (Iaexp_immutable_array elts))
           $1 }
   | LBRACKET expr_semi_list RBRACKET
       { fst (mktailexp $loc($3) $2) }

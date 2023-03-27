@@ -592,9 +592,9 @@ module Generic_array = struct
 end
 
 let ppat_iarray loc elts =
-  (Extensions.Immutable_arrays.pat_of
-     ~loc:(make_loc loc)
-     (Iapat_immutable_array elts)).ppat_desc
+  Extensions.Immutable_arrays.pat_of
+    ~loc:(make_loc loc)
+    (Iapat_immutable_array elts)
 
 let expecting loc nonterm =
     raise_error Syntaxerr.(Error(Expecting(make_loc loc, nonterm)))
@@ -40141,9 +40141,9 @@ module Tables = struct
       ( Generic_array.expression
           "[:" ":]"
           (fun elts ->
-            (Extensions.Immutable_arrays.expr_of
+             Extensions.Immutable_arrays.expr_of
                ~loc:(make_loc _sloc)
-               (Iaexp_immutable_array elts)).pexp_desc)
+               (Iaexp_immutable_array elts))
           _1 )
 # 40149 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -40213,9 +40213,9 @@ module Tables = struct
       ( Generic_array.expression
           "[:" ":]"
           (fun elts ->
-            (Extensions.Immutable_arrays.expr_of
+             Extensions.Immutable_arrays.expr_of
                ~loc:(make_loc _sloc)
-               (Iaexp_immutable_array elts)).pexp_desc)
+               (Iaexp_immutable_array elts))
           _1 )
 # 40221 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -40327,9 +40327,9 @@ module Tables = struct
       ( Generic_array.expression
           "[:" ":]"
           (fun elts ->
-            (Extensions.Immutable_arrays.expr_of
+             Extensions.Immutable_arrays.expr_of
                ~loc:(make_loc _sloc)
-               (Iaexp_immutable_array elts)).pexp_desc)
+               (Iaexp_immutable_array elts))
           _1 )
 # 40335 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -40430,9 +40430,9 @@ module Tables = struct
       ( Generic_array.expression
           "[:" ":]"
           (fun elts ->
-            (Extensions.Immutable_arrays.expr_of
+             Extensions.Immutable_arrays.expr_of
                ~loc:(make_loc _sloc)
-               (Iaexp_immutable_array elts)).pexp_desc)
+               (Iaexp_immutable_array elts))
           _1 )
 # 40438 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -40591,7 +40591,7 @@ module Tables = struct
               let _sloc = (_symbolstartpos, _endpos) in
               
 # 2751 "src/ocaml/preprocess/parser_raw.mly"
-    ( (Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1).pexp_desc )
+    ( Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1 )
 # 40596 "src/ocaml/preprocess/parser_raw.ml"
               
             in
@@ -40692,7 +40692,7 @@ module Tables = struct
               let _sloc = (_symbolstartpos, _endpos) in
               
 # 2751 "src/ocaml/preprocess/parser_raw.mly"
-    ( (Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1).pexp_desc )
+    ( Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1 )
 # 40697 "src/ocaml/preprocess/parser_raw.ml"
               
             in
@@ -40793,7 +40793,7 @@ module Tables = struct
               let _sloc = (_symbolstartpos, _endpos) in
               
 # 2751 "src/ocaml/preprocess/parser_raw.mly"
-    ( (Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1).pexp_desc )
+    ( Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1 )
 # 40798 "src/ocaml/preprocess/parser_raw.ml"
               
             in
@@ -40909,7 +40909,7 @@ module Tables = struct
               let _sloc = (_symbolstartpos, _endpos) in
               
 # 2751 "src/ocaml/preprocess/parser_raw.mly"
-    ( (Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1).pexp_desc )
+    ( Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1 )
 # 40914 "src/ocaml/preprocess/parser_raw.ml"
               
             in
@@ -41047,7 +41047,7 @@ module Tables = struct
               let _sloc = (_symbolstartpos, _endpos) in
               
 # 2751 "src/ocaml/preprocess/parser_raw.mly"
-    ( (Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1).pexp_desc )
+    ( Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1 )
 # 41052 "src/ocaml/preprocess/parser_raw.ml"
               
             in
@@ -41185,7 +41185,7 @@ module Tables = struct
               let _sloc = (_symbolstartpos, _endpos) in
               
 # 2751 "src/ocaml/preprocess/parser_raw.mly"
-    ( (Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1).pexp_desc )
+    ( Extensions.Comprehensions.expr_of ~loc:(make_loc _sloc) _1 )
 # 41190 "src/ocaml/preprocess/parser_raw.ml"
               
             in
