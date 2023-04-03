@@ -15,6 +15,10 @@ things in sync.  By default, this will pull the "$commitish" branch from
 branch can be overridden by any commitish (branch, tag, full (not abbreviated!)
 commit hash, etc.), the repository can be overridden by any URL, and the
 subdirectory can be overriden by any path (including ".").
+
+To import new files from the compiler, first create matched pairs of empty files
+in this repository with the right names: one in "upstream/ocaml_flambda/", and
+one in "src/ocaml".  Then running the script will pull in the named file(s).
 USAGE
 }
 

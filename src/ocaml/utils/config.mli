@@ -41,6 +41,8 @@ val cmxs_magic_number: string
         (* Magic number for dynamically-loadable plugins *)
 val cmt_magic_number: string
         (* Magic number for compiled interface files *)
+val cms_magic_number: string
+        (* Magic number for compiled shapes files *)
 
 val max_tag: int
         (* Biggest tag that can be stored in the header of a regular block. *)

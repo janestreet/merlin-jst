@@ -83,6 +83,7 @@ let builtin_attrs =
   ; "untagged"; "ocaml.untagged"
   ; "poll"; "ocaml.poll"
   ; "loop"; "ocaml.loop"
+  ; "tail_mod_cons"; "ocaml.tail_mod_cons"
   ]
 
 let builtin_attrs =
@@ -528,7 +529,7 @@ let has_curry attrs =
 
 let check_local ext_names other_names attr =
   if has_attribute ext_names attr then
-    if not (Clflags.Extension.is_enabled Local) then
+    if not (Language_extension.is_enabled Local) then
       Error ()
     else
       Ok true
@@ -564,7 +565,7 @@ let tailcall attr =
 
 let has_include_functor attr =
   if has_attribute ["extension.include_functor"] attr then
-    if not (Clflags.Extension.is_enabled Include_functor) then
+    if not (Language_extension.is_enabled Include_functor) then
       Error ()
     else
       Ok true

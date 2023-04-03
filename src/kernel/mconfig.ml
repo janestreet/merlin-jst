@@ -389,8 +389,8 @@ let query_flags = [
 
 let ocaml_ignored_flags = [
   "-a"; "-absname"; "-alias-deps"; "-annot"; "-app-funct"; "-bin-annot";
-  "-c"; "-compact"; "-compat-32"; "-config"; "-custom"; "-dalloc";
-  "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
+  "-bin-annot-cms"; "-c"; "-compact"; "-compat-32"; "-config"; "-custom";
+  "-dalloc"; "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
   "-dflambda-no-invariants"; "-dflambda-verbose"; "-dinstr"; "-dinterf";
   "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer"; "-dshape";
   "-drawclambda"; "-drawflambda"; "-drawlambda"; "-dreload"; "-dscheduling";
@@ -401,7 +401,8 @@ let ocaml_ignored_flags = [
   "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
   "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
   "-no-strict-sequence"; "-no-unbox-free-vars-of-clos";
-  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
+  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic";
+  "-only-erasable-extensions"; "-opaque";
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
   "-verbose"; "-where";
@@ -413,6 +414,7 @@ let ocaml_ignored_flags = [
   "-ocamlcfg";
   "-no-ocamlcfg";
   "-flambda2-backend-cse-at-toplevel";
+  "-flambda2-debug";
   "-flambda2-debug-concrete-types-only-on-canonicals";
   "-flambda2-debug-keep-invalid-handlers";
   "-flambda2-debug-permute-every-name";
@@ -430,6 +432,7 @@ let ocaml_ignored_flags = [
   "-flambda2-unbox-along-intra-function-control-flow";
   "-flambda2-unicode";
   "-no-flambda2-backend-cse-at-toplevel";
+  "-no-flambda2-debug";
   "-no-flambda2-debug-concrete-types-only-on-canonicals";
   "-no-flambda2-debug-keep-invalid-handlers";
   "-no-flambda2-debug-permute-every-name";

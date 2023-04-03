@@ -25,6 +25,7 @@ let open_modules        = ref []
 
 let annotations         = ref false
 let binary_annotations  = ref true
+let binary_annotations_cms  = ref false
 let print_types         = ref false
 let native_code         = ref false
 let error_size          = ref 500
@@ -39,68 +40,3 @@ let unboxed_types       = ref false
 
 let locations = ref true
 let all_ppx = ref []
-
-module Extension = struct
-  type t = Comprehensions
-         | Local
-         | Include_functor
-         | Polymorphic_parameters
-         | Immutable_arrays
-
-  let all = [ Comprehensions;
-              Local;
-              Include_functor;
-              Polymorphic_parameters;
-              Immutable_arrays ]
-  let default_extensions = [ Local; Include_functor; Polymorphic_parameters ]
-
-  let extensions = ref ([] : t list)   (* -extension *)
-  let equal (a : t) (b : t) = (a = b)
-
-  let to_string = function
-    | Comprehensions -> "comprehensions_experimental"
-    | Local -> "local"
-    | Include_functor -> "include_functor"
-    | Polymorphic_parameters -> "polymorphic_parameters"
-    | Immutable_arrays -> "immutable_arrays_experimental"
-
-  let of_string = function
-    | "comprehensions_experimental" -> Some Comprehensions
-    | "local" -> Some Local
-    | "include_functor" -> Some Include_functor
-    | "polymorphic_parameters" -> Some Polymorphic_parameters
-    | "immutable_arrays_experimental" -> Some Immutable_arrays
-    | _ -> None
-
-  let disable_all_extensions = ref false             (* -disable-all-extensions *)
-
-  let disable_all () =
-    disable_all_extensions := true;
-    match !extensions with
-    | [] -> ()
-    | ls ->
-      raise (Arg.Bad(Printf.sprintf
-                       "Compiler flag -disable-all-extensions is incompatible with \
-                        the enabled extensions: %s"
-                       (String.concat "," (List.map to_string ls))))
-
-  let enable_t extension =
-    if not (List.exists (equal extension) !extensions) then
-      extensions := extension :: !extensions
-
-  let enable extn =
-    if !disable_all_extensions then
-      raise (Arg.Bad(Printf.sprintf
-                       "Cannot enable extension %s: \
-                        incompatible with compiler flag -disable-all-extensions"
-                       extn));
-    match of_string (String.lowercase_ascii extn) with
-    | Some extension -> enable_t extension
-    | None ->
-      raise (Arg.Bad (Printf.sprintf "Unknown extension \"%s\"" extn))
-
-  let is_enabled ext =
-    not !disable_all_extensions
-    && (List.mem ext default_extensions
-        || List.mem ext !extensions)
-end

@@ -24,7 +24,7 @@ let rec normalize_path env path =
   | decl ->
     match decl.Types.type_manifest with
     | Some body when decl.Types.type_private = Asttypes.Public
-                  || decl.Types.type_kind <> Types.Type_abstract ->
+                  || not (Types.decl_is_abstract decl) ->
       begin match Types.get_desc body with
       | Types.Tconstr (path, _, _) -> normalize_path env path
       | _ -> path

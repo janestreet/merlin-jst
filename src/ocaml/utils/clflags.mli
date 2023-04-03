@@ -23,6 +23,7 @@ val open_modules         : string list ref
     Ignored by merlin but kept for compatibility with upstream code. *)
 val annotations          : bool ref
 val binary_annotations   : bool ref
+val binary_annotations_cms   : bool ref
 val print_types          : bool ref
 val native_code          : bool ref
 val dont_write_files     : bool ref
@@ -37,18 +38,3 @@ val unboxed_types        : bool ref
 
 val locations            : bool ref
 val all_ppx              : string list ref
-
-(** {1 Language extensions} *)
-module Extension : sig
-  type t = Comprehensions
-         | Local
-         | Include_functor
-         | Polymorphic_parameters
-         | Immutable_arrays
-  val enable : string -> unit
-  val is_enabled : t -> bool
-  val of_string : string -> t option
-  val to_string : t -> string
-  val all : t list
-  val disable_all : unit -> unit
-end
