@@ -83,6 +83,7 @@ let builtin_attrs =
   ; "untagged"; "ocaml.untagged"
   ; "poll"; "ocaml.poll"
   ; "loop"; "ocaml.loop"
+  ; "tail_mod_cons"; "ocaml.tail_mod_cons"
   ]
 
 let builtin_attrs =
