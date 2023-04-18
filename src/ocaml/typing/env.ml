@@ -2455,7 +2455,7 @@ let add_item (map, mod_shape) comp env =
       map, add_value ?shape id decl env
   | Sig_type(id, decl, _, _) ->
       let map, shape = proj_shape (map, mod_shape) (Shape.Item.type_ id) in
-      map, add_type ~check:false ?shape id decl env
+      map, add_type ~predef:false ~check:false ?shape id decl env
   | Sig_typext(id, ext, _, _) ->
       let map, shape = proj_shape (map, mod_shape) (Shape.Item.extension_constructor id) in
       map, add_extension ~check:false ?shape ~rebind:false id ext env
@@ -2487,7 +2487,7 @@ let add_item_lazy (map, mod_shape) comp env =
       map, add_value ?shape id decl env
   | SigL_type(id, decl, _, _) ->
       let map, shape = proj_shape (map, mod_shape) (Shape.Item.type_ id) in
-      map, add_type ~check:false ?shape id decl env
+      map, add_type ~predef:false ~check:false ?shape id decl env
   | SigL_typext(id, ext, _, _) ->
       let map, shape = proj_shape (map, mod_shape) (Shape.Item.extension_constructor id) in
       map, add_extension ~check:false ?shape ~rebind:false id ext env

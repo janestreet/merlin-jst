@@ -632,7 +632,7 @@ and try_modtypes ~in_eq ~loc env ~mark subst mty1 mty2 orig_shape =
       in
       let d = Error.sdiff params1 params2 in
       Error Error.(Functor (Params d))
-  | Mty_for_hole, _ | _, Mty_for_hole ->
+  | MtyL_for_hole, _ | _, MtyL_for_hole ->
       Ok (Tcoerce_none, Shape.dummy_mod)
   | _, MtyL_alias _ ->
       Error (Error.Mt_core Error.Not_an_alias)
