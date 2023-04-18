@@ -444,6 +444,9 @@ let ocaml_ignored_flags = [
   "-no-flambda2-join-points";
   "-no-flambda2-speculative-inlining-only-if-arguments-useful";
   "-no-flambda2-unbox-along-intra-function-control-flow";
+  "-zero-alloc-check";
+  "-regalloc-validate";
+  "-no-regalloc-validate";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
@@ -457,7 +460,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style"; "-dump-dir";
+  "-error-style"; "-dump-dir" ;
 
   (* flambda-backend specific *)
   "-drawfexpr-to";
@@ -480,6 +483,8 @@ let ocaml_ignored_parametrized_flags = [
   "-flambda2-inline-prim-cost";
   "-flambda2-inline-small-function-size";
   "-flambda2-inline-threshold";
+  "-regalloc";
+  "-regalloc-param";
 ]
 
 let ocaml_warnings_spec ~error =
