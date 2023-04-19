@@ -356,6 +356,11 @@ let merlin_flags = [
     "<path> Change path of ocaml standard library"
   );
   (
+    "-use-ppx-cache",
+    Marg.unit_ignore,
+    " Flag not yet in use. Will be used to enable ppx cache."
+  );
+  (
     (* Legacy support for janestreet. Ignored. To be removed soon. *)
     "-attributes-allowed",
     Marg.unit_ignore,
