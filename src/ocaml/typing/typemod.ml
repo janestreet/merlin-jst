@@ -3240,6 +3240,7 @@ let () =
 
 let type_implementation sourcefile outputprefix modulename initial_env ast =
   Cmt_format.clear ();
+  Cms_format.clear ();
   Misc.try_finally (fun () ->
       Typecore.reset_delayed_checks ();
       Typecore.reset_allocations ();
