@@ -5383,8 +5383,6 @@ and type_expect_
            We also don't report any error in the body, as there's no way to
            tell if it is due to the failed open. *)
         Msupport.catch_errors (Warnings.backup ()) (ref [])
-          (* CR ddickstein: I added [expected_mode] to this call. A type systems dev
-             should confirm this is correct. *)
           (fun () -> type_expect env expected_mode e ty_expected_explained)
       end
   | Pexp_letop{ let_ = slet; ands = sands; body = sbody } ->
@@ -5654,9 +5652,7 @@ and type_function ?in_function loc attrs env (expected_mode : expected_mode)
       (* Merlin: we recover with an expected type of 'a -> 'b *)
       let level = get_level (instance ty_expected) in
       raise_error (error(loc_fun, env, err));
-      (* CR ddickstein: I added [Alloc_mode.global] to make this recovery case compile.
-         A type systems dev should confirm what we actually want here. *)
-      (Alloc_mode.global, newvar2 level, Alloc_mode.global, newvar2 level)
+      (Alloc_mode.newvar (), newvar2 level, Alloc_mode.newvar (), newvar2 level)
   in
   if has_local then
     eqmode ~loc ~env arg_mode Alloc_mode.local
