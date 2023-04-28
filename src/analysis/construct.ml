@@ -88,6 +88,9 @@ module Util = struct
   {i values} with a return type compatible with [typ] *)
   let find_values_for_type env typ =
     let aux name path value_description acc =
+      let value_description =
+        Subst.Lazy.force_value_description value_description
+      in
       (* [check_type| checks return type compatibility and lists parameters *)
       let rec check_type type_expr params =
         let type_expr = Transient_expr.repr type_expr in

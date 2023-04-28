@@ -118,6 +118,7 @@ let directories ~global_modules env =
 let execute_query query env dirs =
   let direct dir acc =
     Env.fold_values (fun _ path desc acc ->
+        let desc = Subst.Lazy.force_value_description desc in
         match match_query env query desc.Types.val_type with
         | Some cost -> (cost, path, desc) :: acc
         | None -> acc

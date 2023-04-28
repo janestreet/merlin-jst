@@ -41,7 +41,7 @@ let error err = raise (Error err)
 module Persistent_signature = struct
   type t =
     { filename : string;
-      cmi : Cmi_format.cmi_infos }
+      cmi : Cmi_format.cmi_infos_lazy }
 
   let load = ref (fun ~unit_name ->
       let unit_name = CU.Name.to_string unit_name in
