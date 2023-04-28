@@ -159,6 +159,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
   let kind, text =
     match ty with
     | `Value v ->
+      let v = Subst.Lazy.force_value_description v in
       (`Value, `Type_scheme v.Types.val_type)
     | `Cons c  -> (`Constructor, `Constructor c)
     | `Label label_descr ->
@@ -297,7 +298,7 @@ let fold_sumtype_constructors ~env ~init ~f t =
 
 let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch =
   let cstr_attributes c = c.Types.cstr_attributes in
-  let val_attributes v = v.Types.val_attributes in
+  let val_attributes v = v.Subst.Lazy.val_attributes in
   let type_attributes t = t.Types.type_attributes in
   let lbl_attributes l = l.Types.lbl_attributes in
   let mtd_attributes t = t.Types.mtd_attributes in
@@ -396,10 +397,14 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         let type_check {Types. val_type; _} = type_check val_type in
         Env.fold_values (fun name path v candidates ->
           if not (validate `Lident `Value name) then candidates else
-          let priority = if is_internal name then 0 else type_check v in
+          let priority = if is_internal name
+            then 0
+            else
+              type_check (Subst.Lazy.force_value_description v)
+          in
           make_weighted_candidate ~exact:(name = prefix) name ~priority ~path
             ~attrs:(val_attributes v)
-            (`Value v) ~loc:v.Types.val_loc
+            (`Value v) ~loc:v.Subst.Lazy.val_loc
           :: candidates
         ) prefix_path env []
 

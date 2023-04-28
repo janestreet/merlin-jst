@@ -2662,6 +2662,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
               let (first_loc, _) = List.hd modes in
               Signature_names.check_value names first_loc id;
               let vd =  Env.find_value (Pident id) newenv in
+              let vd = Subst.Lazy.force_value_description vd in
               Env.register_uid vd.val_uid ~loc:vd.val_loc ~attributes:vd.val_attributes;
               Sig_value(id, vd, Exported) :: acc,
               Shape.Map.add_value shape_map id vd.val_uid
@@ -3457,8 +3458,9 @@ let package_units initial_env objfiles cmifile modulename =
           sg modulename
           (prefix ^ ".cmi") (Array.of_list imports)
       in
+      let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
       Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
-        (Cmt_format.Packed (cmi.Cmi_format.cmi_sign, objfiles)) None initial_env
+        (Cmt_format.Packed (sign, objfiles)) None initial_env
         (Some cmi) (Some shape);
       Cms_format.save_cms (prefix ^ ".cms")  modulename
         None (Some shape);
