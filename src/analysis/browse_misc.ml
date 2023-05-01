@@ -51,7 +51,7 @@ let print_constructor c =
 
 let summary_prev = function
   | Env.Env_empty -> None
-  | Env.Env_open (s,_)       | Env.Env_value (s,_,_)
+  | Env.Env_open (s,_)       | Env.Env_value (s,_,_,_)
   | Env.Env_type (s,_,_)     | Env.Env_extension (s,_,_)
   | Env.Env_module (s,_,_,_) | Env.Env_modtype (s,_,_)
   | Env.Env_class (s,_,_)    | Env.Env_cltype (s,_,_)
@@ -69,7 +69,7 @@ let signature_of_env ?(ignore_extensions=true) env =
     (* FIXME: the use of [Exported] here is wrong... The compiler should export
       that information. *)
     function
-    | Env_value (_,i,v)      -> Some (Sig_value (i,v,Exported))
+    | Env_value (_,i,v,_)    -> Some (Sig_value (i,v,Exported))
     (* Trec_not == bluff, FIXME *)
     | Env_type (_,i,t)       -> Some (Sig_type (i,t,Trec_not,Exported))
     (* Texp_first == bluff, FIXME *)

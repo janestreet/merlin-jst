@@ -605,6 +605,16 @@ let expression sub exp =
                      , [])
                ; pstr_loc = loc
                }]))
+    | Texp_exclave exp ->
+        Pexp_apply ({
+        pexp_desc =
+          Pexp_extension
+            ({ txt = "ocaml.exclave"; loc}
+            , PStr []);
+        pexp_loc = loc;
+        pexp_loc_stack = [];
+        pexp_attributes = [];
+      }, [Nolabel, sub.expr sub exp])
     | Texp_hole ->
         let id = Location.mkloc hole_txt loc in
         Pexp_extension (id, PStr [])

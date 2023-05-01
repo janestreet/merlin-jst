@@ -401,6 +401,7 @@ let of_expression_desc loc = function
     of_expression p.handler
   | Texp_probe_is_enabled _ ->
     id_fold
+  | Texp_exclave e -> of_expression e
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
