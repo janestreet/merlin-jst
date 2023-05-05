@@ -161,7 +161,7 @@ let node_attributes = function
   | Class_expr cl         -> cl.cl_attributes
   | Class_field cf        -> cf.cf_attributes
   | Module_expr me        -> me.mod_attributes
-  | Structure_item ({str_desc = Tstr_eval (_,attr)},_) -> attr
+  | Structure_item ({str_desc = Tstr_eval (_,_,attr)},_) -> attr
   | Structure_item ({str_desc = Tstr_attribute a},_) -> [a]
   | Signature_item ({sig_desc = Tsig_attribute a},_) -> [a]
   | Module_binding mb     -> mb.mb_attributes
@@ -340,7 +340,7 @@ let of_expression_desc loc = function
         | (_,Omitted _) -> id_fold
         | (_,Arg e) -> of_expression e)
       ls
-  | Texp_match (e,cs,_) ->
+  | Texp_match (e,_,cs,_) ->
     of_expression e **
     list_fold of_case cs
   | Texp_try (e,cs) ->
@@ -364,7 +364,7 @@ let of_expression_desc loc = function
   | Texp_setfield (e1,_,lid_loc,lbl,e2) ->
     of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
   | Texp_ifthenelse (e1,e2,None)
-  | Texp_sequence (e1,e2)
+  | Texp_sequence (e1,_,e2)
   | Texp_while { wh_cond = e1; wh_body = e2; _ } ->
     of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1,e2,Some e3)
@@ -458,7 +458,7 @@ and of_module_expr_desc = function
   | Tmod_hole -> id_fold
 
 and of_structure_item_desc = function
-  | Tstr_eval (e,_) ->
+  | Tstr_eval (e,_,_) ->
     of_expression e
   | Tstr_value (_,vbs) ->
     list_fold of_value_binding vbs

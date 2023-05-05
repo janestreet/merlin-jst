@@ -271,7 +271,7 @@ let type_in_env ?(verbosity=Verbosity.default) ?keywords ~context env ppf expr =
     in
     let open Typedtree in
     match str.str_items with
-    | [ { str_desc = Tstr_eval (exp,_); _ }] ->
+    | [ { str_desc = Tstr_eval (exp,_,_); _ }] ->
       print_type_with_decl ~verbosity env ppf exp.exp_type
     | _ -> failwith "unhandled expression"
   in

@@ -31,8 +31,8 @@ let rec module_type =
 and core_type type_expr =
   let open Ast_helper in
   match Types.get_desc type_expr with
-  | Tvar None | Tunivar None -> Typ.any ()
-  | Tvar (Some s) | Tunivar (Some s) -> Typ.var s
+  | Tvar { name = None; _ } | Tunivar { name = None; _ } -> Typ.any ()
+  | Tvar { name = Some s; _ } | Tunivar { name = Some s; _ } -> Typ.var s
   | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
     Typ.arrow label
       (core_type type_expr)
@@ -44,7 +44,7 @@ and core_type type_expr =
   | Tobject (type_expr, class_) ->
     let rec aux acc type_expr = match get_desc type_expr with
       | Tnil -> acc, Asttypes.Closed
-      | Tvar None | Tunivar None -> acc, Asttypes.Open
+      | Tvar { name = None ; _ } | Tunivar { name = None; _ } -> acc, Asttypes.Open
       | Tfield ("*dummy method*", _, _, fields) -> aux acc fields
       | Tfield (name, _, type_expr, fields) ->
         let open Ast_helper in
@@ -83,7 +83,7 @@ and core_type type_expr =
     Typ.variant fields closed None
   | Tpoly (type_expr, type_exprs) ->
     let names = List.map ~f:(fun v -> match get_desc v with
-      | Tunivar (Some name) | Tvar (Some name) -> mknoloc name
+      | Tunivar { name = Some name; _ } | Tvar { name = Some name; _ } -> mknoloc name
       | _ -> failwith "poly: not a var")
       type_exprs
     in

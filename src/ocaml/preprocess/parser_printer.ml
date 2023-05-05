@@ -204,6 +204,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_core_type_) -> "reversed_separated_nontrivial_llist_COMMA_core_type_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_) -> "reversed_separated_nonempty_llist_STAR_atomic_type_gbl_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_type_parameter_) -> "reversed_separated_nonempty_llist_COMMA_type_parameter_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_) -> "reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_) -> "reversed_separated_nonempty_llist_COMMA_core_type_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_BAR_row_field_) -> "reversed_separated_nonempty_llist_BAR_row_field_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_with_constraint_) -> "reversed_separated_nonempty_llist_AND_with_constraint_"
@@ -245,6 +246,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_core_type) -> "parse_core_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_constr_longident) -> "parse_constr_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_any_longident) -> "parse_any_longident"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parenthesized_type_parameter) -> "parenthesized_type_parameter"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_paren_module_expr) -> "paren_module_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optlabel) -> "optlabel"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_type_constraint_) -> "option_type_constraint_"
@@ -315,6 +317,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_) -> "let_bindings_ext_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_binding_body_no_punning) -> "let_binding_body_no_punning"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_binding_body) -> "let_binding_body"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_layout) -> "layout"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_pattern) -> "labeled_simple_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_expr) -> "labeled_simple_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_longident) -> "label_longident"
@@ -566,6 +569,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nontrivial_llist_COMMA_core_type_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_ -> (fun _ -> "reversed_separated_nonempty_llist_STAR_atomic_type_gbl_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_type_parameter_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_type_parameter_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_core_type_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_BAR_row_field_ -> (fun _ -> "reversed_separated_nonempty_llist_BAR_row_field_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_AND_with_constraint_ -> (fun _ -> "reversed_separated_nonempty_llist_AND_with_constraint_")
@@ -607,6 +611,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_parse_core_type -> (fun _ -> "parse_core_type")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_constr_longident -> (fun _ -> "parse_constr_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_any_longident -> (fun _ -> "parse_any_longident")
+  | MenhirInterpreter.N MenhirInterpreter.N_parenthesized_type_parameter -> (fun _ -> "parenthesized_type_parameter")
   | MenhirInterpreter.N MenhirInterpreter.N_paren_module_expr -> (fun _ -> "paren_module_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_optlabel -> (fun _ -> "optlabel")
   | MenhirInterpreter.N MenhirInterpreter.N_option_type_constraint_ -> (fun _ -> "option_type_constraint_")
@@ -677,6 +682,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_ -> (fun _ -> "let_bindings_ext_")
   | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body_no_punning -> (fun _ -> "let_binding_body_no_punning")
   | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body -> (fun _ -> "let_binding_body")
+  | MenhirInterpreter.N MenhirInterpreter.N_layout -> (fun _ -> "layout")
   | MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_pattern -> (fun _ -> "labeled_simple_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_expr -> (fun _ -> "labeled_simple_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_label_longident -> (fun _ -> "label_longident")

@@ -594,7 +594,7 @@ let locate ~config ~env ~ml_or_mli decl_uid loc path ns =
 let path_and_loc_of_cstr desc _ =
   let open Types in
   match desc.cstr_tag with
-  | Cstr_extension (path, _) -> path, desc.cstr_loc
+  | Extension (path, _) -> path, desc.cstr_loc
   | _ ->
     match get_desc desc.cstr_res with
     | Tconstr (path, _, _) -> path, desc.cstr_loc
@@ -818,7 +818,7 @@ end = struct
       List.iter nss ~f:(fun namespace ->
         try
           match namespace with
-          | `This_cstr ({ Types.cstr_tag = Cstr_extension _; _ } as cd) ->
+          | `This_cstr ({ Types.cstr_tag = Extension _; _ } as cd) ->
             log ~title:"lookup"
               "got extension constructor";
             let path, loc = path_and_loc_of_cstr cd env in
