@@ -311,7 +311,7 @@ let merlin_flags = [
     "Add a suffix implementation,interface pair"
   );
   (
-    "-extension",
+    "-merlin-extension",
     Marg.param "extension" (fun extension merlin ->
         match Extension.lookup extension with
         | None -> invalid_arg "Unknown extension"
