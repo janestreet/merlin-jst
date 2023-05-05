@@ -415,9 +415,8 @@ let ocaml_ignored_flags = [
   (* flambda-backend specific *)
   "-basic-block-sections";
   "-caml-apply-inline-fast-path";
+  "-debug-ocaml";
   "-dgc-timings";
-  "-ocamlcfg";
-  "-no-ocamlcfg";
   "-flambda2-backend-cse-at-toplevel";
   "-flambda2-debug";
   "-flambda2-debug-concrete-types-only-on-canonicals";
@@ -449,9 +448,11 @@ let ocaml_ignored_flags = [
   "-no-flambda2-join-points";
   "-no-flambda2-speculative-inlining-only-if-arguments-useful";
   "-no-flambda2-unbox-along-intra-function-control-flow";
-  "-zero-alloc-check";
+  "-ocamlcfg";
+  "-no-ocamlcfg";
   "-regalloc-validate";
   "-no-regalloc-validate";
+  "-zero-alloc-check";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
