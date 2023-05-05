@@ -469,6 +469,7 @@ let ocaml_ignored_parametrized_flags = [
   "-error-style"; "-dump-dir" ;
 
   (* flambda-backend specific *)
+  "-extension";
   "-drawfexpr-to";
   "-dfexpr-to";
   "-dflexpect-to";
