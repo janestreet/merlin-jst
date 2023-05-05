@@ -33,6 +33,8 @@ let max_compatible =
   ; Layouts Alpha
   ]
 
+(* merlin-jst: Ignored, as all extensions are always enabled; see the bottom of
+   this file. *)
 let default_extensions =
   [ Local
   ; Include_functor
@@ -198,3 +200,7 @@ let disallow_extensions () =
   (* The strictest option, so no internal checks needed *)
   extensions := [];
   universe   := Universe.No_extensions
+
+(* merlin-jst: Enable all the ocaml-jst language extensions.  We do it this way
+   rather than updating [default_extensions] to avoid merge conflicts. *)
+let () = List.iter enable max_compatible

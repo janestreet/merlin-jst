@@ -70,8 +70,6 @@ module Server = struct
 end
 
 let main () =
-  (* merlin-jst: Enable all the ocaml-jst language extensions *)
-  Language_extension.(List.iter enable max_compatible);
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
