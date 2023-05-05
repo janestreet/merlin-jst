@@ -57,12 +57,12 @@ let expr_tail_positions = function
   | Texp_list_comprehension _ | Texp_array_comprehension _
   | Texp_probe _ | Texp_probe_is_enabled _
     -> []
-  | Texp_match (_,cs,_)
+  | Texp_match (_,_,cs,_)
     -> List.map cs ~f:(fun c -> Case c)
   | Texp_try (_,cs)
     -> List.map cs ~f:(fun c -> Case c)
   | Texp_letmodule (_,_,_,_,e) | Texp_letexception (_,e) | Texp_let (_,_,e)
-  | Texp_sequence (_,e) | Texp_ifthenelse (_,e,None) | Texp_open (_, e)
+  | Texp_sequence (_,_,e) | Texp_ifthenelse (_,e,None) | Texp_open (_, e)
     -> [Expression e]
   | Texp_ifthenelse (_,e1,Some e2)
     -> [Expression e1; Expression e2]

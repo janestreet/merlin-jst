@@ -377,6 +377,7 @@ module MenhirInterpreter : sig
     | N_reversed_separated_nontrivial_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
+    | N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_BAR_row_field_ : (Parsetree.row_field list) nonterminal
     | N_reversed_separated_nonempty_llist_AND_with_constraint_ : (Parsetree.with_constraint list) nonterminal
@@ -419,6 +420,7 @@ module MenhirInterpreter : sig
     | N_parse_core_type : (Parsetree.core_type) nonterminal
     | N_parse_constr_longident : (Longident.t) nonterminal
     | N_parse_any_longident : (Longident.t) nonterminal
+    | N_parenthesized_type_parameter : (Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) nonterminal
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
     | N_option_type_constraint_ : ((Parsetree.core_type option * Parsetree.core_type option) option) nonterminal
@@ -490,6 +492,7 @@ module MenhirInterpreter : sig
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression) nonterminal
     | N_let_binding_body : (Parsetree.pattern * Parsetree.expression * bool) nonterminal
+    | N_layout : (Parsetree.attribute) nonterminal
     | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal
