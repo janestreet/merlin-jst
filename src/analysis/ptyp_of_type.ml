@@ -164,7 +164,7 @@ and type_declaration id {
     core_type, (v, i))
   in
   let kind = match type_kind with
-    | Type_abstract _ -> Parsetree.Ptype_abstract
+    | Type_abstract -> Parsetree.Ptype_abstract
     | Type_open -> Ptype_open
     | Type_variant (constrs, _) ->
       Ptype_variant (List.map ~f:constructor_declaration constrs)

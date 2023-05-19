@@ -381,14 +381,14 @@ module MenhirInterpreter : sig
     | N_reversed_separated_nonempty_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_BAR_row_field_ : (Parsetree.row_field list) nonterminal
     | N_reversed_separated_nonempty_llist_AND_with_constraint_ : (Parsetree.with_constraint list) nonterminal
-    | N_reversed_separated_nonempty_llist_AND_comprehension_clause_binding_ : (Extensions.Comprehensions.clause_binding list) nonterminal
+    | N_reversed_separated_nonempty_llist_AND_comprehension_clause_binding_ : (Jane_syntax.Comprehensions.clause_binding list) nonterminal
     | N_reversed_separated_nonempty_llist_AMPERSAND_core_type_no_attr_ : (Parsetree.core_type list) nonterminal
     | N_reversed_preceded_or_separated_nonempty_llist_BAR_match_case_ : (Parsetree.case list) nonterminal
     | N_reversed_nonempty_llist_typevar_ : (string Location.loc list) nonterminal
     | N_reversed_nonempty_llist_name_tag_ : (string list) nonterminal
     | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Asttypes.arg_label * Parsetree.expression) list) nonterminal
     | N_reversed_nonempty_llist_functor_arg_ : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
-    | N_reversed_nonempty_llist_comprehension_clause_ : (Extensions.Comprehensions.clause list) nonterminal
+    | N_reversed_nonempty_llist_comprehension_clause_ : (Jane_syntax.Comprehensions.clause list) nonterminal
     | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
     | N_reversed_bar_llist_extension_constructor_declaration_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_extension_constructor_ : (Parsetree.extension_constructor list) nonterminal
@@ -539,9 +539,9 @@ module MenhirInterpreter : sig
     | N_constr_ident : (string) nonterminal
     | N_constr_extra_nonprefix_ident : (string) nonterminal
     | N_constant : (Parsetree.constant) nonterminal
-    | N_comprehension_iterator : (Extensions.Comprehensions.iterator) nonterminal
-    | N_comprehension_clause_binding : (Extensions.Comprehensions.clause_binding) nonterminal
-    | N_comprehension_clause : (Extensions.Comprehensions.clause) nonterminal
+    | N_comprehension_iterator : (Jane_syntax.Comprehensions.iterator) nonterminal
+    | N_comprehension_clause_binding : (Jane_syntax.Comprehensions.clause_binding) nonterminal
+    | N_comprehension_clause : (Jane_syntax.Comprehensions.clause) nonterminal
     | N_clty_longident : (Longident.t) nonterminal
     | N_class_type_declarations : (string Location.loc option * Parsetree.class_type_declaration list) nonterminal
     | N_class_type : (Parsetree.class_type) nonterminal

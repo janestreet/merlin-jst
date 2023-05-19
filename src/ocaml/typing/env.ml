@@ -4000,7 +4000,7 @@ let short_paths_type_desc decl =
     if ty.level <> Btype.generic_level then Fresh
     else begin
       match decl.type_private, decl.type_kind with
-      | Private, Type_abstract _ -> Fresh
+      | Private, Type_abstract -> Fresh
       | _, _ -> begin
         let params = List.map get_desc decl.type_params in
         match ty with
