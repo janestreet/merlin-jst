@@ -361,7 +361,7 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
         let pats = List.map (sub.pat sub) list in
         match am with
         | Mutable   -> Ppat_array pats
-        | Immutable -> Extensions.Immutable_arrays.pat_of
+        | Immutable -> Jane_syntax.Immutable_arrays.pat_of
                          ~loc
                          (Iapat_immutable_array pats)
       end
@@ -403,8 +403,8 @@ let value_binding sub vb =
     (sub.pat sub vb.vb_pat)
     (sub.expr sub vb.vb_expr)
 
-let comprehension ~loc sub comp_type comp =
-  let open Extensions.Comprehensions in
+let comprehension sub comp_type comp =
+  let open Jane_syntax.Comprehensions in
   let iterator = function
     | Texp_comp_range { ident = _; pattern; start ; stop ; direction } ->
         pattern,
@@ -429,9 +429,7 @@ let comprehension ~loc sub comp_type comp =
     { body    = sub.expr sub comp_body
     ; clauses = List.map clause comp_clauses }
   in
-  Extensions.Comprehensions.expr_of
-    ~loc
-    (comp_type (comprehension comp))
+  Jane_syntax.Comprehensions.expr_of (comp_type (comprehension comp))
 
 let expression sub exp =
   let loc = sub.location sub exp.exp_loc in
@@ -503,9 +501,8 @@ let expression sub exp =
         | Mutable ->
             Pexp_array plist
         | Immutable ->
-            Extensions.Immutable_arrays.expr_of
-              ~loc
-              (Iaexp_immutable_array plist)
+            Jane_syntax.Immutable_arrays.expr_of
+              ~loc (Iaexp_immutable_array plist)
       end
     | Texp_list_comprehension comp ->
         comprehension
