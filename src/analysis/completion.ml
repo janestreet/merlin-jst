@@ -289,7 +289,7 @@ let fold_sumtype_constructors ~env ~init ~f t =
       (Path.name path);
     begin match Env.find_type_descrs path env with
     | exception Not_found -> init
-    | Type_record _ | Type_abstract _ | Type_open -> init
+    | Type_record _ | Type_abstract | Type_open -> init
     | Type_variant (constrs, _) ->
       List.fold_right constrs ~init ~f
     end
