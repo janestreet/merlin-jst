@@ -1404,7 +1404,7 @@ let build_or_pat env loc lid =
   let make_row more =
     create_row ~fields ~more ~closed:false ~fixed:None ~name in
   let ty = newty (Tvariant (make_row (newvar Layout.value))) in
-  let gloc = {loc with Location.loc_ghost=true} in
+  let gloc = Location.ghostify loc in
   let row' = ref (make_row (newvar Layout.value)) in
   let pats =
     List.map
@@ -1768,7 +1768,7 @@ module Label = NameChoice (struct
     Env.lookup_all_labels_from_type ~loc usage path env
   let in_env lbl =
     match lbl.lbl_repres with
-    | Record_boxed _ | Record_float | Record_unboxed _ -> true
+    | Record_boxed _ | Record_float | Record_unboxed -> true
     | Record_inlined _ -> false
 end)
 
@@ -1956,8 +1956,8 @@ type 'case_pattern half_typed_case =
     contains_gadt: bool; }
 
 let rec has_literal_pattern p =
-  match Extensions.Pattern.of_ast p with
-  | Some epat -> has_literal_pattern_extension epat
+  match Jane_syntax.Pattern.of_ast p with
+  | Some jpat -> has_literal_pattern_jane_syntax jpat
   | None      -> match p.ppat_desc with
   | Ppat_constant _
   | Ppat_interval _ ->
@@ -1985,8 +1985,8 @@ let rec has_literal_pattern p =
      List.exists (fun (_,p) -> has_literal_pattern p) ps
   | Ppat_or (p, q) ->
      has_literal_pattern p || has_literal_pattern q
-and has_literal_pattern_extension : Extensions.Pattern.t -> _ = function
-  | Epat_immutable_array (Iapat_immutable_array ps) ->
+and has_literal_pattern_jane_syntax : Jane_syntax.Pattern.t -> _ = function
+  | Jpat_immutable_array (Iapat_immutable_array ps) ->
      List.exists has_literal_pattern ps
 
 let check_scope_escape loc env level ty =
@@ -2316,14 +2316,14 @@ and type_pat_aux
         pat_attributes = sp.ppat_attributes;
         pat_env = !env })
   in
-  match Extensions.Pattern.of_ast sp with
-  | Some epat -> begin
+  match Jane_syntax.Pattern.of_ast sp with
+  | Some jpat -> begin
       (* Normally this would go to an auxiliary function, but this function
          takes so many parameters, has such a complex type, and uses so many
          local definitions, it seems better to just put the pattern matching
          here.  This shouldn't mess up the diff *too* much. *)
-      match epat with
-      | Epat_immutable_array (Iapat_immutable_array spl) ->
+      match jpat with
+      | Jpat_immutable_array (Iapat_immutable_array spl) ->
           type_pat_array Immutable spl
     end
   | None ->
@@ -2426,7 +2426,7 @@ and type_pat_aux
         pat_env = !env }
   | Ppat_interval (Pconst_char c1, Pconst_char c2) ->
       let open Ast_helper.Pat in
-      let gloc = {loc with Location.loc_ghost=true} in
+      let gloc = Location.ghostify loc in
       let rec loop c1 c2 =
         if c1 = c2 then constant ~loc:gloc (Pconst_char c1)
         else
@@ -2958,8 +2958,8 @@ let combine_pat_tuple_arity a b =
       else Not_local_tuple
 
 let rec pat_tuple_arity spat =
-  match Extensions.Pattern.of_ast spat with
-  | Some epat -> pat_tuple_arity_extension epat
+  match Jane_syntax.Pattern.of_ast spat with
+  | Some jpat -> pat_tuple_arity_jane_syntax jpat
   | None      ->
   match spat.ppat_desc with
   | Ppat_tuple args -> Local_tuple (List.length args)
@@ -2971,8 +2971,8 @@ let rec pat_tuple_arity spat =
   | Ppat_or(sp1, sp2) ->
       combine_pat_tuple_arity (pat_tuple_arity sp1) (pat_tuple_arity sp2)
   | Ppat_constraint(p, _) | Ppat_open(_, p) | Ppat_alias(p, _) -> pat_tuple_arity p
-and pat_tuple_arity_extension : Extensions.Pattern.t -> _ = function
-  | Epat_immutable_array (Iapat_immutable_array _) -> Not_local_tuple
+and pat_tuple_arity_jane_syntax : Jane_syntax.Pattern.t -> _ = function
+  | Jpat_immutable_array (Iapat_immutable_array _) -> Not_local_tuple
 
 let rec cases_tuple_arity cases =
   match cases with
@@ -3512,11 +3512,11 @@ let is_local_returning_expr e =
         raise(Error(loc2, Env.empty, Local_return_annotation_mismatch loc1))
   in
   let rec loop e =
-    match Extensions.Expression.of_ast e with
-    | Some eexp -> begin
-        match eexp with
-        | Eexp_comprehension   _ -> false, e.pexp_loc
-        | Eexp_immutable_array _ -> false, e.pexp_loc
+    match Jane_syntax.Expression.of_ast e with
+    | Some jexp -> begin
+        match jexp with
+        | Jexp_comprehension   _ -> false, e.pexp_loc
+        | Jexp_immutable_array _ -> false, e.pexp_loc
       end
     | None      ->
     match e.pexp_desc with
@@ -3637,12 +3637,12 @@ let rec approx_type env sty =
      (which mentions approx_type) for why it can't be value.  *)
   | _ -> newvar Layout.any
 
-let type_pattern_approx_extension : Extensions.Pattern.t -> _ = function
-  | Epat_immutable_array _ -> ()
+let type_pattern_approx_jane_syntax : Jane_syntax.Pattern.t -> _ = function
+  | Jpat_immutable_array _ -> ()
 
 let type_pattern_approx env spat ty_expected =
-  match Extensions.Pattern.of_ast spat with
-  | Some epat -> type_pattern_approx_extension epat
+  match Jane_syntax.Pattern.of_ast spat with
+  | Some jpat -> type_pattern_approx_jane_syntax jpat
   | None      ->
   match spat.ppat_desc with
   | Ppat_constraint(_, ({ptyp_desc=Ptyp_poly _} as sty)) ->
@@ -3703,8 +3703,8 @@ let rec type_function_approx env loc label spato sexp in_function ty_expected =
   type_approx_aux env sexp in_function ty_res
 
 and type_approx_aux env sexp in_function ty_expected =
-  match Extensions.Expression.of_ast sexp with
-  | Some eexp -> type_approx_aux_extension eexp
+  match Jane_syntax.Expression.of_ast sexp with
+  | Some jexp -> type_approx_aux_jane_syntax jexp
   | None      -> match sexp.pexp_desc with
     Pexp_let (_, _, e) -> type_approx_aux env e None ty_expected
   | Pexp_fun (l, _, p, e) ->
@@ -3748,9 +3748,9 @@ and type_approx_aux env sexp in_function ty_expected =
     type_approx_aux env e None ty_expected
   | _ -> ()
 
-and type_approx_aux_extension : Extensions.Expression.t -> _ = function
-  | Eexp_comprehension _
-  | Eexp_immutable_array _ -> ()
+and type_approx_aux_jane_syntax : Jane_syntax.Expression.t -> _ = function
+  | Jexp_comprehension _
+  | Jexp_immutable_array _ -> ()
 
 let type_approx env sexp ty =
   type_approx_aux env sexp None ty
@@ -3967,12 +3967,12 @@ let contains_variant_either ty =
   try loop ty; unmark_type ty; false
   with Exit -> unmark_type ty; true
 
-let shallow_iter_ppat_extension f : Extensions.Pattern.t -> _ = function
-  | Epat_immutable_array (Iapat_immutable_array pats) -> List.iter f pats
+let shallow_iter_ppat_jane_syntax f : Jane_syntax.Pattern.t -> _ = function
+  | Jpat_immutable_array (Iapat_immutable_array pats) -> List.iter f pats
 
 let shallow_iter_ppat f p =
-  match Extensions.Pattern.of_ast p with
-  | Some epat -> shallow_iter_ppat_extension f epat
+  match Jane_syntax.Pattern.of_ast p with
+  | Some jpat -> shallow_iter_ppat_jane_syntax f jpat
   | None      ->
   match p.ppat_desc with
   | Ppat_any | Ppat_var _ | Ppat_constant _ | Ppat_interval _
@@ -4108,17 +4108,17 @@ let unify_exp env exp expected_ty =
    the "expected type" provided by the context. *)
 
 let rec is_inferred sexp =
-  match Extensions.Expression.of_ast sexp with
-  | Some eexp -> is_inferred_extension eexp
+  match Jane_syntax.Expression.of_ast sexp with
+  | Some jexp -> is_inferred_jane_syntax jexp
   | None      -> match sexp.pexp_desc with
   | Pexp_ident _ | Pexp_apply _ | Pexp_field _ | Pexp_constraint _
   | Pexp_coerce _ | Pexp_send _ | Pexp_new _ -> true
   | Pexp_sequence (_, e) | Pexp_open (_, e) -> is_inferred e
   | Pexp_ifthenelse (_, e1, Some e2) -> is_inferred e1 && is_inferred e2
   | _ -> false
-and is_inferred_extension : Extensions.Expression.t -> _ = function
-  | Eexp_comprehension _
-  | Eexp_immutable_array _ -> false
+and is_inferred_jane_syntax : Jane_syntax.Expression.t -> _ = function
+  | Jexp_comprehension _
+  | Jexp_immutable_array _ -> false
 
 (* check if the type of %apply or %revapply matches the type expected by
    the specialized typing rule for those primitives.
@@ -4221,16 +4221,16 @@ and type_expect_
     submode ~env ~loc:exp.exp_loc ~reason:Other mode expected_mode;
     exp
   in
-  match Extensions.Expression.of_ast sexp with
-  | Some eexp ->
-      type_expect_extension
+  match Jane_syntax.Expression.of_ast sexp with
+  | Some jexp ->
+      type_expect_jane_syntax
         ~loc
         ~env
         ~expected_mode
         ~ty_expected
         ~explanation
         ~attributes:sexp.pexp_attributes
-        eexp
+        jexp
   | None      -> match sexp.pexp_desc with
   | Pexp_ident lid ->
       let path, mode, desc, kind = type_ident env ~recarg lid in
@@ -4543,7 +4543,7 @@ and type_expect_
         rt, funct
       in
       let type_sfunct_args sfunct extra_args =
-        match Extensions.Expression.of_ast sfunct, sfunct.pexp_desc with
+        match Jane_syntax.Expression.of_ast sfunct, sfunct.pexp_desc with
         | None, Pexp_apply (sfunct, args) ->
            type_sfunct sfunct, args @ extra_args
         | _ ->
@@ -4771,7 +4771,7 @@ and type_expect_
       let alloc_mode =
         if List.exists
             (function
-              | _, { lbl_repres = Record_unboxed _; _ }, _ -> false
+              | _, { lbl_repres = Record_unboxed; _ }, _ -> false
               | _ -> true)
             lbl_exp_list then
           Some (register_allocation expected_mode)
@@ -5608,7 +5608,7 @@ and type_expect_
         | { pbop_pat = spat; _} :: rest ->
             (* CR layouts v5: eliminate value requirement *)
             let ty = newvar Layout.value in
-            let loc = { slet.pbop_op.loc with Location.loc_ghost = true } in
+            let loc = Location.ghostify slet.pbop_op.loc in
             let spat_acc = Ast_helper.Pat.tuple ~loc [spat_acc; spat] in
             let ty_acc = newty (Ttuple [ty_acc; ty]) in
             loop spat_acc ty_acc rest
@@ -6048,7 +6048,7 @@ and type_label_access env srecord usage lid =
    (Handling of * modifiers contributed by Thorsten Ohl.) *)
 
 and type_format loc str env =
-  let loc = {loc with Location.loc_ghost = true} in
+  let loc = Location.ghostify loc in
   try
     CamlinternalFormatBasics.(CamlinternalFormat.(
       let mk_exp_loc pexp_desc = {
@@ -6323,7 +6323,7 @@ and type_label_exp create env (expected_mode : expected_mode) loc ty_expected
     let snap = if vars = [] then None else Some (Btype.snapshot ()) in
     let rmode =
       match label.lbl_repres with
-      | Record_unboxed _ | Record_inlined (_, Variant_unboxed _) ->
+      | Record_unboxed | Record_inlined (_, Variant_unboxed) ->
         expected_mode
       | _ -> mode_subcomponent expected_mode
     in
@@ -6762,7 +6762,7 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
   in
   let (argument_mode, alloc_mode) =
     match constr.cstr_repr with
-    | Variant_unboxed _ -> expected_mode, None
+    | Variant_unboxed -> expected_mode, None
     | Variant_boxed _ when constr.cstr_constant -> expected_mode, None
     | Variant_boxed _ | Variant_extensible ->
        mode_subcomponent expected_mode,
@@ -6787,7 +6787,7 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
     begin match constr.cstr_repr with
     | Variant_extensible ->
         raise(error(loc, env, Private_constructor (constr, ty_res)))
-    | Variant_boxed _ | Variant_unboxed _ ->
+    | Variant_boxed _ | Variant_unboxed ->
         raise (error(loc, env, Private_type ty_res));
     end;
   (* NOTE: shouldn't we call "re" on this final expression? -- AF *)
@@ -7056,8 +7056,8 @@ and type_let
         false
   in
   let rec sexp_is_fun sexp =
-    match Extensions.Expression.of_ast sexp with
-    | Some eexp -> eexp_is_fun eexp
+    match Jane_syntax.Expression.of_ast sexp with
+    | Some jexp -> jexp_is_fun jexp
     | None      -> match sexp.pexp_desc with
     | Pexp_fun _ | Pexp_function _ -> true
     | Pexp_constraint (e, _)
@@ -7067,9 +7067,9 @@ and type_let
           {txt = "extension.local"|"ocaml.local"|"local"}, PStr []) },
        [Nolabel, e]) -> sexp_is_fun e
     | _ -> false
-  and eexp_is_fun : Extensions.Expression.t -> _ = function
-    | Eexp_comprehension _
-    | Eexp_immutable_array _ -> false
+  and jexp_is_fun : Jane_syntax.Expression.t -> _ = function
+    | Jexp_comprehension _
+    | Jexp_immutable_array _ -> false
   in
   let vb_is_fun { pvb_expr = sexp; _ } = sexp_is_fun sexp in
   let entirely_functions = List.for_all vb_is_fun spat_sexp_list in
@@ -7091,7 +7091,7 @@ and type_let
                (* propagate type annotation to pattern,
                   to allow it to be generalized in -principal mode *)
                Pat.constraint_
-                 ~loc:{spat.ppat_loc with Location.loc_ghost=true}
+                 ~loc:(Location.ghostify spat.ppat_loc)
                  spat
                  sty
            | _ -> spat
@@ -7456,13 +7456,13 @@ and type_generic_array
     exp_attributes = attributes;
     exp_env = env }
 
-and type_expect_extension
+and type_expect_jane_syntax
       ~loc ~env ~expected_mode ~ty_expected ~explanation ~attributes
-  : Extensions.Expression.t -> _ = function
-  | Eexp_comprehension cexpr ->
+  : Jane_syntax.Expression.t -> _ = function
+  | Jexp_comprehension cexpr ->
       type_comprehension_expr
         ~loc ~env ~expected_mode ~ty_expected ~explanation ~attributes cexpr
-  | Eexp_immutable_array iaexpr ->
+  | Jexp_immutable_array iaexpr ->
       type_immutable_array
         ~loc ~env ~expected_mode ~ty_expected ~explanation ~attributes iaexpr
 
@@ -7543,7 +7543,7 @@ and type_expect_extension
 
 and type_comprehension_expr
       ~loc ~env ~expected_mode:_ ~ty_expected ~explanation:_ ~attributes cexpr =
-  let open Extensions.Comprehensions in
+  let open Jane_syntax.Comprehensions in
   (* - [comprehension_type]:
          For printing nicer error messages.
      - [container_type]:
@@ -7609,7 +7609,7 @@ and type_comprehension_clauses
 
 (* Calls [reset_pattern] *)
 and type_comprehension_clause ~loc ~comprehension_type ~container_type env
-  : Extensions.Comprehensions.clause -> _ = function
+  : Jane_syntax.Comprehensions.clause -> _ = function
   | For bindings ->
       (* TODO: fix handling of first-class module patterns *)
       let tps = create_type_pat_state Modules_rejected in
@@ -7644,7 +7644,7 @@ and type_comprehension_binding
       ~container_type
       ~env
       tps
-      Extensions.Comprehensions.{ pattern; iterator; attributes } =
+      Jane_syntax.Comprehensions.{ pattern; iterator; attributes } =
   { comp_cb_iterator =
       type_comprehension_iterator
         ~loc ~env ~comprehension_type ~container_type tps pattern iterator
@@ -7654,7 +7654,7 @@ and type_comprehension_binding
 
 and type_comprehension_iterator
       ~loc ~env ~comprehension_type ~container_type tps pattern
-  : Extensions.Comprehensions.iterator -> _ = function
+  : Jane_syntax.Comprehensions.iterator -> _ = function
   | Range { start; stop; direction } ->
       let tbound ~explanation bound =
         (* To understand why [for ... = ...] iterator range endpoints can be
@@ -7708,7 +7708,7 @@ and type_comprehension_iterator
 
 and type_immutable_array
       ~loc ~env ~expected_mode ~ty_expected ~explanation ~attributes
-    : Extensions.Immutable_arrays.expression -> _ = function
+    : Jane_syntax.Immutable_arrays.expression -> _ = function
   | Iaexp_immutable_array elts ->
       type_generic_array
         ~loc
