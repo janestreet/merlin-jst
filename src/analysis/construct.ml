@@ -369,6 +369,9 @@ module Gen = struct
         | None -> []
       in
       List.map constrs ~f:(make_constr env path type_expr)
+      (* [constrs] are ordered inversly to a source code declaration.
+         We reverse it to match it and provide better UX *)
+      |> List.rev
       |> Util.panache
     in
 
@@ -381,6 +384,9 @@ module Gen = struct
             | Reither (false, [_], _) -> true
             | _ -> false)
           (row_fields row_desc)
+        (* [row_fields] are ordered inversly to a source code declaration.
+           We reverse it to match it and provide better UX *)
+        |> List.rev
       in
       match fields with
       | [] -> raise (Not_allowed "empty variant type")
@@ -394,6 +400,7 @@ module Gen = struct
               Ast_helper.Exp.variant lbl e)
             )
         |> List.flatten
+        |> List.rev
     in
 
     let record env typ path labels =
