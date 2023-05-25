@@ -3460,6 +3460,9 @@ let is_local_returning_function cases =
 (* Approximate the type of an expression, for better recursion *)
 
 let rec approx_type env sty =
+  match Jane_syntax.Core_type.of_ast sty with
+  | Some jty -> approx_type_jst env jty
+  | None ->
   match sty.ptyp_desc with
   | Ptyp_arrow (p, ({ ptyp_desc = Ptyp_poly _ } as arg_sty), sty) ->
       (* CR layouts v5: value requirement here to be relaxed *)
@@ -3501,6 +3504,9 @@ let rec approx_type env sty =
      should probably be sort variable.  See Test21 in typing-layouts/basics.ml
      (which mentions approx_type) for why it can't be value.  *)
   | _ -> newvar Layout.any
+
+and approx_type_jst _env : Jane_syntax.Core_type.t -> _ = function
+  | _ -> .
 
 let type_pattern_approx_jane_syntax : Jane_syntax.Pattern.t -> _ = function
   | Jpat_immutable_array _ -> ()
@@ -5498,7 +5504,8 @@ and type_expect_
           raise (Error (loc, env, Invalid_extension_constructor_payload))
       end
   | Pexp_extension ({ txt = ("probe" | "ocaml.probe"); _ }, payload) ->
-      begin match payload with
+    let name, name_loc, args =
+      match payload with
       | PStr
           ([{ pstr_desc =
                 Pstr_eval
@@ -5508,22 +5515,37 @@ and type_expect_
                                (Pexp_constant (Pconst_string(name,_,None)));
                              pexp_loc = name_loc;
                              _ }
-                          , [Nolabel, arg]))
+                          , args))
                    ; _ }
-                  , _)}]) ->
-        check_probe_name name name_loc env;
-        let env = Env.add_lock Alloc_mode.global env in
-        Env.add_probe name;
-        let exp = type_expect env mode_global arg
-                    (mk_expected Predef.type_unit) in
-        rue {
-          exp_desc = Texp_probe {name; handler=exp};
-          exp_loc = loc; exp_extra = [];
-          exp_type = instance Predef.type_unit;
-          exp_attributes = sexp.pexp_attributes;
-          exp_env = env }
+                  , _)}]) -> name, name_loc, args
       | _ -> raise (Error (loc, env, Probe_format))
-    end
+    in
+    let bool_of_string = function
+      | "true" -> true
+      | "false" -> false
+      | _ -> raise (Error (loc, env, Probe_format))
+    in
+    let arg, enabled_at_init =
+      match args with
+      | [Nolabel, arg] -> arg, false
+      | [Labelled "enabled_at_init",
+         { pexp_desc =
+             Pexp_construct({ txt = Longident.Lident b; _ },
+                            None); _ };
+         Nolabel, arg] -> arg, bool_of_string b
+      | _ -> raise (Error (loc, env, Probe_format))
+    in
+    check_probe_name name name_loc env;
+    let env = Env.add_lock Alloc_mode.global env in
+    Env.add_probe name;
+    let exp = type_expect env mode_global arg
+                (mk_expected Predef.type_unit) in
+    rue {
+      exp_desc = Texp_probe {name; handler=exp; enabled_at_init};
+      exp_loc = loc; exp_extra = [];
+      exp_type = instance Predef.type_unit;
+      exp_attributes = sexp.pexp_attributes;
+      exp_env = env }
   | Pexp_extension ({ txt = ("probe_is_enabled"
                             |"ocaml.probe_is_enabled"); _ }, payload) ->
       begin match payload with
@@ -7496,15 +7518,11 @@ let type_let existential_ctx env rec_flag spat_sexp_list =
 
 (* Typing of toplevel expressions *)
 
-(* CR layouts: In many places, we call this (or various related functions like
-   type_expect) and then immediately call `type_layout` to find the layout of
-   the resulting type.  This feels like it could be improved - perhaps
-   type_expression could cheaply keep track of the layout of the type it's
-   computing and return it? *)
-let type_expression env sexp =
+let type_expression env layout sexp =
   Typetexp.TyVarEnv.reset ();
   begin_def();
-  let exp = type_exp env mode_global sexp in
+  let expected = mk_expected (newvar layout) in
+  let exp = type_expect env mode_global sexp expected in
   end_def();
   if maybe_expansive exp then lower_contravariant env exp.exp_type;
   generalize exp.exp_type;
@@ -7517,6 +7535,13 @@ let type_expression env sexp =
       in
       {exp with exp_type = desc.val_type}
   | _ -> exp
+
+let type_representable_expression env sexp =
+  let sort = Sort.new_var () in
+  let exp = type_expression env (Layout.of_sort sort) sexp in
+  exp, sort
+
+let type_expression env sexp = type_expression env Layout.any sexp
 
 (* Error report *)
 
@@ -8041,8 +8066,9 @@ let report_error ~loc env = function
         name name
   | Probe_format ->
       Location.errorf ~loc
-        "Probe points must consist of a name, as a string \
-         literal, followed by a single expression of type unit."
+        "Probe points must consist of a name, as a string literal, \
+         optionally followed by ~enabled_at_init:true or ~enabled_at_init:false, \
+         followed by a single expression of type unit."
   | Probe_is_enabled_format ->
       Location.errorf ~loc
         "%%probe_is_enabled points must specify a single probe name as a \

@@ -363,7 +363,7 @@ end
    way; this function filters them out. *)
 let uniformly_handled_extension name =
   match name with
-  | "local"|"global"|"nonlocal"|"escape"|"include_functor"|"curry" -> false
+  | "local"|"global"|"nonlocal"|"escape"|"curry" -> false
   | _ -> true
 
 (** Given the [AST_parameters] for a syntactic category, produce the
@@ -415,6 +415,45 @@ module Make_AST (AST_parameters : AST_parameters) :
       | None -> None
 end
 
+(** The AST parameters for every subset of types; embedded as
+    [[[%jane.FEATNAME] * BODY]]. *)
+module Type_AST_parameters = struct
+  type ast = core_type
+  type ast_desc = core_type_desc
+
+  (* Missing [plural] *)
+
+  let location typ = typ.ptyp_loc
+
+  let wrap_desc ?loc ~attrs = Ast_helper.Typ.mk ?loc ~attrs
+
+  let make_extension_node = Ast_helper.Typ.extension
+
+  let make_extension_use ~extension_node typ =
+    Ptyp_tuple [extension_node; typ]
+
+  let match_extension_use typ =
+    match typ.ptyp_desc with
+    | Ptyp_tuple([{ptyp_desc = Ptyp_extension ext; _}; typ]) ->
+        Some (ext, typ)
+    | _ ->
+        None
+end
+
+(** Types; embedded as [[[%jane.FEATNAME] * BODY]]. *)
+module Core_type = Make_AST(struct
+    include Type_AST_parameters
+
+    let plural = "types"
+end)
+
+(** Constructor arguments; the same as types, but used in fewer places *)
+module Constructor_argument = Make_AST(struct
+  include Type_AST_parameters
+
+  let plural = "constructor arguments"
+end)
+
 (** Expressions; embedded as [([%jane.FEATNAME] BODY)]. *)
 module Expression = Make_AST(struct
   type ast = expression
@@ -461,7 +500,7 @@ module Pattern = Make_AST(struct
     | Ppat_tuple([{ppat_desc = Ppat_extension ext; _}; pattern]) ->
         Some (ext, pattern)
     | _ ->
-       None
+        None
 end)
 
 (** Module types; embedded as [functor (_ : [%jane.FEATNAME]) -> BODY]. *)
@@ -484,7 +523,89 @@ module Module_type = Make_AST(struct
       match mty.pmty_desc with
       | Pmty_functor(Named({txt = None},
                            {pmty_desc = Pmty_extension ext}), mty) ->
-        Some (ext, mty)
+          Some (ext, mty)
+      | _ -> None
+end)
+
+(** Signature items; embedded as
+    [include sig [%%extension.EXTNAME];; BODY end]. *)
+module Signature_item = Make_AST(struct
+    type ast = signature_item
+    type ast_desc = signature_item_desc
+
+    let plural = "signature items"
+
+    let location sigi = sigi.psig_loc
+
+    (* The attributes are only set in [ast_mapper], so requiring them to be
+       empty here is fine, as there won't be any to set in that case. *)
+    let wrap_desc ?loc ~attrs =
+      match attrs with
+      | [] -> Ast_helper.Sig.mk ?loc
+      | _ :: _ ->
+          Misc.fatal_errorf
+            "Jane syntax: Cannot put attributes on a signature item"
+
+    let make_extension_node = Ast_helper.Sig.extension
+
+    let make_extension_use ~extension_node sigi =
+      Psig_include { pincl_mod = Ast_helper.Mty.signature [extension_node; sigi]
+                   ; pincl_loc = !Ast_helper.default_loc
+                   ; pincl_attributes = [] }
+
+    let match_extension_use sigi =
+      match sigi.psig_desc with
+      | Psig_include
+          { pincl_mod =
+              { pmty_desc =
+                  Pmty_signature
+                    [ { psig_desc = Psig_extension (ext, []); _ }
+                    ; sigi ]
+              ; _}
+          ; _}
+        ->
+          Some (ext, sigi)
+      | _ -> None
+end)
+
+(** Structure items; embedded as
+    [include struct [%%extension.EXTNAME];; BODY end]. *)
+module Structure_item = Make_AST(struct
+    type ast = structure_item
+    type ast_desc = structure_item_desc
+
+    let plural = "structure items"
+
+    let location stri = stri.pstr_loc
+
+    (* The attributes are only set in [ast_mapper], so requiring them to be
+       empty here is fine, as there won't be any to set in that case. *)
+    let wrap_desc ?loc ~attrs =
+      match attrs with
+      | [] -> Ast_helper.Str.mk ?loc
+      | _ :: _ ->
+          Misc.fatal_errorf
+            "Jane syntax: Cannot put attributes on a structure item"
+
+    let make_extension_node = Ast_helper.Str.extension
+
+    let make_extension_use ~extension_node stri =
+      Pstr_include { pincl_mod = Ast_helper.Mod.structure [extension_node; stri]
+                   ; pincl_loc = !Ast_helper.default_loc
+                   ; pincl_attributes = [] }
+
+    let match_extension_use stri =
+      match stri.pstr_desc with
+      | Pstr_include
+          { pincl_mod =
+              { pmod_desc =
+                  Pmod_structure
+                    [ { pstr_desc = Pstr_extension (ext, []); _ }
+                    ; stri ]
+              ; _}
+          ; _}
+        ->
+          Some (ext, stri)
       | _ -> None
 end)
 
