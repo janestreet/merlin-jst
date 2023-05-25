@@ -357,7 +357,7 @@ and expression_desc =
   | Texp_extension_constructor of Longident.t loc * Path.t
   | Texp_open of open_declaration * expression
         (** let open[!] M in e *)
-  | Texp_probe of { name:string; handler:expression; }
+  | Texp_probe of { name:string; handler:expression; enabled_at_init:bool }
   | Texp_probe_is_enabled of { name:string }
   | Texp_exclave of expression
   | Texp_hole
@@ -550,9 +550,7 @@ and structure_item =
   }
 
 and structure_item_desc =
-    Tstr_eval of expression * Layouts.layout * attributes
-    (* CR layouts v5: The above layout is now only used to implement the void
-       sanity check.  Consider removing when void is handled properly. *)
+    Tstr_eval of expression * Layouts.sort * attributes
   | Tstr_value of rec_flag * value_binding list
   | Tstr_primitive of value_description
   | Tstr_type of rec_flag * type_declaration list

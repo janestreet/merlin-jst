@@ -152,24 +152,23 @@ module Comprehensions = struct
   module Desugaring_error = struct
     type error =
       | Non_comprehension_embedding of Embedded_name.t
-      | Non_extension
+      | Non_embedding
       | Bad_comprehension_embedding of string list
       | No_clauses
 
     let report_error ~loc = function
-      | Non_comprehension_embedding ext_name ->
+      | Non_comprehension_embedding name ->
           Location.errorf ~loc
             "Tried to desugar the non-comprehension embedded term %a@ \
              as part of a comprehension expression"
-            Embedded_name.pp_quoted_name ext_name
-      | Non_extension ->
+            Embedded_name.pp_quoted_name name
+      | Non_embedding ->
           Location.errorf ~loc
             "Tried to desugar a non-embedded expression@ \
              as part of a comprehension expression"
       | Bad_comprehension_embedding subparts ->
           Location.errorf ~loc
-            "Unknown, unexpected, or malformed@ \
-             comprehension embedded term %a"
+            "Unknown, unexpected, or malformed@ comprehension embedded term %a"
             Embedded_name.pp_quoted_name
             Embedded_name.(extension_string :: subparts)
       | No_clauses ->
@@ -195,7 +194,7 @@ module Comprehensions = struct
     | Some (ext_name, _) ->
         Desugaring_error.raise expr (Non_comprehension_embedding ext_name)
     | None ->
-        Desugaring_error.raise expr Non_extension
+        Desugaring_error.raise expr Non_embedding
 
   let iterator_of_expr expr =
     match expand_comprehension_extension_expr expr with
@@ -279,9 +278,40 @@ module Immutable_arrays = struct
       Pattern.make_entire_jane_syntax ~loc extension_string (fun () ->
         Ast_helper.Pat.array elts)
 
-  let of_pat expr = match expr.ppat_desc with
+  let of_pat pat = match pat.ppat_desc with
     | Ppat_array elts -> Iapat_immutable_array elts
     | _ -> failwith "Malformed immutable array pattern"
+end
+
+(** [include functor] *)
+module Include_functor = struct
+  type signature_item =
+    | Ifsig_include_functor of include_description
+
+  type structure_item =
+    | Ifstr_include_functor of include_declaration
+
+  let extension_string = Language_extension.to_string Include_functor
+
+  let sig_item_of ~loc = function
+    | Ifsig_include_functor incl ->
+        (* See Note [Wrapping with make_entire_jane_syntax] *)
+        Signature_item.make_entire_jane_syntax ~loc extension_string (fun () ->
+          Ast_helper.Sig.include_ incl)
+
+  let of_sig_item sigi = match sigi.psig_desc with
+    | Psig_include incl -> Ifsig_include_functor incl
+    | _ -> failwith "Malformed [include functor] in signature"
+
+  let str_item_of ~loc = function
+    | Ifstr_include_functor incl ->
+        (* See Note [Wrapping with make_entire_jane_syntax] *)
+        Structure_item.make_entire_jane_syntax ~loc extension_string (fun () ->
+          Ast_helper.Str.include_ incl)
+
+  let of_str_item stri = match stri.pstr_desc with
+    | Pstr_include incl -> Ifstr_include_functor incl
+    | _ -> failwith "Malformed [include functor] in structure"
 end
 
 (** Module strengthening *)
@@ -308,13 +338,41 @@ module Strengthen = struct
 end
 
 (******************************************************************************)
-(** The interface to language extensions, which we export *)
+(** The interface to our novel syntax, which we export *)
 
 module type AST = sig
   type t
   type ast
 
   val of_ast : ast -> t option
+end
+
+module Core_type = struct
+  module M = struct
+    module AST = Jane_syntax_parsing.Core_type
+
+    type t = |
+
+    let of_ast_internal (feat : Feature.t) _typ = match feat with
+      | _ -> None
+  end
+
+  include M
+  include Make_of_ast(M)
+end
+
+module Constructor_argument = struct
+  module M = struct
+    module AST = Jane_syntax_parsing.Constructor_argument
+
+    type t = |
+
+    let of_ast_internal (feat : Feature.t) _carg = match feat with
+      | _ -> None
+  end
+
+  include M
+  include Make_of_ast(M)
 end
 
 module Expression = struct
@@ -364,6 +422,40 @@ module Module_type = struct
     let of_ast_internal (feat : Feature.t) mty = match feat with
       | Language_extension Module_strengthening ->
         Some (Jmty_strengthen (Strengthen.of_mty mty))
+      | _ -> None
+  end
+
+  include M
+  include Make_of_ast(M)
+end
+
+module Signature_item = struct
+  module M = struct
+    module AST = Jane_syntax_parsing.Signature_item
+
+    type t =
+      | Jsig_include_functor of Include_functor.signature_item
+
+    let of_ast_internal (feat : Feature.t) sigi = match feat with
+      | Language_extension Include_functor ->
+        Some (Jsig_include_functor (Include_functor.of_sig_item sigi))
+      | _ -> None
+  end
+
+  include M
+  include Make_of_ast(M)
+end
+
+module Structure_item = struct
+  module M = struct
+    module AST = Jane_syntax_parsing.Structure_item
+
+    type t =
+      | Jstr_include_functor of Include_functor.structure_item
+
+    let of_ast_internal (feat : Feature.t) stri = match feat with
+      | Language_extension Include_functor ->
+        Some (Jstr_include_functor (Include_functor.of_str_item stri))
       | _ -> None
   end
 
