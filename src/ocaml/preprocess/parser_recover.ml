@@ -327,7 +327,7 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_interface -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_index_mod -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_include_and_functor_attr -> raise Not_found
+    | MenhirInterpreter.N MenhirInterpreter.N_include_maybe_functor -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_implementation -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_ident -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_ -> raise Not_found
