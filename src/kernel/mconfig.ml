@@ -451,6 +451,7 @@ let ocaml_ignored_flags = [
   "-regalloc-validate";
   "-no-regalloc-validate";
   "-zero-alloc-check";
+  "-checkmach-details-cutoff";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
