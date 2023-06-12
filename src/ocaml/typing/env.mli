@@ -302,6 +302,7 @@ val add_value:
     ?check:(string -> Warnings.t) -> ?mode:(Types.value_mode) ->
     Ident.t -> Types.value_description -> t -> t
 val add_type: check:bool -> Ident.t -> type_declaration -> t -> t
+val add_type_long_path: check:bool -> Ident.t -> type_declaration -> t -> t
 val add_extension:
   check:bool -> rebind:bool -> Ident.t -> extension_constructor -> t -> t
 val add_module: ?arg:bool -> ?shape:Shape.t ->
