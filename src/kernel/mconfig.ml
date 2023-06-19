@@ -452,6 +452,7 @@ let ocaml_ignored_flags = [
   "-no-regalloc-validate";
   "-zero-alloc-check";
   "-checkmach-details-cutoff";
+  "-use-cached-generic-functions";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
@@ -491,6 +492,7 @@ let ocaml_ignored_parametrized_flags = [
   "-flambda2-inline-threshold";
   "-regalloc";
   "-regalloc-param";
+  "-cached-generic-functions-path";
 ]
 
 let ocaml_warnings_spec ~error =
