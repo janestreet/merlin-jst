@@ -60,7 +60,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OF) -> "of"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OBJECT) -> "object"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_NONREC) -> "nonrec"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_NONLOCAL) -> "nonlocal_"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_NEW) -> "new"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MUTABLE) -> "mutable"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MODULE) -> "module"
@@ -103,6 +102,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_INCLUDE) -> "include"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_IN) -> "in"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_IF) -> "if"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH_SUFFIX) -> "# "
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH_INT) -> "HASH_INT"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH_FLOAT) -> "HASH_FLOAT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) -> "#<op>"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH) -> "#"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) -> ">]"
@@ -119,6 +121,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT) -> "finally"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_FALSE) -> "false"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL) -> "external"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EXCLAVE) -> "exclave_"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EXCEPTION) -> "exception"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EQUAL) -> "="
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EOL) -> "EOL"
@@ -425,7 +428,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_OF -> (fun _ -> "of")
   | MenhirInterpreter.T MenhirInterpreter.T_OBJECT -> (fun _ -> "object")
   | MenhirInterpreter.T MenhirInterpreter.T_NONREC -> (fun _ -> "nonrec")
-  | MenhirInterpreter.T MenhirInterpreter.T_NONLOCAL -> (fun _ -> "nonlocal_")
   | MenhirInterpreter.T MenhirInterpreter.T_NEW -> (fun _ -> "new")
   | MenhirInterpreter.T MenhirInterpreter.T_MUTABLE -> (fun _ -> "mutable")
   | MenhirInterpreter.T MenhirInterpreter.T_MODULE -> (fun _ -> "module")
@@ -468,6 +470,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_INCLUDE -> (fun _ -> "include")
   | MenhirInterpreter.T MenhirInterpreter.T_IN -> (fun _ -> "in")
   | MenhirInterpreter.T MenhirInterpreter.T_IF -> (fun _ -> "if")
+  | MenhirInterpreter.T MenhirInterpreter.T_HASH_SUFFIX -> (fun _ -> "# ")
+  | MenhirInterpreter.T MenhirInterpreter.T_HASH_INT -> (string_of_INT)
+  | MenhirInterpreter.T MenhirInterpreter.T_HASH_FLOAT -> (string_of_FLOAT)
   | MenhirInterpreter.T MenhirInterpreter.T_HASHOP -> (Printf.sprintf "HASHOP(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_HASH -> (fun _ -> "#")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET -> (fun _ -> ">]")
@@ -484,6 +489,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT -> (fun _ -> "finally")
   | MenhirInterpreter.T MenhirInterpreter.T_FALSE -> (fun _ -> "false")
   | MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL -> (fun _ -> "external")
+  | MenhirInterpreter.T MenhirInterpreter.T_EXCLAVE -> (fun _ -> "exclave_")
   | MenhirInterpreter.T MenhirInterpreter.T_EXCEPTION -> (fun _ -> "exception")
   | MenhirInterpreter.T MenhirInterpreter.T_EQUAL -> (fun _ -> "=")
   | MenhirInterpreter.T MenhirInterpreter.T_EOL -> (fun _ -> "EOL")
@@ -789,7 +795,6 @@ let print_token = function
   | OF -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OF) ()
   | OBJECT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OBJECT) ()
   | NONREC -> print_value (MenhirInterpreter.T MenhirInterpreter.T_NONREC) ()
-  | NONLOCAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_NONLOCAL) ()
   | NEW -> print_value (MenhirInterpreter.T MenhirInterpreter.T_NEW) ()
   | MUTABLE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_MUTABLE) ()
   | MODULE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_MODULE) ()
@@ -832,6 +837,9 @@ let print_token = function
   | INCLUDE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_INCLUDE) ()
   | IN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_IN) ()
   | IF -> print_value (MenhirInterpreter.T MenhirInterpreter.T_IF) ()
+  | HASH_SUFFIX -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH_SUFFIX) ()
+  | HASH_INT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH_INT) v
+  | HASH_FLOAT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH_FLOAT) v
   | HASHOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) v
   | HASH -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH) ()
   | GREATERRBRACKET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) ()
@@ -848,6 +856,7 @@ let print_token = function
   | FINALLY_LWT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT) ()
   | FALSE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_FALSE) ()
   | EXTERNAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL) ()
+  | EXCLAVE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EXCLAVE) ()
   | EXCEPTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EXCEPTION) ()
   | EQUAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EQUAL) ()
   | EOL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EOL) ()
@@ -930,7 +939,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_OF -> OF
   | MenhirInterpreter.T_OBJECT -> OBJECT
   | MenhirInterpreter.T_NONREC -> NONREC
-  | MenhirInterpreter.T_NONLOCAL -> NONLOCAL
   | MenhirInterpreter.T_NEW -> NEW
   | MenhirInterpreter.T_MUTABLE -> MUTABLE
   | MenhirInterpreter.T_MODULE -> MODULE
@@ -973,6 +981,9 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_INCLUDE -> INCLUDE
   | MenhirInterpreter.T_IN -> IN
   | MenhirInterpreter.T_IF -> IF
+  | MenhirInterpreter.T_HASH_SUFFIX -> HASH_SUFFIX
+  | MenhirInterpreter.T_HASH_INT -> HASH_INT v
+  | MenhirInterpreter.T_HASH_FLOAT -> HASH_FLOAT v
   | MenhirInterpreter.T_HASHOP -> HASHOP v
   | MenhirInterpreter.T_HASH -> HASH
   | MenhirInterpreter.T_GREATERRBRACKET -> GREATERRBRACKET
@@ -989,6 +1000,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_FINALLY_LWT -> FINALLY_LWT
   | MenhirInterpreter.T_FALSE -> FALSE
   | MenhirInterpreter.T_EXTERNAL -> EXTERNAL
+  | MenhirInterpreter.T_EXCLAVE -> EXCLAVE
   | MenhirInterpreter.T_EXCEPTION -> EXCEPTION
   | MenhirInterpreter.T_EQUAL -> EQUAL
   | MenhirInterpreter.T_EOL -> EOL

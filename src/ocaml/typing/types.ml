@@ -247,7 +247,6 @@ and variant_representation =
 
 and global_flag =
   | Global
-  | Nonlocal
   | Unrestricted
 
 and label_declaration =

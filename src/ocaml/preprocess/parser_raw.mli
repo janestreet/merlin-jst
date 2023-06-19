@@ -43,7 +43,6 @@ type token =
   | OF
   | OBJECT
   | NONREC
-  | NONLOCAL
   | NEW
   | MUTABLE
   | MODULE
@@ -86,6 +85,9 @@ type token =
   | INCLUDE
   | IN
   | IF
+  | HASH_SUFFIX
+  | HASH_INT of (string * char option)
+  | HASH_FLOAT of (string * char option)
   | HASHOP of (string)
   | HASH
   | GREATERRBRACKET
@@ -102,6 +104,7 @@ type token =
   | FINALLY_LWT
   | FALSE
   | EXTERNAL
+  | EXCLAVE
   | EXCEPTION
   | EQUAL
   | EOL
@@ -228,7 +231,6 @@ module MenhirInterpreter : sig
     | T_OF : unit terminal
     | T_OBJECT : unit terminal
     | T_NONREC : unit terminal
-    | T_NONLOCAL : unit terminal
     | T_NEW : unit terminal
     | T_MUTABLE : unit terminal
     | T_MODULE : unit terminal
@@ -271,6 +273,9 @@ module MenhirInterpreter : sig
     | T_INCLUDE : unit terminal
     | T_IN : unit terminal
     | T_IF : unit terminal
+    | T_HASH_SUFFIX : unit terminal
+    | T_HASH_INT : (string * char option) terminal
+    | T_HASH_FLOAT : (string * char option) terminal
     | T_HASHOP : (string) terminal
     | T_HASH : unit terminal
     | T_GREATERRBRACKET : unit terminal
@@ -287,6 +292,7 @@ module MenhirInterpreter : sig
     | T_FINALLY_LWT : unit terminal
     | T_FALSE : unit terminal
     | T_EXTERNAL : unit terminal
+    | T_EXCLAVE : unit terminal
     | T_EXCEPTION : unit terminal
     | T_EQUAL : unit terminal
     | T_EOL : unit terminal
@@ -362,7 +368,7 @@ module MenhirInterpreter : sig
     | N_simple_pattern : (Parsetree.pattern) nonterminal
     | N_simple_expr : (Parsetree.expression) nonterminal
     | N_simple_delimited_pattern : (Parsetree.pattern) nonterminal
-    | N_signed_constant : (Parsetree.constant) nonterminal
+    | N_signed_constant : (Jane_syntax.jane_constant) nonterminal
     | N_signature_item : (Parsetree.signature_item) nonterminal
     | N_signature : (Parsetree.signature) nonterminal
     | N_sig_exception_declaration : (Parsetree.type_exception * string Location.loc option) nonterminal
@@ -538,7 +544,7 @@ module MenhirInterpreter : sig
     | N_constr_longident : (Longident.t) nonterminal
     | N_constr_ident : (string) nonterminal
     | N_constr_extra_nonprefix_ident : (string) nonterminal
-    | N_constant : (Parsetree.constant) nonterminal
+    | N_constant : (Jane_syntax.jane_constant) nonterminal
     | N_comprehension_iterator : (Jane_syntax.Comprehensions.iterator) nonterminal
     | N_comprehension_clause_binding : (Jane_syntax.Comprehensions.clause_binding) nonterminal
     | N_comprehension_clause : (Jane_syntax.Comprehensions.clause) nonterminal
