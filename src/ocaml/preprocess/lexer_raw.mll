@@ -1044,6 +1044,14 @@ and skip_sharp_bang state = parse
   (* preprocessor support not implemented, not compatible with monadic
      interface *)
 
+  let token state lexbuf =
+    match Queue.take_opt deferred_tokens with
+    | None -> token state lexbuf
+    | Some { token; start_pos; end_pos } ->
+        lexbuf.lex_start_p <- start_pos;
+        lexbuf.lex_curr_p <- end_pos;
+        return token
+
   let rec token_without_comments state lexbuf =
     token state lexbuf >>= function
     | COMMENT _ ->
