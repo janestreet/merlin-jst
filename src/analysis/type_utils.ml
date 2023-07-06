@@ -41,6 +41,22 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
   Parser_raw.parse_expression lexer lexbuf
 
+let parse_longident lid =
+  let protected_lid =
+    Pprintast.protect_ident (Format.str_formatter) lid;
+    Format.flush_str_formatter ()
+  in
+  let lexbuf = Lexing.from_string protected_lid in
+  let state = Lexer_raw.make @@ Lexer_raw.keywords [] in
+  let rec lexer = function
+    | Lexer_raw.Fail (e,l) -> raise (Lexer_raw.Error (e,l))
+    | Lexer_raw.Return token -> token
+    | Lexer_raw.Refill k -> lexer (k ())
+  in
+  let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
+  try Some (Parser_raw.parse_any_longident lexer lexbuf)
+  with Parser_raw.Error -> None
+
 let lookup_module name env =
   let path, md = Env.find_module_by_name name env in
   path, md.Types.md_type, md.Types.md_attributes

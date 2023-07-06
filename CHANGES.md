@@ -1,6 +1,25 @@
+unreleased
+==========
+  + merlin binary
+    - Constrain socket path buffer size to avoid build warnings (#1631)
+    - Handle concurrent server start (#1622)
+    - Omit module prefixes for constructors and record fields in the
+      `construct` command (#1618).  Prefixes are still produced when
+      warning 42 (disambiguated name) is active.
+    - Correctly invalidate PPX cache when pipeline ran partially (#1650,
+      fixes #1647)
+  + editor modes
+    - emacs: call merlin-client-logger with "interrupted" if the
+      merlin binary itself is interrupted, not just the parsing of the
+      result (#1626).
+    - emacs: merlin-construct, with a prefix argument, now includes
+      local values in the completion options.  Alternatively, this
+      behavior can be enabled permanently by customizing
+      `merlin-construct-with-local-values` (#1644)
+
 merlin 4.9
 ==========
-unreleased
+Fri May 26 15:23:42 CEST 2023
 
   + merlin binary
     - Allow monadic IO in dot protocol (#1581)
@@ -19,6 +38,9 @@ unreleased
     - Fix incorrect locations for string literals (#1574)
     - Fixed an issue that caused `errors` to erroneously alert about missing
       `cmi` files (#1577)
+    - Prevent destruct from crashing on closed variant types (#1602,
+      fixes #1601)
+    - Improve longident parsing (#1612, fixes #945)
   + editor modes
     - emacs: call the user's configured completion UI in
       `merlin-construct` (#1598)
