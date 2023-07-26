@@ -591,7 +591,7 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_instvar (self_path, pth, _inst_var) ->
         join [path self_path << Dereference; path pth]
     | Texp_apply
-        ({exp_desc = Texp_ident (_, _, vd, Id_prim _)}, [_, Arg arg], _, _)
+        ({exp_desc = Texp_ident (_, _, vd, Id_prim _)}, [_, Arg (arg, _)], _, _)
       when is_ref vd ->
       (*
         G |- e: m[Guard]
@@ -603,7 +603,7 @@ let rec expression : Typedtree.expression -> term_judg =
         let arg (_, arg) =
           match arg with
           | Omitted _ -> empty
-          | Arg e -> expression e
+          | Arg (e, _) -> expression e
         in
         let app_mode = if List.exists is_abstracted_arg args
           then (* see the comment on Texp_apply in typedtree.mli;
@@ -1081,7 +1081,7 @@ and class_expr : Typedtree.class_expr -> term_judg =
         let arg (_, arg) =
           match arg with
           | Omitted _ -> empty
-          | Arg e -> expression e
+          | Arg (e, _) -> expression e
         in
         join [
           class_expr ce << Dereference;

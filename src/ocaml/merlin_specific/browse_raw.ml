@@ -338,7 +338,7 @@ let of_expression_desc loc = function
     of_expression e **
     list_fold (function
         | (_,Omitted _) -> id_fold
-        | (_,Arg e) -> of_expression e)
+        | (_,Arg (e,_)) -> of_expression e)
       ls
   | Texp_match (e,_,cs,_) ->
     of_expression e **
@@ -415,7 +415,7 @@ and of_class_expr_desc = function
   | Tcl_apply (ce,es) ->
     list_fold (function
         | (_,Omitted _) -> id_fold
-        | (_,Arg e) -> of_expression e)
+        | (_,Arg (e,_)) -> of_expression e)
       es **
     app (Class_expr ce)
   | Tcl_let (_,vbs,es,ce) ->

@@ -756,7 +756,7 @@ let labels_of_application ~prefix = function
     let labels = labels f.exp_type in
     let is_application_of label (label',expr) =
       match expr with
-      | Arg {exp_loc = {Location. loc_ghost; loc_start; loc_end}; _} ->
+      | Arg ({exp_loc = {Location. loc_ghost; loc_start; loc_end}; _},_) ->
         label = label'
         && (Btype.prefixed_label_name label <> prefix)
         && not loc_ghost
