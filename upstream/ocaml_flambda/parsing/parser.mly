@@ -48,7 +48,7 @@ let ghost_loc (startpos, endpos) = {
 
 let mktyp ~loc ?attrs d = Typ.mk ~loc:(make_loc loc) ?attrs d
 let mkpat ~loc d = Pat.mk ~loc:(make_loc loc) d
-let mkexp ~loc d = Exp.mk ~loc:(make_loc loc) d
+let mkexp ~loc ?attrs d = Exp.mk ~loc:(make_loc loc) ?attrs d
 let mkmty ~loc ?attrs d = Mty.mk ~loc:(make_loc loc) ?attrs d
 let mksig ~loc d = Sig.mk ~loc:(make_loc loc) d
 let mkmod ~loc ?attrs d = Mod.mk ~loc:(make_loc loc) ?attrs d
@@ -130,19 +130,19 @@ let neg_string f =
 let mkuminus ~oploc name arg =
   match name, arg.pexp_desc with
   | "-", Pexp_constant(Pconst_integer (n,m)) ->
-      Pexp_constant(Pconst_integer(neg_string n,m))
+      Pexp_constant(Pconst_integer(neg_string n,m)), arg.pexp_attributes
   | ("-" | "-."), Pexp_constant(Pconst_float (f, m)) ->
-      Pexp_constant(Pconst_float(neg_string f, m))
+      Pexp_constant(Pconst_float(neg_string f, m)), arg.pexp_attributes
   | _ ->
-      Pexp_apply(mkoperator ~loc:oploc ("~" ^ name), [Nolabel, arg])
+      Pexp_apply(mkoperator ~loc:oploc ("~" ^ name), [Nolabel, arg]), []
 
 let mkuplus ~oploc name arg =
   let desc = arg.pexp_desc in
   match name, desc with
   | "+", Pexp_constant(Pconst_integer _)
-  | ("+" | "+."), Pexp_constant(Pconst_float _) -> desc
+  | ("+" | "+."), Pexp_constant(Pconst_float _) -> desc, arg.pexp_attributes
   | _ ->
-      Pexp_apply(mkoperator ~loc:oploc ("~" ^ name), [Nolabel, arg])
+      Pexp_apply(mkoperator ~loc:oploc ("~" ^ name), [Nolabel, arg]), []
 
 
 let local_ext_loc loc = mkloc "extension.local" loc
@@ -757,7 +757,7 @@ let mk_directive ~loc name arg =
 let check_layout loc id =
   begin
     match id with
-    | ("any" | "value" | "void" | "immediate64" | "immediate") -> ()
+    | ("any" | "value" | "void" | "immediate64" | "immediate" | "float64") -> ()
     | _ -> expecting loc "layout"
   end;
   let loc = make_loc loc in
@@ -765,7 +765,7 @@ let check_layout loc id =
 
 (* Unboxed literals *)
 
-(* CR layouts v2: The [unboxed_*] functions will both be improved and lose
+(* CR layouts v2.5: The [unboxed_*] functions will both be improved and lose
    their explicit assert once we have real unboxed literals in Jane syntax; they
    may also get re-inlined at that point *)
 let unboxed_literals_extension = Language_extension.Layouts
@@ -2617,6 +2617,12 @@ expr:
       { Pexp_assert $3, $2 }
   | LAZY ext_attributes simple_expr %prec below_HASH
       { Pexp_lazy $3, $2 }
+  | subtractive expr %prec prec_unary_minus
+      { let desc, attrs = mkuminus ~oploc:$loc($1) $1 $2 in
+        desc, (None, attrs) }
+  | additive expr %prec prec_unary_plus
+      { let desc, attrs = mkuplus ~oploc:$loc($1) $1 $2 in
+        desc, (None, attrs) }
 ;
 %inline expr_:
   | simple_expr nonempty_llist(labeled_simple_expr)
@@ -2629,10 +2635,6 @@ expr:
       { Pexp_variant($1, Some $2) }
   | e1 = expr op = op(infix_operator) e2 = expr
       { mkinfix e1 op e2 }
-  | subtractive expr %prec prec_unary_minus
-      { mkuminus ~oploc:$loc($1) $1 $2 }
-  | additive expr %prec prec_unary_plus
-      { mkuplus ~oploc:$loc($1) $1 $2 }
 ;
 
 simple_expr:
@@ -4031,7 +4033,7 @@ signed_constant:
   | PLUS FLOAT        { let (f, m) = $2 in
                         Constant.value (Pconst_float(f, m)) }
   | PLUS HASH_INT     { unboxed_int $sloc $loc($2) Positive $2 }
-  | PLUS HASH_FLOAT   { unboxed_float $sloc Negative $2 }
+  | PLUS HASH_FLOAT   { unboxed_float $sloc Positive $2 }
 ;
 
 /* Identifiers and long identifiers */

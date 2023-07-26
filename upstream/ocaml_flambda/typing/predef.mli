@@ -22,7 +22,6 @@ val type_char: type_expr
 val type_string: type_expr
 val type_bytes: type_expr
 val type_float: type_expr
-val type_float_unboxed: type_expr
 val type_bool: type_expr
 val type_unit: type_expr
 val type_exn: type_expr
@@ -33,9 +32,11 @@ val type_option: type_expr -> type_expr
 val type_nativeint: type_expr
 val type_int32: type_expr
 val type_int64: type_expr
+val type_vec128: type_expr
 val type_lazy_t: type_expr -> type_expr
 val type_extension_constructor:type_expr
 val type_floatarray:type_expr
+val type_unboxed_float:type_expr
 
 val path_int: Path.t
 val path_char: Path.t
@@ -52,9 +53,11 @@ val path_option: Path.t
 val path_nativeint: Path.t
 val path_int32: Path.t
 val path_int64: Path.t
+val path_vec128: Path.t
 val path_lazy_t: Path.t
 val path_extension_constructor: Path.t
 val path_floatarray: Path.t
+val path_unboxed_float: Path.t
 
 val path_match_failure: Path.t
 val path_invalid_argument: Path.t
@@ -77,6 +80,11 @@ val build_initial_env:
   (Ident.t -> type_declaration -> 'a -> 'a) ->
   (Ident.t -> extension_constructor -> 'a -> 'a) ->
   'a -> 'a * 'a
+
+(* Add simd types to an environment.  This is separate from [build_initial_env]
+   because we'd like to only do it if the simd extension is on. *)
+val add_simd_extension_types :
+  (Ident.t -> type_declaration -> 'a -> 'a) -> 'a -> 'a
 
 (* To initialize linker tables *)
 
