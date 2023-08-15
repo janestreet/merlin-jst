@@ -536,7 +536,7 @@ and of_signature_item_desc = function
     id_fold
 
 and of_core_type_desc = function
-  | Ttyp_any | Ttyp_var _ -> id_fold
+  | Ttyp_var _ -> id_fold
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
@@ -547,7 +547,7 @@ and of_core_type_desc = function
       | OTtag (_,ct)
       | OTinherit ct -> of_core_type ct
     ) cts
-  | Ttyp_poly (_,ct) | Ttyp_alias (ct,_) ->
+  | Ttyp_poly (_,ct) | Ttyp_alias (ct,_,_) ->
     of_core_type ct
   | Ttyp_variant (rfs,_,_) ->
     list_fold (fun rf -> app (Row_field rf)) rfs
@@ -839,7 +839,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
   List.fold_left ~init exp_extra
     ~f:(fun acc (extra, _, _) ->
       match extra with
-      | Texp_newtype' (id, label_loc) ->
+      | Texp_newtype' (id, label_loc, _) ->
         let path = Path.Pident id in
         let lid = Longident.Lident (label_loc.txt) in
         (mkloc path label_loc.loc, Some lid) :: acc

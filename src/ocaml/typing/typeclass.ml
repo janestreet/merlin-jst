@@ -325,7 +325,9 @@ let rec class_type_field env sign self_scope ctf =
                  Ctype.newvar (Layout.value ~why:Object_field)
                in
                add_method loc env lab priv virt expected_ty sign;
-               let returned_cty = ctyp Ttyp_any (Ctype.newty Tnil) env loc in
+               let returned_cty =
+                 ctyp (Ttyp_var (None, None)) (Ctype.newty Tnil) env loc
+               in
                delayed_meth_specs :=
                  Warnings.mk_lazy (fun () ->
                    let cty = transl_simple_type_univars env sty' in
@@ -1173,14 +1175,21 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
           default;
        ]
       in
+      let param_suffix =
+        match l with
+        | Optional name -> name
+        | Nolabel | Labelled _ ->
+          Misc.fatal_error "[default] allowed only with optional argument"
+      in
+      let param_name = "*opt*" ^ param_suffix in
       let smatch =
-        Exp.match_ ~loc (Exp.ident ~loc (mknoloc (Longident.Lident "*opt*")))
+        Exp.match_ ~loc (Exp.ident ~loc (mknoloc (Longident.Lident param_name)))
           scases
       in
       let sfun =
         Cl.fun_ ~loc:scl.pcl_loc
           l None
-          (Pat.var ~loc (mknoloc "*opt*"))
+          (Pat.var ~loc (mknoloc param_name))
           (Cl.let_ ~loc:scl.pcl_loc Nonrecursive [Vb.mk spat smatch] sbody)
           (* Note: we don't put the '#default' attribute, as it
              is not detected for class-level let bindings.  See #5975.*)
@@ -1613,7 +1622,13 @@ let class_infos define_class kind
   let ci_params =
     let make_param (sty, v) =
       try
-          (transl_type_param env sty (Layout.value ~why:Class_argument), v)
+        let param = transl_type_param env (Pident ty_id) sty in
+        (* CR layouts: we require class type parameters to be values, but
+           we should lift this restriction. Doing so causes bad error messages
+           today, so we wait for tomorrow. *)
+        Ctype.unify env param.ctyp_type
+          (Ctype.newvar (Layout.value ~why:Class_argument));
+        (param, v)
       with Already_bound ->
         raise(Error(sty.ptyp_loc, env, Repeated_parameter))
     in

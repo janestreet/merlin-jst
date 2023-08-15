@@ -165,13 +165,14 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_virtual_with_mutable_flag) -> "virtual_with_mutable_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_virtual_flag) -> "virtual_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_value_description) -> "value_description"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_value_constant) -> "value_constant"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_value) -> "value"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_val_longident) -> "val_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_val_ident) -> "val_ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_val_extra_ident) -> "val_extra_ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_use_file) -> "use_file"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_unboxed_constant) -> "unboxed_constant"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_variance) -> "type_variance"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_variable) -> "type_variable"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameters) -> "type_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameter) -> "type_parameter"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_longident) -> "type_longident"
@@ -192,6 +193,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_pattern) -> "simple_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_expr) -> "simple_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_delimited_pattern) -> "simple_delimited_pattern"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_signed_value_constant) -> "signed_value_constant"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_signed_constant) -> "signed_constant"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_signature_item) -> "signature_item"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_signature) -> "signature"
@@ -259,6 +261,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_EQUAL_expr__) -> "option_preceded_EQUAL_expr__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_core_type__) -> "option_preceded_COLON_core_type__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_AS_mkrhs_LIDENT___) -> "option_preceded_AS_mkrhs_LIDENT___"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_layout_attr_) -> "option_layout_attr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_SEMI_) -> "option_SEMI_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_BAR_) -> "option_BAR_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand) -> "opt_ampersand"
@@ -267,7 +270,10 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_open_declaration) -> "open_declaration"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_type_kind) -> "nonempty_type_kind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_raw_string_) -> "nonempty_list_raw_string_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_) -> "nonempty_list_newtype_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mkrhs_LIDENT__) -> "nonempty_list_mkrhs_LIDENT__"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_newtypes) -> "newtypes"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_newtype) -> "newtype"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_name_tag) -> "name_tag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mutable_virtual_flags) -> "mutable_virtual_flags"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mutable_or_global_flag) -> "mutable_or_global_flag"
@@ -320,7 +326,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_) -> "let_bindings_ext_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_binding_body_no_punning) -> "let_binding_body_no_punning"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_binding_body) -> "let_binding_body"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_layout) -> "layout"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_layout_string) -> "layout_string"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_layout_attr) -> "layout_attr"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_layout_annotation) -> "layout_annotation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_pattern) -> "labeled_simple_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_expr) -> "labeled_simple_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_longident) -> "label_longident"
@@ -533,13 +541,14 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_virtual_with_mutable_flag -> (fun _ -> "virtual_with_mutable_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_virtual_flag -> (fun _ -> "virtual_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_value_description -> (fun _ -> "value_description")
+  | MenhirInterpreter.N MenhirInterpreter.N_value_constant -> (fun _ -> "value_constant")
   | MenhirInterpreter.N MenhirInterpreter.N_value -> (fun _ -> "value")
   | MenhirInterpreter.N MenhirInterpreter.N_val_longident -> (fun _ -> "val_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_val_ident -> (fun _ -> "val_ident")
   | MenhirInterpreter.N MenhirInterpreter.N_val_extra_ident -> (fun _ -> "val_extra_ident")
   | MenhirInterpreter.N MenhirInterpreter.N_use_file -> (fun _ -> "use_file")
+  | MenhirInterpreter.N MenhirInterpreter.N_unboxed_constant -> (fun _ -> "unboxed_constant")
   | MenhirInterpreter.N MenhirInterpreter.N_type_variance -> (fun _ -> "type_variance")
-  | MenhirInterpreter.N MenhirInterpreter.N_type_variable -> (fun _ -> "type_variable")
   | MenhirInterpreter.N MenhirInterpreter.N_type_parameters -> (fun _ -> "type_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_type_parameter -> (fun _ -> "type_parameter")
   | MenhirInterpreter.N MenhirInterpreter.N_type_longident -> (fun _ -> "type_longident")
@@ -560,6 +569,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_simple_pattern -> (fun _ -> "simple_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_expr -> (fun _ -> "simple_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_delimited_pattern -> (fun _ -> "simple_delimited_pattern")
+  | MenhirInterpreter.N MenhirInterpreter.N_signed_value_constant -> (fun _ -> "signed_value_constant")
   | MenhirInterpreter.N MenhirInterpreter.N_signed_constant -> (fun _ -> "signed_constant")
   | MenhirInterpreter.N MenhirInterpreter.N_signature_item -> (fun _ -> "signature_item")
   | MenhirInterpreter.N MenhirInterpreter.N_signature -> (fun _ -> "signature")
@@ -627,6 +637,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_EQUAL_expr__ -> (fun _ -> "option_preceded_EQUAL_expr__")
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_core_type__ -> (fun _ -> "option_preceded_COLON_core_type__")
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_AS_mkrhs_LIDENT___ -> (fun _ -> "option_preceded_AS_mkrhs_LIDENT___")
+  | MenhirInterpreter.N MenhirInterpreter.N_option_layout_attr_ -> (fun _ -> "option_layout_attr_")
   | MenhirInterpreter.N MenhirInterpreter.N_option_SEMI_ -> (fun _ -> "option_SEMI_")
   | MenhirInterpreter.N MenhirInterpreter.N_option_BAR_ -> (fun _ -> "option_BAR_")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand -> (fun _ -> "opt_ampersand")
@@ -635,7 +646,10 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_open_declaration -> (fun _ -> "open_declaration")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_type_kind -> (fun _ -> "nonempty_type_kind")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_raw_string_ -> (fun _ -> "nonempty_list_raw_string_")
+  | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_ -> (fun _ -> "nonempty_list_newtype_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mkrhs_LIDENT__ -> (fun _ -> "nonempty_list_mkrhs_LIDENT__")
+  | MenhirInterpreter.N MenhirInterpreter.N_newtypes -> (fun _ -> "newtypes")
+  | MenhirInterpreter.N MenhirInterpreter.N_newtype -> (fun _ -> "newtype")
   | MenhirInterpreter.N MenhirInterpreter.N_name_tag -> (fun _ -> "name_tag")
   | MenhirInterpreter.N MenhirInterpreter.N_mutable_virtual_flags -> (fun _ -> "mutable_virtual_flags")
   | MenhirInterpreter.N MenhirInterpreter.N_mutable_or_global_flag -> (fun _ -> "mutable_or_global_flag")
@@ -688,7 +702,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_ -> (fun _ -> "let_bindings_ext_")
   | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body_no_punning -> (fun _ -> "let_binding_body_no_punning")
   | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body -> (fun _ -> "let_binding_body")
-  | MenhirInterpreter.N MenhirInterpreter.N_layout -> (fun _ -> "layout")
+  | MenhirInterpreter.N MenhirInterpreter.N_layout_string -> (fun _ -> "layout_string")
+  | MenhirInterpreter.N MenhirInterpreter.N_layout_attr -> (fun _ -> "layout_attr")
+  | MenhirInterpreter.N MenhirInterpreter.N_layout_annotation -> (fun _ -> "layout_annotation")
   | MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_pattern -> (fun _ -> "labeled_simple_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_expr -> (fun _ -> "labeled_simple_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_label_longident -> (fun _ -> "label_longident")
