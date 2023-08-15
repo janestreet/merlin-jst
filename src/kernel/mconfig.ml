@@ -456,6 +456,15 @@ let ocaml_ignored_flags = [
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
+  "-gdwarf-may-alter-codegen";
+  "-gno-dwarf-may-alter-codegen";
+  "-davail";
+  "-dranges";
+  "-ddebug-invariants";
+  "-cfg-peephole-optimize";
+  "-no-cfg-peephole-optimize";
+  "-verbose-types";
+  "-no-verbose-types"
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -493,6 +502,7 @@ let ocaml_ignored_parametrized_flags = [
   "-regalloc";
   "-regalloc-param";
   "-cached-generic-functions-path";
+  "-gdwarf-max-function-complexity";
 ]
 
 let ocaml_warnings_spec ~error =
