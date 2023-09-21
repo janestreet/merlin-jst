@@ -68,7 +68,7 @@ let rec reduce_strengthen_lazy ~aliasable mty p =
       (* Strengthening aliases, generative functors and already strengthened
         types is a no-op. *)
       Some mty
-  | Mty_ident _ -> None
+  | Mty_ident _ | Mty_for_hole -> None
 
 (* Strengthen a type by pushing strengthening inward and/or constructing
     appropriate Mty_strengthen nodes. *)
@@ -180,7 +180,7 @@ let rec reduce_lazy ~aliases env mty =
         | None -> None
         end
       end
-  | Mty_signature _ | Mty_functor _ | Mty_alias _ -> None
+  | Mty_signature _ | Mty_functor _ | Mty_alias _ | Mty_for_hole -> None
 
 let rec scrape_lazy ~aliases env mty =
   match reduce_lazy ~aliases env mty with
@@ -249,7 +249,7 @@ let rec expand_paths_lazy paths env =
           node. *)
       let mty = expand_paths_lazy paths env mty in
       Mty_strengthen (mty,p,a)
-  | Mty_ident _ | Mty_alias _ as mty ->
+  | Mty_ident _ | Mty_alias _ | Mty_for_hole as mty ->
       mty
 
 and expand_paths_lazy_sig paths env sg =
@@ -355,7 +355,7 @@ let rec make_aliases_absent ~aliased pres mty =
   | Mty_functor(arg, res) ->
       let _, res = make_aliases_absent ~aliased:false Mp_present res in
       pres, Mty_functor(arg, res)
-  | Mty_ident _ ->
+  | Mty_ident _ | Mty_for_hole ->
       pres, mty
   | Mty_strengthen (mty,p,a) ->
       let aliased = aliased || Aliasability.is_aliasable a in
@@ -372,7 +372,7 @@ let scrape_for_type_of env pres mty =
         with Not_found -> outer
       end
     | Mty_strengthen (inner,_,_) -> loop env outer inner
-    | Mty_ident _ | Mty_signature _ | Mty_functor _ -> outer
+    | Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole -> outer
   in
   make_aliases_absent ~aliased:false pres (loop env mty mty)
 
@@ -454,10 +454,7 @@ let rec nondep_mty_with_presence env va ids pres mty =
                     nondep_mty res_env va ids res)
       in
       pres, mty
-<<<<<<< janestreet/merlin-jst:main
   | Mty_for_hole -> pres, Mty_for_hole
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
   | Mty_strengthen (mty,p,a) ->
       (* If we end up strengthening an abstract type with a dependent module,
         just drop the strengthening. *)
@@ -469,7 +466,6 @@ let rec nondep_mty_with_presence env va ids pres mty =
           else strengthen ~aliasable:(Aliasability.is_aliasable a) mty p
       in
       pres,mty
->>>>>>> ocaml-flambda/flambda-backend:main
 
 and nondep_mty env va ids mty =
   snd (nondep_mty_with_presence env va ids Mp_present mty)
@@ -572,12 +568,8 @@ let rec type_paths env p mty =
   | Mty_alias _ -> []
   | Mty_signature sg -> type_paths_sig env p sg
   | Mty_functor _ -> []
-<<<<<<< janestreet/merlin-jst:main
   | Mty_for_hole -> []
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
   | Mty_strengthen _ -> []
->>>>>>> ocaml-flambda/flambda-backend:main
 
 and type_paths_sig env p sg =
   match sg with
@@ -603,12 +595,8 @@ let rec no_code_needed_mod env pres mty =
       | Mty_signature sg -> no_code_needed_sig env sg
       | Mty_functor _ -> false
       | Mty_alias _ -> false
-<<<<<<< janestreet/merlin-jst:main
       | Mty_for_hole -> true
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
       | Mty_strengthen _ -> false
->>>>>>> ocaml-flambda/flambda-backend:main
     end
 
 and no_code_needed_sig env sg =

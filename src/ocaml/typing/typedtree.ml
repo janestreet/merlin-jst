@@ -982,16 +982,8 @@ let rec alpha_pat
       {p with pat_desc =
        try Tpat_var (alpha_var env id, s, uid, mode) with
        | Not_found -> Tpat_any}
-<<<<<<< janestreet/merlin-jst:main
-  | Tpat_alias (p1, id, s, mode) ->
-      let new_p : k general_pattern =  alpha_pat env p1 in
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  | Tpat_alias (p1, id, s, mode) ->
-      let new_p =  alpha_pat env p1 in
-=======
   | Tpat_alias (p1, id, s, uid, mode) ->
-      let new_p =  alpha_pat env p1 in
->>>>>>> ocaml-flambda/flambda-backend:main
+      let new_p : k general_pattern =  alpha_pat env p1 in
       begin try
         {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s, uid, mode)}
       with

@@ -165,16 +165,16 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | `Label label_descr ->
       let desc =
         Types.(Tarrow ((Ast_helper.no_label,
-                        Types.Alloc_mode.global,
-                        Types.Alloc_mode.global),
+                        Mode.Alloc.legacy,
+                        Mode.Alloc.legacy),
                        label_descr.lbl_res, label_descr.lbl_arg, commu_ok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Label_decl (ty,label_decl) ->
       let desc =
         Types.(Tarrow ((Ast_helper.no_label,
-                        Types.Alloc_mode.global,
-                        Types.Alloc_mode.global),
+                        Mode.Alloc.legacy,
+                        Mode.Alloc.legacy),
                        ty, label_decl.ld_type, commu_ok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))

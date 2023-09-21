@@ -3474,8 +3474,8 @@ let collect_unknown_apply_args env funct ty_fun mode_fun rev_args sargs ret_tvar
                               (expand_head env funct.exp_type)))
     with Msupport.Resume ->
       Sort.new_var (),
-      Alloc_mode.newvar (), newvar (Layout.value ~why:(Unknown "merlin")),
-      Alloc_mode.newvar (), ty_fun
+      Mode.Alloc.newvar (), newvar (Layout.value ~why:(Unknown "merlin")),
+      Mode.Alloc.newvar (), ty_fun
     in
     let arg = Unknown_arg { sarg; ty_arg_mono; mode_fun; mode_arg; sort_arg } in
     loop ty_res mode_ret ((lbl, Arg arg) :: rev_args) rest
@@ -4004,13 +4004,13 @@ let type_approx_constraint ~loc env constraint_ ty_expected =
   | Pconstraint sty ->
       let ty_expected' = approx_type env sty in
       begin try unify env ty_expected' ty_expected with Unify err ->
-        raise (Error (loc, env, Expr_type_clash (err, None, None)))
+        raise (error (loc, env, Expr_type_clash (err, None, None)))
       end;
       ty_expected'
   | Pcoerce (_sty1, sty2) ->
       let ty = approx_type env sty2 in
       begin try unify env ty ty_expected with Unify trace ->
-        raise (Error (loc, env, Expr_type_clash (trace, None, None)))
+        raise (error (loc, env, Expr_type_clash (trace, None, None)))
       end;
       ty_expected
 
@@ -4031,26 +4031,8 @@ let type_approx_fun_one_param
         let mode_annots = mode_annots_from_pat_attrs spat in
         let has_poly = has_poly_constraint spat in
         if has_poly && is_optional label then
-<<<<<<< janestreet/merlin-jst:main
-          raise(error(spat.ppat_loc, env, Optional_poly_param));
-        has_local, has_poly
-  in
-  let loc_fun, ty_fun =
-    match in_function with
-    | Some (loc, ty) -> loc, ty
-    | None -> loc, ty_expected
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-          raise(Error(spat.ppat_loc, env, Optional_poly_param));
-        has_local, has_poly
-  in
-  let loc_fun, ty_fun =
-    match in_function with
-    | Some (loc, ty) -> loc, ty
-    | None -> loc, ty_expected
-=======
           raise(Error(spat.ppat_loc, env, Optional_poly_param));
         Some mode_annots, has_poly
->>>>>>> ocaml-flambda/flambda-backend:main
   in
   let loc_fun, ty_fun = in_function in
   let { ty_arg; arg_mode; ty_ret; _ } =
@@ -4098,13 +4080,7 @@ let rec type_approx env sexp ty_expected =
       in
       let ty = newty (Ttuple tys) in
       begin try unify env ty ty_expected with Unify err ->
-<<<<<<< janestreet/merlin-jst:main
-        raise(error(sexp.pexp_loc, env, Expr_type_clash (err, None, None)))
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-        raise(Error(sexp.pexp_loc, env, Expr_type_clash (err, None, None)))
-=======
-        raise(Error(loc, env, Expr_type_clash (err, None, None)))
->>>>>>> ocaml-flambda/flambda-backend:main
+        raise(error(loc, env, Expr_type_clash (err, None, None)))
       end;
       List.iter2
         (fun e ty -> type_approx env e ty)
@@ -4112,29 +4088,6 @@ let rec type_approx env sexp ty_expected =
   | Pexp_ifthenelse (_,e,_) -> type_approx env e ty_expected
   | Pexp_sequence (_,e) -> type_approx env e ty_expected
   | Pexp_constraint (e, sty) ->
-<<<<<<< janestreet/merlin-jst:main
-      let ty_expected' = approx_type env sty in
-      begin try unify env ty_expected' ty_expected with Unify err ->
-        raise(error(sexp.pexp_loc, env, Expr_type_clash (err, None, None)))
-      end;
-      type_approx_aux env e None ty_expected'
-  | Pexp_coerce (_, _, sty) ->
-      let ty = approx_type env sty in
-      begin try unify env ty ty_expected with Unify trace ->
-        raise(error(sexp.pexp_loc, env, Expr_type_clash (trace, None, None)))
-      end
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-      let ty_expected' = approx_type env sty in
-      begin try unify env ty_expected' ty_expected with Unify err ->
-        raise(Error(sexp.pexp_loc, env, Expr_type_clash (err, None, None)))
-      end;
-      type_approx_aux env e None ty_expected'
-  | Pexp_coerce (_, _, sty) ->
-      let ty = approx_type env sty in
-      begin try unify env ty ty_expected with Unify trace ->
-        raise(Error(sexp.pexp_loc, env, Expr_type_clash (trace, None, None)))
-      end
-=======
       let ty_expected =
         type_approx_constraint env (Pconstraint sty) ty_expected ~loc
       in
@@ -4143,7 +4096,6 @@ let rec type_approx env sexp ty_expected =
       ignore
         (type_approx_constraint env (Pcoerce (sty1, sty2)) ty_expected ~loc
            : type_expr)
->>>>>>> ocaml-flambda/flambda-backend:main
   | Pexp_apply
       ({ pexp_desc = Pexp_extension(
          {txt = "extension.local"|"ocaml.local"|"local"}, PStr []) },
@@ -4682,7 +4634,8 @@ and type_expect ?in_function ?recarg env
                             val_attributes = [];
                             val_uid = Uid.internal_not_actually_unique;
                           },
-                          Id_value);
+                          Id_value,
+                          (Uniqueness.legacy, Linearity.legacy));
             exp_loc = loc;
             exp_extra = [];
             exp_type = ty_expected_explained.ty;
@@ -5475,16 +5428,8 @@ and type_expect_
         raise(error(loc, env, Label_not_mutable lid.txt));
       rue {
         exp_desc = Texp_setfield(record,
-<<<<<<< janestreet/merlin-jst:main
-                                 Value_mode.regional_to_local_alloc rmode,
-                                 label_loc, label, newval);
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-          Value_mode.regional_to_local_alloc rmode,
-          label_loc, label, newval);
-=======
           (Alloc.locality (Value.regional_to_local_alloc rmode)),
           label_loc, label, newval);
->>>>>>> ocaml-flambda/flambda-backend:main
         exp_loc = loc; exp_extra = [];
         exp_type = instance Predef.type_unit;
         exp_attributes = sexp.pexp_attributes;
@@ -5699,27 +5644,11 @@ and type_expect_
       if !Clflags.principal then begin_def ();
       let obj = type_exp env mode_legacy e in
       let pm = position_and_mode env expected_mode sexp in
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-      let (meth, typ) =
-        match obj.exp_desc with
-        | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _) ->
-            let id, typ =
-              match meths with
-              | Self_concrete meths ->
-=======
-      let (meth, typ) =
-        match obj.exp_desc with
-        | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _, _) ->
-            let id, typ =
-              match meths with
-              | Self_concrete meths ->
->>>>>>> ocaml-flambda/flambda-backend:main
       let obj_meths = ref None in
       begin try
         let (meth, typ) =
           match obj.exp_desc with
-          | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _) ->
+          | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _, _) ->
               let id, typ =
                 match meths with
                 | Self_concrete meths ->
@@ -5751,7 +5680,7 @@ and type_expect_
                   end
               in
               Tmeth_val id, typ
-          | Texp_ident(_, _, {val_kind = Val_anc (sign, meths, cl_num)}, _) ->
+          | Texp_ident(_, _, {val_kind = Val_anc (sign, meths, cl_num)}, _, _) ->
               obj_meths := Some meths;
               let id =
                 match Meths.find met meths with
@@ -5849,7 +5778,7 @@ and type_expect_
                 Undefined_method (obj.exp_type, met, valid_methods)));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, pm.apply_position,
-                               Amode Global);
+                               Mode.Alloc.legacy);
           exp_loc = loc; exp_extra = [];
           exp_type = ty_expected;
           exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
@@ -5877,7 +5806,7 @@ and type_expect_
       match mut with
       | Mutable ->
           let newval =
-            type_expect env mode_global snewval
+            type_expect env mode_legacy snewval
               (mk_expected (instance ty))
           in
           let (path_self, _) =
@@ -5915,7 +5844,7 @@ and type_expect_
             begin try
               let id = Vars.find lab.txt vars in
               let ty = Btype.instance_variable_type lab.txt sign in
-              (id, lab, type_expect env mode_global snewval (mk_expected (instance ty)))
+              (id, lab, type_expect env mode_legacy snewval (mk_expected (instance ty)))
             with
               Not_found ->
                 let vars = Vars.fold (fun var _ li -> var::li) vars [] in
@@ -5957,20 +5886,6 @@ and type_expect_
             let id, env =
               Env.enter_module_declaration ~scope ~shape:md_shape name pres md env
             in
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-            Tmeth_val id, typ
-        | Texp_ident(_, _, {val_kind = Val_anc (sign, meths, cl_num)}, _) ->
-            let id =
-              match Meths.find met meths with
-              | id -> id
-=======
-            Tmeth_val id, typ
-        | Texp_ident(_, _, {val_kind = Val_anc (sign, meths, cl_num)}, _, _) ->
-            let id =
-              match Meths.find met meths with
-              | id -> id
->>>>>>> ocaml-flambda/flambda-backend:main
             Some id, env
         in
         modl, pres, id, new_env
@@ -6446,38 +6361,20 @@ and type_function
     in
     try filter_arrow env ty_expected' arg_label ~force_tpoly
     with Filter_arrow_failed err ->
+      let first = Option.is_none in_function in
       let err =
-        error_of_filter_arrow_failure ~explanation in_function ty_fun err
+        error_of_filter_arrow_failure ~explanation ~first ty_fun err
       in
       (* Merlin: we recover with an expected type of 'a -> 'b *)
       let level = get_level (instance ty_expected) in
       raise_error (error(loc_fun, env, err));
       { ty_arg = newvar2 level (Layout.value ~why:(Unknown "merlin"))
-      ; arg_mode = Alloc_mode.newvar ()
+      ; arg_mode = Mode.Alloc.newvar ()
       ; arg_sort = Sort.new_var ()
       ; ty_ret = newvar2 level (Layout.value ~why:(Unknown "merlin"))
-      ; ret_mode = Alloc_mode.newvar ()
+      ; ret_mode = Mode.Alloc.newvar ()
       ; ret_sort = Sort.new_var ()
       }
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-    in
-    try filter_arrow env ty_expected' arg_label ~force_tpoly
-    with Filter_arrow_failed err ->
-      let err =
-        error_of_filter_arrow_failure ~explanation in_function ty_fun err
-      in
-      raise (Error(loc_fun, env, err))
-=======
-    in
-    try filter_arrow env ty_expected' arg_label ~force_tpoly
-    with Filter_arrow_failed err ->
-      let first = Option.is_none in_function in
-      let err =
-        error_of_filter_arrow_failure ~explanation ~first ty_fun err
-      in
-      raise (Error(loc_fun, env, err))
->>>>>>> ocaml-flambda/flambda-backend:main
   in
   apply_mode_annots ~loc ~env ~ty_expected mode_annots arg_mode;
   if separate then begin
@@ -8070,19 +7967,10 @@ and type_andops env sarg sands expected_sort expected_ty =
         if !Clflags.principal then begin_def ();
         let op_path, op_desc = type_binding_op_ident env sop in
         let op_type = op_desc.val_type in
-<<<<<<< janestreet/merlin-jst:main
-        (* CR layouts v2: relax value requirements *)
-        let ty_arg = newvar (Layout.of_new_sort_var ~why:Function_argument) in
-        let ty_rest = newvar (Layout.of_new_sort_var ~why:Function_argument) in
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-        let ty_arg = newvar (Layout.of_new_sort_var ~why:Function_argument) in
-        let ty_rest = newvar (Layout.of_new_sort_var ~why:Function_argument) in
-=======
         let sort_arg = Sort.new_var () in
         let ty_arg = newvar (Layout.of_sort ~why:Function_argument sort_arg) in
         let sort_rest = Sort.new_var () in
         let ty_rest = newvar (Layout.of_sort ~why:Function_argument sort_rest) in
->>>>>>> ocaml-flambda/flambda-backend:main
         let op_result_sort = Sort.new_var () in
         let ty_result =
           newvar (Layout.of_sort ~why:Function_result op_result_sort)
@@ -8551,17 +8439,9 @@ and type_unboxed_constant ~loc ~env ~rue ~attributes cst =
     exp_attributes = attributes;
     exp_env = env }
 
-<<<<<<< janestreet/merlin-jst:main
-(* Typing of toplevel bindings *)
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-
-(* Typing of toplevel bindings *)
-=======
-
 let maybe_check_uniqueness_exp exp =
   if Language_extension.is_enabled Unique then
     check_uniqueness_exp exp
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let maybe_check_uniqueness_value_bindings vbl =
   if Language_extension.is_enabled Unique then
@@ -9384,16 +9264,6 @@ let () =
 
 let () =
   Persistent_env.add_delayed_check_forward := add_delayed_check;
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  Env.add_delayed_check_forward := add_delayed_check;
-  ()
-
-(* drop unnecessary arguments from the external API *)
-let type_expect env e ty = type_expect env mode_global e ty
-let type_exp env e = type_exp env mode_global e
-let type_argument env e t1 t2 = type_argument env mode_global e t1 t2
-=======
   Env.add_delayed_check_forward := add_delayed_check;
   ()
 
@@ -9410,14 +9280,6 @@ let type_exp env e =
 let type_argument env e t1 t2 =
   let exp = type_argument env mode_legacy e t1 t2 in
   maybe_check_uniqueness_exp exp; exp
->>>>>>> ocaml-flambda/flambda-backend:main
-  Env.add_delayed_check_forward := add_delayed_check;
-  ()
-
-(* drop unnecessary arguments from the external API *)
-let type_expect env e ty = type_expect env mode_global e ty
-let type_exp env e = type_exp env mode_global e
-let type_argument env e t1 t2 = type_argument env mode_global e t1 t2
 
 (* Merlin specific *)
 let partial_pred ~lev ?explode env expected_ty constrs labels p =
@@ -9432,4 +9294,3 @@ let partial_pred ~lev ?explode env expected_ty constrs labels p =
   in
   end_def ();
   result
-

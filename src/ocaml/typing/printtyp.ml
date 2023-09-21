@@ -2018,10 +2018,7 @@ let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_alias p ->
       let p = best_module_path p in
       Omty_alias (tree_of_path Module p)
-<<<<<<< janestreet/merlin-jst:main
   | Mty_for_hole -> Omty_hole
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
   | Mty_strengthen _ as mty ->
       begin match !expand_module_type !printing_env mty with
       | Mty_strengthen (mty,p,a) ->
@@ -2033,7 +2030,6 @@ let rec tree_of_modtype ?(ellipsis=false) = function
             (tree_of_modtype ~ellipsis mty, tree_of_path Module p, unaliasable)
       | mty -> tree_of_modtype ~ellipsis mty
       end
->>>>>>> ocaml-flambda/flambda-backend:main
 
 and tree_of_functor_parameter = function
   | Unit ->

@@ -28,6 +28,12 @@ let rec module_type =
     in
     let out = module_type type_out in
     Mty.functor_ param out
+  | Mty_strengthen (mty, path, _aliasability) ->
+    Jane_syntax.Strengthen.mty_of ~loc:Location.none
+      { mty = module_type mty;
+        mod_id = Location.mknoloc (Untypeast.lident_of_path path);
+      }
+
 and core_type type_expr =
   let open Ast_helper in
   match Types.get_desc type_expr with

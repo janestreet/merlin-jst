@@ -146,13 +146,9 @@ type out_module_type =
   | Omty_ident of out_ident
   | Omty_signature of out_sig_item list
   | Omty_alias of out_ident
-<<<<<<< janestreet/merlin-jst:main
   | Omty_hole
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
   | Omty_strengthen of out_module_type * out_ident * bool
         (* the bool indicates whether we should print the unaliasable attribute *)
->>>>>>> ocaml-flambda/flambda-backend:main
 and out_sig_item =
   | Osig_class of
       bool * string * out_type_param list * out_class_type *

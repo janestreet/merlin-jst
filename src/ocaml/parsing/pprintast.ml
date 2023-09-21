@@ -2118,28 +2118,6 @@ let string_of_structure x =
 let top_phrase f x =
   pp_print_newline f ();
   toplevel_phrase f x;
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  pp f ";;";
-  pp_print_newline f ()
-
-let core_type = core_type reset_ctxt
-let pattern = pattern reset_ctxt
-let signature = signature reset_ctxt
-let structure = structure reset_ctxt
-let module_expr = module_expr reset_ctxt
-let module_type = module_type reset_ctxt
-let class_field = class_field reset_ctxt
-let class_type_field = class_type_field reset_ctxt
-let class_expr = class_expr reset_ctxt
-let class_type = class_type reset_ctxt
-let class_signature = class_signature reset_ctxt
-let structure_item = structure_item reset_ctxt
-let signature_item = signature_item reset_ctxt
-let binding = binding reset_ctxt
-let payload = payload reset_ctxt
-let type_declaration = type_declaration reset_ctxt
-=======
   pp f ";;";
   pp_print_newline f ()
 
@@ -2160,27 +2138,8 @@ let binding = print_reset_with_maximal_extensions binding
 let payload = print_reset_with_maximal_extensions payload
 let type_declaration = print_reset_with_maximal_extensions type_declaration
 
->>>>>>> ocaml-flambda/flambda-backend:main
-  pp f ";;";
-  pp_print_newline f ()
-
-let core_type = core_type reset_ctxt
-let pattern = pattern reset_ctxt
-let signature = signature reset_ctxt
-let structure = structure reset_ctxt
-let module_expr = module_expr reset_ctxt
-let module_type = module_type reset_ctxt
-let class_field = class_field reset_ctxt
-let class_type_field = class_type_field reset_ctxt
-let class_expr = class_expr reset_ctxt
-let class_type = class_type reset_ctxt
-let class_signature = class_signature reset_ctxt
-let structure_item = structure_item reset_ctxt
-let signature_item = signature_item reset_ctxt
-let binding = binding reset_ctxt
-let payload = payload reset_ctxt
-let type_declaration = type_declaration reset_ctxt
-let case_list = case_list reset_ctxt
+(* Added in merlin *)
+let case_list = print_reset_with_maximal_extensions case_list
 
 let prepare_error err =
   let source = Location.Parser in

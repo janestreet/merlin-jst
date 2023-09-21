@@ -33,12 +33,7 @@ open Parsetree
 open Ast_helper
 open Docstrings
 open Docstrings.WithMenhir
-<<<<<<< janestreet/merlin-jst:main
 open Msupport_parsing
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
-module N_ary = Jane_syntax.N_ary_functions
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc
@@ -224,14 +219,9 @@ let wrap_exp_once exp loc =
   {exp with
    pexp_attributes = once_attr (make_loc loc) :: exp.pexp_attributes}
 
-type mode_annotation = N_ary.mode_annotation =
-  | Local
-  | Unique
-  | Once
-
 (** [loc] is the location to be used for the whole expression including the
     extension node.  The extension node will always have the location [kwd_loc]. *)
-let exp_with_mode ~loc ~kwd_loc flag exp =
+let exp_with_mode ~loc ~kwd_loc (flag : Jane_syntax.N_ary_functions.mode_annotation) exp =
   match flag with
   | Local -> mkexp_stack exp ~loc ~kwd_loc
   | Unique -> mkexp_unique exp ~loc ~kwd_loc
@@ -253,7 +243,7 @@ let ghexp_with_modes loc modes exp =
   let modes = List.map (fun (mode, loc) -> mkloc mode (make_loc loc)) modes in
   exp_with_modes loc modes exp
 
-let mkpat_with_mode = function
+let mkpat_with_mode : Jane_syntax.N_ary_functions.mode_annotation -> _ = function
   | Local -> mkpat_stack
   | Unique -> mkpat_unique
   | Once -> mkpat_once
@@ -261,7 +251,7 @@ let mkpat_with_mode = function
 let mkpat_with_modes flags pat =
   List.fold_left (fun pat (flag, loc) -> mkpat_with_mode flag pat loc) pat flags
 
-let mktyp_with_mode = function
+let mktyp_with_mode : Jane_syntax.N_ary_functions.mode_annotation -> _ = function
   | Local -> mktyp_stack
   | Unique -> mktyp_unique
   | Once -> mktyp_once
@@ -269,7 +259,7 @@ let mktyp_with_mode = function
 let mktyp_with_modes flags typ =
   List.fold_left (fun typ (flag, loc) -> mktyp_with_mode flag typ loc) typ flags
 
-let wrap_exp_with_mode = function
+let wrap_exp_with_mode : Jane_syntax.N_ary_functions.mode_annotation -> _ = function
   | Local -> wrap_exp_stack
   | Unique -> wrap_exp_unique
   | Once -> wrap_exp_once
@@ -367,8 +357,8 @@ let mkstrexp e attrs =
 
 let mkexp_desc_constraint e t =
   match t with
-  | N_ary.Pconstraint t -> Pexp_constraint(e, t)
-  | N_ary.Pcoerce(t1, t2)  -> Pexp_coerce(e, t1, t2)
+  | Jane_syntax.N_ary_functions.Pconstraint t -> Pexp_constraint(e, t)
+  | Jane_syntax.N_ary_functions.Pcoerce(t1, t2)  -> Pexp_coerce(e, t1, t2)
 
 let mkexp_constraint ~loc e t =
   mkexp ~loc (mkexp_desc_constraint e t)
@@ -834,7 +824,7 @@ let class_of_let_bindings ~loc lbs body =
    parameter.
 *)
 let all_params_as_newtypes =
-  let open N_ary in
+  let open Jane_syntax.N_ary_functions in
   let is_newtype { pparam_desc; _ } =
     match pparam_desc with
     | Pparam_newtype _ -> true
@@ -858,7 +848,7 @@ let mkghost_newtype_function_body newtypes body_constraint body ~loc =
   let wrapped_body =
     match body_constraint with
     | None -> body
-    | Some { N_ary.type_constraint; mode_annotations } ->
+    | Some { Jane_syntax.N_ary_functions.type_constraint; mode_annotations } ->
         let loc = { body.pexp_loc with loc_ghost = true } in
         let body = Exp.mk (mkexp_desc_constraint body type_constraint) ~loc in
         exp_with_modes loc mode_annotations body
@@ -866,13 +856,13 @@ let mkghost_newtype_function_body newtypes body_constraint body ~loc =
   mk_newtypes ~loc newtypes wrapped_body
 
 let n_ary_function expr ~attrs ~loc =
-  wrap_exp_attrs ~loc (N_ary.expr_of expr ~loc:(make_loc loc)) attrs
+  wrap_exp_attrs ~loc (Jane_syntax.N_ary_functions.expr_of expr ~loc:(make_loc loc)) attrs
 
 let mkfunction ~loc ~attrs params body_constraint body =
   match body with
-  | N_ary.Pfunction_cases _ ->
+  | Jane_syntax.N_ary_functions.Pfunction_cases _ ->
       n_ary_function (params, body_constraint, body) ~loc ~attrs
-  | N_ary.Pfunction_body body_exp -> begin
+  | Jane_syntax.N_ary_functions.Pfunction_body body_exp -> begin
     (* If all the params are newtypes, then we don't create a function node;
        we create a newtype node. *)
       match all_params_as_newtypes params with
@@ -1118,23 +1108,6 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token <char> CHAR [@cost 2] [@recovery '_']
 %token CLASS [@symbol "class"]
 %token COLON [@symbol ":"]
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-%token NONREC                 "nonrec"
-%token OBJECT                 "object"
-%token OF                     "of"
-%token OPEN                   "open"
-%token <string> OPTLABEL      "?label:" (* just an example *)
-%token OR                     "or"
-=======
-%token NONREC                 "nonrec"
-%token OBJECT                 "object"
-%token OF                     "of"
-%token ONCE                   "once_"
-%token OPEN                   "open"
-%token <string> OPTLABEL      "?label:" (* just an example *)
-%token OR                     "or"
->>>>>>> ocaml-flambda/flambda-backend:main
 %token COLONCOLON [@symbol "::"]
 %token COLONEQUAL [@symbol ":="]
 %token COLONGREATER [@symbol ":>"]
@@ -1173,23 +1146,6 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token <string> INFIXOP3 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP3(%S)"]
 %token <string> INFIXOP4 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP4(%S)"]
 %token <string> DOTOP
-<<<<<<< janestreet/merlin-jst:main
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-%token TYPE                   "type"
-%token <string> UIDENT        "UIdent" (* just an example *)
-%token UNDERSCORE             "_"
-%token VAL                    "val"
-%token VIRTUAL                "virtual"
-%token WHEN                   "when"
-=======
-%token TYPE                   "type"
-%token <string> UIDENT        "UIdent" (* just an example *)
-%token UNDERSCORE             "_"
-%token UNIQUE                 "unique_"
-%token VAL                    "val"
-%token VIRTUAL                "virtual"
-%token WHEN                   "when"
->>>>>>> ocaml-flambda/flambda-backend:main
 %token <string> LETOP /* TODO: recovery & printing */
 %token <string> ANDOP /* TODO: recovery & printing */
 %token INHERIT [@symbol "inherit"]
@@ -1227,6 +1183,7 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token NONREC [@cost 1] [@symbol "nonrec"]
 %token OBJECT [@symbol "object"]
 %token OF [@symbol "of"]
+%token ONCE [@symbol "once"]
 %token OPEN [@symbol "open"]
 %token <string> OPTLABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "OPTLABEL(%S)"] [@symbol "?<label>"]
 %token OR [@symbol "or"]
@@ -1245,6 +1202,7 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token RPAREN [@symbol ")"]
 %token SEMI [@symbol ";"]
 %token SEMISEMI [@symbol ";;"]
+%token UNIQUE [@symbol "unique"]
 %token HASH [@symbol "#"]
 %token HASH_SUFFIX [@symbol "# "]
 %token <string> HASHOP [@cost 2] [@recovery ""][@printer Printf.sprintf "HASHOP(%S)"] [@symbol "#<op>"]
@@ -2919,13 +2877,7 @@ let_pattern [@recovery default_pattern ()]:
 
 %inline qualified_dotop: ioption(DOT mod_longident {$2}) DOTOP { $1, $2 };
 
-<<<<<<< janestreet/merlin-jst:main
-%public expr [@recovery default_expr ()]:
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-expr:
-=======
 fun_expr:
->>>>>>> ocaml-flambda/flambda-backend:main
     simple_expr %prec below_HASH
       { $1 }
   | expr_attrs
@@ -2936,7 +2888,7 @@ fun_expr:
       MINUSGREATER fun_body
       { let body_constraint =
           Option.map
-            (fun x : N_ary.function_constraint ->
+            (fun x : Jane_syntax.N_ary_functions.function_constraint ->
               { type_constraint = Pconstraint x
               ; mode_annotations = []
               })
@@ -2954,16 +2906,8 @@ fun_expr:
         let pbop_loc = make_loc $sloc in
         let let_ = {pbop_op; pbop_pat; pbop_exp; pbop_loc} in
         mkexp ~loc:$sloc (Pexp_letop{ let_; ands; body}) }
-<<<<<<< janestreet/merlin-jst:main
-  | expr COLONCOLON expr
-      { mkexp_cons ~loc:$sloc $loc($2) (ghexp ~loc:$sloc (Pexp_tuple[$1;(merloc $endpos($2) $3)])) }
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  | expr COLONCOLON expr
-      { mkexp_cons ~loc:$sloc $loc($2) (ghexp ~loc:$sloc (Pexp_tuple[$1;$3])) }
-=======
   | fun_expr COLONCOLON expr
-      { mkexp_cons ~loc:$sloc $loc($2) (ghexp ~loc:$sloc (Pexp_tuple[$1;$3])) }
->>>>>>> ocaml-flambda/flambda-backend:main
+      { mkexp_cons ~loc:$sloc $loc($2) (ghexp ~loc:$sloc (Pexp_tuple[$1;(merloc $endpos($2) $3)])) }
   | mkrhs(label) LESSMINUS expr
       { mkexp ~loc:$sloc (Pexp_setinstvar($1, $3)) }
   | simple_expr DOT mkrhs(label_longident) LESSMINUS expr
@@ -2979,21 +2923,13 @@ fun_expr:
   | UNDERSCORE
      { not_expecting $loc($1) "wildcard \"_\"" }
 /* END AVOID */
-<<<<<<< janestreet/merlin-jst:main
   *)
-  | LOCAL seq_expr
-     { mkexp_stack ~loc:$sloc ~kwd_loc:($loc($1)) $2 }
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  | LOCAL seq_expr
-     { mkexp_stack ~loc:$sloc ~kwd_loc:($loc($1)) $2 }
-=======
   | mode_flag seq_expr
      { mkexp_with_mode $sloc $1 $2 }
->>>>>>> ocaml-flambda/flambda-backend:main
   | EXCLAVE seq_expr
      { mkexp_exclave ~loc:$sloc ~kwd_loc:($loc($1)) $2 }
 ;
-%inline expr:
+%public expr [@recovery default_expr ()]:
   | or_function(fun_expr) { $1 }
 ;
 %inline expr_attrs:
@@ -3004,23 +2940,7 @@ fun_expr:
   | LET OPEN override_flag ext_attributes module_expr IN seq_expr
       { let open_loc = make_loc ($startpos($2), $endpos($5)) in
         let od = Opn.mk $5 ~override:$3 ~loc:open_loc in
-<<<<<<< janestreet/merlin-jst:main
         Pexp_open(od, (merloc $endpos($6) $7)), $4 }
-  | FUNCTION ext_attributes match_cases
-      { Pexp_function $3, $2 }
-  | FUN ext_attributes labeled_simple_pattern fun_def
-      { let (l,o,p) = $3 in
-        Pexp_fun(l, o, p, $4), $2 }
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-        Pexp_open(od, $7), $4 }
-  | FUNCTION ext_attributes match_cases
-      { Pexp_function $3, $2 }
-  | FUN ext_attributes labeled_simple_pattern fun_def
-      { let (l,o,p) = $3 in
-        Pexp_fun(l, o, p, $4), $2 }
-=======
-        Pexp_open(od, $7), $4 }
->>>>>>> ocaml-flambda/flambda-backend:main
   | MATCH ext_attributes seq_expr WITH match_cases
       { Pexp_match($3, $5), $2 }
   | TRY ext_attributes seq_expr WITH match_cases
@@ -3348,8 +3268,8 @@ let_binding_body_no_punning:
       { let v = $2 in (* PR#7344 *)
         let t =
           match $3 with
-          | N_ary.Pconstraint t -> t
-          | N_ary.Pcoerce (_, t) -> t
+          | Jane_syntax.N_ary_functions.Pconstraint t -> t
+          | Jane_syntax.N_ary_functions.Pcoerce (_, t) -> t
         in
         let loc = Location.(t.ptyp_loc.loc_start, t.ptyp_loc.loc_end) in
         let typ = ghtyp ~loc (Ptyp_poly([],t)) in
@@ -3463,7 +3383,7 @@ strict_binding_modes:
             (fun (mode, loc) -> mkloc mode (make_loc loc))
             mode_annotations
         in
-        let constraint_ : N_ary.function_constraint option =
+        let constraint_ : Jane_syntax.N_ary_functions.function_constraint option =
           match $2 with
           | None -> None
           | Some type_constraint -> Some { type_constraint; mode_annotations }
@@ -3480,15 +3400,15 @@ fun_body:
   | FUNCTION ext_attributes match_cases
       { let ext, attrs = $2 in
         match ext with
-        | None -> N_ary.Pfunction_cases ($3, make_loc $sloc, attrs)
+        | None -> Jane_syntax.N_ary_functions.Pfunction_cases ($3, make_loc $sloc, attrs)
         | Some _ ->
           (* function%foo extension nodes interrupt the arity *)
-          let cases = N_ary.Pfunction_cases ($3, make_loc $sloc, []) in
+          let cases = Jane_syntax.N_ary_functions.Pfunction_cases ($3, make_loc $sloc, []) in
           let function_ = mkfunction [] None cases ~loc:$sloc ~attrs:$2 in
-          N_ary.Pfunction_body function_
+          Jane_syntax.N_ary_functions.Pfunction_body function_
       }
   | fun_seq_expr
-      { N_ary.Pfunction_body $1 }
+      { Jane_syntax.N_ary_functions.Pfunction_body $1 }
 ;
 %inline match_cases:
   xs = preceded_or_separated_nonempty_llist(BAR, match_case)
@@ -3503,31 +3423,7 @@ match_case:
       { Exp.case $1 (merloc $endpos($2)
                        (Exp.unreachable ~loc:(make_loc $loc($3)) ())) }
 ;
-<<<<<<< janestreet/merlin-jst:main
-fun_def:
-    MINUSGREATER seq_expr
-      { (merloc $endpos($1) $2) }
-  | mkexp(COLON atomic_type MINUSGREATER seq_expr
-      { Pexp_constraint ((merloc $endpos($3) $4), $2) })
-      { $1 }
-/* Cf #5939: we used to accept (fun p when e0 -> e) */
-  | labeled_simple_pattern fun_def
-      {
-       let (l,o,p) = $1 in
-       ghexp ~loc:$sloc (Pexp_fun(l, o, p, $2))
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-fun_def:
-    MINUSGREATER seq_expr
-      { $2 }
-  | mkexp(COLON atomic_type MINUSGREATER seq_expr
-      { Pexp_constraint ($4, $2) })
-      { $1 }
-/* Cf #5939: we used to accept (fun p when e0 -> e) */
-  | labeled_simple_pattern fun_def
-      {
-       let (l,o,p) = $1 in
-       ghexp ~loc:$sloc (Pexp_fun(l, o, p, $2))
-=======
+
 fun_param_as_list:
   | LPAREN TYPE ty_params = newtypes RPAREN
       { (* We desugar (type a b c) to (type a) (type b) (type c).
@@ -3540,24 +3436,23 @@ fun_param_as_list:
         in
         List.map
           (fun (newtype, layout) ->
-             { N_ary.pparam_loc = loc;
+             { Jane_syntax.N_ary_functions.pparam_loc = loc;
                pparam_desc = Pparam_newtype (newtype, layout)
              })
           ty_params
       }
   | LPAREN TYPE mkrhs(LIDENT) COLON layout_annotation RPAREN
-      { [ { N_ary.pparam_loc = make_loc $sloc;
+      { [ { Jane_syntax.N_ary_functions.pparam_loc = make_loc $sloc;
             pparam_desc = Pparam_newtype ($3, Some $5)
           }
         ]
       }
   | labeled_simple_pattern
       { let a, b, c = $1 in
-        [ { N_ary.pparam_loc = make_loc $sloc;
+        [ { Jane_syntax.N_ary_functions.pparam_loc = make_loc $sloc;
             pparam_desc = Pparam_val (a, b, c)
           }
         ]
->>>>>>> ocaml-flambda/flambda-backend:main
       }
 ;
 fun_params:
@@ -3607,25 +3502,9 @@ record_expr_content:
     { es }
 ;
 type_constraint:
-<<<<<<< janestreet/merlin-jst:main
-    COLON core_type                             { (Some $2, None) }
-  | COLON core_type COLONGREATER core_type      { (Some $2, Some $4) }
-  | COLONGREATER core_type                      { (None, Some $2) }
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-    COLON core_type                             { (Some $2, None) }
-  | COLON core_type COLONGREATER core_type      { (Some $2, Some $4) }
-  | COLONGREATER core_type                      { (None, Some $2) }
-  | COLON error                                 { syntax_error() }
-  | COLONGREATER error                          { syntax_error() }
-;
-=======
-    COLON core_type                             { N_ary.Pconstraint $2 }
-  | COLON core_type COLONGREATER core_type      { N_ary.Pcoerce (Some $2, $4) }
-  | COLONGREATER core_type                      { N_ary.Pcoerce (None, $2) }
-  | COLON error                                 { syntax_error() }
-  | COLONGREATER error                          { syntax_error() }
-;
->>>>>>> ocaml-flambda/flambda-backend:main
+    COLON core_type                             { Jane_syntax.N_ary_functions.Pconstraint $2 }
+  | COLON core_type COLONGREATER core_type      { Jane_syntax.N_ary_functions.Pcoerce (Some $2, $4) }
+  | COLONGREATER core_type                      { Jane_syntax.N_ary_functions.Pcoerce (None, $2) }
   (*| COLON error                                 { syntax_error() } *)
   (*| COLONGREATER error                          { syntax_error() } *)
 ;
@@ -4420,11 +4299,11 @@ strict_function_type:
 ;
 %inline mode_flag:
    | LOCAL
-       { (Local, $sloc) }
+       { (Jane_syntax.N_ary_functions.Local, $sloc) }
    | UNIQUE
-       { (Unique, $sloc) }
+       { (Jane_syntax.N_ary_functions.Unique, $sloc) }
    | ONCE
-       { (Once, $sloc) }
+       { (Jane_syntax.N_ary_functions.Once, $sloc) }
 ;
 %inline mode_flags:
    | flags = iloption(mode_flag+)

@@ -239,6 +239,9 @@ module Gen = struct
           let name = Ident.name (Path.head path) in
           raise (Modtype_not_found (Mod, name))
       end
+    (* CR module strengthening: This might be wrong. *)
+    | Mty_strengthen (_mty, path, _aliasability) ->
+        module_ env (Mty_ident path)
     | Mty_for_hole -> Mod.hole ()
   and structure_item env =
     let open Ast_helper in
@@ -490,7 +493,12 @@ module Gen = struct
           in
           let env = Env.add_value (Ident.create_local name) value_description env in
           let exps = arrow_rhs env tyright in
-          List.map exps ~f:(Ast_helper.Exp.fun_ label None argument)
+          List.map exps ~f:(fun expr ->
+              Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
+                ([ { pparam_desc = Pparam_val (label, None, argument);
+                     pparam_loc = Location.none;
+                   }],
+                 None, Pfunction_body expr))
         | Ttuple types ->
           let choices = List.map types ~f:(exp_or_hole env)
             |> Util.combinations

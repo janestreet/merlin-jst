@@ -173,9 +173,9 @@ let typevar_layout' ppf (v, l) =
   let pptv = fmt_ident in
   match l with
   | None -> fprintf ppf " %a" pptv v
-  | Some lay -> fprintf ppf " (%a : %s)"
+  | Some lay -> fprintf ppf " (%a : %a)"
                     pptv v
-                    (Printast.const_layout_to_string lay)
+                    Jane_syntax.Layouts.Pprint.const_layout lay
 
 
 let typevars ppf vs =

@@ -710,7 +710,7 @@ let batch_mode_printer : report_printer =
       (self.pp_submsg_txt self report) txt
   in
   let pp_submsg_loc self report ppf loc =
-    if not (is_dummy_loc loc) then
+    if not loc.loc_ghost then
       pp_loc self report ppf loc
   in
   let pp_submsg_txt _self _ ppf loc =
@@ -858,21 +858,7 @@ let report_exception ppf exn =
     | Some (`Ok err) -> report_error ppf err
     | exception exn when n > 0 -> loop (n-1) exn
   in
-<<<<<<< janestreet/merlin-jst:main
   loop 5 exn
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  let pp_main_loc _ _ _ _ = () in
-  let pp_submsg_loc _ _ ppf loc =
-    if not loc.loc_ghost then
-      Format.fprintf ppf "%a:@ " print_loc loc in
-  { batch_mode_printer with pp; pp_main_loc; pp_submsg_loc }
-=======
-  let pp_main_loc _ _ _ _ = () in
-  let pp_submsg_loc _ _ ppf loc =
-    if not (is_dummy_loc loc) then
-      Format.fprintf ppf "%a:@ " print_loc loc in
-  { batch_mode_printer with pp; pp_main_loc; pp_submsg_loc }
->>>>>>> ocaml-flambda/flambda-backend:main
 
 exception Error of error
 

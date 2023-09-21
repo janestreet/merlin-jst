@@ -392,45 +392,12 @@ let pair_components subst sig1_comps sig2 =
 
 
 let retrieve_functor_params env mty =
-<<<<<<< janestreet/merlin-jst:main
-  let rec retrieve_functor_params before env =
-    function
-    | Mty_ident p as res ->
-        begin match expand_modtype_path env p with
-        | Some mty -> retrieve_functor_params before env mty
-        | None -> List.rev before, res
-        end
-    | Mty_alias p as res ->
-        begin match expand_module_alias ~strengthen:false env p with
-        | Ok mty ->  retrieve_functor_params before env mty
-        | Error _ -> List.rev before, res
-        end
-    | Mty_functor (p, res) -> retrieve_functor_params (p :: before) env res
-    | Mty_signature _ as res -> List.rev before, res
-    | Mty_for_hole as res -> List.rev before, res
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  let rec retrieve_functor_params before env =
-    function
-    | Mty_ident p as res ->
-        begin match expand_modtype_path env p with
-        | Some mty -> retrieve_functor_params before env mty
-        | None -> List.rev before, res
-        end
-    | Mty_alias p as res ->
-        begin match expand_module_alias ~strengthen:false env p with
-        | Ok mty ->  retrieve_functor_params before env mty
-        | Error _ -> List.rev before, res
-        end
-    | Mty_functor (p, res) -> retrieve_functor_params (p :: before) env res
-    | Mty_signature _ as res -> List.rev before, res
-=======
   let rec retrieve_functor_params before env mty =
     match Mtype.scrape_alias env mty with
     | Mty_functor (p, res) ->
         retrieve_functor_params (p :: before) env res
-    | Mty_ident _ | Mty_alias _ | Mty_signature _ | Mty_strengthen _ as res ->
+    | Mty_ident _ | Mty_alias _ | Mty_signature _ | Mty_strengthen _ | Mty_for_hole as res ->
         List.rev before, res
->>>>>>> ocaml-flambda/flambda-backend:main
   in
   retrieve_functor_params [] env mty
 
@@ -503,7 +470,7 @@ let rec shallow_modtypes env subst mty1 mty2 =
   | Mty_strengthen (mty1,_,_), mty2 ->
       (* S with M <= S *)
       shallow_modtypes env subst mty1 mty2
-  | (Mty_alias _ | Mty_ident _ | Mty_signature _ | Mty_functor _), _  -> false
+  | (Mty_alias _ | Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole), _  -> false
 
 and shallow_module_paths env subst p1 mty2 p2 =
   equal_module_paths env p1 subst p2 ||
@@ -513,7 +480,7 @@ and shallow_module_paths env subst p1 mty2 p2 =
     | Mty_strengthen (mty1,p1,_) ->
         shallow_modtypes env subst mty1 mty2
           && equal_module_paths env p1 subst p2
-    | Mty_alias _ | Mty_ident _ | Mty_signature _ | Mty_functor _
+    | Mty_alias _ | Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole
     | exception Not_found -> false
 
 (**
@@ -640,36 +607,6 @@ and try_modtypes ~in_eq ~loc env ~mark subst mty1 mty2 orig_shape =
       | Ok _, Error res ->
           Error Error.(Functor (Result res))
       end
-<<<<<<< janestreet/merlin-jst:main
-  | Mty_functor _, _
-  | _, Mty_functor _ ->
-      let params1 =
-        retrieve_functor_params env (Subst.Lazy.force_modtype mty1)
-      in
-      let params2 =
-        retrieve_functor_params env (Subst.Lazy.force_modtype mty2)
-      in
-      let d = Error.sdiff params1 params2 in
-      Error Error.(Functor (Params d))
-  | Mty_for_hole, _ | _, Mty_for_hole ->
-      Ok (Tcoerce_none, Shape.dummy_mod)
-  | _, Mty_alias _ ->
-      Error (Error.Mt_core Error.Not_an_alias)
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  | Mty_functor _, _
-  | _, Mty_functor _ ->
-      let params1 =
-        retrieve_functor_params env (Subst.Lazy.force_modtype mty1)
-      in
-      let params2 =
-        retrieve_functor_params env (Subst.Lazy.force_modtype mty2)
-      in
-      let d = Error.sdiff params1 params2 in
-      Error Error.(Functor (Params d))
-  | _, Mty_alias _ ->
-      Error (Error.Mt_core Error.Not_an_alias)
-=======
-
   | _ ->
     let red =
       (* Try to reduce one of the two types *)
@@ -713,9 +650,10 @@ and try_modtypes ~in_eq ~loc env ~mark subst mty1 mty2 orig_shape =
             Error Error.(Mt_core Not_an_identifier)
         | _, Mty_alias _ ->
             Error (Error.Mt_core Error.Not_an_alias)
+        | Mty_for_hole, _ | _, Mty_for_hole ->
+            Ok (Tcoerce_none, Shape.dummy_mod)
         | (Mty_alias _ | Mty_signature _), _ ->
             Error (Error.Mt_core Abstract_module_type)
->>>>>>> ocaml-flambda/flambda-backend:main
 
 (* Functor parameters *)
 
@@ -1165,14 +1103,8 @@ module Functor_inclusion_diff = struct
 
   let rec keep_expansible_param = function
     | Mty_ident _ | Mty_alias _ as mty -> Some mty
-<<<<<<< janestreet/merlin-jst:main
     | Mty_signature _ | Mty_functor _ | Mty_for_hole -> None
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-    | Mty_signature _ | Mty_functor _ -> None
-=======
-    | Mty_signature _ | Mty_functor _ -> None
     | Mty_strengthen (mty,_,_) -> keep_expansible_param mty
->>>>>>> ocaml-flambda/flambda-backend:main
 
   let lookup_expansion { env ; res ; _ } = match res with
     | None -> None

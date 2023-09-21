@@ -289,12 +289,8 @@ module With_shorthand = struct
     | Types.Mty_ident _
     | Types.Mty_alias _
     | Types.Mty_signature []
-<<<<<<< janestreet/merlin-jst:main
     | Types.Mty_for_hole
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
     | Types.Mty_strengthen _
->>>>>>> ocaml-flambda/flambda-backend:main
       -> Original r.item
     | Types.Mty_signature _ | Types.Mty_functor _
       -> Synthetic r

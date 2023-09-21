@@ -305,13 +305,6 @@ module Exist = struct
   let is_erasable : t -> bool = function
     | Pack extn -> is_erasable extn
 end
-<<<<<<< janestreet/merlin-jst:main
-
-(* merlin-jst: Enable all the ocaml-jst language extensions.  We do it this way
-   rather than updating [default_extensions] to avoid merge conflicts. *)
-let _ = enable_maximal ()
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-=======
 
 (********************************************)
 (* Special functionality for [Pprintast] *)
@@ -328,15 +321,18 @@ module For_pprintast = struct
     if !can_still_define_printers then begin
       can_still_define_printers := false;
       { print_with_maximal_extensions = fun pp fmt item ->
-          with_temporary_extensions (fun () ->
-            (* It's safe to call this here without validating that the
-               extensions are enabled, because the [Pprintast] printers should
-               always print Jane syntax. *)
-            unconditionally_enable_maximal_without_checks ();
-            pp fmt item)
+            with_temporary_extensions (fun () ->
+                (* It's safe to call this here without validating that the
+                   extensions are enabled, because the [Pprintast] printers should
+                   always print Jane syntax. *)
+                unconditionally_enable_maximal_without_checks ();
+                pp fmt item)
       }
     end else
       Misc.fatal_error
         "Only Pprintast may use [Language_extension.For_pprintast]"
 end
->>>>>>> ocaml-flambda/flambda-backend:main
+
+(* merlin-jst: Enable all the ocaml-jst language extensions.  We do it this way
+   rather than updating [default_extensions] to avoid merge conflicts. *)
+let _ = enable_maximal ()

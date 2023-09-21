@@ -2241,22 +2241,14 @@ and package_constraints env loc mty constrs =
     match Mtype.scrape env mty with
     | Mty_signature sg ->
         Mty_signature (package_constraints_sig env loc sg constrs)
-<<<<<<< janestreet/merlin-jst:main
-    | Mty_functor _ | Mty_alias _ -> assert false
     | Mty_for_hole -> Mty_for_hole
-    | Mty_ident p -> raise(Error(loc, env, Cannot_scrape_package_type p))
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-    | Mty_functor _ | Mty_alias _ -> assert false
-    | Mty_ident p -> raise(Error(loc, env, Cannot_scrape_package_type p))
-=======
     | mty ->
       let rec ident = function
           Mty_ident p -> p
         | Mty_strengthen (mty,_,_) -> ident mty
-        | Mty_functor _ | Mty_alias _ | Mty_signature _ -> assert false
+        | Mty_functor _ | Mty_alias _ | Mty_signature _ | Mty_for_hole -> assert false
       in
       raise(Error(loc, env, Cannot_scrape_package_type (ident mty)))
->>>>>>> ocaml-flambda/flambda-backend:main
   end
 
 let modtype_of_package env loc p fl =

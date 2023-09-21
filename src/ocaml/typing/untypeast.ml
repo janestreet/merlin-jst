@@ -433,7 +433,7 @@ let exp_extra sub (extra, loc, attrs) sexp =
     | Texp_newtype' (_id, label_loc, None) ->
         Pexp_newtype (label_loc, sexp)
     | Texp_newtype' (_id, label_loc, Some layout) ->
-        Jane_syntax.Layouts.expr_of ~loc ~attrs:[]
+        Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(label_loc, add_loc layout, sexp))
         |> add_jane_syntax_attributes
   in
@@ -797,7 +797,7 @@ let module_type (sub : mapper) mty =
       Mty.mk ~loc ~attrs (Pmty_ident (map_loc sub lid))
   | Tmty_alias (_path, lid) ->
       Mty.mk ~loc ~attrs (Pmty_alias (map_loc sub lid))
-  | Tmty_signature sg -> 
+  | Tmty_signature sg ->
       Mty.mk ~loc ~attrs (Pmty_signature (sub.signature sub sg))
   | Tmty_functor (arg, mtype2) ->
       Mty.mk ~loc ~attrs

@@ -42,8 +42,8 @@ let print_constructor c =
       List.map ~f:(fun (arg, (_ : global_flag)) -> arg) args
     in
     let desc = Tarrow ((Ast_helper.no_label,
-                        Types.Alloc_mode.global,
-                        Types.Alloc_mode.global),
+                        Mode.Alloc.legacy,
+                        Mode.Alloc.legacy),
                        dummy_type_scheme (Ttuple args_without_modalities),
                        c.cstr_res, commu_ok)
     in

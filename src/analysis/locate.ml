@@ -248,7 +248,7 @@ end = struct
 
         value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
           begin match vb_pat.pat_desc with
-          | Tpat_var (id, _, _) ->
+          | Tpat_var (id, _, _, _) ->
               begin try
                 let vd = Env.find_value (Pident id) env in
                 test vd.val_uid vb_attributes
@@ -472,7 +472,7 @@ let scrape_alias ~env ~fallback_uid path =
     match Env.find_module path env with
     | { md_type = Mty_alias path; md_uid = fallback_uid; _ } ->
         non_alias_declaration_uid ~fallback_uid path
-    | { md_type = Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole;
+    | { md_type = Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_strengthen _ | Mty_for_hole;
         md_uid; _ }-> md_uid
     | exception Not_found -> fallback_uid
   in

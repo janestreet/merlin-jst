@@ -2048,19 +2048,9 @@ let rec components_of_module_maker
               Named (param, force_modtype (modtype scoping sub ty_arg)));
           fcomp_res = force_modtype (modtype scoping sub ty_res);
           fcomp_shape = cm_shape;
-<<<<<<< janestreet/merlin-jst:main
           fcomp_cache = stamped_create 17;
           fcomp_subst_cache = stamped_create 17 })
-  | Mty_ident _ -> Error No_components_abstract
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-          fcomp_cache = Hashtbl.create 17;
-          fcomp_subst_cache = Hashtbl.create 17 })
-  | Mty_ident _ -> Error No_components_abstract
-=======
-          fcomp_cache = Hashtbl.create 17;
-          fcomp_subst_cache = Hashtbl.create 17 })
   | Mty_ident _ | Mty_strengthen _ -> Error No_components_abstract
->>>>>>> ocaml-flambda/flambda-backend:main
   | Mty_alias p -> Error (No_components_alias p)
   | Mty_for_hole -> Error No_components_abstract
 
@@ -2806,13 +2796,7 @@ let read_signature modname filename ~add_binding =
   let md = Subst.Lazy.force_module_decl mda.mda_declaration in
   match md.md_type with
   | Mty_signature sg -> sg
-<<<<<<< janestreet/merlin-jst:main
-  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_for_hole -> assert false
-||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
-  | Mty_ident _ | Mty_functor _ | Mty_alias _ -> assert false
-=======
-  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_strengthen _ -> assert false
->>>>>>> ocaml-flambda/flambda-backend:main
+  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_strengthen _ | Mty_for_hole -> assert false
 
 let is_identchar_latin1 = function
   | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
@@ -4257,6 +4241,8 @@ let short_paths_module_type_desc mty =
   | None | Some Mty_for_hole -> Fresh
   | Some (Mty_ident path) -> Alias path
   | Some (Mty_signature _ | Mty_functor _) -> Fresh
+  (* CR module strengthening: This might be wrong. *)
+  | Some (Mty_strengthen _) -> Fresh
   | Some (Mty_alias _) -> assert false
 
 let deprecated_of_alerts alerts =
@@ -4293,6 +4279,9 @@ let rec short_paths_module_desc env mpath mty comp =
         short_paths_functor_components_desc env mpath comp path
       in
       Fresh (Functor apply)
+  (* CR module strengthening: this can probably be improved someday *)
+  | Mty_strengthen (strengthened_mty, _, _) ->
+      short_paths_module_desc env mpath strengthened_mty comp
   | Mty_for_hole -> Fresh (Signature (lazy []))
 
 and short_paths_module_components_desc env mpath comp =
