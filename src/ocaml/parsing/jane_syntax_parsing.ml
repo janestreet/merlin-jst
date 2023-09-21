@@ -490,26 +490,25 @@ let parse_embedding_exn ~loc ~name ~embedding_syntax =
   | None -> None
 
 let find_and_remove_jane_syntax_attribute =
-  let rec loop rest ~rev_prefix =
-    match rest with
+  (* Recurs on [rev_prefix] *)
+  let rec loop ~rev_prefix ~suffix =
+    match rev_prefix with
     | [] -> None
-    | attr :: rest ->
-      let { attr_name = { txt = name; loc = attr_loc }; attr_payload } =
-        attr
-      in
-      begin
-        match
-         parse_embedding_exn
-           ~loc:attr_loc
-           ~name
-           ~embedding_syntax:Attribute
-        with
-        | None -> loop rest ~rev_prefix:(attr :: rev_prefix)
-        | Some name -> Some (name, attr_loc, attr_payload,
-                             List.rev_append rev_prefix rest)
-      end
+    | attr :: rev_prefix ->
+        let { attr_name = { txt = name; loc = attr_loc }; attr_payload } =
+          attr
+        in
+        begin
+          match
+            parse_embedding_exn ~loc:attr_loc ~name ~embedding_syntax:Attribute
+          with
+          | None -> loop ~rev_prefix ~suffix:(attr :: suffix)
+          | Some name ->
+              let unconsumed_attributes = List.rev_append rev_prefix suffix in
+              Some (name, attr_loc, attr_payload, unconsumed_attributes)
+        end
   in
-  fun attributes -> loop attributes ~rev_prefix:[]
+  fun attributes -> loop ~rev_prefix:(List.rev attributes) ~suffix:[]
 ;;
 
 let make_jane_syntax_attribute name payload =
@@ -538,7 +537,8 @@ module Make_with_attribute
 
     let make_jane_syntax name ?(payload = PStr []) ast =
       let attr = make_jane_syntax_attribute name payload in
-      with_attributes ast (attr :: attributes ast)
+      (* See Note [Outer attributes at end] in jane_syntax.ml *)
+      with_attributes ast (attributes ast @ [ attr ])
 
     let match_jane_syntax ast =
       match find_and_remove_jane_syntax_attribute (attributes ast) with
@@ -800,6 +800,9 @@ module Make_ast (AST : AST_internal) : AST with type ast = AST.ast = struct
 
   let make_entire_jane_syntax ~loc feature ast =
     AST.with_location
+      (* We can't call [Location.ghostify] here, as we need
+         [jane_syntax_parsing.ml] to build with the upstream compiler; see
+         Note [Buildable with upstream] in jane_syntax.mli for details. *)
       (Ast_helper.with_default_loc { loc with loc_ghost = true } (fun () ->
         make_jane_syntax feature [] (ast ())))
       loc

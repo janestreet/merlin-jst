@@ -1,0 +1,20 @@
+--- typecore.ml
++++ typecore.ml
+@@ -5951,7 +6291,7 @@ and type_expect_
+       match mut with
+       | Mutable ->
+           let newval =
+-            type_expect env mode_global snewval
++            type_expect env mode_legacy snewval
+               (mk_expected (instance ty))
+           in
+           let (path_self, _) =
+@@ -5989,7 +6329,7 @@ and type_expect_
+             begin try
+               let id = Vars.find lab.txt vars in
+               let ty = Btype.instance_variable_type lab.txt sign in
+-              (id, lab, type_expect env mode_global snewval (mk_expected (instance ty)))
++              (id, lab, type_expect env mode_legacy snewval (mk_expected (instance ty)))
+             with
+               Not_found ->
+                 let vars = Vars.fold (fun var _ li -> var::li) vars [] in

@@ -1,0 +1,94 @@
+$ ./import-ocaml-source.sh 
+From https://github.com/ocaml-flambda/flambda-backend
+ * branch                main       -> FETCH_HEAD
+fatal: path 'ocaml/typing/type_immediacy.ml' does not exist in 'FETCH_HEAD'
+fatal: path 'ocaml/typing/type_immediacy.mli' does not exist in 'FETCH_HEAD'
+fatal: path 'ocaml/typing/typedecl_immediacy.ml' does not exist in 'FETCH_HEAD'
+fatal: path 'ocaml/typing/typedecl_immediacy.mli' does not exist in 'FETCH_HEAD'
+fatal: path 'ocaml/typing/typedecl_unboxed.ml' does not exist in 'FETCH_HEAD'
+fatal: path 'ocaml/typing/typedecl_unboxed.mli' does not exist in 'FETCH_HEAD'
+[main 07f55de52] Import ocaml sources for ocaml-flambda/flambda-backend@9d77824d1
+ 75 files changed, 4622 insertions(+), 2362 deletions(-)
+patching file src/ocaml/parsing/location.ml
+Hunk #4 NOT MERGED at 862-876.
+patching file src/ocaml/preprocess/parser_raw.mly
+Hunk #1 merged at 30, NOT MERGED at 36-41.
+Hunk #9 merged at 1008-1009,1018.
+Hunk #11 NOT MERGED at 1153-1169.
+Hunk #12 NOT MERGED at 1208-1224.
+Hunk #17 NOT MERGED at 2972-2978, merged at 2984-2996.
+Hunk #18 NOT MERGED at 3007-3016.
+Hunk #19 merged at 3025, NOT MERGED at 3039-3049,3053-3055.
+Hunk #20 NOT MERGED at 3064-3080.
+Hunk #28 NOT MERGED at 3614-3668, merged at 3670, merged at 3675-3676.
+Hunk #29 NOT MERGED at 3722-3740.
+patching file src/ocaml/parsing/pprintast.ml
+Hunk #13 NOT MERGED at 2144-2186.
+patching file src/ocaml/parsing/pprintast.mli
+Hunk #1 NOT MERGED at 60-75.
+patching file src/ocaml/typing/ctype.ml
+Hunk #2 NOT MERGED at 806-813.
+patching file src/ocaml/typing/env.ml
+Hunk #7 NOT MERGED at 2059-2071.
+Hunk #11 NOT MERGED at 2821-2827.
+patching file src/ocaml/typing/includemod.ml
+Hunk #2 NOT MERGED at 412-450.
+Hunk #6 NOT MERGED at 714-789.
+Hunk #9 merged at 1253, NOT MERGED at 1256-1263.
+patching file src/ocaml/typing/includemod_errorprinter.ml
+Hunk #1 NOT MERGED at 292-297.
+patching file src/ocaml/typing/mtype.ml
+Hunk #7 NOT MERGED at 556-571.
+Hunk #9 NOT MERGED at 675-680.
+Hunk #10 NOT MERGED at 706-711.
+Hunk #11 merged at 745.
+patching file src/ocaml/typing/oprint.ml
+Hunk #6 NOT MERGED at 808-817.
+patching file src/ocaml/typing/outcometree.mli
+Hunk #3 NOT MERGED at 153-159.
+patching file src/ocaml/typing/printtyp.ml
+Hunk #5 merged at 2014-2017.
+Hunk #6 NOT MERGED at 2034-2049.
+patching file src/ocaml/typing/subst.ml
+Hunk #1 NOT MERGED at 193-199.
+Hunk #3 NOT MERGED at 781-787.
+patching file src/ocaml/typing/typecore.ml
+Hunk #1 merged at 23,27.
+Hunk #19 merged at 1325.
+Hunk #29 merged at 1836-1843.
+Hunk #61 merged at 4160-4186,4190,4193, NOT MERGED at 4197-4216,4218,4223,4228-4231,4240,4244-4245,4248,4251-4265, NOT MERGED at 4281-4287,4290,4293-4294, NOT MERGED at 4298-4329,4334-4344,4349,4353-4359,4365-4404.
+Hunk #68 merged at 5118,5122,5125.
+Hunk #83 NOT MERGED at 5726-5735.
+Hunk #84 merged at 5752.
+Hunk #90 merged at 5960, NOT MERGED at 5963-5978.
+Hunk #91 NOT MERGED at 6221-6234.
+misordered hunks! output would be garbled
+Hunk #92 FAILED at 6152.
+misordered hunks! output would be garbled
+Hunk #93 FAILED at 6190.
+Hunk #106 NOT MERGED at 6747-6765, merged at 6767.
+Hunk #123 merged at 7757.
+Hunk #132 merged at 8421-8424,8429,8432, NOT MERGED at 8438-8450,8455.
+Hunk #143 NOT MERGED at 8932-8942, merged at 8944-8949, merged at 8956, merged at 8961, merged at 8968.
+Hunk #152 NOT MERGED at 9797-9823.
+2 out of 152 hunks FAILED -- saving rejects to file src/ocaml/typing/typecore.ml.rej
+patching file src/ocaml/typing/typedtree.ml
+Hunk #6 merged at 215.
+Hunk #17 merged at 996,1004,1011,1019,1022, NOT MERGED at 1025-1034,1036.
+patching file src/ocaml/typing/typemod.ml
+Hunk #12 NOT MERGED at 2259-2274.
+Hunk #15 merged at 3219.
+patching file src/ocaml/typing/types.ml
+Hunk #4 NOT MERGED at 380-386.
+Hunk #5 NOT MERGED at 443-449.
+Hunk #6 merged at 562-565.
+Hunk #8 merged at 638, NOT MERGED at 645-686.
+Hunk #10 NOT MERGED at 965-976.
+Hunk #11 NOT MERGED at 1130-1583.
+patching file src/ocaml/typing/types.mli
+Hunk #4 NOT MERGED at 687-693.
+Hunk #7 NOT MERGED at 873-1027.
+Ignoring changes to utils/config.mlp, inspect it manually.
+patching file src/ocaml/utils/language_extension.ml
+Hunk #2 merged at 79,86.
+Hunk #6 NOT MERGED at 319-353.

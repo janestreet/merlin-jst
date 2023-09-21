@@ -190,7 +190,13 @@ let rec module_path s path =
 let modtype_path s path =
       match Path.Map.find path s.modtypes with
       | Mty_ident p -> p
+<<<<<<< janestreet/merlin-jst:main
       | Mty_alias _ | Mty_signature _ | Mty_functor _ | Mty_for_hole ->
+||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
+      | Mty_alias _ | Mty_signature _ | Mty_functor _ ->
+=======
+      | Mty_alias _ | Mty_signature _ | Mty_functor _| Mty_strengthen _ ->
+>>>>>>> ocaml-flambda/flambda-backend:main
          fatal_error "Subst.modtype_path"
       | exception Not_found ->
          match path with
@@ -445,6 +451,7 @@ let record_representation ~prepare_layout loc = function
   | Record_boxed lays ->
       Record_boxed (Array.map (prepare_layout loc) lays)
   | Record_float -> Record_float
+  | Record_ufloat -> Record_ufloat
 
 let type_declaration' copy_scope s decl =
   { type_params = List.map (typexp copy_scope s decl.type_loc) decl.type_params;
@@ -771,7 +778,13 @@ and subst_lazy_modtype scoping s = function
                   subst_lazy_modtype scoping (add_module id (Pident id') s) res)
   | Mty_alias p ->
       Mty_alias (module_path s p)
+<<<<<<< janestreet/merlin-jst:main
   | Mty_for_hole -> Mty_for_hole
+||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
+=======
+  | Mty_strengthen (mty, p, a) ->
+      Mty_strengthen (subst_lazy_modtype scoping s mty, module_path s p, a)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 and subst_lazy_modtype_decl scoping s mtd =
   { mtd_type = Option.map (subst_lazy_modtype scoping s) mtd.mtd_type;

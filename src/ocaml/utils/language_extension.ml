@@ -45,6 +45,7 @@ let get_level_ops : type a. a t -> (module Extension_level with type t = a) =
   function
   | Comprehensions -> (module Unit)
   | Local -> (module Unit)
+  | Unique -> (module Unit)
   | Include_functor -> (module Unit)
   | Polymorphic_parameters -> (module Unit)
   | Immutable_arrays -> (module Unit)
@@ -75,13 +76,14 @@ type (_, _) eq = Refl : ('a, 'a) eq
 let equal_t (type a b) (a : a t) (b : b t) : (a, b) eq option = match a, b with
   | Comprehensions, Comprehensions -> Some Refl
   | Local, Local -> Some Refl
+  | Unique, Unique -> Some Refl
   | Include_functor, Include_functor -> Some Refl
   | Polymorphic_parameters, Polymorphic_parameters -> Some Refl
   | Immutable_arrays, Immutable_arrays -> Some Refl
   | Module_strengthening, Module_strengthening -> Some Refl
   | Layouts, Layouts -> Some Refl
   | SIMD, SIMD -> Some Refl
-  | (Comprehensions | Local | Include_functor | Polymorphic_parameters |
+  | (Comprehensions | Local | Unique | Include_functor | Polymorphic_parameters |
      Immutable_arrays | Module_strengthening | Layouts | SIMD), _ -> None
 
 let equal a b = Option.is_some (equal_t a b)
@@ -178,6 +180,7 @@ let default_extensions : extn_pair list =
   [ Pair (Local, ())
   ; Pair (Include_functor, ())
   ; Pair (Polymorphic_parameters, ())
+  ; Pair (Immutable_arrays, ())
   ]
 let extensions : extn_pair list ref = ref default_extensions
 
@@ -205,18 +208,17 @@ let set extn ~enabled =
 let enable extn value = set_worker extn (Some value)
 let disable extn = set_worker extn None
 
+(* This is similar to [Misc.protect_refs], but we don't have values to set
+   [extensions] to. *)
+let with_temporary_extensions f =
+  let current_extensions = !extensions in
+  Fun.protect ~finally:(fun () -> extensions := current_extensions) f
+
 (* It might make sense to ban [set], [enable], [disable],
    [only_erasable_extensions], and [disallow_extensions] inside [f], but it's
    not clear that it's worth the hassle *)
 let with_set_worker extn value f =
-  (* This is similar to [Misc.protect_refs], but we don't have values to set
-     [extensions] to. *)
-  let current_extensions = !extensions in
-  Fun.protect
-    ~finally:(fun () -> extensions := current_extensions)
-    (fun () ->
-       set_worker extn value;
-       f ())
+  with_temporary_extensions (fun () -> set_worker extn value; f ())
 
 let with_set extn ~enabled =
   with_set_worker extn (if enabled then Some () else None)
@@ -232,13 +234,17 @@ let disable_of_string_exn extn_name = match pair_of_string_exn extn_name with
 let disable_all () =
   extensions := []
 
-let enable_maximal () =
-  Universe.check_maximal ();
+let unconditionally_enable_maximal_without_checks () =
   let maximal_pair (Pack extn) =
     let (module Ops) = get_level_ops extn in
     Pair (extn, Ops.max_value)
   in
   extensions := List.map maximal_pair Exist.all
+
+let enable_maximal () =
+  Universe.check_maximal ();
+  (* It's safe to call this here because we've confirmed that we can. *)
+  unconditionally_enable_maximal_without_checks ()
 
 let restrict_to_erasable_extensions () =
   let changed = Universe.set Only_erasable in
@@ -299,7 +305,38 @@ module Exist = struct
   let is_erasable : t -> bool = function
     | Pack extn -> is_erasable extn
 end
+<<<<<<< janestreet/merlin-jst:main
 
 (* merlin-jst: Enable all the ocaml-jst language extensions.  We do it this way
    rather than updating [default_extensions] to avoid merge conflicts. *)
 let _ = enable_maximal ()
+||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
+=======
+
+(********************************************)
+(* Special functionality for [Pprintast] *)
+
+module For_pprintast = struct
+  type printer_exporter =
+    { print_with_maximal_extensions :
+        'a. (Format.formatter -> 'a -> unit) -> (Format.formatter -> 'a -> unit)
+    }
+
+  let can_still_define_printers = ref true
+
+  let make_printer_exporter () =
+    if !can_still_define_printers then begin
+      can_still_define_printers := false;
+      { print_with_maximal_extensions = fun pp fmt item ->
+          with_temporary_extensions (fun () ->
+            (* It's safe to call this here without validating that the
+               extensions are enabled, because the [Pprintast] printers should
+               always print Jane syntax. *)
+            unconditionally_enable_maximal_without_checks ();
+            pp fmt item)
+      }
+    end else
+      Misc.fatal_error
+        "Only Pprintast may use [Language_extension.For_pprintast]"
+end
+>>>>>>> ocaml-flambda/flambda-backend:main

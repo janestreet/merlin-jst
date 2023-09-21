@@ -57,6 +57,19 @@ val tyvar: Format.formatter -> string -> unit
   (** Print a type variable name, taking care of the special treatment
       required for the single quote character in second position. *)
 
+<<<<<<< janestreet/merlin-jst:main
 (* merlin *)
 val case_list : Format.formatter -> Parsetree.case list -> unit
 val protect_ident : Format.formatter -> string -> unit
+||||||| ocaml-flambda/flambda-backend:3e7c48082fe2de762e84ac5cda703e1b13080f00
+val class_signature: Format.formatter -> Parsetree.class_signature -> unit
+val type_declaration: Format.formatter -> Parsetree.type_declaration -> unit
+=======
+val class_signature: Format.formatter -> Parsetree.class_signature -> unit
+val type_declaration: Format.formatter -> Parsetree.type_declaration -> unit
+
+val tyvar: Format.formatter -> string -> unit
+  (** Print a type variable name as a valid identifier, taking care of the
+      special treatment required for the single quote character in second
+      position, or for keywords by escaping them with \#. No-op on "_". *)
+>>>>>>> ocaml-flambda/flambda-backend:main
