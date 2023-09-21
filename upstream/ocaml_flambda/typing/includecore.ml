@@ -98,7 +98,9 @@ let value_descriptions ~loc env name
          let ty1_global, _ = Ctype.instance_prim_mode p1 vd1.val_type in
          let ty2_global =
            let ty2, mode2 = Ctype.instance_prim_mode p2 vd2.val_type in
-           Option.iter Alloc_mode.make_global_exn mode2;
+           Option.iter
+             (fun m -> Mode.Locality.submode_exn m Mode.Locality.global)
+             mode2;
            ty2
          in
          (try Ctype.moregeneral env true ty1_global ty2_global
@@ -106,7 +108,9 @@ let value_descriptions ~loc env name
          let ty1_local, _ = Ctype.instance_prim_mode p1 vd1.val_type in
          let ty2_local =
            let ty2, mode2 = Ctype.instance_prim_mode p2 vd2.val_type in
-           Option.iter Alloc_mode.make_local_exn mode2;
+           Option.iter
+             (fun m -> Mode.Locality.submode_exn Mode.Locality.local m)
+             mode2;
            ty2
          in
          (try Ctype.moregeneral env true ty1_local ty2_local
@@ -183,6 +187,7 @@ type record_mismatch =
   | Label_mismatch of record_change list
   | Inlined_representation of position
   | Float_representation of position
+  | Ufloat_representation of position
 
 type constructor_mismatch =
   | Type of Errortrace.equality_error
@@ -356,6 +361,14 @@ let report_record_mismatch first second decl env ppf err =
       pr "@[<hv>Their internal representations differ:@ %s %s %s.@]"
         (choose ord first second) decl
         "uses unboxed float representation"
+  | Ufloat_representation ord ->
+      (* CR layouts: This case should unreachable now.  But it may be reachable
+         when we allow [any] types in structure declarations, using an example
+         like the "unboxed float representation" one in
+         [typing-unboxed-types/test.ml].  Add a test then. *)
+      pr "@[<hv>Their internal representations differ:@ %s %s %s.@]"
+        (choose ord first second) decl
+        "uses float# representation"
 
 let report_constructor_mismatch first second decl env ppf err =
   let pr fmt  = Format.fprintf ppf fmt in
@@ -629,6 +642,12 @@ module Record_diffing = struct
         Some (Record_mismatch (Float_representation First))
      | _, Record_float ->
         Some (Record_mismatch (Float_representation Second))
+
+     | Record_ufloat, Record_ufloat -> None
+     | Record_ufloat, _ ->
+        Some (Record_mismatch (Ufloat_representation First))
+     | _, Record_ufloat ->
+        Some (Record_mismatch (Ufloat_representation Second))
 
      | Record_boxed _, Record_boxed _ -> None
 
