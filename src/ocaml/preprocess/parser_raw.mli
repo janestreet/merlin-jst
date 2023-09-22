@@ -557,7 +557,6 @@ module MenhirInterpreter : sig
     | N_extension_constructor_rebind_BAR_ : (Parsetree.extension_constructor) nonterminal
     | N_extension : (Parsetree.extension) nonterminal
     | N_ext : (string Location.loc option) nonterminal
-    | N_expr : (Parsetree.expression) nonterminal
     | N_direction_flag : (Asttypes.direction_flag) nonterminal
     | N_core_type : (Parsetree.core_type) nonterminal
     | N_constructor_declarations : (Parsetree.constructor_declaration list) nonterminal

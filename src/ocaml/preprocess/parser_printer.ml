@@ -364,7 +364,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension_constructor_rebind_BAR_) -> "extension_constructor_rebind_BAR_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension) -> "extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ext) -> "ext"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr) -> "expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_direction_flag) -> "direction_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_core_type) -> "core_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_constructor_declarations) -> "constructor_declarations"
@@ -746,7 +745,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_extension_constructor_rebind_BAR_ -> (fun _ -> "extension_constructor_rebind_BAR_")
   | MenhirInterpreter.N MenhirInterpreter.N_extension -> (fun _ -> "extension")
   | MenhirInterpreter.N MenhirInterpreter.N_ext -> (fun _ -> "ext")
-  | MenhirInterpreter.N MenhirInterpreter.N_expr -> (fun _ -> "expr")
   | MenhirInterpreter.N MenhirInterpreter.N_direction_flag -> (fun _ -> "direction_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_core_type -> (fun _ -> "core_type")
   | MenhirInterpreter.N MenhirInterpreter.N_constructor_declarations -> (fun _ -> "constructor_declarations")

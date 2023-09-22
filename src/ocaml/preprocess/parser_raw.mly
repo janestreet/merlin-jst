@@ -2877,7 +2877,7 @@ let_pattern [@recovery default_pattern ()]:
 
 %inline qualified_dotop: ioption(DOT mod_longident {$2}) DOTOP { $1, $2 };
 
-fun_expr:
+%public fun_expr [@recovery default_expr ()]:
     simple_expr %prec below_HASH
       { $1 }
   | expr_attrs
@@ -2929,7 +2929,7 @@ fun_expr:
   | EXCLAVE seq_expr
      { mkexp_exclave ~loc:$sloc ~kwd_loc:($loc($1)) $2 }
 ;
-%public expr [@recovery default_expr ()]:
+%public %inline expr :
   | or_function(fun_expr) { $1 }
 ;
 %inline expr_attrs:
@@ -4937,7 +4937,7 @@ lwt_bindings:
   | lwt_bindings and_let_binding                { addlb $1 $2 }
 ;
 
-%public expr:
+%public fun_expr:
 | lwt_bindings IN seq_expr
     { expr_of_lwt_bindings ~loc:$loc $1 (merloc $endpos($2) $3) }
 | MATCH_LWT ext_attributes seq_expr WITH match_cases
