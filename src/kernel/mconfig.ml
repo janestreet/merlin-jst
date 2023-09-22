@@ -464,7 +464,17 @@ let ocaml_ignored_flags = [
   "-cfg-peephole-optimize";
   "-no-cfg-peephole-optimize";
   "-verbose-types";
-  "-no-verbose-types"
+  "-no-verbose-types";
+  "-fsse3";
+  "-fno-sse3";
+  "-fssse3";
+  "-fno-ssse3";
+  "-fsse41";
+  "-fno-sse41";
+  "-fsse42";
+  "-fno-sse42";
+  "-fsimd-regalloc";
+  "-fno-simd-regalloc";
 ]
 
 let ocaml_ignored_parametrized_flags = [
