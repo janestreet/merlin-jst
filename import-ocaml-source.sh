@@ -1,8 +1,10 @@
 #!/bin/bash
 
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 # Script arguments with their default values
-repository=https://github.com/ocaml-flambda/flambda-backend
 commitish=main
+repository=https://github.com/ocaml-flambda/flambda-backend
 subdirectory=ocaml
 
 function usage () {
@@ -16,9 +18,11 @@ branch can be overridden by any commitish (branch, tag, full (not abbreviated!)
 commit hash, etc.), the repository can be overridden by any URL, and the
 subdirectory can be overriden by any path (including ".").
 
-To import new files from the compiler, first create matched pairs of empty files
-in this repository with the right names: one in "upstream/ocaml_flambda/", and
-one in "src/ocaml".  Then running the script will pull in the named file(s).
+This attempts to import new files from the compiler by running the
+"import_added_ocaml_source_files.sh" script. If that doesn't work, you can also
+try making matched pairs of files in this repository with the right names: one
+in "upstream/ocaml_flambda/", and one in "src/ocaml".  Then running the script
+will pull in the named file(s).
 USAGE
 }
 
@@ -53,11 +57,15 @@ if ! git diff --quiet; then
   exit 1
 fi
 
+
 # Used for patch output
 old_base_rev="$(cat upstream/ocaml_flambda/base-rev.txt)"
 current_head="$(git symbolic-ref --short HEAD)"
 
-# First, fetch the new flambda-backend sources (which include ocaml-jst) and
+# First, add any files that have been added since the last import.
+./import-added-ocaml-source-files.sh "$commitish" "$repository" "$subdirectory"
+
+# Then, fetch the new flambda-backend sources (which include ocaml-jst) and
 # copy into upstream/ocaml_flambda
 git fetch "$repository" "$commitish"
 rev=$(git rev-parse FETCH_HEAD)
