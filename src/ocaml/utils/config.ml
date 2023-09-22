@@ -32,28 +32,28 @@ let version = Sys.ocaml_version
 
 let flambda = false
 
-let exec_magic_number = "Caml1999X510"
+let exec_magic_number = "Caml1999X511"
     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
 and cmi_magic_number =
   (* When bumping this number, be sure to also update ../typing/magic_numbers.ml *)
-  "Caml1999I511"
-and cmo_magic_number = "Caml1999O511"
-and cma_magic_number = "Caml1999A511"
+  "Caml1999I512"
+and cmo_magic_number = "Caml1999O512"
+and cma_magic_number = "Caml1999A512"
 and cmx_magic_number =
   if flambda then
-    "Caml2021y513"
+    "Caml2021y514"
   else
-    "Caml2021Y513"
+    "Caml2021Y514"
 and cmxa_magic_number =
   if flambda then
-    "Caml2021z513"
+    "Caml2021z514"
   else
-    "Caml2021Z513"
+    "Caml2021Z514"
 and ast_impl_magic_number = "Caml1999M031"
 and ast_intf_magic_number = "Caml1999N031"
-and cmxs_magic_number = "Caml1999D512"
-and cmt_magic_number = "Caml1999T511"
-and cms_magic_number = "Caml1999S509"
+and cmxs_magic_number = "Caml1999D513"
+and cmt_magic_number = "Caml1999T512"
+and cms_magic_number = "Caml1999S510"
 
 let interface_suffix = ref ".mli"
 

@@ -307,7 +307,7 @@ let of_comprehension {comp_body; comp_clauses} =
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
-  | Tpat_alias (p,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
+  | Tpat_alias (p,_,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array (_,ps) ->
@@ -359,7 +359,7 @@ let of_expression_desc loc = function
         of_exp_record_field e lid_loc desc ** of_expression e
     in
     array_fold fold_field fields
-  | Texp_field (e,lid_loc,lbl,_) ->
+  | Texp_field (e,lid_loc,lbl,_,_) ->
     of_expression e ** of_exp_record_field e lid_loc lbl
   | Texp_setfield (e1,_,lid_loc,lbl,e2) ->
     of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
@@ -489,6 +489,8 @@ and of_structure_item_desc = function
 
 and of_module_type_desc = function
   | Tmty_ident _ | Tmty_alias _ -> id_fold
+  (* CR module strengthening: this might be wrong *)
+  | Tmty_strengthen (mty, _, _) -> of_module_type mty
   | Tmty_signature sg ->
     app (Signature sg)
   | Tmty_functor (Named (_,_,mt1),mt2) ->
@@ -780,9 +782,9 @@ let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; _ } =
     match (pat_desc : k pattern_desc) with
     | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
       fake_path lid_loc cstr_res cstr_name
-    | Tpat_var (id, {Location. loc; txt},_) ->
+    | Tpat_var (id, {Location. loc; txt},_,_) ->
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
-    | Tpat_alias (_,id,loc,_) ->
+    | Tpat_alias (_,id,loc,_,_) ->
       [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
     | _ -> []
   in
@@ -808,7 +810,7 @@ let bindop_path { bop_op_name; bop_op_path } =
 let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
   let init =
     match exp_desc with
-    | Texp_ident (path,loc,_,_) -> [reloc path loc, Some loc.txt]
+    | Texp_ident (path,loc,_,_,_) -> [reloc path loc, Some loc.txt]
     | Texp_letop {let_; ands} ->
       bindop_path let_ :: List.map ~f:bindop_path ands
     | Texp_new (path,loc,_,_) -> [reloc path loc, Some loc.txt]

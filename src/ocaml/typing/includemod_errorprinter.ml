@@ -290,6 +290,7 @@ module With_shorthand = struct
     | Types.Mty_alias _
     | Types.Mty_signature []
     | Types.Mty_for_hole
+    | Types.Mty_strengthen _
       -> Original r.item
     | Types.Mty_signature _ | Types.Mty_functor _
       -> Synthetic r
@@ -336,6 +337,10 @@ module With_shorthand = struct
     match (arg: Err.functor_arg_descr) with
     | Unit -> Format.dprintf "()"
     | Named p ->
+        let mty = match mty with
+          | Types.Mty_strengthen (mty,q,_) when Path.same p q -> mty
+          | _ -> mty
+        in
         let mty = modtype { ua with item = mty } in
         Format.dprintf
           "%a@ :@ %t"
