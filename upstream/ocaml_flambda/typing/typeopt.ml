@@ -125,7 +125,7 @@ let classify env ty : classification =
       else begin
         try
           match (Env.find_type p env).type_kind with
-          | Type_abstract ->
+          | Type_abstract _ ->
               Any
           | Type_record _ | Type_variant _ | Type_open ->
               Addr
@@ -368,7 +368,7 @@ let rec value_kind env ~loc ~visited ~depth ~num_nodes_visited ty
           fallback_if_missing_cmi ~default:(num_nodes_visited, Pgenval)
             (fun () -> value_kind_record env ~loc ~visited ~depth
                          ~num_nodes_visited labels rep)
-        | Type_abstract ->
+        | Type_abstract _ ->
           num_nodes_visited,
           value_kind_of_value_layout decl.type_layout
         | Type_open -> num_nodes_visited, Pgenval
@@ -637,7 +637,7 @@ let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   if Lambda.equal_value_kind k1 k2 then k1
   else Pgenval
 
-let layout_union l1 l2 =
+let rec layout_union l1 l2 =
   match l1, l2 with
   | Pbottom, l
   | l, Pbottom -> l
@@ -648,7 +648,11 @@ let layout_union l1 l2 =
       if equal_boxed_integer bi1 bi2 then l1 else Ptop
   | Punboxed_vector vi1, Punboxed_vector vi2 ->
       Lambda.join_boxed_vector_layout vi1 vi2
-  | (Ptop | Pvalue _ | Punboxed_float | Punboxed_int _ | Punboxed_vector _), _ ->
+  | Punboxed_product layouts1, Punboxed_product layouts2 ->
+      if List.compare_lengths layouts1 layouts2 <> 0 then Ptop
+      else Punboxed_product (List.map2 layout_union layouts1 layouts2)
+  | (Ptop | Pvalue _ | Punboxed_float | Punboxed_int _ | Punboxed_vector _ | Punboxed_product _),
+    _ ->
       Ptop
 
 (* Error report *)
