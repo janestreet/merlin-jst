@@ -213,7 +213,7 @@ let print_type_with_decl ~verbosity env ppf typ =
         Env.with_cmis @@ fun () ->
         Env.find_type path env
       in
-      let is_abstract = Types.decl_is_abstract decl in
+      let is_abstract = Btype.type_kind_is_abstract decl in
       (* Print expression only if it is parameterized or abstract *)
       let print_expr = is_abstract || params <> [] in
       if print_expr then
