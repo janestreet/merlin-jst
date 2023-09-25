@@ -396,7 +396,8 @@ let scrape env mty =
 
 let () =
   Printtyp.expand_module_type := expand ;
-  Env.scrape_alias := scrape_alias_lazy
+  Env.scrape_alias := scrape_alias_lazy ;
+  Env.scrape := scrape
 
 let find_type_of_module ~strengthen ~aliasable env path =
   if strengthen then

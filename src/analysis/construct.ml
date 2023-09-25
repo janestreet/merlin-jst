@@ -208,18 +208,12 @@ module Gen = struct
     else Exp.ident lid
 
   (* We never perform deep search when constructing modules *)
-  let rec module_ env =
-    let open Ast_helper in function
-    | Mty_ident path -> begin
-      try
-        let m = Env.find_modtype path env in
-        match m.mtd_type with
-        | Some t -> module_ env t
-        | None -> raise Not_found
-      with Not_found ->
-        let name = Ident.name (Path.head path) in
-        raise (Modtype_not_found (Modtype, name))
-      end
+  let rec module_ env mty =
+    let open Ast_helper in
+    match Mtype.scrape_alias env mty with
+    | Mty_ident path ->
+      let name = Ident.name (Path.head path) in
+      raise (Modtype_not_found (Modtype, name))
     | Mty_signature sig_items ->
       let env = Env.add_signature sig_items env in
       Mod.structure @@ structure env sig_items
@@ -233,15 +227,9 @@ module Gen = struct
       in
       Mod.functor_ param @@ module_ env out
     | Mty_alias path ->
-      begin try let m = Env.find_module path env in
-        module_ env m.md_type
-        with Not_found ->
-          let name = Ident.name (Path.head path) in
-          raise (Modtype_not_found (Mod, name))
-      end
-    (* CR module strengthening: This might be wrong. *)
-    | Mty_strengthen (_mty, path, _aliasability) ->
-        module_ env (Mty_ident path)
+      let name = Ident.name (Path.head path) in
+      raise (Modtype_not_found (Mod, name))
+    | Mty_strengthen (mty, _, _) -> module_ env mty
     | Mty_for_hole -> Mod.hole ()
   and structure_item env =
     let open Ast_helper in
