@@ -4241,7 +4241,6 @@ let short_paths_module_type_desc mty =
   | None | Some Mty_for_hole -> Fresh
   | Some (Mty_ident path) -> Alias path
   | Some (Mty_signature _ | Mty_functor _) -> Fresh
-  (* CR module strengthening: This might be wrong. *)
   | Some (Mty_strengthen _) -> Fresh
   | Some (Mty_alias _) -> assert false
 
@@ -4260,15 +4259,15 @@ let deprecated_of_alerts alerts =
 let deprecated_of_attributes attrs =
   deprecated_of_alerts (Builtin_attributes.alerts_of_attrs attrs)
 
+let scrape =
+  (* to be filled with Mtype.scrape_alias *)
+  ref ((fun _env _mty -> assert false) : t -> module_type -> module_type)
+
 let rec short_paths_module_desc env mpath mty comp =
   let open Short_paths.Desc.Module in
-  match mty with
+  match !scrape env mty with
   | Mty_alias path -> Alias path
-  | Mty_ident path -> begin
-      match find_modtype_expansion path env with
-      | exception Not_found -> Fresh (Signature (lazy []))
-      | mty -> short_paths_module_desc env mpath mty comp
-    end
+  | Mty_ident _ -> Fresh (Signature (lazy []))
   | Mty_signature _ ->
       let components =
         lazy (short_paths_module_components_desc env mpath comp)
@@ -4279,9 +4278,7 @@ let rec short_paths_module_desc env mpath mty comp =
         short_paths_functor_components_desc env mpath comp path
       in
       Fresh (Functor apply)
-  (* CR module strengthening: this can probably be improved someday *)
-  | Mty_strengthen (strengthened_mty, _, _) ->
-      short_paths_module_desc env mpath strengthened_mty comp
+  | Mty_strengthen _ -> Fresh (Signature (lazy []))
   | Mty_for_hole -> Fresh (Signature (lazy []))
 
 and short_paths_module_components_desc env mpath comp =
