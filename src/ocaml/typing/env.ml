@@ -2525,7 +2525,8 @@ end) = struct
         map, M.add_value ?shape id decl env
     | Sig_type(id, decl, _, _) ->
         let map, shape = proj_shape map mod_shape (Shape.Item.type_ id) in
-        map, add_type ~predef:false ~long_path:false ~check:false ?shape id decl env
+        map,
+        add_type ~long_path:false ~check:false ~predef:false ?shape id decl env
     | Sig_typext(id, ext, _, _) ->
         let map, shape = proj_shape map mod_shape (Shape.Item.extension_constructor id) in
         map, add_extension ~check:false ?shape ~rebind:false id ext env

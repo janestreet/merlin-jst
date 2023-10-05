@@ -100,6 +100,7 @@ let classify_node = function
   | Class_structure          _ -> `Expression
   | Class_field              _ -> `Expression
   | Class_field_kind         _ -> `Expression
+  | Binding_op               _ -> `Expression
   | Module_expr              _ -> `Module
   | Module_type_constraint   _ -> `Module_type
   | Structure                _ -> `Structure

@@ -71,6 +71,7 @@ type node =
   | Class_declaration        of class_declaration
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
+  | Binding_op               of binding_op
 
   | Include_description      of include_description
   | Include_declaration      of include_declaration
@@ -111,6 +112,7 @@ let node_update_env env0 = function
   | Class_type_declaration  _ | Class_type_field        _
   | Include_description     _ | Include_declaration     _
   | Open_description        _ | Open_declaration        _
+  | Binding_op              _
     -> env0
 
 let node_real_loc loc0 = function
@@ -143,6 +145,7 @@ let node_real_loc loc0 = function
   | Include_declaration     {incl_loc = loc}
   | Open_description        {open_loc = loc}
   | Open_declaration        {open_loc = loc}
+  | Binding_op              {bop_op_name = {loc}}
     -> loc
   | Module_type_declaration_name {mtd_name = loc}
     -> loc.Location.loc
@@ -189,6 +192,13 @@ let node_attributes = function
   | Record_field (`Expression obj,_,_) -> obj.exp_attributes
   | Record_field (`Pattern obj,_,_) -> obj.pat_attributes
   | _ -> []
+
+let has_attr ~name node =
+  let attrs = node_attributes node in
+  List.exists ~f:(fun a ->
+    let (str,_) = Ast_helper.Attr.as_tuple a in
+    str.Location.txt = name
+  ) attrs
 
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
@@ -274,8 +284,8 @@ let of_constructor_arguments = function
   | Cstr_tuple cts -> list_fold of_constructor_arg cts
   | Cstr_record lbls -> list_fold of_label_declaration lbls
 
-let of_bop { bop_op_path = _; bop_op_val = _; bop_exp; _ } =
-  of_expression bop_exp
+let of_bop ({ bop_exp; _ } as bop) =
+  app (Binding_op bop) ** of_expression bop_exp
 
 let of_record_field obj loc lbl =
   fun env (f : _ f0) acc ->
@@ -392,9 +402,21 @@ let of_expression_desc loc = function
   | Texp_unreachable | Texp_extension_constructor _ ->
     id_fold
   | Texp_letop { let_; ands; body; _ } ->
-    of_bop let_ **
-    list_fold of_bop ands **
-    of_case body
+    (* let+ ..pat1 and pat2 and ... are represented as pattern couples:
+       [pat1; [pat2; ...]]. The following function flattens these couples.
+       Keeping track of the known size of the tuple prevent wrongly flattening
+       the patterns patN when they are tuples themselves. *)
+    let rec flatten_patterns ~size acc pat =
+      match pat.pat_desc with
+      | Tpat_tuple [ tuple; pat ] when size > 0 ->
+           flatten_patterns ~size:(size - 1) (pat :: acc) tuple
+      | _ -> List.rev (pat :: acc)
+    in
+    let bindops = let_ :: ands in
+    let patterns = flatten_patterns ~size:(List.length ands) [] body.c_lhs in
+    let of_letop (pat, bindop) = of_bop bindop ** of_pattern pat in
+    list_fold of_letop (List.combine patterns bindops) **
+    of_expression body.c_rhs
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
   | Texp_probe p ->
@@ -702,6 +724,8 @@ let of_node = function
     of_module_expr i.incl_mod
   | Include_description i ->
     of_module_type i.incl_mod
+  | Binding_op { bop_exp=_ } ->
+    id_fold
 
 let fold_node f env node acc =
   of_node node env f acc
@@ -748,6 +772,7 @@ let string_of_node = function
   | Class_declaration       _ -> "class_declaration"
   | Class_description       _ -> "class_description"
   | Class_type_declaration  _ -> "class_type_declaration"
+  | Binding_op              _ -> "binding_op"
   | Method_call             _ -> "method_call"
   | Record_field            _ -> "record_field"
   | Module_binding_name     _ -> "module_binding_name"
@@ -951,6 +976,9 @@ let node_is_constructor = function
     Some {loc with Location.txt = `Description desc}
   | Pattern {pat_desc = Tpat_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
+  | Extension_constructor ext_cons ->
+    Some { Location.loc = ext_cons.ext_loc;
+           txt = `Extension_constructor ext_cons}
   | _ -> None
 
 let node_of_binary_part env part =

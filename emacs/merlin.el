@@ -192,7 +192,7 @@ a new window or not."
 
 (defcustom merlin-logfile nil
   "If non-nil, use this file for the log file (should be an absolute path)."
-  :group 'merlin :type 'filename)
+  :group 'merlin :type 'file)
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
@@ -257,8 +257,6 @@ The association list can contain the following optional keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defvar merlin-opam-bin-path nil)
 
 ;; If user did not specify its merlin-favourite-caml-mode, try to guess it from
 ;; the buffer being edited
@@ -512,7 +510,13 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
   ;; Really start process
   (let ((binary      (merlin-command))
         ;; (flags       (merlin-lookup 'flags merlin-buffer-configuration))
-        (process-environment (cl-copy-list process-environment))
+        (process-environment
+         ;; for simplicity, we use a mere append here (leading to a
+         ;; duplicate binding), it does work because only the first
+         ;; occurrence is considered, one can check this by running
+         ;; (call-process "printenv" nil t)
+         (append (merlin-lookup 'env merlin-buffer-configuration)
+                 process-environment))
         (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
         ;; FIXME use logfile
         ;; (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
@@ -522,16 +526,6 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
         (packages    (merlin--map-flatten (lambda (x) (cons "-I" x))
                                           merlin-buffer-packages-path))
         (filename    (buffer-file-name (buffer-base-buffer))))
-    ;; Update environment
-    (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
-      (let* ((equal-pos (string-match-p "=" binding))
-             (prefix (if equal-pos
-                       (substring binding 0 (1+ equal-pos))
-                       binding))
-             (is-prefix (lambda (x) (string-prefix-p prefix x))))
-        (setq process-environment (cl-delete-if is-prefix process-environment))
-        (when equal-pos
-          (setq process-environment (cons binding process-environment)))))
     ;; Compute verbosity
     (when (eq merlin-verbosity-context t)
       (setq merlin-verbosity-context (cons command args)))
@@ -610,6 +604,35 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
       (with-current-buffer buf
         (kill-local-variable 'merlin-buffer-configuration)
         (kill-local-variable 'merlin-erroneous-buffer)))))
+
+(defcustom merlin-stop-server-on-opam-switch t
+  "If t, stops the Merlin server before the opam switch changes.
+If the user changes the opam switch using `opam-switch-set-switch'
+or an `\"OPSW\"' menu from `opam-switch-mode', this option asks to
+stop the Merlin server process, so that the next Merlin command
+starts a new server, typically with a different Merlin version
+from a different opam switch.
+
+See https://github.com/ProofGeneral/opam-switch-mode
+
+Note: `opam-switch-mode' triggers automatic changes for `exec-path' and
+`process-environment', which are useful to find the `\"ocamlmerlin\"'
+binary (its filename can be overriden in `merlin-command') and the
+binary of Merlin's subprocesses, in the ambient opam switch."
+  :type 'boolean)
+
+(defun merlin--stop-server-on-opam-switch ()
+  "Stop the Merlin server before the opam switch changes.
+This function is for the `opam-switch-mode' hook
+`opam-switch-before-change-opam-switch-hook', which runs just
+before the user changes the opam switch through `opam-switch-mode'."
+  (when (and merlin-mode merlin-stop-server-on-opam-switch)
+    (condition-case _sig
+        (merlin-stop-server)
+      (t (message "Info: (merlin-stop-server) failed in the previous opam switch")))))
+
+(add-hook 'opam-switch-before-change-opam-switch-hook
+          #'merlin--stop-server-on-opam-switch t)
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -784,12 +807,12 @@ If there is no error, do nothing."
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
-(defun merlin--after-save ()
+(defun merlin--after-save (&optional _)
   (when (and merlin-mode merlin-error-after-save) (merlin-error-check)))
 
-(defadvice basic-save-buffer (after merlin--after-save activate)
-  "The save hook is called only if buffer was modified, but user might want fresh errors anyway"
-  (merlin--after-save))
+; The save hook is called only if buffer was modified,
+; but user might want fresh errors anyway
+(advice-add 'basic-save-buffer :after #'merlin--after-save)
 
 (defun merlin-error-prev (&optional group)
   "Jump back to previous error."
@@ -1293,15 +1316,18 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (set-temporary-overlay-map merlin-type-enclosing-map t
                                  'merlin--type-enclosing-reset))))
 
-(defun merlin-type-enclosing ()
+(defun merlin-type-enclosing (&optional manual)
   "Print the type of the expression under point (or of the region, if it exists).
-If called repeatedly, increase the verbosity of the type shown."
-  (interactive)
-  (if (region-active-p)
-      (merlin--type-region)
-    (when (merlin--type-enclosing-query)
-      (merlin-type-enclosing-go-up)
-      (merlin--type-enclosing-after))))
+If called repeatedly, increase the verbosity of the type shown.
+With prefix argument MANUAL, call `merlin-type-expr' interactively."
+  (interactive "P")
+  (if manual
+      (call-interactively #'merlin-type-expr)
+    (if (region-active-p)
+        (merlin--type-region)
+      (when (merlin--type-enclosing-query)
+        (merlin-type-enclosing-go-up)
+        (merlin--type-enclosing-after)))))
 
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
@@ -1910,7 +1936,8 @@ Empty string defaults to jumping to all these."
             (merlin-lookup 'do-not-cache-config merlin-buffer-configuration))
     (setq merlin-buffer-configuration (merlin--configuration)))
 
-  (let ((command (merlin-lookup 'command merlin-buffer-configuration)))
+  (let ((command (merlin-lookup 'command merlin-buffer-configuration))
+        bin-path)
     (unless command
       (setq
        command
@@ -1921,7 +1948,7 @@ Empty string defaults to jumping to all these."
          (with-temp-buffer
            (if (eq (call-process-shell-command
                     "opam var bin" nil (current-buffer) nil) 0)
-               (let ((bin-path
+               (let ((bin-dir
                       (replace-regexp-in-string "\n$" "" (buffer-string))))
                  ;; the opam bin dir needs to be on the path, so if merlin
                  ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
@@ -1930,21 +1957,17 @@ Empty string defaults to jumping to all these."
 
                  ;; this was originally done via `opam exec' but that does not
                  ;; work for opam 1, and added a performance hit
-                 (setq merlin-opam-bin-path (list (concat "PATH=" bin-path)))
-                 (concat bin-path "/ocamlmerlin"))
-
+                 (setq bin-path (list (concat "PATH=" bin-dir))))
              ;; best effort if opam is not available, lookup for the binary in
              ;; the existing env
-             (progn
-               (message "merlin-command: opam var failed (%S)"
-                        (buffer-string))
-               "ocamlmerlin"))))))
-
+             (message "merlin-command: opam var failed (%S)"
+                      (buffer-string)))
+           "ocamlmerlin"))))
       ;; cache command in merlin-buffer configuration to avoid having to shell
       ;; out to `opam` each time.
       (push (cons 'command command) merlin-buffer-configuration)
-      (when merlin-opam-bin-path
-        (push (cons 'env merlin-opam-bin-path) merlin-buffer-configuration)))
+      (when bin-path
+        (push (cons 'env bin-path) merlin-buffer-configuration)))
 
     command))
 
@@ -1959,9 +1982,11 @@ Empty string defaults to jumping to all these."
     (define-key merlin-map (kbd "C-c C-x") #'merlin-error-next)
     (define-key merlin-map (kbd "C-c C-l") #'merlin-locate)
     (define-key merlin-map (kbd "C-c &"  ) #'merlin-pop-stack)
-    (define-key merlin-map (kbd "C-c C-r") #'merlin-error-check)
+    (define-key merlin-map (kbd "C-c C-v") #'merlin-error-check)
     (define-key merlin-map (kbd "C-c C-t") #'merlin-type-enclosing)
-    (define-key merlin-map (kbd "C-c C-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c C-d") #'merlin-document)
+    (define-key merlin-map (kbd "C-c M-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c |") #'merlin-destruct)
     (define-key merlin-map (kbd "C-c C-n") #'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") #'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]

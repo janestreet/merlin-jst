@@ -1,5 +1,43 @@
-unreleased
+merlin NEXT_VERSION
+===================
+
+  + editor modes
+    - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+
+merlin 4.12
+===========
+Tue Sep 26 17:45:42 CEST 2023
+
+  + merlin binary
+    - Fix issue with let operators and tuples (#1684, fixes #1683, fixes
+      ocaml/ocaml-lsp#1182)
+    - Fix an issue causing Merlin locate queries to hang (#1686,
+      fixes ocaml/ocaml-lsp#1192)
+
+merlin 4.11
+===========
+Thu Sep 24 18:01:42 CEST 2023
+
+  + merlin binary
+    - Improve error messages for missing configuration reader (#1669)
+    - Fix regression causing crash when using ppxes under Windows (#1673)
+    - Fix confusion between aliased modules and module types (#1676,
+      fixes #1667)
+    - Ignore hidden branches when listing occurrences (#1677, fixes #1671)
+  + editor modes
+    - emacs: fix/improve keybindings (#1668, fixes #1386):
+      Unbind <kbd>C-c C-r</kbd> (to avoid shadowing `tuareg-eval-region`)
+      and bind <kbd>C-c C-v</kbd> instead to `merlin-error-check`;
+      rebind <kbd>C-c C-d</kbd> to `merlin-document`
+      and bind <kbd>C-c M-d</kbd> and <kbd>C-c |</kbd> instead to `merlin-destruct`;
+      bind <kbd>C-u C-c C-t</kbd> to `merlin-type-expr`.
+      See also <https://github.com/ocaml/merlin/issues/1386#issuecomment-1701567716>
+    - emacs: remove use of obsolete `defadvice` macro (#1675)
+
+merlin 4.10
 ==========
+Thu Aug 24 17:17:42 CEST 2023
+
   + merlin binary
     - Constrain socket path buffer size to avoid build warnings (#1631)
     - Handle concurrent server start (#1622)
@@ -8,6 +46,13 @@ unreleased
       warning 42 (disambiguated name) is active.
     - Correctly invalidate PPX cache when pipeline ran partially (#1650,
       fixes #1647)
+    - Prevent `short-path` from looping in some cases related to recursive type
+      definitions (#1645)
+    - Support parsing negative numbers in sexps (#1655)
+    - Fix construct not working with inline records (#1658)
+    - Improve behavior of `type-enclosing` on let/and operators (#1653)
+    - Fix occurrences of extension constructors (#1662)
+    - Improve node selection when ghosts are present (#1664, fixes #1660)
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
@@ -16,6 +61,8 @@ unreleased
       local values in the completion options.  Alternatively, this
       behavior can be enabled permanently by customizing
       `merlin-construct-with-local-values` (#1644)
+    - emacs: add support for opam-switch-mode (#1654, fixes #1591).
+      See <https://github.com/ProofGeneral/opam-switch-mode>
 
 merlin 4.9
 ==========
