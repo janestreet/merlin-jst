@@ -16,7 +16,6 @@
 (* Inclusion checks for the core language *)
 
 open Typedtree
-open Layouts
 open Types
 
 type position = Errortrace.position = First | Second
@@ -105,7 +104,7 @@ type type_mismatch =
   | Variant_mismatch of variant_change list
   | Unboxed_representation of position * attributes
   | Extensible_representation of position
-  | Layout of Layout.Violation.t
+  | Jkind of Jkind.Violation.t
 
 val value_descriptions:
   loc:Location.t -> Env.t -> string ->

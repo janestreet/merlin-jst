@@ -104,6 +104,10 @@ let builtin_attrs =
   ; "loop"; "ocaml.loop"
   ; "tail_mod_cons"; "ocaml.tail_mod_cons"
   ; "unaliasable"; "ocaml.unaliasable"
+  ; "builtin"; "ocaml.builtin"
+  ; "no_effects"; "ocaml.no_effects"
+  ; "no_coeffects"; "ocaml.no_coeffects"
+  ; "only_generative_effects"; "ocaml.only_generative_effects";
   ]
 
 (* nroberts: When we upstream the builtin-attribute whitelisting, we shouldn't
@@ -449,8 +453,8 @@ let warn_on_literal_pattern attrs =
 let explicit_arity attrs =
   has_attribute ["ocaml.explicit_arity"; "explicit_arity"] attrs
 
-let layout ~legacy_immediate attrs =
-  let layout =
+let jkind ~legacy_immediate attrs =
+  let jkind =
     List.find_map
       (fun a ->
          match a.attr_name.txt with
@@ -463,7 +467,7 @@ let layout ~legacy_immediate attrs =
          | _ -> None
         ) attrs
   in
-  match layout with
+  match jkind with
   | None -> Ok None
   | Some (a, l) ->
      mark_used a.attr_name;
