@@ -382,7 +382,7 @@ let of_expression_desc loc = function
     of_expression e1 ** of_expression e2 ** of_expression e3
   | Texp_list_comprehension cs | Texp_array_comprehension (_, cs) ->
     of_comprehension cs
-  | Texp_send (e,meth,_,_) ->
+  | Texp_send (e,meth,_) ->
     of_expression e **
     of_method_call e meth loc (* TODO ulysse CHECK*)
   | Texp_override (_,ls) ->

@@ -18,7 +18,6 @@ open Longident
 open Path
 open Asttypes
 open Parsetree
-open Layouts
 open Types
 open Format
 
@@ -85,7 +84,7 @@ type error =
   | Invalid_type_subst_rhs
   | Unpackable_local_modtype_subst of Path.t
   | With_cannot_remove_packed_modtype of Path.t * module_type
-  | Toplevel_nonvalue of string * sort
+  | Toplevel_nonvalue of string * Jkind.sort
   | Strengthening_mismatch of Longident.t * Includemod.explanation
 
 exception Error of Location.t * Env.t * error
@@ -515,14 +514,14 @@ let () = Env.check_well_formed_module := check_well_formed_module
 let type_decl_is_alias sdecl = (* assuming no explicit constraint *)
   let eq_vars x y =
     match Jane_syntax.Core_type.of_ast x, Jane_syntax.Core_type.of_ast y with
-    (* a layout annotation on either type variable might mean this definition
+    (* a jkind annotation on either type variable might mean this definition
        is not an alias. Example: {v
          type ('a : value) t
          type ('a : immediate) t2 = ('a : immediate) t
        v}
        But the only way to know that t2 isn't an alias is to look at
-       layouts in the environment, which is hard to do here. So we
-       conservatively say that any layout annotations block alias
+       jkinds in the environment, which is hard to do here. So we
+       conservatively say that any jkind annotations block alias
        detection.
     *)
     | (Some _, _) | (_, Some _) -> false
@@ -593,14 +592,14 @@ let merge_constraint initial_env loc sg lid constr =
         let decl_row =
           let arity = List.length sdecl.ptype_params in
           { type_params =
-              (* layout any is fine on the params because they get thrown away
+              (* jkind any is fine on the params because they get thrown away
                  below *)
               List.map
-                (fun _ -> Btype.newgenvar (Layout.any ~why:Dummy_layout))
+                (fun _ -> Btype.newgenvar (Jkind.any ~why:Dummy_jkind))
                 sdecl.ptype_params;
             type_arity = arity;
             type_kind = Type_abstract Abstract_def;
-            type_layout = Layout.value ~why:(Unknown "merge_constraint");
+            type_jkind = Jkind.value ~why:(Unknown "merge_constraint");
             type_private = Private;
             type_manifest = None;
             type_variance =
@@ -2063,8 +2062,8 @@ let check_nongen_signature_item env sig_item =
 let check_nongen_signature env sg =
   List.iter (check_nongen_signature_item env) sg
 
-let remove_mode_and_layout_variables env sg =
-  let rm _env ty = Ctype.remove_mode_and_layout_variables ty; false in
+let remove_mode_and_jkind_variables env sg =
+  let rm _env ty = Ctype.remove_mode_and_jkind_variables ty; false in
   List.exists (nongen_signature_item env rm) sg |> ignore
 
 (* Helpers for typing recursive modules *)
@@ -2761,7 +2760,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
     | None ->
     match desc with
     | Pstr_eval (sexpr, attrs) ->
-        (* We restrict [Tstr_eval] expressions to representable layouts to
+        (* We restrict [Tstr_eval] expressions to representable jkinds to
            support the native toplevel.  See the special handling of [Tstr_eval]
            near the top of [execute_phrase] in [opttoploop.ml]. *)
         let expr, sort =
@@ -2789,12 +2788,12 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
               List.iter
                 (fun (loc, mode, sort) ->
                    Typecore.escape ~loc ~env:newenv ~reason:Other mode;
-                   (* CR layouts v5: this layout check has the effect of
+                   (* CR layouts v5: this jkind check has the effect of
                       defaulting the sort of top-level bindings to value, which
                       will change. *)
-                   if not Sort.(equate sort value)
+                   if not Jkind.Sort.(equate sort value)
                    then raise (Error (loc, env,
-                                      Toplevel_nonvalue (Ident.name id,sort)))
+                                   Toplevel_nonvalue (Ident.name id,sort)))
                 )
                 modes;
               let (first_loc, _, _) = List.hd modes in
@@ -3147,7 +3146,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
        str, sg, names, Shape.str shape_map, final_env)
 
 (* The toplevel will print some types not present in the signature *)
-let remove_mode_and_layout_variables_for_toplevel str =
+let remove_mode_and_jkind_variables_for_toplevel str =
   match str.str_items with
   | [{ str_desc =
          ( Tstr_eval (exp, _, _)
@@ -3156,7 +3155,7 @@ let remove_mode_and_layout_variables_for_toplevel str =
                          vb_expr = exp}])) }] ->
      (* These types are printed by the toplevel,
         even though they do not appear in sg *)
-     Ctype.remove_mode_and_layout_variables exp.exp_type
+     Ctype.remove_mode_and_jkind_variables exp.exp_type
   | _ -> ()
 
 let type_toplevel_phrase env sig_acc s =
@@ -3165,8 +3164,8 @@ let type_toplevel_phrase env sig_acc s =
   Typecore.reset_allocations ();
   let (str, sg, _to_remove_from_sg, shape, env) =
     type_structure ~toplevel:(Some sig_acc) false None env sig_acc s in
-  remove_mode_and_layout_variables env sg;
-  remove_mode_and_layout_variables_for_toplevel str;
+  remove_mode_and_jkind_variables env sg;
+  remove_mode_and_jkind_variables_for_toplevel str;
   Typecore.optimise_allocations ();
   (str, sg, (* to_remove_from_sg, *) shape, env)
 
@@ -3321,7 +3320,7 @@ let type_package env m p fl =
     (fun (n, ty) ->
        (* CR layouts v5: relax value requirement. *)
       try Ctype.unify env ty
-            (Ctype.newvar (Layout.value ~why:Structure_element))
+            (Ctype.newvar (Jkind.value ~why:Structure_element))
       with Ctype.Unify _ ->
         raise (Error(modl.mod_loc, env, Scoping_pack (n,ty))))
     fl';
@@ -3367,7 +3366,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       in
       let simple_sg = Signature_names.simplify finalenv names sg in
       if !Clflags.print_types then begin
-        remove_mode_and_layout_variables finalenv sg;
+        remove_mode_and_jkind_variables finalenv sg;
         Typecore.force_delayed_checks ();
         Typecore.optimise_allocations ();
         let shape = Shape.local_reduce shape in
@@ -3757,7 +3756,7 @@ let report_error ~loc _env = function
   | Toplevel_nonvalue (id, sort) ->
       Location.errorf ~loc
         "@[Top-level module bindings must have layout value, but@ \
-         %s has layout@ %a.@]" id Sort.format sort
+         %s has layout@ %a.@]" id Jkind.Sort.format sort
  | Strengthening_mismatch(lid, explanation) ->
       let main = Includemod_errorprinter.err_msgs explanation in
       Location.errorf ~loc

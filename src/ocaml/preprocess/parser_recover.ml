@@ -264,7 +264,7 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_core_type__ -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_atomic_type__ -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_AS_mkrhs_LIDENT___ -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_option_layout_attr_ -> raise Not_found
+    | MenhirInterpreter.N MenhirInterpreter.N_option_jkind_attr_ -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_option_SEMI_ -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_option_BAR_ -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand -> raise Not_found
@@ -328,9 +328,6 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_ -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body_no_punning -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_layout_string -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_layout_attr -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_layout_annotation -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_pattern -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_labeled_simple_expr -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_label_longident -> raise Not_found
@@ -338,6 +335,9 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_label_declarations -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_label_declaration_semi -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_label_declaration -> raise Not_found
+    | MenhirInterpreter.N MenhirInterpreter.N_jkind_string -> raise Not_found
+    | MenhirInterpreter.N MenhirInterpreter.N_jkind_attr -> raise Not_found
+    | MenhirInterpreter.N MenhirInterpreter.N_jkind_annotation -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_interface -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_index_mod -> raise Not_found
@@ -663,7 +663,7 @@ let recover =
   let r123 = Sub (r93) :: r122 in
   let r124 = S (T T_DOT) :: r123 in
   let r125 = Sub (r118) :: r124 in
-  let r126 = [R 324] in
+  let r126 = [R 293] in
   let r127 = Sub (r111) :: r126 in
   let r128 = [R 660] in
   let r129 = S (T T_RPAREN) :: r128 in
@@ -749,9 +749,9 @@ let recover =
   let r209 = Sub (r111) :: r208 in
   let r210 = [R 576] in
   let r211 = [R 677] in
-  let r212 = [R 326] in
+  let r212 = [R 295] in
   let r213 = Sub (r111) :: r212 in
-  let r214 = [R 325] in
+  let r214 = [R 294] in
   let r215 = [R 495] in
   let r216 = S (T T_DOTDOT) :: r215 in
   let r217 = [R 972] in
@@ -821,7 +821,7 @@ let recover =
   let r281 = S (N N_pattern) :: r280 in
   let r282 = [R 746] in
   let r283 = S (T T_RBRACKET) :: r282 in
-  let r284 = [R 301] in
+  let r284 = [R 304] in
   let r285 = Sub (r245) :: r284 in
   let r286 = [R 388] in
   let r287 = R 557 :: r286 in
@@ -980,21 +980,21 @@ let recover =
   let r440 = [R 390] in
   let r441 = [R 747] in
   let r442 = [R 749] in
-  let r443 = [R 316] in
-  let r444 = [R 298] in
+  let r443 = [R 319] in
+  let r444 = [R 301] in
   let r445 = S (T T_LIDENT) :: r444 in
-  let r446 = [R 314] in
+  let r446 = [R 317] in
   let r447 = S (T T_RPAREN) :: r446 in
-  let r448 = [R 299] in
-  let r449 = [R 300] in
+  let r448 = [R 302] in
+  let r449 = [R 303] in
   let r450 = Sub (r93) :: r449 in
-  let r451 = [R 315] in
+  let r451 = [R 318] in
   let r452 = S (T T_RPAREN) :: r451 in
-  let r453 = [R 310] in
-  let r454 = [R 308] in
+  let r453 = [R 313] in
+  let r454 = [R 311] in
   let r455 = S (T T_RPAREN) :: r454 in
   let r456 = R 559 :: r455 in
-  let r457 = [R 309] in
+  let r457 = [R 312] in
   let r458 = S (T T_RPAREN) :: r457 in
   let r459 = R 559 :: r458 in
   let r460 = [R 560] in
@@ -1007,14 +1007,14 @@ let recover =
   let r467 = S (T T_IN) :: r466 in
   let r468 = [R 612] in
   let r469 = S (T T_UNDERSCORE) :: r468 in
-  let r470 = [R 313] in
-  let r471 = [R 311] in
+  let r470 = [R 316] in
+  let r471 = [R 314] in
   let r472 = S (T T_RPAREN) :: r471 in
   let r473 = R 559 :: r472 in
   let r474 = [R 344] in
   let r475 = [R 345] in
   let r476 = Sub (r93) :: r475 in
-  let r477 = [R 312] in
+  let r477 = [R 315] in
   let r478 = S (T T_RPAREN) :: r477 in
   let r479 = R 559 :: r478 in
   let r480 = [R 474] in
@@ -1031,18 +1031,18 @@ let recover =
   let r491 = S (T T_COLON) :: r490 in
   let r492 = [R 259] in
   let r493 = S (T T_RPAREN) :: r492 in
-  let r494 = [R 323] in
+  let r494 = [R 326] in
   let r495 = S (T T_RPAREN) :: r494 in
   let r496 = Sub (r93) :: r495 in
-  let r497 = [R 320] in
+  let r497 = [R 323] in
   let r498 = S (T T_RPAREN) :: r497 in
-  let r499 = [R 317] in
-  let r500 = [R 321] in
+  let r499 = [R 320] in
+  let r500 = [R 324] in
   let r501 = S (T T_RPAREN) :: r500 in
   let r502 = Sub (r93) :: r501 in
-  let r503 = [R 318] in
+  let r503 = [R 321] in
   let r504 = S (T T_RPAREN) :: r503 in
-  let r505 = [R 322] in
+  let r505 = [R 325] in
   let r506 = S (T T_RPAREN) :: r505 in
   let r507 = Sub (r93) :: r506 in
   let r508 = S (T T_DOT) :: r507 in
@@ -1149,7 +1149,7 @@ let recover =
   let r609 = [R 396] in
   let r610 = Sub (r3) :: r609 in
   let r611 = S (T T_MINUSGREATER) :: r610 in
-  let r612 = [R 319] in
+  let r612 = [R 322] in
   let r613 = Sub (r400) :: r612 in
   let r614 = [R 260] in
   let r615 = Sub (r613) :: r614 in
@@ -1226,17 +1226,17 @@ let recover =
   let r686 = [R 179] in
   let r687 = Sub (r40) :: r686 in
   let r688 = R 362 :: r687 in
-  let r689 = [R 304] in
+  let r689 = [R 307] in
   let r690 = [R 968] in
   let r691 = Sub (r93) :: r690 in
   let r692 = S (T T_COLON) :: r691 in
-  let r693 = [R 305] in
+  let r693 = [R 308] in
   let r694 = S (T T_RPAREN) :: r693 in
   let r695 = Sub (r692) :: r694 in
   let r696 = [R 970] in
   let r697 = [R 969] in
-  let r698 = [R 306] in
-  let r699 = [R 307] in
+  let r698 = [R 309] in
+  let r699 = [R 310] in
   let r700 = [R 781] in
   let r701 = [R 756] in
   let r702 = S (T T_RPAREN) :: r701 in
@@ -1441,17 +1441,17 @@ let recover =
   let r901 = [R 272] in
   let r902 = [R 620] in
   let r903 = Sub (r91) :: r902 in
-  let r904 = [R 293] in
+  let r904 = [R 296] in
   let r905 = R 362 :: r904 in
   let r906 = Sub (r903) :: r905 in
   let r907 = S (T T_COLON) :: r906 in
   let r908 = S (T T_LIDENT) :: r907 in
   let r909 = R 465 :: r908 in
-  let r910 = [R 295] in
+  let r910 = [R 298] in
   let r911 = Sub (r909) :: r910 in
   let r912 = [R 134] in
   let r913 = S (T T_RBRACE) :: r912 in
-  let r914 = [R 294] in
+  let r914 = [R 297] in
   let r915 = R 362 :: r914 in
   let r916 = S (T T_SEMI) :: r915 in
   let r917 = R 362 :: r916 in
@@ -1776,7 +1776,7 @@ let recover =
   let r1236 = Sub (r1234) :: r1235 in
   let r1237 = [R 55] in
   let r1238 = Sub (r1135) :: r1237 in
-  let r1239 = [R 303] in
+  let r1239 = [R 306] in
   let r1240 = [R 340] in
   let r1241 = R 368 :: r1240 in
   let r1242 = Sub (r271) :: r1241 in
@@ -2234,9 +2234,9 @@ let recover =
   | 137 -> One (R 288 :: r107)
   | 141 -> One (R 288 :: r109)
   | 259 -> One ([R 292])
-  | 1178 -> One ([R 296])
-  | 1179 -> One ([R 297])
-  | 1627 -> One ([R 302])
+  | 1178 -> One ([R 299])
+  | 1179 -> One ([R 300])
+  | 1627 -> One ([R 305])
   | 1088 -> One ([R 327])
   | 2120 -> One ([R 329])
   | 1707 -> One ([R 339])
