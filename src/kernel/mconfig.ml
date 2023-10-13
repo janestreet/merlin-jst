@@ -453,6 +453,8 @@ let ocaml_ignored_flags = [
   "-zero-alloc-check";
   "-checkmach-details-cutoff";
   "-use-cached-generic-functions";
+  "-flambda2-expert-shorten-symbol-names";
+  "-no-flambda2-expert-shorten-symbol-names";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
