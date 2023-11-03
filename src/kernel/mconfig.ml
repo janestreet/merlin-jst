@@ -450,7 +450,6 @@ let ocaml_ignored_flags = [
   "-no-ocamlcfg";
   "-regalloc-validate";
   "-no-regalloc-validate";
-  "-zero-alloc-check";
   "-checkmach-details-cutoff";
   "-use-cached-generic-functions";
   "-flambda2-expert-shorten-symbol-names";
@@ -511,6 +510,7 @@ let ocaml_ignored_parametrized_flags = [
   "-flambda2-inline-prim-cost";
   "-flambda2-inline-small-function-size";
   "-flambda2-inline-threshold";
+  "-zero-alloc-check";
   "-regalloc";
   "-regalloc-param";
   "-cached-generic-functions-path";
