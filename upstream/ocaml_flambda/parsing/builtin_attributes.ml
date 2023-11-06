@@ -481,9 +481,9 @@ let jkind ~legacy_immediate attrs =
      | Value -> check true
      | Immediate | Immediate64 ->
         check  (legacy_immediate
-             || Language_extension.(is_at_least Layouts Beta))
+             || Language_extension.(is_at_least Layouts Stable))
      | Any | Float64 ->
-        check Language_extension.(is_at_least Layouts Beta)
+        check Language_extension.(is_at_least Layouts Stable)
      | Void ->
         check Language_extension.(is_at_least Layouts Alpha)
 
@@ -586,7 +586,7 @@ let parse_attribute_with_ident_payload attr ~name ~f =
 let zero_alloc_attribute (attr : Parsetree.attribute)  =
   parse_attribute_with_ident_payload attr
     ~name:"zero_alloc" ~f:(function
-      | "check" -> Clflags.zero_alloc_check := true
+      | "check" -> Clflags.zero_alloc_check := Clflags.Annotations.Check_default
       | "all" ->
         Clflags.zero_alloc_check_assert_all := true
       | _ ->
