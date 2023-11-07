@@ -423,14 +423,12 @@ let update_loc lexbuf _file line absolute chars =
     pos_lnum = if absolute then line else pos.pos_lnum + line;
     pos_bol = pos.pos_cnum - chars;
   }
-;;
 
 (* Warn about Latin-1 characters used in idents *)
 
 let warn_latin1 lexbuf =
   Location.deprecated (Location.curr lexbuf)
     "ISO-Latin1 characters in identifiers"
-;;
 
 let float ~maybe_hash lit modifier =
   match maybe_hash with

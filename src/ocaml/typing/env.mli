@@ -59,6 +59,7 @@ type address =
 type t
 
 val empty: t
+<<<<<<< HEAD
 
 (* These environments are lazy so that they may depend on the enabled
    extensions, typically adjusted via command line flags.  If extensions are
@@ -68,6 +69,12 @@ val empty: t
 val initial_safe_string: t Lazy.t
 val initial_unsafe_string: t Lazy.t
 
+||||||| b01e78e20
+val initial_safe_string: t
+val initial_unsafe_string: t
+=======
+val initial: t
+>>>>>>> ups/501
 val diff: t -> t -> Ident.t list
 
 type type_descr_kind =
@@ -136,9 +143,8 @@ val normalize_module_path: Location.t option -> t -> Path.t -> Path.t
 val normalize_type_path: Location.t option -> t -> Path.t -> Path.t
 (* Normalize the prefix part of the type path *)
 
-val normalize_path_prefix: Location.t option -> t -> Path.t -> Path.t
-(* Normalize the prefix part of other kinds of paths
-   (value/modtype/etc) *)
+val normalize_value_path: Location.t option -> t -> Path.t -> Path.t
+(* Normalize the prefix part of the value path *)
 
 val normalize_modtype_path: t -> Path.t -> Path.t
 (* Normalize a module type path *)
@@ -321,6 +327,21 @@ val find_constructor_by_name:
 val find_label_by_name:
   Longident.t -> t -> label_description
 
+(** The [find_*_index] functions computes a "namespaced" De Bruijn index
+    of an identifier in a given environment. In other words, it returns how many
+    times an identifier has been shadowed by a more recent identifiers with the
+    same name in a given environment.
+    Those functions return [None] when the identifier is not bound in the
+    environment. This behavior is there to facilitate the detection of
+    inconsistent printing environment, but should disappear in the long term.
+*)
+val find_value_index:   Ident.t -> t -> int option
+val find_type_index:    Ident.t -> t -> int option
+val find_module_index:  Ident.t -> t -> int option
+val find_modtype_index: Ident.t -> t -> int option
+val find_class_index:   Ident.t -> t -> int option
+val find_cltype_index:  Ident.t -> t -> int option
+
 (* Check if a name is bound *)
 
 val bound_value: string -> t -> bool
@@ -346,8 +367,14 @@ val add_extension:
   check:bool -> rebind:bool -> Ident.t -> extension_constructor -> t -> t
 val add_module: ?arg:bool -> ?shape:Shape.t ->
   Ident.t -> module_presence -> module_type -> t -> t
+<<<<<<< HEAD
 val add_module_lazy: update_summary:bool ->
   Ident.t -> module_presence -> Subst.Lazy.module_type -> t -> t
+||||||| b01e78e20
+=======
+val add_module_lazy: update_summary:bool ->
+  Ident.t -> module_presence -> Subst.Lazy.modtype -> t -> t
+>>>>>>> ups/501
 val add_module_declaration: ?arg:bool -> ?shape:Shape.t -> check:bool ->
   Ident.t -> module_presence -> module_declaration -> t -> t
 val add_module_declaration_lazy: ?arg:bool -> update_summary:bool ->
@@ -617,5 +644,10 @@ val with_cmis : (unit -> 'a) -> 'a
 (* helper for merlin *)
 
 val add_merlin_extension_module: Ident.t -> module_type -> t -> t
+<<<<<<< HEAD
 val cleanup_functor_caches : stamp:int -> unit
 val scrape: (t -> module_type -> module_type) ref
+||||||| b01e78e20
+=======
+val cleanup_functor_caches : stamp:int -> unit
+>>>>>>> ups/501

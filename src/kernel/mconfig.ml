@@ -15,7 +15,6 @@ type ocaml = {
   recursive_types      : bool;
   strict_sequence      : bool;
   applicative_functors : bool;
-  unsafe_string        : bool;
   nopervasives         : bool;
   strict_formats       : bool;
   open_modules         : string list;
@@ -40,7 +39,6 @@ let dump_ocaml x = `Assoc [
     "recursive_types"      , `Bool x.recursive_types;
     "strict_sequence"      , `Bool x.strict_sequence;
     "applicative_functors" , `Bool x.applicative_functors;
-    "unsafe_string"        , `Bool x.unsafe_string;
     "nopervasives"         , `Bool x.nopervasives;
     "strict_formats"       , `Bool x.strict_formats;
     "open_modules"         , Json.list Json.string x.open_modules;
@@ -486,6 +484,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
+<<<<<<< HEAD
   "-error-style"; "-dump-dir" ;
 
   (* flambda-backend specific *)
@@ -515,6 +514,11 @@ let ocaml_ignored_parametrized_flags = [
   "-regalloc-param";
   "-cached-generic-functions-path";
   "-gdwarf-max-function-complexity";
+||||||| b01e78e20
+  "-error-style";
+=======
+  "-error-style"; "-dump-dir";
+>>>>>>> ups/501
 ]
 
 let ocaml_warnings_spec ~error =
@@ -603,18 +607,9 @@ let ocaml_flags = [
     " Add support for VM-scheduled threads library"
   );
   (
-    "-unsafe-string",
-    Marg.unit (fun ocaml -> {ocaml with unsafe_string = true}),
-    Printf.sprintf
-      " Make strings mutable (default: %B)"
-      (not Config.safe_string)
-  );
-  (
     "-safe-string",
-    Marg.unit (fun ocaml -> {ocaml with unsafe_string = false}),
-    Printf.sprintf
-      " Make strings immutable (default: %B)"
-      Config.safe_string
+    Marg.unit (fun ocaml -> ocaml),
+    " Default to true unconditionally since 5.00"
   );
   (
     "-nopervasives",
@@ -692,7 +687,6 @@ let initial = {
     recursive_types      = false;
     strict_sequence      = false;
     applicative_functors = true;
-    unsafe_string        = not Config.safe_string;
     nopervasives         = false;
     strict_formats       = false;
     open_modules         = [];

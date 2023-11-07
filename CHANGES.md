@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 merlin NEXT_VERSION
 ===================
 
@@ -121,9 +122,150 @@ Fri Feb 24 16:55:42 CEST 2023
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
 
+||||||| b01e78e20
+=======
+merlin 4.12
+===========
+Tue Sep 26 17:45:42 CEST 2023
+
+  + merlin binary
+    - Fix issue with let operators and tuples (#1684, fixes #1683, fixes
+      ocaml/ocaml-lsp#1182)
+    - Fix an issue causing Merlin locate queries to hang (#1686,
+      fixes ocaml/ocaml-lsp#1192)
+
+merlin 4.11
+===========
+Thu Sep 24 18:01:42 CEST 2023
+
+  + merlin binary
+    - Add support for OCaml 5.1
+    - Improve error messages for missing configuration reader (#1669)
+    - Fix regression causing crash when using ppxes under Windows (#1673)
+    - Fix confusion between aliased modules and module types (#1676,
+      fixes #1667)
+    - Ignore hidden branches when listing occurrences (#1677, fixes #1671)
+  + editor modes
+    - emacs: fix/improve keybindings (#1668, fixes #1386):
+      Unbind <kbd>C-c C-r</kbd> (to avoid shadowing `tuareg-eval-region`)
+      and bind <kbd>C-c C-v</kbd> instead to `merlin-error-check`;
+      rebind <kbd>C-c C-d</kbd> to `merlin-document`
+      and bind <kbd>C-c M-d</kbd> and <kbd>C-c |</kbd> instead to `merlin-destruct`;
+      bind <kbd>C-u C-c C-t</kbd> to `merlin-type-expr`.
+      See also <https://github.com/ocaml/merlin/issues/1386#issuecomment-1701567716>
+    - emacs: remove use of obsolete `defadvice` macro (#1675)
+
+merlin 4.10
+===========
+Thu Aug 24 17:17:42 CEST 2023
+
+  + merlin binary
+    - Constrain socket path buffer size to avoid build warnings (#1631)
+    - Handle concurrent server start (#1622)
+    - Omit module prefixes for constructors and record fields in the
+      `construct` command (#1618).  Prefixes are still produced when
+      warning 42 (disambiguated name) is active.
+    - Correctly invalidate PPX cache when pipeline ran partially (#1650,
+      fixes #1647)
+    - Prevent `short-path` from looping in some cases related to recursive type
+      definitions (#1645)
+    - Support parsing negative numbers in sexps (#1655)
+    - Fix construct not working with inline records (#1658)
+    - Improve behavior of `type-enclosing` on let/and operators (#1653)
+    - Fix occurrences of extension constructors (#1662)
+    - Improve node selection when ghosts are present (#1664, fixes #1660)
+  + editor modes
+    - emacs: call merlin-client-logger with "interrupted" if the
+      merlin binary itself is interrupted, not just the parsing of the
+      result (#1626).
+    - emacs: merlin-construct, with a prefix argument, now includes
+      local values in the completion options.  Alternatively, this
+      behavior can be enabled permanently by customizing
+      `merlin-construct-with-local-values` (#1644)
+    - emacs: add support for opam-switch-mode (#1654, fixes #1591).
+      See <https://github.com/ProofGeneral/opam-switch-mode>
+
+merlin 4.9
+==========
+unreleased
+
+  + merlin binary
+    - Preview support for OCaml 5.1-alpha1. Short path is temporary disabled and
+      inline records might not behave as expected.
+    - Allow monadic IO in dot protocol (#1581)
+    - Add a `scope` option to the `occurrences` command in preparation for
+      the upcoming `project-wide-occurrences` feature (#1596)
+    - Construct bool-typed holes as `false` instead of `true` in the
+      `construct` command, for consistency (#1599).
+    - Add a hook to configure system command for spawning ppxes when Merlin is
+      used as a library. (#1585)
+    - Implement an all-or-nothing cache for the PPX phase (#1584)
+    - Cleanup functors caches when backtracking, to avoid memory leaks
+      (#1609, fixes #1529 and ocaml-lsp#1032)
+    - Fix `construct` results ordering for sum types sand poly variants (#1603)
+    - Fix object method completion not working (#1606, fixes #1575)
+    - Improve context detection for package types (#1608, fixes #1607)
+    - Fix incorrect locations for string literals (#1574)
+    - Fixed an issue that caused `errors` to erroneously alert about missing
+      `cmi` files (#1577)
+    - Prevent destruct from crashing on closed variant types (#1602,
+      fixes #1601)
+    - Improve longident parsing (#1612, fixes #945)
+  + editor modes
+    - emacs: call the user's configured completion UI in
+      `merlin-construct` (#1598)
+  + test suite
+    - Add missing dependency to a test using ppxlib (#1583)
+    - Add tests for the new PPX phase cache (#1584)
+    - Add and update tests for `construct` ordering (#1603)
+
+merlin 4.8
+==========
+Fri Feb 24 16:55:42 CEST 2023
+
+  + merlin binary
+    - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
+      (#1554, fixes #1553)
+    - Upgrade Merlin from the RC2 to the stable 5.0.0 compiler release (#1559,
+      fixes #1558)
+    - Improve type-enclosing behaviour when used on records' labels (#1565,
+      fixes #1564)
+    - Restore compatibility with the compiler's command line by accepting the
+      `-safe-string` flag as a no-op instead of rejecting it (#1544, fixes
+      #1518)
+    - Traverse aliases when jumping to declaration. This matches
+      jump-to-definition's behavior (#1563)
+    - Improve locate's behavior in various ill-typed expressions (#1546, fixes
+      #1567 and partially #1543)
+    - Correctly traverse patterns when looking for docs in the typedtree (#1572)
+    - Get documentation when the declaration or definition is selected (#1542,
+      fixes #1540)
+    - On Windows, change to a harmless directory when launching server to avoid
+      locking down current directory (#1569, fixes #1474)
+  + editor modes
+    - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
+    - emacs: xref works from context menus; better highlighting of xref matches;
+      xref recognises operators and binding operators at the cursor position;
+      bad locations are filtered out (#1385, fixes #1410, @mattiase)
+  + test suite
+    - Add a test for incorrect alert defaults (#1559)
+    - Add multiple tests for locate over ill-typed expressions (#1546)
+    - Add non-regression tests for other fixes in this release
+
+merlin 4.7.1
+==========
+Thu Dec 13 11:49:42 CEST 2022
+
+  + merlin binary
+    - Restore compatibility with the compiler's command line by accepting
+      the `-safe-string` flag as a no-op instead of rejecting it. (#1544,
+      fixes #1518)
+    - Mark some C variables as unused to remove warnings (#1541, @antalsz)
+
+>>>>>>> ups/501
 merlin 4.7
 ==========
-Thu Nov 24 13:31:42 CEST 2022
+Thu Nov 24 17:49:42 CEST 2022
 
   + merlin binary
     - Replace custom "holes" AST nodes by extensions. This restores binary

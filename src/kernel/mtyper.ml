@@ -111,17 +111,38 @@ let type_implementation config caught parsetree =
     | Some (`Implementation items) -> compatible_prefix items parsetree
     | Some (`Interface _) | None -> ([], parsetree)
   in
+<<<<<<< HEAD
   let env', sg', snap', stamp', warn' = match prefix with
     | [] -> (env0, [], snap0, stamp0, Warnings.backup ())
+||||||| b01e78e20
+  let env', snap', warn' = match prefix with
+    | [] -> (env0, snap0, Warnings.backup ())
+=======
+  let env', snap', stamp', warn' = match prefix with
+    | [] -> (env0, snap0, stamp0, Warnings.backup ())
+>>>>>>> ups/501
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
+<<<<<<< HEAD
       (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_warnings)
+||||||| b01e78e20
+      (x.part_env, x.part_snapshot, x.part_warnings)
+=======
+      (x.part_env, x.part_snapshot, x.part_stamp, x.part_warnings)
+>>>>>>> ups/501
   in
   Btype.backtrack snap';
   Warnings.restore warn';
+<<<<<<< HEAD
   Env.cleanup_functor_caches ~stamp:stamp';
   let suffix = type_structure caught env' sg' parsetree in
+||||||| b01e78e20
+  let suffix = type_structure caught env' parsetree in
+=======
+  Env.cleanup_functor_caches ~stamp:stamp';
+  let suffix = type_structure caught env' parsetree in
+>>>>>>> ups/501
   return_and_cache
     (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix))
 
@@ -132,17 +153,38 @@ let type_interface config caught parsetree =
     | Some (`Interface items) -> compatible_prefix items parsetree
     | Some (`Implementation _) | None -> ([], parsetree)
   in
+<<<<<<< HEAD
   let env', sg', snap', stamp', warn' = match prefix with
     | [] -> (env0, [], snap0, stamp0, Warnings.backup ())
+||||||| b01e78e20
+  let env', snap', warn' = match prefix with
+    | [] -> (env0, snap0, Warnings.backup ())
+=======
+  let env', snap', stamp', warn' = match prefix with
+    | [] -> (env0, snap0, stamp0, Warnings.backup ())
+>>>>>>> ups/501
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
+<<<<<<< HEAD
       (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_warnings)
+||||||| b01e78e20
+      (x.part_env, x.part_snapshot, x.part_warnings)
+=======
+      (x.part_env, x.part_snapshot, x.part_stamp, x.part_warnings)
+>>>>>>> ups/501
   in
   Btype.backtrack snap';
   Warnings.restore warn';
+<<<<<<< HEAD
   Env.cleanup_functor_caches ~stamp:stamp';
   let suffix = type_signature caught env' sg' parsetree in
+||||||| b01e78e20
+  let suffix = type_signature caught env' parsetree in
+=======
+  Env.cleanup_functor_caches ~stamp:stamp';
+  let suffix = type_signature caught env' parsetree in
+>>>>>>> ups/501
   return_and_cache
     (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix))
 
@@ -154,7 +196,7 @@ let run config parsetree =
     Mocaml.flush_caches ();
     Local_store.reset ();
     Load_path.reset ();
-    Load_path.init load_path;
+    Load_path.(init ~auto_include:no_auto_include load_path);
   );
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->

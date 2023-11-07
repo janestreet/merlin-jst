@@ -8,31 +8,31 @@ buffers, and different runs for the same buffer:
   $ echo "let f x = x" | \
   > $MERLIN server dump -what browse -filename test.ml | \
   > sed 's:\\n:\n:g' | grep Tpat_var
-    Tpat_var \"f/273\"
-    Tpat_var \"x/275\"
+    Tpat_var \"f/275\"
+    Tpat_var \"x/277\"
 
   $ echo "let f x = let () = () in x" | \
   > $MERLIN server dump -what browse -filename test.ml | \
   > sed 's:\\n:\n:g' | grep Tpat_var
-    Tpat_var \"f/276\"
-    Tpat_var \"x/278\"
+    Tpat_var \"f/278\"
+    Tpat_var \"x/280\"
 
   $ echo "let f x = x" | \
   > $MERLIN server dump -what browse -filename other_test.ml | \
   > sed 's:\\n:\n:g' | grep Tpat_var
-    Tpat_var \"f/273\"
-    Tpat_var \"x/275\"
+    Tpat_var \"f/275\"
+    Tpat_var \"x/277\"
 
   $ echo "let f x = let () = () in x" | \
   > $MERLIN server dump -what browse -filename test.ml | \
   > sed 's:\\n:\n:g' | grep Tpat_var
-    Tpat_var \"f/276\"
-    Tpat_var \"x/278\"
+    Tpat_var \"f/278\"
+    Tpat_var \"x/280\"
 
   $ echo "let f x = x" | \
   > $MERLIN server dump -what browse -filename test.ml | \
   > sed 's:\\n:\n:g' | grep Tpat_var
-    Tpat_var \"f/279\"
-    Tpat_var \"x/281\"
+    Tpat_var \"f/281\"
+    Tpat_var \"x/283\"
 
   $ $MERLIN server stop-server
