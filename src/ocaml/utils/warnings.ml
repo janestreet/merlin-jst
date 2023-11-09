@@ -108,15 +108,9 @@ type t =
   | Missing_mli                             (* 70 *)
   | Unused_tmc_attribute                    (* 71 *)
   | Tmc_breaks_tailcall                     (* 72 *)
-<<<<<<< HEAD
+  | Generative_application_expects_unit     (* 73 *)
   | Probe_name_too_long of string           (* 190 *)
   | Unchecked_property_attribute of string  (* 199 *)
-;;
-||||||| b01e78e20
-;;
-=======
-  | Generative_application_expects_unit     (* 73 *)
->>>>>>> ups/501
 
 (* If you remove a warning, leave a hole in the numbering.  NEVER change
    the numbers of existing warnings.
@@ -197,27 +191,15 @@ let number = function
   | Missing_mli -> 70
   | Unused_tmc_attribute -> 71
   | Tmc_breaks_tailcall -> 72
-<<<<<<< HEAD
+  | Generative_application_expects_unit -> 73
   | Probe_name_too_long _ -> 190
   | Unchecked_property_attribute _ -> 199
-||||||| b01e78e20
-=======
-  | Generative_application_expects_unit -> 73
->>>>>>> ups/501
 ;;
 (* DO NOT REMOVE the ;; above: it is used by
    the testsuite/ests/warnings/mnemonics.mll test to determine where
    the  definition of the number function above ends *)
 
-<<<<<<< HEAD
 let last_warning_number = 199
-;;
-||||||| b01e78e20
-let last_warning_number = 72
-;;
-=======
-let last_warning_number = 73
->>>>>>> ups/501
 
 type description =
   { number : int;
@@ -549,18 +531,6 @@ let descriptions = [
   { number = 72;
     names = ["tmc-breaks-tailcall"];
     description = "A tail call is turned into a non-tail call \
-<<<<<<< HEAD
-                   by the @tail_mod_cons transformation." };
-  { number = 190;
-    names = ["probe-name-too-long"];
-    description = "Probe name must be at most 100 characters long." };
-  { number = 199;
-    names = ["unchecked-property-attribute"];
-    description = "A property of a function that was \
-                   optimized away cannot be checked." };
-||||||| b01e78e20
-                   by the @tail_mod_cons transformation." };
-=======
                    by the @tail_mod_cons transformation.";
     since = since 4 14 };
   { number = 73;
@@ -568,7 +538,13 @@ let descriptions = [
     description = "A generative functor is applied to an empty structure \
                    (struct end) rather than to ().";
     since = since 5 1 };
->>>>>>> ups/501
+  { number = 190;
+    names = ["probe-name-too-long"];
+    description = "Probe name must be at most 100 characters long." };
+  { number = 199;
+    names = ["unchecked-property-attribute"];
+    description = "A property of a function that was \
+                  optimized away cannot be checked." };
 ]
 
 let name_to_number =
@@ -910,24 +886,10 @@ let defaults_warn_error = "-a"
 let default_disabled_alerts = [ "unstable"; "unsynchronized_access" ]
 
 
-<<<<<<< HEAD
-let ref_manual_explanation () =
-  (* manual references are checked a posteriori by the manual
-     cross-reference consistency check in manual/tests*)
-  let chapter, section = 11, 5 in
-  Printf.sprintf "(See manual section %d.%d)" chapter section
-||||||| b01e78e20
-let ref_manual_explanation () =
-  (* manual references are checked a posteriori by the manual
-     cross-reference consistency check in manual/tests*)
-  let[@manual.ref "s:comp-warnings"] chapter, section = 11, 5 in
-  Printf.sprintf "(See manual section %d.%d)" chapter section
-=======
 let () = ignore @@ parse_options false defaults_w
 let () = ignore @@ parse_options true defaults_warn_error
 let () =
   List.iter (set_alert ~error:false ~enable:false) default_disabled_alerts
->>>>>>> ups/501
 
 let message = function
   | Comment_start ->
@@ -1189,7 +1151,9 @@ let message = function
        Please either mark the called function with the [@tail_mod_cons]\n\
        attribute, or mark this call with the [@tailcall false] attribute\n\
        to make its non-tailness explicit."
-<<<<<<< HEAD
+  | Generative_application_expects_unit ->
+      "A generative functor\n\
+       should be applied to '()'; using '(struct end)' is deprecated."
   | Probe_name_too_long name ->
       Printf.sprintf
         "This probe name is too long: `%s'. \
@@ -1200,12 +1164,6 @@ let message = function
       You can try to mark this function as [@inline never] \n\
       or move the attribute to the relevant callers of this function."
       property
-||||||| b01e78e20
-=======
-  | Generative_application_expects_unit ->
-      "A generative functor\n\
-       should be applied to '()'; using '(struct end)' is deprecated."
->>>>>>> ups/501
 ;;
 
 let nerrors = ref 0
