@@ -52,34 +52,6 @@ module TyVarEnv : sig
        type scheme (i.e. variables become Tvar rather than Tunivar) *)
 end
 
-module TyVarEnv : sig
-  (* this is just the subset of [TyVarEnv] that is needed outside
-     of [Typetexp]. See the ml file for more. *)
-
-  val reset : unit -> unit
-  (** removes all type variables from scope *)
-
-  val with_local_scope : (unit -> 'a) -> 'a
-  (** Evaluate in a narrowed type-variable scope *)
-
-  type poly_univars
-  val make_poly_univars : string list -> poly_univars
-    (** remember that a list of strings connotes univars; this must
-        always be paired with a [check_poly_univars]. *)
-
-  val check_poly_univars :
-     Env.t -> Location.t -> poly_univars -> type_expr list
-    (** Verify that the given univars are universally quantified,
-       and return the list of variables. The type in which the
-       univars are used must be generalised *)
-
-  val instance_poly_univars :
-     Env.t -> Location.t -> poly_univars -> type_expr list
-    (** Same as [check_poly_univars], but instantiates the resulting
-       type scheme (i.e. variables become Tvar rather than Tunivar) *)
-
-end
-
 val valid_tyvar_name : string -> bool
 
 val transl_simple_type:
