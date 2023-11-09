@@ -39,12 +39,8 @@ type mapper =
     expr: mapper -> expression -> expression;
     extension_constructor: mapper -> extension_constructor ->
       extension_constructor;
-<<<<<<< HEAD
     jkind_annotation: mapper -> const_jkind -> const_jkind;
-||||||| b01e78e20
-=======
     location: mapper -> Location.t -> Location.t;
->>>>>>> ups/501
     module_binding: mapper -> module_binding -> module_binding;
     module_coercion: mapper -> module_coercion -> module_coercion;
     module_declaration: mapper -> module_declaration -> module_declaration;

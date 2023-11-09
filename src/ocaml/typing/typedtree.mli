@@ -83,14 +83,8 @@ and pat_extra =
   | Tpat_unpack
         (** (module P)     { pat_desc  = Tpat_var "P"
                            ; pat_extra = (Tpat_unpack, _, _) :: ... }
-<<<<<<< HEAD
-            (module _)     { pat_desc  = Tpat_any
-                           ; pat_extra = (Tpat_unpack, _, _) :: ... }
-||||||| b01e78e20
-=======
             (module _)     { pat_desc  = Tpat_any
             ; pat_extra = (Tpat_unpack, _, _) :: ... }
->>>>>>> ups/501
          *)
 
 and 'k pattern_desc =
@@ -434,13 +428,7 @@ and 'k case =
     }
 
 and record_label_definition =
-<<<<<<< HEAD
-  | Kept of Types.type_expr * unique_use
-||||||| b01e78e20
-  | Kept of Types.type_expr
-=======
-  | Kept of Types.type_expr * mutable_flag
->>>>>>> ups/501
+  | Kept of Types.type_expr * unique_use * mutable_flag
   | Overridden of Longident.t loc * expression
 
 and binding_op =

@@ -83,16 +83,8 @@ end
 val valid_tyvar_name : string -> bool
 
 val transl_simple_type:
-<<<<<<< HEAD
         Env.t -> ?univars:TyVarEnv.poly_univars -> closed:bool -> Alloc.Const.t
         -> Parsetree.core_type -> Typedtree.core_type
-||||||| b01e78e20
-        Env.t -> ?univars:poly_univars -> bool -> Parsetree.core_type
-        -> Typedtree.core_type
-=======
-        Env.t -> ?univars:TyVarEnv.poly_univars -> closed:bool
-        -> Parsetree.core_type -> Typedtree.core_type
->>>>>>> ups/501
 val transl_simple_type_univars:
         Env.t -> Parsetree.core_type -> Typedtree.core_type
 val transl_simple_type_delayed
@@ -109,19 +101,11 @@ val transl_type_param:
 (* the Path.t above is of the type/class whose param we are processing;
    the level defaults to the current level *)
 
-<<<<<<< HEAD
 val get_type_param_jkind: Path.t -> Parsetree.core_type -> jkind
 val get_type_param_name: Parsetree.core_type -> string option
 
 val get_alloc_mode : Parsetree.core_type -> Alloc.Const.t
 
-||||||| b01e78e20
-type variable_context
-val narrow: unit -> variable_context
-val widen: variable_context -> unit
-
-=======
->>>>>>> ups/501
 exception Already_bound
 
 type value_loc =

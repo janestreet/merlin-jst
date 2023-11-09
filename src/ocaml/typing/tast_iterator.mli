@@ -39,12 +39,8 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
-<<<<<<< HEAD
     jkind_annotation: iterator -> const_jkind -> unit;
-||||||| b01e78e20
-=======
     location: iterator -> Location.t -> unit;
->>>>>>> ups/501
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
     module_declaration: iterator -> module_declaration -> unit;

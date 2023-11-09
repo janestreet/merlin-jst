@@ -505,26 +505,9 @@ and ('lbl, 'cstr) type_kind =
   | Type_variant of 'cstr list * variant_representation
   | Type_open
 
-<<<<<<< HEAD
 (* CR layouts: after removing the void translation from lambda, we could get rid of
    this src_index / runtime_tag distinction.  But I am leaving it in because it
    may not be long before we need it again.
-||||||| b01e78e20
-and record_representation =
-    Record_regular                      (* All fields are boxed / tagged *)
-  | Record_float                        (* All fields are floats *)
-  | Record_unboxed of bool    (* Unboxed single-field record, inlined or not *)
-  | Record_inlined of int               (* Inlined record *)
-  | Record_extension of Path.t          (* Inlined record under extension *)
-=======
-and record_representation =
-    Record_regular                      (* All fields are boxed / tagged *)
-  | Record_float                        (* All fields are floats *)
-  | Record_unboxed of bool    (* Unboxed single-field record, inlined or not *)
-  | Record_inlined of int               (* Inlined record *)
-  | Record_extension of Path.t          (* Inlined record under extension *)
-                             (* The argument is the path of the extension *)
->>>>>>> ups/501
 
    In particular, lambda will need to do something about computing offsets for
    block projections when not everything is one word wide, whether that's
@@ -536,6 +519,7 @@ and record_representation =
 and tag = Ordinary of {src_index: int;  (* Unique name (per type) *)
                        runtime_tag: int}    (* The runtime tag *)
         | Extension of Path.t * Jkind.t array
+                      (* The argument is the path of the extension *)
 
 and abstract_reason =
     Abstract_def
