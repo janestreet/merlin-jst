@@ -358,16 +358,8 @@ let of_expression_desc loc = function
     list_fold of_case cs
   | Texp_tuple (es,_) | Texp_construct (_,_,es,_) | Texp_array (_,es,_) ->
     list_fold of_expression es
-<<<<<<< HEAD
   | Texp_variant (_,Some (e,_))
-  | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
-||||||| b01e78e20
-  | Texp_variant (_,Some e)
-  | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
-=======
-  | Texp_variant (_,Some e)
   | Texp_assert (e, _) | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
->>>>>>> ups/501
     of_expression e
   | Texp_record { fields; extended_expression } ->
     option_fold of_expression extended_expression **

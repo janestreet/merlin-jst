@@ -580,31 +580,6 @@ type type_descriptions = type_descr_kind
 
 let in_signature_flag = 0x01
 
-<<<<<<< HEAD
-let stamped_changelog =
-  s_table Stamped_hashtable.create_changelog ()
-
-let stamped_add table path value =
-  let rec path_stamp = function
-    | Pident id -> Ident.stamp id
-    | Pdot (t, _) -> path_stamp t
-    | Papply (t1, t2) -> Int.max (path_stamp t1) (path_stamp t2)
-  in
-  let stamp = path_stamp path in
-  let stamp = if stamp = 0 then None else Some stamp in
-  Stamped_hashtable.add table ?stamp path value
-
-let stamped_mem table path =
-  Stamped_hashtable.mem table path
-
-let stamped_find table path =
-  Stamped_hashtable.find table path
-
-let stamped_create n =
-  Stamped_hashtable.create !stamped_changelog n
-
-||||||| b01e78e20
-=======
 let stamped_changelog =
   s_table Stamped_hashtable.create_changelog ()
 
@@ -628,7 +603,6 @@ let stamped_find table path =
 let stamped_create n =
   Stamped_hashtable.create !stamped_changelog n
 
->>>>>>> ups/501
 type t = {
   values: (value_lock, value_entry, value_data) IdTbl.t;
   constrs: constructor_data TycompTbl.t;
@@ -876,17 +850,11 @@ let is_ext cda =
 
 let is_local_ext cda =
   match cda.cda_description with
-<<<<<<< HEAD
-  | {cstr_tag = Extension (p,_)} -> is_ident p
-||||||| b01e78e20
-  | {cstr_tag = Cstr_extension(p, _)} -> is_ident p
-=======
-  | {cstr_tag = Cstr_extension(p, _)} -> begin
+  | {cstr_tag = Extension(p, _)} -> begin
       match p with
       | Pident _ -> true
       | Pdot _ | Papply _ | Pextra_ty _ -> false
   end
->>>>>>> ups/501
   | _ -> false
 
 let diff env1 env2 =
@@ -1232,16 +1200,8 @@ let find_module path env =
       Subst.Lazy.force_module_decl data.mda_declaration
   | Papply(p1, p2) ->
       let fc = find_functor_components p1 env in
-<<<<<<< HEAD
       md (modtype_of_functor_appl fc p1 p2)
-||||||| b01e78e20
-      if alias then md (fc.fcomp_res)
-      else md (modtype_of_functor_appl fc p1 p2)
-=======
-      if alias then md (fc.fcomp_res)
-      else md (modtype_of_functor_appl fc p1 p2)
   | Pextra_ty _ -> raise Not_found
->>>>>>> ups/501
 
 let find_module_lazy ~alias path env =
   match path with
@@ -1302,67 +1262,12 @@ let type_of_cstr path = function
       end
   | _ -> assert false
 
-<<<<<<< HEAD
-let find_type_data path env =
-  match Path.constructor_typath path with
-  | Regular p -> begin
-      match Path.Map.find p env.local_constraints with
-      | decl ->
-          {
-            tda_declaration = decl;
-            tda_descriptions = Type_abstract Abstract_def;
-            tda_shape = Shape.leaf decl.type_uid;
-          }
-      | exception Not_found -> find_type_full p env
-    end
-  | Cstr (ty_path, s) ->
-      (* This case corresponds to an inlined record *)
-      let tda =
-        try find_type_full ty_path env
-        with Not_found -> assert false
-      in
-      let cstr =
-        begin match tda.tda_descriptions with
-        | Type_variant (cstrs, _) -> begin
-            try
-              List.find (fun cstr -> cstr.cstr_name = s) cstrs
-            with Not_found -> assert false
-          end
-        | Type_record _ | Type_abstract _ | Type_open -> assert false
-||||||| b01e78e20
-let find_type_data path env =
-  match Path.constructor_typath path with
-  | Regular p -> begin
-      match Path.Map.find p env.local_constraints with
-      | decl ->
-          {
-            tda_declaration = decl;
-            tda_descriptions = Type_abstract;
-            tda_shape = Shape.leaf decl.type_uid;
-          }
-      | exception Not_found -> find_type_full p env
-    end
-  | Cstr (ty_path, s) ->
-      (* This case corresponds to an inlined record *)
-      let tda =
-        try find_type_full ty_path env
-        with Not_found -> assert false
-      in
-      let cstr =
-        begin match tda.tda_descriptions with
-        | Type_variant (cstrs, _) -> begin
-            try
-              List.find (fun cstr -> cstr.cstr_name = s) cstrs
-            with Not_found -> assert false
-          end
-        | Type_record _ | Type_abstract | Type_open -> assert false
-=======
 let rec find_type_data path env =
   match Path.Map.find path env.local_constraints with
   | decl ->
     {
       tda_declaration = decl;
-      tda_descriptions = Type_abstract;
+      tda_descriptions = Type_abstract Abstract_def;
       tda_shape = Shape.leaf decl.type_uid;
     }
   | exception Not_found -> begin
@@ -1380,7 +1285,6 @@ let rec find_type_data path env =
           | Pext_ty ->
               let cda = find_extension_full p env in
               type_of_cstr path cda.cda_description
->>>>>>> ups/501
         end
     end
 and find_cstr path name env =
@@ -1388,7 +1292,7 @@ and find_cstr path name env =
   match tda.tda_descriptions with
   | Type_variant (cstrs, _) ->
       List.find (fun cstr -> cstr.cstr_name = name) cstrs
-  | Type_record _ | Type_abstract | Type_open -> raise Not_found
+  | Type_record _ | Type_abstract _ | Type_open -> raise Not_found
 
 
 
@@ -2138,25 +2042,11 @@ let rec components_of_module_maker
               Named (param, force_modtype (modtype scoping sub ty_arg)));
           fcomp_res = force_modtype (modtype scoping sub ty_res);
           fcomp_shape = cm_shape;
-<<<<<<< HEAD
           fcomp_cache = stamped_create 17;
           fcomp_subst_cache = stamped_create 17 })
   | Mty_ident _ | Mty_strengthen _ -> Error No_components_abstract
   | Mty_alias p -> Error (No_components_alias p)
   | Mty_for_hole -> Error No_components_abstract
-||||||| b01e78e20
-          fcomp_cache = Hashtbl.create 17;
-          fcomp_subst_cache = Hashtbl.create 17 })
-  | MtyL_ident _ -> Error No_components_abstract
-  | MtyL_alias p -> Error (No_components_alias p)
-  | MtyL_for_hole -> Error No_components_abstract
-=======
-          fcomp_cache = stamped_create 17;
-          fcomp_subst_cache = stamped_create 17 })
-  | MtyL_ident _ -> Error No_components_abstract
-  | MtyL_alias p -> Error (No_components_alias p)
-  | MtyL_for_hole -> Error No_components_abstract
->>>>>>> ups/501
 
 (* Insertion of bindings by identifier + path *)
 
@@ -2229,16 +2119,10 @@ and store_constructor ~check type_decl type_id cstr_id cstr env =
                      (Warnings.Unused_constructor(name, complaint)))
               (constructor_usage_complaint ~rebind:false priv used));
     end;
-<<<<<<< HEAD
-  end;
+  end);
   Builtin_attributes.mark_alerts_used cstr.cstr_attributes;
   Builtin_attributes.mark_warn_on_literal_pattern_used
     cstr.cstr_attributes;
-||||||| b01e78e20
-  end;
-=======
-  end);
->>>>>>> ups/501
   let cda_shape = Shape.leaf cstr.cstr_uid in
   { env with
     constrs =
@@ -2270,14 +2154,8 @@ and store_label ~check type_decl type_id lbl_id lbl env =
                    Location.prerr_warning
                      loc (Warnings.Unused_field(name, complaint)))
               (label_usage_complaint priv mut used))
-<<<<<<< HEAD
-  end;
-  Builtin_attributes.mark_alerts_used lbl.lbl_attributes;
-||||||| b01e78e20
-  end;
-=======
   end);
->>>>>>> ups/501
+  Builtin_attributes.mark_alerts_used lbl.lbl_attributes;
   { env with
     labels = TycompTbl.add lbl_id lbl env.labels;
   }
@@ -2351,14 +2229,10 @@ and store_extension ~check ~rebind id addr ext shape env =
       cda_address = Some addr;
       cda_shape = shape }
   in
-<<<<<<< HEAD
   Builtin_attributes.mark_alerts_used ext.ext_attributes;
   Builtin_attributes.mark_alerts_used cstr.cstr_attributes;
   Builtin_attributes.mark_warn_on_literal_pattern_used cstr.cstr_attributes;
-||||||| b01e78e20
-=======
   Builtin_attributes.warning_scope ext.ext_attributes (fun () ->
->>>>>>> ups/501
   if check && not loc.Location.loc_ghost &&
     Warnings.is_active (Warnings.Unused_extension ("", false, Unused))
   then begin
@@ -2634,77 +2508,12 @@ let add_unboxed_lock env =
 
 (* Insertion of all components of a signature *)
 
-<<<<<<< HEAD
 let proj_shape map mod_shape item =
   match mod_shape with
   | None -> map, None
   | Some mod_shape ->
       let shape = Shape.proj mod_shape item in
       Shape.Map.add map item shape, Some shape
-||||||| b01e78e20
-let add_item (map, mod_shape) comp env =
-  let proj_shape item =
-    match mod_shape with
-    | None -> map, None
-    | Some mod_shape ->
-        let shape = Shape.proj mod_shape item in
-        Shape.Map.add map item shape, Some shape
-  in
-  match comp with
-  | Sig_value(id, decl, _) ->
-      let map, shape = proj_shape (Shape.Item.value id) in
-      map, add_value ?shape id decl env
-  | Sig_type(id, decl, _, _) ->
-      let map, shape = proj_shape (Shape.Item.type_ id) in
-      map, add_type ~check:false ~predef:false ?shape id decl env
-  | Sig_typext(id, ext, _, _) ->
-      let map, shape = proj_shape (Shape.Item.extension_constructor id) in
-      map, add_extension ~check:false ?shape ~rebind:false id ext env
-  | Sig_module(id, presence, md, _, _) ->
-      let map, shape = proj_shape (Shape.Item.module_ id) in
-      map, add_module_declaration ~check:false ?shape id presence md env
-  | Sig_modtype(id, decl, _)  ->
-      let map, shape = proj_shape (Shape.Item.module_type id) in
-      map, add_modtype ?shape id decl env
-  | Sig_class(id, decl, _, _) ->
-      let map, shape = proj_shape (Shape.Item.class_ id) in
-      map, add_class ?shape id decl env
-  | Sig_class_type(id, decl, _, _) ->
-      let map, shape = proj_shape (Shape.Item.class_type id) in
-      map, add_cltype ?shape id decl env
-=======
-let add_item (map, mod_shape) comp env =
-  let proj_shape item =
-    match mod_shape with
-    | None -> map, None
-    | Some mod_shape ->
-        let shape = Shape.proj mod_shape item in
-        Shape.Map.add map item shape, Some shape
-  in
-  match comp with
-  | Sig_value(id, decl, _) ->
-      let map, shape = proj_shape (Shape.Item.value id) in
-      map, add_value ?shape id decl env
-  | Sig_type(id, decl, _, _) ->
-      let map, shape = proj_shape (Shape.Item.type_ id) in
-      map,
-      add_type ~long_path:false ~check:false ~predef:false ?shape id decl env
-  | Sig_typext(id, ext, _, _) ->
-      let map, shape = proj_shape (Shape.Item.extension_constructor id) in
-      map, add_extension ~check:false ?shape ~rebind:false id ext env
-  | Sig_module(id, presence, md, _, _) ->
-      let map, shape = proj_shape (Shape.Item.module_ id) in
-      map, add_module_declaration ~check:false ?shape id presence md env
-  | Sig_modtype(id, decl, _)  ->
-      let map, shape = proj_shape (Shape.Item.module_type id) in
-      map, add_modtype ?shape id decl env
-  | Sig_class(id, decl, _, _) ->
-      let map, shape = proj_shape (Shape.Item.class_ id) in
-      map, add_class ?shape id decl env
-  | Sig_class_type(id, decl, _, _) ->
-      let map, shape = proj_shape (Shape.Item.class_type id) in
-      map, add_cltype ?shape id decl env
->>>>>>> ups/501
 
 module Add_signature(T : Types.Wrapped)(M : sig
   val add_value: ?shape:Shape.t -> Ident.t -> T.value_description -> t -> t
@@ -3043,16 +2852,8 @@ let save_signature_with_imports ~alerts sg modname filename imports =
   save_signature_with_transform with_imports
     ~alerts sg modname filename
 
-<<<<<<< HEAD
 (* Make the initial environment, without language extensions *)
-let (initial_safe_string, initial_unsafe_string) =
-||||||| b01e78e20
-(* Make the initial environment *)
-let (initial_safe_string, initial_unsafe_string) =
-=======
-(* Make the initial environment *)
 let initial =
->>>>>>> ups/501
   Predef.build_initial_env
     (add_type ~check:false ~predef:true ~long_path:false)
     (add_extension ~check:false ~rebind:false)
@@ -3062,7 +2863,6 @@ let add_type_long_path ~check id info env =
   add_type ~check ~predef:false ~long_path:true id info env
 
 let add_type ~check id info env =
-<<<<<<< HEAD
   add_type ~check ~predef:false ~long_path:false id info env
 
 let add_language_extension_types env =
@@ -3081,11 +2881,6 @@ let add_language_extension_types env =
 *)
 let initial_safe_string = add_language_extension_types initial_safe_string
 let initial_unsafe_string = add_language_extension_types initial_unsafe_string
-||||||| b01e78e20
-  add_type ~check ~predef:false id info env
-=======
-  add_type ~check ~predef:false ~long_path:false id info env
->>>>>>> ups/501
 
 (* Tracking usage *)
 
@@ -3639,13 +3434,7 @@ let lookup_all_dot_constructors ~errors ~use ~loc usage l s env =
   | Longident.Lident "*predef*" ->
       (* Hack to support compilation of default arguments *)
       lookup_all_ident_constructors
-<<<<<<< HEAD
-        ~errors ~use ~loc usage s (Lazy.force initial_safe_string)
-||||||| b01e78e20
-        ~errors ~use ~loc usage s initial_safe_string
-=======
-        ~errors ~use ~loc usage s initial
->>>>>>> ups/501
+        ~errors ~use ~loc usage s (Lazy.force initial)
   | _ ->
       let (_, comps) = lookup_structure_components ~errors ~use ~loc l env in
       match NameMap.find s comps.comp_constrs with

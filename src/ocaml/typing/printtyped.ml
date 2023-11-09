@@ -169,16 +169,8 @@ let typevar_layout' ppf (v, l) =
 
 
 let typevars ppf vs =
-<<<<<<< HEAD
   List.iter (typevar_jkind ~print_quote:true ppf) vs
-;;
-||||||| b01e78e20
-  List.iter (fun x -> fprintf ppf " %a" Pprintast.tyvar x.txt) vs
-;;
-=======
-  List.iter (fun x -> fprintf ppf " %a" Pprintast.tyvar x.txt) vs
 
->>>>>>> ups/501
 
 let jkind_array i ppf jkinds =
   array (i+1) (fun _ ppf l -> fprintf ppf "%a;@ " Jkind.format l)

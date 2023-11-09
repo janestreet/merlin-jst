@@ -183,23 +183,13 @@ val new_local_type:
         ?loc:Location.t -> ?manifest_and_scope:(type_expr * int) ->
         Jkind.t -> type_declaration
 val existential_name: constructor_description -> type_expr -> string
-<<<<<<< HEAD
-val instance_constructor:
-        ?in_pattern:Env.t ref * int ->
-        constructor_description -> (type_expr * global_flag) list * type_expr * type_expr list
-||||||| b01e78e20
-val instance_constructor:
-        ?in_pattern:Env.t ref * int ->
-        constructor_description -> type_expr list * type_expr * type_expr list
-=======
 
 type existential_treatment =
   | Keep_existentials_flexible
   | Make_existentials_abstract of { env: Env.t ref; scope: int }
 
 val instance_constructor: existential_treatment ->
-        constructor_description -> type_expr list * type_expr * type_expr list
->>>>>>> ups/501
+        constructor_description -> (type_expr * global_flag) list * type_expr * type_expr list
         (* Same, for a constructor. Also returns existentials. *)
 val instance_parameterized_type:
         ?keep_names:bool ->
@@ -477,35 +467,16 @@ val nondep_cltype_declaration:
 val is_contractive: Env.t -> Path.t -> bool
 val normalize_type: type_expr -> unit
 
-<<<<<<< HEAD
 val remove_mode_and_jkind_variables: type_expr -> unit
         (* Ensure mode and jkind variables are fully determined *)
 
-val nongen_schema: Env.t -> type_expr -> bool
-        (* Check whether the given type scheme contains no non-generic
-           type variables, and ensure mode variables are fully determined *)
-||||||| b01e78e20
-val nongen_schema: Env.t -> type_expr -> bool
-        (* Check whether the given type scheme contains no non-generic
-           type variables *)
-=======
 val nongen_vars_in_schema: Env.t -> type_expr -> Btype.TypeSet.t option
-        (* Return any non-generic variables in the type scheme *)
->>>>>>> ups/501
+        (* Return any non-generic variables in the type scheme,
+           and ensure mode variables are fully determined *)
 
-<<<<<<< HEAD
-val nongen_class_declaration: class_declaration -> bool
-        (* Check whether the given class type contains no non-generic
-           type variables, and ensures mode variables are fully determined.
-           Uses the empty environment.  *)
-||||||| b01e78e20
-val nongen_class_declaration: class_declaration -> bool
-        (* Check whether the given class type contains no non-generic
-           type variables. Uses the empty environment.  *)
-=======
 val nongen_vars_in_class_declaration:class_declaration -> Btype.TypeSet.t option
-        (* Return any non-generic variables in the class type.
-           Uses the empty environment.  *)
+        (* Return any non-generic variables in the class type, and ensures mode
+           variables are fully determined.  Uses the empty environment.  *)
 
 type variable_kind = Row_variable | Type_variable
 type closed_class_failure = {
@@ -513,7 +484,6 @@ type closed_class_failure = {
   meth: string;
   meth_ty: type_expr;
 }
->>>>>>> ups/501
 
 val free_variables: ?env:Env.t -> type_expr -> type_expr list
         (* If env present, then check for incomplete definitions too;
@@ -546,7 +516,6 @@ val package_subtype :
 
 (* Raises [Incompatible] *)
 val mcomp : Env.t -> type_expr -> type_expr -> unit
-<<<<<<< HEAD
 
 val get_unboxed_type_representation :
   Env.t -> type_expr -> (type_expr, type_expr) result
@@ -606,7 +575,3 @@ val mode_cross : Env.t -> type_expr -> bool
 type global_state
 val global_state : global_state
 val print_global_state : Format.formatter -> global_state -> unit
-||||||| b01e78e20
-
-=======
->>>>>>> ups/501

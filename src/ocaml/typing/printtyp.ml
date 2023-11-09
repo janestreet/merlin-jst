@@ -478,7 +478,6 @@ let rewrite_double_underscore_paths env p =
   else
     rewrite_double_underscore_paths env p
 
-<<<<<<< HEAD
 let rec rewrite_double_underscore_longidents env (l : Longident.t) =
   match l with
   | Ldot (l, s) ->
@@ -498,15 +497,10 @@ let rec rewrite_double_underscore_longidents env (l : Longident.t) =
           else
           l
 
-let rec tree_of_path namespace = function
-||||||| b01e78e20
-let rec tree_of_path namespace = function
-=======
 let rec tree_of_path ?(disambiguation=true) namespace p =
   let tree_of_path namespace p = tree_of_path ~disambiguation namespace p in
   let namespace = if disambiguation then namespace else None in
   match p with
->>>>>>> ups/501
   | Pident id ->
       Oide_ident (ident_name namespace id)
   | Pdot(_, s) as path when non_shadowed_stdlib namespace path ->
@@ -1145,7 +1139,6 @@ let add_type_to_preparation = prepare_type
 (* Disabled in classic mode when printing an unification error *)
 let print_labels = ref true
 
-<<<<<<< HEAD
 (* returns None for [value], according to (C2.1) from
    Note [When to print jkind annotations] *)
 let out_jkind_option_of_jkind jkind =
@@ -1179,8 +1172,6 @@ let tree_of_mode mode =
   in
   {oam_locality; oam_uniqueness; oam_linearity}
 
-||||||| b01e78e20
-=======
 let alias_nongen_row mode px ty =
     match get_desc ty with
     | Tvariant _ | Tobject _ ->
@@ -1188,7 +1179,6 @@ let alias_nongen_row mode px ty =
           add_alias_proxy px
     | _ -> ()
 
->>>>>>> ups/501
 let rec tree_of_typexp mode ty =
   let px = proxy ty in
   if List.memq px !printed_aliases && not (List.memq px !delayed) then
@@ -1201,15 +1191,7 @@ let rec tree_of_typexp mode ty =
     match tty.desc with
     | Tvar _ ->
         let non_gen = is_non_gen mode ty in
-<<<<<<< HEAD
-        let name_gen = if non_gen then Names.new_weak_name ty else Names.new_name in
-||||||| b01e78e20
-        let name_gen =
-          if non_gen then Names.new_weak_name ty else Names.new_name
-        in
-=======
         let name_gen = Names.new_var_name ~non_gen ty in
->>>>>>> ups/501
         Otyp_var (non_gen, Names.name_of_type name_gen tty)
     | Tarrow ((l, marg, mret), ty1, ty2, _) ->
         let lab =
@@ -1630,19 +1612,12 @@ let tree_of_type_decl id decl =
             tree_of_typexp Type ty, decl.type_private, false
         end
     | Type_variant (cstrs, rep) ->
-<<<<<<< HEAD
         let unboxed =
           match rep with
           | Variant_unboxed -> true
           | Variant_boxed _ | Variant_extensible -> false
         in
-        tree_of_manifest (Otyp_sum (List.map tree_of_constructor cstrs)),
-||||||| b01e78e20
-        tree_of_manifest (Otyp_sum (List.map tree_of_constructor cstrs)),
-=======
-        tree_of_manifest
-          (Otyp_sum (List.map tree_of_constructor_in_decl cstrs)),
->>>>>>> ups/501
+        tree_of_manifest (Otyp_sum (List.map tree_of_constructor_in_decl cstrs)),
         decl.type_private,
         unboxed
     | Type_record(lbls, rep) ->
@@ -1679,74 +1654,12 @@ let tree_of_type_decl id decl =
       otype_unboxed = unboxed;
       otype_cstrs = constraints }
 
-<<<<<<< HEAD
-and tree_of_constructor_arguments = function
-  | Cstr_tuple l -> List.map tree_of_typ_gf l
-  | Cstr_record l -> [ Otyp_record (List.map tree_of_label l), Ogf_unrestricted ]
-
-and tree_of_constructor_args_and_ret_type args ret_type =
-  match ret_type with
-  | None -> (tree_of_constructor_arguments args, None)
-  | Some res ->
-      Names.with_local_names (fun () ->
-        let out_ret = tree_of_typexp Type res in
-        let out_args = tree_of_constructor_arguments args in
-        let qtvs = extract_qtvs (res :: tys_of_constr_args args) in
-        (out_args, Some (qtvs, out_ret)))
-||||||| b01e78e20
-and tree_of_constructor_arguments = function
-  | Cstr_tuple l -> tree_of_typlist Type l
-  | Cstr_record l -> [ Otyp_record (List.map tree_of_label l) ]
-=======
 let add_type_decl_to_preparation id decl =
    ignore @@ prepare_decl id decl
->>>>>>> ups/501
 
-<<<<<<< HEAD
-and tree_of_constructor cd =
-  let name = Ident.name cd.cd_id in
-  let args, ret = tree_of_constructor_args_and_ret_type cd.cd_args cd.cd_res in
-  { ocstr_name = name;
-    ocstr_args = args;
-    ocstr_return_type = ret
-  }
-||||||| b01e78e20
-and tree_of_constructor cd =
-  let name = Ident.name cd.cd_id in
-  let arg () = tree_of_constructor_arguments cd.cd_args in
-  match cd.cd_res with
-  | None -> {
-      ocstr_name = name;
-      ocstr_args = arg ();
-      ocstr_return_type = None;
-    }
-  | Some res ->
-      Names.with_local_names (fun () ->
-        let ret = tree_of_typexp Type res in
-        let args = arg () in
-        {
-          ocstr_name = name;
-          ocstr_args = args;
-          ocstr_return_type = Some ret;
-        })
-=======
 let tree_of_prepared_type_decl id decl =
   tree_of_type_decl id decl
->>>>>>> ups/501
 
-<<<<<<< HEAD
-and tree_of_label l =
-  let gom =
-    match l.ld_mutable, l.ld_global with
-    | Mutable, _ -> Ogom_mutable
-    | Immutable, Global -> Ogom_global
-    | Immutable, Unrestricted -> Ogom_immutable
-  in
-  (Ident.name l.ld_id, gom, tree_of_typexp Type l.ld_type)
-||||||| b01e78e20
-and tree_of_label l =
-  (Ident.name l.ld_id, l.ld_mutable = Mutable, tree_of_typexp Type l.ld_type)
-=======
 let tree_of_type_decl id decl =
   reset_except_context();
   tree_of_type_decl id decl
@@ -1757,20 +1670,11 @@ let add_constructor_to_preparation c =
 
 let prepared_constructor ppf c =
   !Oprint.out_constr ppf (tree_of_single_constructor c)
->>>>>>> ups/501
 
 let constructor ppf c =
   reset_except_context ();
-<<<<<<< HEAD
-  prepare_type_constructor_arguments c.cd_args;
-  Option.iter prepare_type c.cd_res;
-  !Oprint.out_constr ppf (tree_of_constructor c)
-||||||| b01e78e20
-  !Oprint.out_constr ppf (tree_of_constructor c)
-=======
   add_constructor_to_preparation c;
   prepared_constructor ppf c
->>>>>>> ups/501
 
 let label ppf l =
   reset_except_context ();
@@ -1799,26 +1703,6 @@ let constructor_arguments ppf a =
 
 (* Print an extension declaration *)
 
-<<<<<<< HEAD
-let tree_of_extension_constructor id ext es =
-  reset_except_context ();
-  let type_path = best_type_path_simple ext.ext_type_path in
-  let ty_name = Path.name type_path in
-||||||| b01e78e20
-let extension_constructor_args_and_ret_type_subtree ext_args ext_ret_type =
-  match ext_ret_type with
-  | None -> (tree_of_constructor_arguments ext_args, None)
-  | Some res ->
-      Names.with_local_names (fun () ->
-        let ret = tree_of_typexp Type res in
-        let args = tree_of_constructor_arguments ext_args in
-        (args, Some ret))
-
-let tree_of_extension_constructor id ext es =
-  reset_except_context ();
-  let type_path = best_type_path_simple ext.ext_type_path in
-  let ty_name = Path.name type_path in
-=======
 let extension_constructor_args_and_ret_type_subtree ext_args ext_ret_type =
   let ret = Option.map (tree_of_typexp Type) ext_ret_type in
   let args = tree_of_constructor_arguments ext_args in
@@ -1844,7 +1728,6 @@ type 'a t = X of 'a
 ]} *)
 
 let add_extension_constructor_to_preparation ext =
->>>>>>> ups/501
   let ty_params = filter_params ext.ext_type_params in
   List.iter add_alias ty_params;
   List.iter prepare_type ty_params;
@@ -2320,7 +2203,6 @@ and tree_of_signature ?abbrev = function
 
 and tree_of_signature_rec ?abbrev ?max_items env' sg =
   let structured = List.of_seq (Signature_group.seq sg) in
-<<<<<<< HEAD
   (* Don't descent into more than 'max_items' (if set) elements to save time. *)
   let collect_trees_of_rec_group max_items group =
     match max_items with
@@ -2328,8 +2210,7 @@ and tree_of_signature_rec ?abbrev ?max_items env' sg =
     | Some _ | None ->
         let env = !printing_env in
         let env', group_trees =
-          Naming_context.with_ctx
-            (fun () -> trees_of_recursive_sigitem_group ?abbrev env group)
+            trees_of_recursive_sigitem_group ?abbrev env group
         in
         set_printing_env env';
         let max_items, group_trees = match max_items with
@@ -2345,24 +2226,6 @@ and tree_of_signature_rec ?abbrev ?max_items env' sg =
         in
         max_items, (env, group_trees)
   in
-||||||| b01e78e20
-  let collect_trees_of_rec_group group =
-    let env = !printing_env in
-    let env', group_trees =
-      Naming_context.with_ctx
-        (fun () -> trees_of_recursive_sigitem_group env group)
-    in
-    set_printing_env env';
-    (env, group_trees) in
-=======
-  let collect_trees_of_rec_group group =
-    let env = !printing_env in
-    let env', group_trees =
-       trees_of_recursive_sigitem_group env group
-    in
-    set_printing_env env';
-    (env, group_trees) in
->>>>>>> ups/501
   set_printing_env env';
   snd (List.fold_left_map collect_trees_of_rec_group max_items structured)
 
@@ -3081,11 +2944,10 @@ let report_ambiguous_type_error ppf env tp0 tpl txt1 txt2 txt3 =
           txt3 type_path_expansion tp0)
 
 (* Adapt functions to exposed interface *)
-<<<<<<< HEAD
 let abbreviate ~abbrev f =
   f ?abbrev:(if abbrev then Some (Abbrev.abbrev ()) else None)
 
-let tree_of_path = tree_of_path Other
+let tree_of_path = tree_of_path None
 let tree_of_module ident ?(ellipsis = false) =
   tree_of_module ident ?abbrev:(if ellipsis then Some (Abbrev.ellipsis ()) else None)
 let tree_of_signature sg = tree_of_signature sg
@@ -3093,13 +2955,6 @@ let tree_of_modtype ?(abbrev = false) ty =
   abbreviate ~abbrev tree_of_modtype ty
 let tree_of_modtype_declaration ?(abbrev = false) id md =
   abbreviate ~abbrev tree_of_modtype_declaration id md
-||||||| b01e78e20
-let tree_of_path = tree_of_path Other
-let tree_of_modtype = tree_of_modtype ~ellipsis:false
-=======
-let tree_of_path = tree_of_path None
-let tree_of_modtype = tree_of_modtype ~ellipsis:false
->>>>>>> ups/501
 let type_expansion mode ppf ty_exp =
   type_expansion ppf (trees_of_type_expansion mode ty_exp)
 let tree_of_type_declaration ident td rs =

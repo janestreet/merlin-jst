@@ -484,7 +484,6 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-<<<<<<< HEAD
   "-error-style"; "-dump-dir" ;
 
   (* flambda-backend specific *)
@@ -514,11 +513,6 @@ let ocaml_ignored_parametrized_flags = [
   "-regalloc-param";
   "-cached-generic-functions-path";
   "-gdwarf-max-function-complexity";
-||||||| b01e78e20
-  "-error-style";
-=======
-  "-error-style"; "-dump-dir";
->>>>>>> ups/501
 ]
 
 let ocaml_warnings_spec ~error =
