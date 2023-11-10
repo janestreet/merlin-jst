@@ -540,11 +540,13 @@ let descriptions = [
     since = since 5 1 };
   { number = 190;
     names = ["probe-name-too-long"];
-    description = "Probe name must be at most 100 characters long." };
+    description = "Probe name must be at most 100 characters long.";
+    since = since 4 14 };
   { number = 199;
     names = ["unchecked-property-attribute"];
     description = "A property of a function that was \
-                  optimized away cannot be checked." };
+                  optimized away cannot be checked.";
+    since = since 4 14 };
 ]
 
 let name_to_number =
