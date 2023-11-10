@@ -48,9 +48,6 @@ let rec reduce_strengthen_lazy ~aliasable mty p =
 
   | Mty_functor(Named (Some param, arg), res)
     when !Clflags.applicative_functors ->
-      let env =
-        Env.add_module_lazy ~update_summary:false param Mp_present arg env
-      in
       Some (Mty_functor(Named (Some param, arg),
         strengthen_lazy ~aliasable:false res (Papply(p, Pident param))))
   | Mty_functor(Named (None, arg), res)

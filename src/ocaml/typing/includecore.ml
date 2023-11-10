@@ -180,7 +180,7 @@ type type_kind =
   | Kind_open
 
 let of_kind = function
-  | Type_abstract -> Kind_abstract
+  | Type_abstract _ -> Kind_abstract
   | Type_record (_, _) -> Kind_record
   | Type_variant (_, _) -> Kind_variant
   | Type_open -> Kind_open

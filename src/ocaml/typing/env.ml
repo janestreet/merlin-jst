@@ -512,6 +512,8 @@ module IdTbl =
             else
               find_all_idents name next ()
         | Map {next; _ } -> find_all_idents name next ()
+        | Lock {mode=_;next} ->
+            find_all_idents name next ()
       in
       Seq.append current next ()
 
@@ -2426,14 +2428,6 @@ let add_module_lazy ~update_summary id presence mty env =
 let add_module ?arg ?shape id presence mty env =
   add_module_declaration ~check:false ?arg ?shape id presence (md mty) env
 
-let add_module_lazy ~update_summary id presence mty env =
-  let md = Subst.Lazy.{mdl_type = mty;
-                       mdl_attributes = [];
-                       mdl_loc = Location.none;
-                       mdl_uid = Uid.internal_not_actually_unique}
-  in
-  add_module_declaration_lazy ~update_summary id presence md env
-
 let add_local_type path info env =
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
@@ -2879,8 +2873,7 @@ let add_language_extension_types env =
    If language extensions are adjusted after [initial_safe_string] and
    [initial_unsafe_string] are forced, these environments may be inaccurate.
 *)
-let initial_safe_string = add_language_extension_types initial_safe_string
-let initial_unsafe_string = add_language_extension_types initial_unsafe_string
+let initial = add_language_extension_types initial
 
 (* Tracking usage *)
 

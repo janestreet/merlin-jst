@@ -112,7 +112,7 @@ let include_kind sub = function
   | Tincl_gen_functor ccs ->
       List.iter (fun (_, cc) -> sub.module_coercion sub cc) ccs
 
-let str_include_infos sub {incl_mod; incl_kind} =
+let str_include_infos sub {incl_mod; incl_kind; incl_loc} =
   sub.location sub incl_loc;
   sub.module_expr sub incl_mod;
   include_kind sub incl_kind
@@ -133,7 +133,7 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   sub.location sub str_loc;
   sub.env sub str_env;
   match str_desc with
-  | Tstr_eval   (exp, attrs, _) -> sub.expr sub exp; sub.attributes sub attrs
+  | Tstr_eval   (exp, _, attrs) -> sub.expr sub exp; sub.attributes sub attrs
   | Tstr_value  (rec_flag, list) -> sub.value_bindings sub (rec_flag, list)
   | Tstr_primitive v -> sub.value_description sub v
   | Tstr_type (rec_flag, list) -> sub.type_declarations sub (rec_flag, list)
@@ -147,7 +147,7 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_class_type list ->
       List.iter (fun (_, s, cltd) ->
         iter_loc sub s; sub.class_type_declaration sub cltd) list
-  | Tstr_include incl -> str_include_infos sub sub incl
+  | Tstr_include incl -> str_include_infos sub incl
   | Tstr_open od -> sub.open_declaration sub od
   | Tstr_attribute attr -> sub.attribute sub attr
 
@@ -173,7 +173,6 @@ let constructor_decl sub x =
   sub.location sub x.cd_loc;
   sub.attributes sub x.cd_attributes;
   iter_loc sub x.cd_name;
-  List.iter (iter_loc sub) x.cd_vars;
   constructor_args sub x.cd_args;
   Option.iter (sub.typ sub) x.cd_res
 
@@ -216,8 +215,7 @@ let extension_constructor sub {ext_loc; ext_name; ext_kind; ext_attributes; _} =
   sub.attributes sub ext_attributes;
   iter_loc sub ext_name;
   match ext_kind with
-  | Text_decl (ids, ctl, cto) ->
-      List.iter (iter_loc sub) ids;
+  | Text_decl (_, ctl, cto) ->
       constructor_args sub ctl;
       Option.iter (sub.typ sub) cto
   | Text_rebind (_, lid) -> iter_loc sub lid
@@ -240,7 +238,7 @@ let pat
   List.iter (pat_extra sub) extra;
   match pat_desc with
   | Tpat_any  -> ()
-  | Tpat_var (_, s) -> iter_loc sub s
+  | Tpat_var (_, s, _, _) -> iter_loc sub s
   | Tpat_constant _ -> ()
   | Tpat_tuple l -> List.iter (sub.pat sub) l
   | Tpat_construct (lid, _, l, vto) ->
@@ -252,7 +250,7 @@ let pat
   | Tpat_record (l, _) ->
       List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
   | Tpat_array (_, l) -> List.iter (sub.pat sub) l
-  | Tpat_alias (p, _, _, _, s) -> sub.pat sub p; iter_loc sub s
+  | Tpat_alias (p, _, s, _, _) -> sub.pat sub p; iter_loc sub s
   | Tpat_lazy p -> sub.pat sub p
   | Tpat_value p -> sub.pat sub (p :> pattern)
   | Tpat_exception p -> sub.pat sub p
@@ -275,7 +273,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   List.iter (fun (e, loc, _) -> extra e; sub.location sub loc) exp_extra;
   sub.env sub exp_env;
   match exp_desc with
-  | Texp_ident (_, lid, _)  -> iter_loc sub lid
+  | Texp_ident (_, lid, _, _, _)  -> iter_loc sub lid
   | Texp_constant _ -> ()
   | Texp_let (rec_flag, list, exp) ->
       sub.value_bindings sub (rec_flag, list);
@@ -308,7 +306,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_field (exp, lid, _, _, _) ->
       iter_loc sub lid;
       sub.expr sub exp
-  | Texp_setfield (exp1, lid, _, _, exp2) ->
+  | Texp_setfield (exp1, _, lid, _, exp2) ->
       iter_loc sub lid;
       sub.expr sub exp1;
       sub.expr sub exp2
@@ -348,7 +346,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
       sub.expr sub for_body
   | Texp_send (exp, _, _) ->
       sub.expr sub exp
-  | Texp_new (_, lid, _) -> iter_loc sub lid
+  | Texp_new (_, lid, _, _) -> iter_loc sub lid
   | Texp_instvar (_, _, s) -> iter_loc sub s
   | Texp_setinstvar (_, _, s, exp) ->
       iter_loc sub s;

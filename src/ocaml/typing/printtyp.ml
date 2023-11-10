@@ -1469,16 +1469,30 @@ let param_jkind ty =
   | _ -> None (* this is (C2.2) from Note [When to print jkind annotations] *)
 
 let tree_of_label l =
-  (Ident.name l.ld_id, l.ld_mutable = Mutable, tree_of_typexp Type l.ld_type)
+  let gom =
+    match l.ld_mutable, l.ld_global with
+    | Mutable, _ -> Ogom_mutable
+    | Immutable, Global -> Ogom_global
+    | Immutable, Unrestricted -> Ogom_immutable
+  in
+  (Ident.name l.ld_id, gom, tree_of_typexp Type l.ld_type)
 
 let tree_of_constructor_arguments = function
-  | Cstr_tuple l -> tree_of_typlist Type l
-  | Cstr_record l -> [ Otyp_record (List.map tree_of_label l) ]
+  | Cstr_tuple l -> List.map tree_of_typ_gf l
+  | Cstr_record l -> [ Otyp_record (List.map tree_of_label l), Ogf_unrestricted ]
+
+let tree_of_constructor_args_and_ret_type args ret_type =
+  match ret_type with
+  | None -> (tree_of_constructor_arguments args, None)
+  | Some res ->
+      let out_ret = tree_of_typexp Type res in
+      let out_args = tree_of_constructor_arguments args in
+      let qtvs = extract_qtvs (res :: tys_of_constr_args args) in
+      (out_args, Some (qtvs, out_ret))
 
 let tree_of_single_constructor cd =
   let name = Ident.name cd.cd_id in
-  let ret = Option.map (tree_of_typexp Type) cd.cd_res in
-  let args = tree_of_constructor_arguments cd.cd_args in
+  let args, ret = tree_of_constructor_args_and_ret_type cd.cd_args cd.cd_res in
   {
       ocstr_name = name;
       ocstr_args = args;
@@ -1702,11 +1716,6 @@ let constructor_arguments ppf a =
   !Oprint.out_constr_args ppf tys
 
 (* Print an extension declaration *)
-
-let extension_constructor_args_and_ret_type_subtree ext_args ext_ret_type =
-  let ret = Option.map (tree_of_typexp Type) ext_ret_type in
-  let args = tree_of_constructor_arguments ext_args in
-  (args, ret)
 
 (* When printing extension constructor, it is important to ensure that
 after printing the constructor, we are still in the scope of the constructor.
@@ -2165,7 +2174,7 @@ let rec tree_of_modtype ?abbrev = function
             && not (Env.is_functor_arg p !printing_env)
           in
           Omty_strengthen
-            (tree_of_modtype ?abbrev mty, tree_of_path Module p, unaliasable)
+            (tree_of_modtype ?abbrev mty, tree_of_path (Some Module) p, unaliasable)
       | mty -> tree_of_modtype ?abbrev mty
       end
 

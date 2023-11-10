@@ -587,7 +587,7 @@ exception Non_closed of type_expr * variable_kind
    [free_variables] below drops the type/row information
    and only returns a [variable list].
  *)
-let free_vars ?env tyl =
+let free_vars ?env tys =
   let rec fv ~kind acc ty =
     if not (try_mark_node ty) then acc
     else match get_desc ty, env with
@@ -615,7 +615,8 @@ let free_vars ?env tyl =
           else fv ~kind:Row_variable acc (row_more row)
       | _    ->
           fold_type_expr (fv ~kind) acc ty
-  in List.iter (fv ~kind:Type_variable []) tyl
+  in
+  List.fold_left (fv ~kind:Type_variable) [] tys
 
 let free_variables ?env ty =
   let tl = List.map fst (free_vars ?env [ty]) in
@@ -623,8 +624,10 @@ let free_variables ?env ty =
   tl
 
 let free_non_row_variables_of_list tyl =
-  let tl = List.filter_map (fun (v, not_row) -> if not_row then Some v else None)
-             (free_vars tyl)
+  let tl =
+    List.filter_map (function (v, Type_variable) -> Some v
+                            | (_, Row_variable) -> None)
+      (free_vars tyl)
   in
   List.iter unmark_type tyl;
   tl
@@ -1279,7 +1282,7 @@ let rec copy ?partial ?keep_names copy_scope ty =
                     if row_closed row && not (is_fixed row)
                     && TypeSet.is_empty (free_univars ty)
                     && not (List.for_all not_reither fields) then
-                      let more' = newvar () in
+                      let more' = newvar (Jkind.value ~why:Row_variable) in
                       (more',
                        create_row ~fields:(List.filter not_reither fields)
                          ~more:more' ~closed:false ~fixed:None ~name:None)
@@ -1507,13 +1510,13 @@ let copy_sep ~copy_scope ~fixed ~(visited : type_expr TypeHash.t) sch =
     let univars = free ty in
     if is_Tvar ty || may_share && TypeSet.is_empty univars then
       if get_level ty <> generic_level then ty else
-      let t = newstub ~scope:(get_scope ty) in
+      let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
       add_delayed_copy t ty;
       t
     else try
       TypeHash.find visited ty
     with Not_found -> begin
-      let t = newstub ~scope:(get_scope ty) in
+      let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
       TypeHash.add visited ty t;
       let desc' =
         match get_desc ty with
@@ -1523,7 +1526,11 @@ let copy_sep ~copy_scope ~fixed ~(visited : type_expr TypeHash.t) sch =
             let keep = is_Tvar more && get_level more <> generic_level in
             (* In that case we should keep the original, but we still
                call copy to correct the levels *)
-            if keep then (add_delayed_copy t ty; Tvar None) else
+            if keep then
+              (add_delayed_copy t ty;
+               Tvar { name = None;
+                      jkind = Jkind.value ~why:Polymorphic_variant })
+            else
             let more' = copy_rec ~may_share:false more in
             let fixed' = fixed && (is_Tvar more || is_Tunivar more) in
             let row =
@@ -3794,7 +3801,8 @@ let unify_delaying_jkind_checks env ty1 ty2 =
     unify_pairs (ref env) ty1 ty2 [])
 
 (* Lower the level of a type to the current level *)
-let enforce_current_level env ty = unify_var env (newvar ()) ty
+let enforce_current_level env ty =
+  unify_var env (newvar (Jkind.any ~why:Dummy_jkind)) ty
 
 
 (**** Special cases of unification ****)

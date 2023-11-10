@@ -1152,7 +1152,8 @@ module Functor_inclusion_diff = struct
         let st, _expansion = update (Diffing.Delete delete) st in
         update (Diffing.Insert insert) st
     | Keep (Named (name1, _), Named (name2, arg2), _) ->
-        let arg = Subst.modtype Keep st.subst arg2 in
+        let arg2 = Subst.Lazy.of_modtype arg2 in
+        let arg = Subst.Lazy.modtype Keep st.subst arg2 in
         let env, subst =
           equate_one_functor_param st.subst st.env arg name1 name2
         in
