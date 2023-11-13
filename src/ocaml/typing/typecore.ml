@@ -616,31 +616,13 @@ let mode_exact mode =
 
 let mode_argument ~funct ~index ~position_and_mode ~partial_app alloc_mode =
   let vmode = Value.of_alloc alloc_mode in
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-pre-501
   if partial_app then mode_default vmode
-||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
-  else match funct.exp_desc, index, (position : apply_position) with
-=======
-  else match funct.exp_desc, index, position_and_mode.apply_position with
->>>>>>> ocaml-flambda/flambda-backend:c60235b32045390860fb1245d7deb6cea4cad833
   else match funct.exp_desc, index, position_and_mode.apply_position with
   | Texp_ident (_, _, {val_kind =
       Val_prim {Primitive.prim_name = ("%sequor"|"%sequand")}},
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-pre-501
                 Id_prim _, _), 1, Tail ->
-     (* The second argument to (&&) and (||) is in
-        tail position if the call is *)
-      (* vmode is wrong; fine because of mode crossing on boolean *)
-||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
-     (* The second argument to (&&) and (||) is in
-        tail position if the call is *)
-      (* vmode is wrong; fine because of mode crossing on boolean *)
-     mode_return vmode
-=======
      (* RHS of (&&) and (||) is at the tail of function region if the
         application is. The argument mode is not constrained otherwise. *)
-     mode_with_position vmode (RTail (Option.get position_and_mode.region_mode, FTail))
->>>>>>> ocaml-flambda/flambda-backend:c60235b32045390860fb1245d7deb6cea4cad833
      mode_with_position vmode (RTail (Option.get position_and_mode.region_mode, FTail))
   | Texp_ident (_, _, _, Id_prim _, _), _, _ ->
      (* Other primitives cannot be tail-called *)
@@ -7229,13 +7211,7 @@ and type_apply_arg env ~app_loc ~funct ~index ~position_and_mode ~partial_app (l
   match arg with
   | Arg (Unknown_arg { sarg; ty_arg_mono; mode_arg; sort_arg }) ->
       let mode, _ = Alloc.newvar_below mode_arg in
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-pre-501
       let expected_mode =
-||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
-        mode_argument ~funct ~index ~position ~partial_app mode in
-=======
-        mode_argument ~funct ~index ~position_and_mode ~partial_app mode in
->>>>>>> ocaml-flambda/flambda-backend:c60235b32045390860fb1245d7deb6cea4cad833
         mode_argument ~funct ~index ~position_and_mode ~partial_app mode in
       let arg =
         type_expect env expected_mode sarg (mk_expected ty_arg_mono)
@@ -7336,13 +7312,7 @@ and type_application env app_loc expected_mode position_and_mode
           ~partial_app:false arg_mode
       in
       let exp = type_expect env arg_mode sarg (mk_expected ty_arg) in
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-pre-501
       check_partial_application ~statement:false exp;
-||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
-      ([Nolabel, Arg (exp, arg_sort)], ty_ret, ap_mode, pm)
-=======
-      ([Nolabel, Arg (exp, arg_sort)], ty_ret, ap_mode, position_and_mode)
->>>>>>> ocaml-flambda/flambda-backend:c60235b32045390860fb1245d7deb6cea4cad833
       ([Nolabel, Arg (exp, arg_sort)], ty_ret, ap_mode, position_and_mode)
   | _ ->
       let ty = funct.exp_type in
@@ -7360,32 +7330,8 @@ and type_application env app_loc expected_mode position_and_mode
              (Warnings.Labels_omitted
                 (List.map Printtyp.string_of_label
                           (List.filter ((<>) Nolabel) labels)));
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-pre-501
            true)
         end
-||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
-          (Value.regional_to_local_alloc funct_mode) sargs ret_tvar
-      in
-      let partial_app = is_partial_apply untyped_args in
-      let pm = if partial_app then position_and_mode_default else pm in
-      let args =
-        List.mapi (fun index arg ->
-            type_apply_arg env ~app_loc ~funct ~index
-              ~position:(pm.apply_position) ~partial_app arg)
-          untyped_args
-=======
-          (Value.regional_to_local_alloc funct_mode) sargs ret_tvar
-      in
-      let partial_app = is_partial_apply untyped_args in
-      let position_and_mode =
-        if partial_app then position_and_mode_default else position_and_mode
-      in
-      let args =
-        List.mapi (fun index arg ->
-            type_apply_arg env ~app_loc ~funct ~index
-              ~position_and_mode ~partial_app arg)
-          untyped_args
->>>>>>> ocaml-flambda/flambda-backend:c60235b32045390860fb1245d7deb6cea4cad833
       in
       let ty_ret, mode_ret, args, position_and_mode =
         with_local_level_if_principal begin fun () ->

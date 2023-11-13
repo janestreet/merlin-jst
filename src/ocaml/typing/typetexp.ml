@@ -705,36 +705,23 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
     let ty = newty (Ttuple (List.map (fun ctyp -> ctyp.ctyp_type) ctys)) in
     ctyp (Ttyp_tuple ctys) ty
   | Ptyp_constr(lid, stl) ->
-      let (path, decl) = Env.lookup_type ~loc:lid.loc lid.txt env in
-      let stl =
-        match stl with
-        | [ {ptyp_desc=Ptyp_any} as t ] when decl.type_arity > 1 ->
-            List.map (fun _ -> t) decl.type_params
-        | _ -> stl
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-pre-501
-||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
-          let path, decl = Env.find_type_by_name lid2 env in
-          ignore(Env.lookup_cltype ~loc:lid.loc lid.txt env);
-          (path, decl, false)
-        with Not_found ->
-          ignore (Env.lookup_cltype ~loc:lid.loc lid.txt env); assert false
-=======
-          let path, decl = Env.find_type_by_name lid2 env in
-          ignore(Env.lookup_cltype ~loc:lid.loc lid.txt env);
-          (path, decl, false)
-        with Not_found -> try
-          (* Raise a different error if it matches the name of an unboxed type *)
-          let lid3 =
-            match lid.txt with
-              Longident.Lident s     -> Longident.Lident (s ^ "#")
-            | Longident.Ldot(r, s)   -> Longident.Ldot (r, s ^ "#")
-            | Longident.Lapply(_, _) -> fatal_error "Typetexp.transl_type"
-          in
-          ignore (Env.find_type_by_name lid3 env : Path.t * Types.type_declaration);
-          raise (Error (styp.ptyp_loc, env, Did_you_mean_unboxed lid.txt))
-        with Not_found ->
-          ignore (Env.lookup_cltype ~loc:lid.loc lid.txt env); assert false
->>>>>>> ocaml-flambda/flambda-backend:c60235b32045390860fb1245d7deb6cea4cad833
+      let (path, decl) =
+        match Env.lookup_cltype ~loc:lid.loc lid.txt env with
+        | (path, decl) -> (path, decl.clty_hash_type)
+        (* Raise a different error if it matches the name of an unboxed type *)
+        | exception
+            (Env.Error (Lookup_error (_, _, Unbound_cltype _)) as exn)
+          ->
+            let unboxed_lid : Longident.t =
+              match lid.txt with
+              | Lident s -> Lident (s ^ "#")
+              | Ldot (l, s) -> Ldot (l, s ^ "#")
+              | Lapply _ -> fatal_error "Typetexp.transl_type"
+            in
+            match Env.find_type_by_name unboxed_lid env with
+            | exception Not_found -> raise exn
+            | (_ : _ * _) ->
+                raise (Error (styp.ptyp_loc, env, Did_you_mean_unboxed lid.txt))
       in
       if List.length stl <> decl.type_arity then
         raise(Error(styp.ptyp_loc, env,
