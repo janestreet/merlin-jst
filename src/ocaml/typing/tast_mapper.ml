@@ -343,6 +343,9 @@ let expr sub x =
                 Texp_comp_for
                   (List.map
                      (fun {comp_cb_iterator; comp_cb_attributes} ->
+                        let comp_cb_attributes =
+                          sub.attributes sub comp_cb_attributes
+                        in
                         let comp_cb_iterator = match comp_cb_iterator with
                           | Texp_comp_range
                               { ident; pattern; start; stop; direction }
@@ -420,7 +423,7 @@ let expr sub x =
           alloc_mode
         }
     | Texp_field (exp, lid, ld, mode, am) ->
-        Texp_field (sub.expr sub exp, lid, ld, mode, am)
+        Texp_field (sub.expr sub exp, map_loc sub lid, ld, mode, am)
     | Texp_setfield (exp1, am, lid, ld, exp2) ->
         Texp_setfield (
           sub.expr sub exp1,
@@ -556,8 +559,11 @@ let signature sub x =
   {x with sig_items; sig_final_env}
 
 let sig_include_infos sub x =
-  { x with incl_mod = sub.module_type sub x.incl_mod;
-           incl_kind = include_kind sub x.incl_kind }
+  let incl_loc = sub.location sub x.incl_loc in
+  let incl_attributes = sub.attributes sub x.incl_attributes in
+  let incl_mod = sub.module_type sub x.incl_mod in
+  let incl_kind = include_kind sub x.incl_kind in
+  { x with incl_loc; incl_attributes; incl_mod; incl_kind }
 
 let signature_item sub x =
   let sig_loc = sub.location sub x.sig_loc in
@@ -912,7 +918,7 @@ let value_binding sub x =
 
 let env _sub x = x
 
-let jkind_annotation _sub l = l
+let jkind_annotation sub (c, l) = (c, map_loc sub l)
 
 let default =
   {

@@ -2490,6 +2490,7 @@ and type_pat_aux
   | Ppat_alias(sq, name) ->
       let q = type_pat tps Value sq expected_ty in
       let ty_var, mode = solve_Ppat_alias ~refine ~mode:alloc_mode.mode env q in
+      let mode = mode_cross_to_min !env expected_ty mode in
       let id, uid =
         enter_variable ~is_as_variable:true tps name.loc name mode
           ty_var sp.ppat_attributes
@@ -2714,9 +2715,8 @@ and type_pat_aux
           let env2 = ref !env in
           let p2 = type_pat_rec tps2 env2 sp2 in
           (env1, p1, env2, p2)
-        end
+        end ~post:(fun _ -> gadt_equations_level := equation_level)
       in
-      gadt_equations_level := equation_level;
       let p1_variables = tps1.tps_pattern_variables in
       let p2_variables = tps2.tps_pattern_variables in
       (* Make sure no variable with an ambiguous type gets added to the
@@ -2768,7 +2768,7 @@ and type_pat_aux
         solve_Ppat_constraint ~refine tps loc env type_modes sty expected_ty
       in
       let p = type_pat ~alloc_mode tps category sp_constrained expected_ty' in
-      let extra = (Tpat_constraint cty, loc, sp.ppat_attributes) in
+      let extra = (Tpat_constraint cty, loc, sp_constrained.ppat_attributes) in
       { p with pat_type = ty; pat_extra = extra::p.pat_extra }
   | Ppat_type lid ->
       let (path, p) = build_or_pat !env loc lid in
@@ -3373,7 +3373,8 @@ type untyped_apply_arg =
         ty_arg : type_expr;
         sort_arg : Jkind.sort;
         mode_arg : Alloc.t;
-        level: int; }
+        level: int;
+      }
 
 type untyped_omitted_param =
   { mode_fun: Alloc.t;
@@ -4737,8 +4738,13 @@ let may_lower_contravariant_then_generalize env exp =
 
 (* value binding elaboration *)
 
-let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; _ } =
+let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; pvb_attributes=attrs; _ } =
   let open Ast_helper in
+  let mode_annot_attrs =
+    Builtin_attributes.filter_attributes
+      Builtin_attributes.mode_annotation_attributes_filter
+      attrs
+  in
   match ct with
   | None -> expr
   | Some (Pvc_constraint { locally_abstract_univars=[]; typ }) ->
@@ -4746,7 +4752,7 @@ let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; _ } =
       | Ptyp_poly _ -> expr
       | _ ->
           let loc = { expr.pexp_loc with Location.loc_ghost = true } in
-          Exp.constraint_ ~loc expr typ
+          Exp.constraint_ ~loc ~attrs:mode_annot_attrs expr typ
       end
   | Some (Pvc_coercion { ground; coercion}) ->
       let loc = { expr.pexp_loc with Location.loc_ghost = true } in
@@ -4754,29 +4760,38 @@ let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; _ } =
   | Some (Pvc_constraint { locally_abstract_univars=vars;typ}) ->
       let loc_start = pat.ppat_loc.Location.loc_start in
       let loc = { expr.pexp_loc with loc_start; loc_ghost=true } in
-      let expr = Exp.constraint_ ~loc expr typ in
+      let expr = Exp.constraint_ ~attrs:mode_annot_attrs ~loc expr typ in
       List.fold_right (Exp.newtype ~loc) vars expr
 
-let vb_pat_constraint ({pvb_pat=pat; pvb_expr = exp; _ } as vb) =
+let vb_pat_constraint
+    ({pvb_pat=pat; pvb_expr = exp; pvb_attributes = attrs; _ } as vb) =
   vb.pvb_attributes,
   let open Ast_helper in
+  let mode_annot_attrs =
+    Builtin_attributes.filter_attributes
+      Builtin_attributes.mode_annotation_attributes_filter
+      attrs
+  in
   match vb.pvb_constraint, pat.ppat_desc, exp.pexp_desc with
   | Some (Pvc_constraint {locally_abstract_univars=[]; typ}
          | Pvc_coercion { coercion=typ; _ }),
     _, _ ->
       Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat typ
+        ~attrs:mode_annot_attrs
   | Some (Pvc_constraint {locally_abstract_univars=vars; typ }), _, _ ->
       let varified = Typ.varify_constructors vars typ in
       let t = Typ.poly ~loc:typ.ptyp_loc vars varified in
       let loc_end = typ.ptyp_loc.Location.loc_end in
       let loc =  { pat.ppat_loc with loc_end; loc_ghost=true } in
       Pat.constraint_ ~loc pat t
+        ~attrs:mode_annot_attrs
   | None, (Ppat_any | Ppat_constraint _), _ -> pat
   | None, _, Pexp_coerce (_, _, sty)
   | None, _, Pexp_constraint (_, sty) when !Clflags.principal ->
       (* propagate type annotation to pattern,
          to allow it to be generalized in -principal mode *)
       Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat sty
+        ~attrs:mode_annot_attrs
   | _ -> pat
 
 let pat_modes ~force_toplevel rec_mode_var (attrs, spat) =
@@ -4787,6 +4802,7 @@ let pat_modes ~force_toplevel rec_mode_var (attrs, spat) =
     | None -> begin
         match pat_tuple_arity spat with
         | Not_local_tuple | Maybe_local_tuple ->
+            (* TODO: mode can be more relaxed than this if fields are global *)
             let mode = Value.newvar () in
             simple_pat_mode mode, mode_default mode
         | Local_tuple arity ->
@@ -7856,7 +7872,8 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
                        snd (instance_poly ~keep_names:true false tl ty)}
                   | _ -> pat
                 in
-                type_approx env binding.pvb_expr pat.pat_type)
+                let bound_expr = vb_exp_constraint binding in
+                type_approx env bound_expr pat.pat_type)
               pat_list spat_sexp_list;
           (* Polymorphic variant processing *)
           List.iter
@@ -8002,7 +8019,8 @@ and type_let_def_wrap_warnings
   let is_fake_let =
     match spat_sexp_list with
     | [{pvb_expr={pexp_desc=Pexp_match(
-           {pexp_desc=Pexp_ident({ txt = Longident.Lident "*opt*"})},_)}}] ->
+           {pexp_desc=Pexp_ident({ txt = Longident.Lident name})},_)}}] ->
+      when String.starts_with ~prefix:"*opt" name ->
         true (* the fake let-declaration introduced by fun ?(x = e) -> ... *)
     | _ ->
         false
@@ -8127,7 +8145,7 @@ and type_andops env sarg sands expected_sort expected_ty =
           ty_result, op_result_sort =
           with_local_level_iter_if_principal begin fun () ->
             let op_path, op_desc = type_binding_op_ident env sop in
-            let op_type = op_desc.val_type in
+            let op_type = instance op_desc.val_type in
             let ty_arg, sort_arg = new_rep_var ~why:Function_argument () in
             let ty_rest, sort_rest = new_rep_var ~why:Function_argument () in
             let ty_result, op_result_sort = new_rep_var ~why:Function_result () in
@@ -8572,7 +8590,7 @@ and type_immutable_array
         ~expected_mode
         ~ty_expected
         ~explanation
-        ~mutability:Mutable
+        ~mutability:Immutable
         ~attributes
         elts
 
