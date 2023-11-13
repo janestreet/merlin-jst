@@ -31,6 +31,15 @@ type error =
   | Keyword_as_label of string
   | Invalid_literal of string
   | Invalid_directive of string * string option
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+
+exception Error of error * Location.t;;
+=======
+
+exception Error of error * Location.t
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 exception Error of error * Location.t
 
@@ -164,6 +173,22 @@ let list_keywords =
     Hashtbl.fold add_kw keywords init
 
 (* To store the position of the beginning of a string and comment *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let string_start_loc = ref Location.none;;
+let comment_start_loc = ref [];;
+let in_comment () = !comment_start_loc <> [];;
+let is_in_string = ref false
+let in_string () = !is_in_string
+let print_warnings = ref true
+=======
+let string_start_loc = ref Location.none
+let comment_start_loc = ref []
+let in_comment () = !comment_start_loc <> []
+let is_in_string = ref false
+let in_string () = !is_in_string
+let print_warnings = ref true
+>>>>>>> ocaml-flambda/flambda-backend:main
 let in_comment state = state.comment_start_loc <> []
 
 let at_beginning_of_line pos = (pos.pos_cnum = pos.pos_bol)
@@ -473,7 +498,7 @@ let prepare_error loc = function
       let msg = "Illegal empty character literal ''" in
       let sub =
         [Location.msg
-           "Hint: Did you mean ' ' or a type variable 'a?"] in
+           "@{<hint>Hint@}: Did you mean ' ' or a type variable 'a?"] in
       Location.error ~loc ~sub msg
   | Keyword_as_label kwd ->
       Location.errorf ~loc

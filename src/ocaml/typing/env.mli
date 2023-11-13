@@ -59,12 +59,32 @@ type address =
 type t
 
 val empty: t
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (* This environment is lazy so that it may depend on the enabled
    extensions, typically adjusted via command line flags.  If extensions are
    changed after this environment is forced, it may be inaccurate.  This
    could happen, for example, if extensions are adjusted via the
    compiler-libs. *)
 val initial: t Lazy.t
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+(* These environments are lazy so that they may depend on the enabled
+   extensions, typically adjusted via command line flags.  If extensions are
+   changed after these environments are forced, they may be inaccurate.  This
+   could happen, for example, if extensions are adjusted via the
+   compiler-libs. *)
+val initial_safe_string: t Lazy.t
+val initial_unsafe_string: t Lazy.t
+
+=======
+
+(* This environment is lazy so that it may depend on the enabled extensions,
+   typically adjusted via command line flags.  If extensions are changed after
+   theis environment is forced, they may be inaccurate.  This could happen, for
+   example, if extensions are adjusted via the compiler-libs. *)
+val initial: t Lazy.t
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 val diff: t -> t -> Ident.t list
 
 type type_descr_kind =
@@ -316,6 +336,21 @@ val find_constructor_by_name:
   Longident.t -> t -> constructor_description
 val find_label_by_name:
   Longident.t -> t -> label_description
+
+(** The [find_*_index] functions computes a "namespaced" De Bruijn index
+    of an identifier in a given environment. In other words, it returns how many
+    times an identifier has been shadowed by a more recent identifiers with the
+    same name in a given environment.
+    Those functions return [None] when the identifier is not bound in the
+    environment. This behavior is there to facilitate the detection of
+    inconsistent printing environment, but should disappear in the long term.
+*)
+val find_value_index:   Ident.t -> t -> int option
+val find_type_index:    Ident.t -> t -> int option
+val find_module_index:  Ident.t -> t -> int option
+val find_modtype_index: Ident.t -> t -> int option
+val find_class_index:   Ident.t -> t -> int option
+val find_cltype_index:  Ident.t -> t -> int option
 
 (** The [find_*_index] functions computes a "namespaced" De Bruijn index
     of an identifier in a given environment. In other words, it returns how many

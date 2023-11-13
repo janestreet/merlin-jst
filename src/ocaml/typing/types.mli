@@ -422,6 +422,22 @@ module Variance : sig
   val eq : t -> t -> bool
   val set : f -> t -> t
   val set_if : bool -> f -> t -> t
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  val get_upper : t -> bool * bool                  (* may_pos, may_neg   *)
+  val get_lower : t -> bool * bool * bool * bool    (* pos, neg, inv, inj *)
+  val unknown_signature : injective:bool -> arity:int -> t list
+  (** The most pessimistic variance for a completely unknown type. *)
+end
+=======
+  val compose : t -> t -> t
+  val strengthen : t -> t                (* remove May_weak when possible *)
+  val get_upper : t -> bool * bool                    (* may_pos, may_neg *)
+  val get_lower : t -> bool * bool * bool                (* pos, neg, inj *)
+  val unknown_signature : injective:bool -> arity:int -> t list
+  (** The most pessimistic variance for a completely unknown type. *)
+end
+>>>>>>> ocaml-flambda/flambda-backend:main
   val mem : f -> t -> bool
   val conjugate : t -> t                (* exchange positive and negative *)
   val compose : t -> t -> t
@@ -482,6 +498,12 @@ type type_declaration =
        the jkind stored here might be a subjkind of the jkind that would
        be computed from the decl kind. This happens in
        Ctype.add_jkind_equation. *)
+
+    type_jkind_annotation: Jkind.annotation option;
+    (* This is the jkind annotation written by the user. If the user did
+    not write this declaration (because it's a synthesized declaration
+    for an e.g. local abstract type or an inlined record), then this field
+    can safely be [None]. It's used only for printing and in untypeast. *)
 
     type_private: private_flag;
     type_manifest: type_expr option;
@@ -739,6 +761,8 @@ end
 
 include Wrapped with type 'a wrapped = 'a
 
+val item_visibility : signature_item -> visibility
+
 (* Constructor and record label descriptions inserted held in typing
    environments *)
 
@@ -867,7 +891,18 @@ val is_valid: snapshot -> bool
 val on_backtrack: (unit -> unit) -> unit
 
 (** Number of unification variables that have been linked so far.
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
    Used to estimate the "cost" of unification. *)
 val linked_variables: unit -> int
 
 val unpack_functor : module_type -> functor_parameter * module_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+val link_kind: inside:field_kind -> field_kind -> unit
+val link_commu: inside:commutable -> commutable -> unit
+val set_commu_ok: commutable -> unit
+
+=======
+val link_kind: inside:field_kind -> field_kind -> unit
+val link_commu: inside:commutable -> commutable -> unit
+val set_commu_ok: commutable -> unit
+>>>>>>> ocaml-flambda/flambda-backend:main

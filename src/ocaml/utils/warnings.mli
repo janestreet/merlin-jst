@@ -117,7 +117,13 @@ type t =
   | Unchecked_property_attribute of string  (* 199 *)
 
 type alert = {kind:string; message:string; def:loc; use:loc}
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+val parse_options : bool -> string -> alert option;;
+=======
+val parse_options : bool -> string -> alert option
+>>>>>>> ocaml-flambda/flambda-backend:main
 val parse_options : bool -> string -> alert option
 
 val parse_alert_option: string -> unit
@@ -130,8 +136,16 @@ val without_warnings : (unit -> 'a) -> 'a
   (** Run the thunk with all warnings and alerts disabled. *)
 
 val is_active : t -> bool
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 val is_error : t -> bool
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+val defaults_w : string;;
+val defaults_warn_error : string;;
+=======
+val defaults_w : string
+val defaults_warn_error : string
+>>>>>>> ocaml-flambda/flambda-backend:main
 val defaults_w : string
 val defaults_warn_error : string
 
@@ -146,7 +160,13 @@ val report : t -> [ `Active of reporting_information | `Inactive ]
 val report_alert : alert -> [ `Active of reporting_information | `Inactive ]
 
 exception Errors
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+val check_fatal : unit -> unit;;
+=======
+val check_fatal : unit -> unit
+>>>>>>> ocaml-flambda/flambda-backend:main
 val check_fatal : unit -> unit
 val reset_fatal: unit -> unit
 

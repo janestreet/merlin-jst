@@ -47,7 +47,14 @@ val transl_with_constraint:
     Typedtree.type_declaration
 
 val abstract_type_decl:
-    injective:bool -> Jkind.t -> Jkind.t list -> type_declaration
+  injective:bool ->
+  jkind:Jkind.t ->
+  (* [jkind_annotation] is what the user wrote, and is just used when printing
+     the type produced by this function. *)
+  jkind_annotation:Jkind.annotation option ->
+  params:Jkind.t list ->
+  type_declaration
+
 val approx_type_decl:
     Parsetree.type_declaration list -> (Ident.t * type_declaration) list
 val check_recmod_typedecl:
@@ -71,8 +78,16 @@ and reaching_type_step =
   | Expands_to of type_expr * type_expr
   | Contains of type_expr * type_expr
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 type error =
     Repeated_parameter
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Recursive_abbrev of string
+  | Cycle_in_def of string * type_expr
+=======
+  | Recursive_abbrev of string * Env.t * reaching_type_path
+  | Cycle_in_def of string * Env.t * reaching_type_path
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Duplicate_constructor of string
   | Too_many_constructors
   | Duplicate_label of string
@@ -107,6 +122,7 @@ type error =
   | Deep_unbox_or_untag_attribute of native_repr_kind
   | Jkind_mismatch_of_type of type_expr * Jkind.Violation.t
   | Jkind_mismatch_of_path of Path.t * Jkind.Violation.t
+  | Jkind_mismatch_in_check_constraints of type_expr * Jkind.Violation.t
   | Jkind_sort of
       { kloc : jkind_sort_loc
       ; typ : type_expr
@@ -122,7 +138,6 @@ type error =
   | Nonrec_gadt
   | Invalid_private_row_declaration of type_expr
   | Local_not_enabled
-  | Layout_not_enabled of Jkind.const
 
 exception Error of Location.t * error
 

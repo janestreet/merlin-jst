@@ -137,21 +137,89 @@ and method_privacy =
      0 <= inj
    Additionally, the following implications are valid
      pos => inj
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      neg => inj
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | May_neg -> 2
+=======
+    | May_neg -> 2 + 4
+>>>>>>> ocaml-flambda/flambda-backend:main
    Examples:
      type 'a t        : may_pos + may_neg + may_weak
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      type 'a t = 'a   : pos
      type 'a t = 'a -> unit : neg
      type 'a t = ('a -> unit) -> unit : pos + may_weak
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | Pos -> 16
+    | Neg -> 32
+    | Inv -> 64
+=======
+    | Pos -> 16 + 8 + 1
+    | Neg -> 32 + 8 + 4 + 2
+    | Inv -> 63
+>>>>>>> ocaml-flambda/flambda-backend:main
      type 'a t = A of (('a -> unit) -> unit) : pos
      type +'a p = ..  : may_pos + inj
      type +!'a t      : may_pos + inj
      type -!'a t      : may_neg + inj
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      type 'a t = A    : inj
  *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let set x b v =
+    if b then v lor single x else  v land (lnot (single x))
+=======
+  let set x v = union v (single x)
+  let set_if b x v = if b then set x v else v
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 module Variance = struct
   type t = int
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let full = 127
+  let covariant = single May_pos lor single Pos lor single Inj
+  let swap f1 f2 v =
+    let v' = set f1 (mem f2 v) v in set f2 (mem f1 v) v'
+  let conjugate v = swap May_pos May_neg (swap Pos Neg v)
+  let get_upper v = (mem May_pos v, mem May_neg v)
+  let get_lower v = (mem Pos v, mem Neg v, mem Inv v, mem Inj v)
+  let unknown_signature ~injective ~arity =
+    let v = if injective then set Inj true unknown else unknown in
+    Misc.replicate_list v arity
+end
+
+=======
+  let full = single Inv
+  let covariant = single Pos
+  let swap f1 f2 v v' =
+    set_if (mem f2 v) f1 (set_if (mem f1 v) f2 v')
+  let conjugate v =
+    let v' = inter v (union (single Inj) (single May_weak)) in
+    swap Pos Neg v (swap May_pos May_neg v v')
+  let compose v1 v2 =
+    if mem Inv v1 && mem Inj v2 then full else
+    let mp =
+      mem May_pos v1 && mem May_pos v2 || mem May_neg v1 && mem May_neg v2
+    and mn =
+      mem May_pos v1 && mem May_neg v2 || mem May_neg v1 && mem May_pos v2
+    and mw = mem May_weak v1 && v2 <> null || v1 <> null && mem May_weak v2
+    and inj = mem Inj v1 && mem Inj v2
+    and pos = mem Pos v1 && mem Pos v2 || mem Neg v1 && mem Neg v2
+    and neg = mem Pos v1 && mem Neg v2 || mem Neg v1 && mem Pos v2 in
+    List.fold_left (fun v (b,f) -> set_if b f v) null
+      [mp, May_pos; mn, May_neg; mw, May_weak; inj, Inj; pos, Pos; neg, Neg]
+  let strengthen v =
+    if mem May_neg v then v else v land (full - single May_weak)
+  let get_upper v = (mem May_pos v, mem May_neg v)
+  let get_lower v = (mem Pos v, mem Neg v, mem Inj v)
+  let unknown_signature ~injective ~arity =
+    let v = if injective then set Inj unknown else unknown in
+    Misc.replicate_list v arity
+end
+
+>>>>>>> ocaml-flambda/flambda-backend:main
   type f = May_pos | May_neg | May_weak | Inj | Pos | Neg | Inv
   let single = function
     | May_pos -> 1
@@ -231,6 +299,7 @@ type type_declaration =
     type_arity: int;
     type_kind: type_decl_kind;
     type_jkind: Jkind.t;
+    type_jkind_annotation: Jkind.annotation option;
     type_private: private_flag;
     type_manifest: type_expr option;
     type_variance: Variance.t list;
@@ -605,6 +674,15 @@ let find_unboxed_type decl =
                      | Variant_extensible ))
   | Type_abstract _ | Type_open ->
     None
+
+let item_visibility = function
+  | Sig_value (_, _, vis)
+  | Sig_type (_, _, _, vis)
+  | Sig_typext (_, _, _, vis)
+  | Sig_module (_, _, _, _, vis)
+  | Sig_modtype (_, _, vis)
+  | Sig_class (_, _, _, vis)
+  | Sig_class_type (_, _, _, vis) -> vis
 
 type label_description =
   { lbl_name: string;                   (* Short name *)

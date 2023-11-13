@@ -67,10 +67,87 @@ val init : auto_include:auto_include_callback -> string list -> unit
 (** [auto_include_otherlibs alert] is a callback function to be passed to
     {!Load_path.init} and automatically adds [-I +lib] to the load path after
     calling [alert lib]. *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+val reset : unit -> unit
+(** Remove all directories *)
+
+val init : string list -> unit
+(** [init l] is the same as [reset (); List.iter add_dir (List.rev l)] *)
+=======
+val reset : unit -> unit
+(** Remove all directories *)
+
+module Dir : sig
+  type t
+  (** Represent one directory in the load path. *)
+
+  val create : string -> t
+
+  val path : t -> string
+
+  val files : t -> string list
+  (** All the files in that directory. This doesn't include files in
+      sub-directories of this directory. *)
+
+  val find : t -> string -> string option
+  (** [find dir fn] returns the full path to [fn] in [dir]. *)
+
+  val find_uncap : t -> string -> string option
+  (** As {!find}, but search also for uncapitalized name, i.e. if name is
+      Foo.ml, either /path/Foo.ml or /path/foo.ml may be returned. *)
+end
+
+type auto_include_callback =
+  (Dir.t -> string -> string option) -> string -> string
+(** The type of callback functions on for [init ~auto_include] *)
+
+val no_auto_include : auto_include_callback
+(** No automatic directory inclusion: misses in the load path raise [Not_found]
+    as normal. *)
+
+val init : auto_include:auto_include_callback -> string list -> unit
+(** [init l] is the same as [reset (); List.iter add_dir (List.rev l)] *)
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+val auto_include_otherlibs :
+  (string -> unit) -> auto_include_callback
+(** [auto_include_otherlibs alert] is a callback function to be passed to
+    {!Load_path.init} and automatically adds [-I +lib] to the load path after
+    calling [alert lib]. *)
 
 val get_paths : unit -> string list
 (** Return the list of directories passed to [add_dir] so far. *)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(** Same as [find], but search also for uncapitalized name, i.e.  if
+    name is Foo.ml, allow /path/Foo.ml and /path/foo.ml to match. *)
+
+module Dir : sig
+  type t
+  (** Represent one directory in the load path. *)
+
+  val create : string -> t
+
+  val path : t -> string
+
+  val files : t -> string list
+  (** All the files in that directory. This doesn't include files in
+      sub-directories of this directory. *)
+end
+
+val[@deprecated] add : Dir.t -> unit
+(** Old name for {!append_dir} *)
+
+=======
+(** Same as [find], but search also for uncapitalized name, i.e.  if
+    name is Foo.ml, allow /path/Foo.ml and /path/foo.ml to match. *)
+
+val[@deprecated] add : Dir.t -> unit
+(** Old name for {!append_dir} *)
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 val find : string -> string
 (** Locate a file in the load path. Raise [Not_found] if the file
     cannot be found. This function is optimized for the case where the

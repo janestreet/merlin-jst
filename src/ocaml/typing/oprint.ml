@@ -272,7 +272,7 @@ let pr_present =
 let pr_var = Printast.tyvar
 let ty_var ~non_gen ppf s =
   pr_var ppf (if non_gen then "_" ^ s else s)
-
+  | Olay_const jkind -> fprintf ppf "%s" (Jkind.string_of_const jkind)
 let print_out_jkind ppf = function
   | Olay_const lay -> fprintf ppf "%s" (Jkind.string_of_const lay)
   | Olay_var v     -> fprintf ppf "%s" v
@@ -379,7 +379,7 @@ let mode_agree expected real =
   linearity_agree expected.oam_linearity real.oam_linearity
 
 let print_out_jkind ppf = function
-  | Olay_const lay -> fprintf ppf "%s" (Jkind.string_of_const lay)
+  | Olay_const jkind -> fprintf ppf "%s" (Jkind.string_of_const jkind)
   | Olay_var v     -> fprintf ppf "%s" v
 
 let is_local mode =
@@ -399,6 +399,22 @@ let is_once mode =
 
 let rec print_out_type_0 mode ppf =
   function
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Otyp_alias (ty, s) ->
+      fprintf ppf "@[%a@ as %a@]" (print_out_type_0 mode) ty pr_var s
+  | Otyp_poly ([], ty) ->
+      print_out_type_0 mode ppf ty  (* no "." if there are no vars *)
+  | Otyp_poly (sl, ty) ->
+=======
+  | Otyp_alias {non_gen; aliased; alias } ->
+    fprintf ppf "@[%a@ as %a@]"
+      (print_out_type_0 mode) aliased
+      (ty_var ~non_gen) alias
+  | Otyp_poly ([], ty) ->
+      print_out_type_0 mode ppf ty  (* no "." if there are no vars *)
+  | Otyp_poly (sl, ty) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Otyp_alias {non_gen; aliased; alias } ->
       fprintf ppf "@[%a@ as %a@]"
         (print_out_type_0 mode) aliased
@@ -480,11 +496,27 @@ and print_out_type_3 mode ppf =
   | Otyp_constr (id, tyl) ->
       pp_open_box ppf 0;
       print_typargs ppf tyl;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       print_ident ppf id;
       pp_close_box ppf ()
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Otyp_object (fields, rest) ->
+      fprintf ppf "@[<2>< %a >@]" (print_fields rest) fields
+=======
   | Otyp_object {fields; open_row} ->
       fprintf ppf "@[<2>< %a >@]" (print_fields open_row) fields
+>>>>>>> ocaml-flambda/flambda-backend:main
+  | Otyp_object {fields; open_row} ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+      fprintf ppf "@[<2>< %a >@]" (print_fields open_row) fields
   | Otyp_stuff s -> pp_print_string ppf s
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Otyp_var (ng, s) -> pr_var ppf (if ng then "_" ^ s else s)
+  | Otyp_variant (non_gen, row_fields, closed, tags) ->
+=======
+  | Otyp_var (non_gen, s) -> ty_var ~non_gen ppf s
+  | Otyp_variant (row_fields, closed, tags) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Otyp_var (non_gen, s) -> ty_var ~non_gen ppf s
   | Otyp_variant (row_fields, closed, tags) ->
       let print_present ppf =
@@ -540,13 +572,39 @@ and print_record_decl ppf lbls =
     (print_list_init print_out_label (fun ppf -> fprintf ppf "@ ")) lbls
 and print_fields open_row ppf =
   function
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     [] ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      begin match rest with
+        Some non_gen -> fprintf ppf "%s.." (if non_gen then "_" else "")
+      | None -> ()
+      end
+=======
+      if open_row then fprintf ppf "..";
+>>>>>>> ocaml-flambda/flambda-backend:main
       if open_row then fprintf ppf "..";
   | [s, t] ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       fprintf ppf "%s : %a" s print_out_type t;
       if open_row then fprintf ppf ";@ ";
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      begin match rest with
+        Some _ -> fprintf ppf ";@ "
+      | None -> ()
+      end;
+      print_fields rest ppf []
+=======
+      if open_row then fprintf ppf ";@ ";
       print_fields open_row ppf []
+>>>>>>> ocaml-flambda/flambda-backend:main
+      print_fields open_row ppf []
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | (s, t) :: l ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      fprintf ppf "%s : %a;@ %a" s print_out_type t (print_fields rest) l
+=======
+      fprintf ppf "%s : %a;@ %a" s print_out_type t (print_fields open_row) l
+>>>>>>> ocaml-flambda/flambda-backend:main
       fprintf ppf "%s : %a;@ %a" s print_out_type t (print_fields open_row) l
 and print_row_field ppf (l, opt_amp, tyl) =
   let pr_of ppf =
@@ -589,6 +647,16 @@ let out_type = ref print_out_type
 
 let out_type_args = ref print_typargs
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let out_type = ref print_out_type
+
+=======
+let out_type = ref print_out_type
+
+let out_type_args = ref print_typargs
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 (* Class types *)
 
 let print_type_parameter ppf s =

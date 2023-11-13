@@ -104,6 +104,26 @@ let rec lident_of_path = function
   | Path.Pextra_ty (p, _) -> lident_of_path p
 
 let map_loc sub {loc; txt} = {loc = sub.location sub loc; txt}
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let rec aux i =
+    let name = s ^ Int.to_string i in
+    if Env.bound_value name env then aux (i+1)
+    else name
+  in
+  aux 0
+
+(** Extract the [n] patterns from the case of a letop *)
+let rec extract_letop_patterns n pat =
+=======
+  let name i = s ^ Int.to_string i in
+  let available i = not (Env.bound_value (name i) env) in
+  let first_i = Misc.find_first_mono available in
+  name first_i
+
+(** Extract the [n] patterns from the case of a letop *)
+let rec extract_letop_patterns n pat =
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 (** Try a name [$name$0], check if it's free, if not, increment and repeat. *)
 let fresh_name s env =
@@ -149,7 +169,7 @@ let attributes sub l = List.map (sub.attribute sub) l
 
 let var_jkind ~loc (var, jkind) =
   let add_loc x = mkloc x loc in
-  add_loc var, Option.map add_loc jkind
+  add_loc var, Option.map (fun (_, annot) -> annot) jkind
 
 let structure sub str =
   List.map (sub.structure_item sub) str.str_items
@@ -238,7 +258,8 @@ let type_parameter sub (ct, v) = (sub.typ sub ct, v)
 let type_declaration sub decl =
   let loc = sub.location sub decl.typ_loc in
   let attrs = sub.attributes sub decl.typ_attributes in
-  Type.mk ~loc ~attrs
+  Jane_syntax.Layouts.type_declaration_of
+    ~loc ~attrs
     ~params:(List.map (type_parameter sub) decl.typ_params)
     ~cstrs:(
       List.map
@@ -247,7 +268,10 @@ let type_declaration sub decl =
         decl.typ_cstrs)
     ~kind:(sub.type_kind sub decl.typ_kind)
     ~priv:decl.typ_private
-    ?manifest:(Option.map (sub.typ sub) decl.typ_manifest)
+    ~manifest:(Option.map (sub.typ sub) decl.typ_manifest)
+    ~docs:Docstrings.empty_docs
+    ~text:None
+    ~jkind:decl.typ_jkind_annotation
     (map_loc sub decl.typ_name)
 
 let type_kind sub tk = match tk with
@@ -384,7 +408,7 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
     | Tpat_record (list, closed) ->
         Ppat_record (List.map (fun (lid, _, pat) ->
             map_loc sub lid, sub.pat sub pat) list, closed)
-    | Tpat_array (am, list) -> begin
+    | Tpat_array (am, _, list) -> begin
         let pats = List.map (sub.pat sub) list in
         match am with
         | Mutable   -> Ppat_array pats
@@ -426,9 +450,9 @@ let exp_extra sub (extra, loc, attrs) sexp =
     | Texp_poly cto -> Pexp_poly (sexp, Option.map (sub.typ sub) cto)
     | Texp_newtype (s, None) ->
         Pexp_newtype (add_loc s, sexp)
-    | Texp_newtype (s, Some jkind) ->
+    | Texp_newtype (s, Some (_, jkind)) ->
         Jane_syntax.Layouts.expr_of ~loc
-          (Lexp_newtype(add_loc s, add_loc jkind, sexp))
+          (Lexp_newtype(add_loc s, jkind, sexp))
         |> add_jane_syntax_attributes
     | Texp_newtype' (_id, label_loc, None) ->
         Pexp_newtype (label_loc, sexp)
@@ -952,9 +976,9 @@ let core_type sub ct =
   let desc = match ct.ctyp_desc with
     | Ttyp_var (None, None) -> Ptyp_any
     | Ttyp_var (Some s, None) -> Ptyp_var s
-    | Ttyp_var (name, Some jkind) ->
+    | Ttyp_var (name, Some (_, jkind_annotation)) ->
         Jane_syntax.Layouts.type_of ~loc
-          (Ltyp_var { name; jkind = mkloc jkind loc }) |>
+          (Ltyp_var { name; jkind = jkind_annotation }) |>
         add_jane_syntax_attributes
     | Ttyp_arrow (label, ct1, ct2) ->
         Ptyp_arrow (label, sub.typ sub ct1, sub.typ sub ct2)
@@ -969,10 +993,10 @@ let core_type sub ct =
         Ptyp_class (map_loc sub lid, List.map (sub.typ sub) list)
     | Ttyp_alias (ct, Some s, None) ->
         Ptyp_alias (sub.typ sub ct, s)
-    | Ttyp_alias (ct, s, Some jkind) ->
+    | Ttyp_alias (ct, s, Some (_, jkind_annotation)) ->
         Jane_syntax.Layouts.type_of ~loc
           (Ltyp_alias { aliased_type = sub.typ sub ct; name = s;
-                        jkind = mkloc jkind loc }) |>
+                        jkind = jkind_annotation }) |>
         add_jane_syntax_attributes
     | Ttyp_alias (_, None, None) ->
       Misc.fatal_error "anonymous alias without layout annotation in Untypeast"

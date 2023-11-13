@@ -44,8 +44,40 @@ type variance_error =
   | Variance_variable_error of {
        error : variance_variable_error;
        context : variance_variable_context;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
        variable : type_expr
      }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+type req = surface_variance list
+val property : (Variance.t list, req) property
+
+type variance_error =
+| Variance_not_satisfied of int
+| No_variable
+| Variance_not_reflected
+| Variance_not_deducible
+=======
+type req = surface_variance list
+val property : (Variance.t list, req) property
+
+type variance_variable_context =
+  | Type_declaration of Ident.t * type_declaration
+  | Gadt_constructor of constructor_declaration
+  | Extension_constructor of Ident.t * extension_constructor
+
+type variance_variable_error =
+  | No_variable
+  | Variance_not_reflected
+  | Variance_not_deducible
+
+type variance_error =
+  | Variance_not_satisfied of int
+  | Variance_variable_error of {
+       error : variance_variable_error;
+       context : variance_variable_context;
+       variable : type_expr
+     }
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 type error =
   | Bad_variance of variance_error * surface_variance * surface_variance
@@ -69,7 +101,13 @@ val update_class_decls :
   Env.t ->
   (Ident.t * Typedecl_properties.decl *
    Types.class_declaration * Types.class_type_declaration *
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
    'a Typedtree.class_infos) list ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  (Typedecl_properties.decl * Types.type_declaration *
+=======
+  (Typedecl_properties.decl *
+>>>>>>> ocaml-flambda/flambda-backend:main
   (Typedecl_properties.decl *
    Types.class_declaration * Types.class_type_declaration) list
 (* FIXME: improve this horrible interface *)

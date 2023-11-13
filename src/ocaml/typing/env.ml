@@ -517,6 +517,25 @@ module IdTbl =
       in
       Seq.append current next ()
 
+    let rec find_all_idents name tbl () =
+      let current =
+        Ident.find_all_seq name tbl.current
+        |> Seq.map (fun (id, _) -> Some id)
+      in
+      let next () =
+        match tbl.layer with
+        | Nothing -> Seq.Nil
+        | Open { next; components; _ } ->
+            if NameMap.mem name components then
+              Seq.Cons(None, find_all_idents name next)
+            else
+              find_all_idents name next ()
+        | Map {next; _ } -> find_all_idents name next ()
+        | Lock {mode=_;next} ->
+            find_all_idents name next ()
+      in
+      Seq.append current next ()
+
     let rec fold_name wrap f tbl acc =
       let acc =
         Ident.fold_name
@@ -852,7 +871,23 @@ let is_ext cda =
 
 let is_local_ext cda =
   match cda.cda_description with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | {cstr_tag = Extension(p, _)} -> begin
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | {cstr_tag = Extension (p,_)} -> is_ident p
+  | _ -> false
+
+let diff env1 env2 =
+=======
+  | {cstr_tag = Extension(p, _)} -> begin
+      match p with
+      | Pident _ -> true
+      | Pdot _ | Papply _ | Pextra_ty _ -> false
+  end
+  | _ -> false
+
+let diff env1 env2 =
+>>>>>>> ocaml-flambda/flambda-backend:main
       match p with
       | Pident _ -> true
       | Pdot _ | Papply _ | Pextra_ty _ -> false
@@ -1308,29 +1343,229 @@ let find_modtype_lazy path env =
 
 let find_modtype path env =
   Subst.Lazy.force_modtype_decl (find_modtype_lazy path env)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      NameMap.find s sc.comp_values
+  | Papply _ -> raise Not_found
+=======
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      NameMap.find s sc.comp_values
+  | Papply _ | Pextra_ty _ -> raise Not_found
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let find_class_full path env =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let find_type_full path env =
+=======
+let find_extension_full path env =
+>>>>>>> ocaml-flambda/flambda-backend:main
   match path with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Pident id -> IdTbl.find_same id env.classes
   | Pdot(p, s) ->
       let sc = find_structure_components p env in
       NameMap.find s sc.comp_classes
   | Papply _ | Pextra_ty _ -> raise Not_found
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Pident id -> IdTbl.find_same id env.types
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      NameMap.find s sc.comp_types
+  | Papply _ -> raise Not_found
+=======
+  | Pident id -> TycompTbl.find_same id env.constrs
+  | Pdot(p, s) -> begin
+      let comps = find_structure_components p env in
+      let cstrs = NameMap.find s comps.comp_constrs in
+      let exts = List.filter is_ext cstrs in
+      match exts with
+      | [cda] -> cda
+      | _ -> raise Not_found
+    end
+  | Papply _ | Pextra_ty _ -> raise Not_found
+
+let type_of_cstr path = function
+  | {cstr_inlined = Some decl; _} ->
+      let labels =
+        List.map snd (Datarepr.labels_of_type path decl)
+      in
+      begin match decl.type_kind with
+      | Type_record (_, repr) ->
+        {
+          tda_declaration = decl;
+          tda_descriptions = Type_record (labels, repr);
+          tda_shape = Shape.leaf decl.type_uid;
+        }
+      | _ -> assert false
+      end
+  | _ -> assert false
+
+let rec find_type_data path env =
+  match Path.Map.find path env.local_constraints with
+  | decl ->
+    {
+      tda_declaration = decl;
+      tda_descriptions = Type_abstract Abstract_def;
+      tda_shape = Shape.leaf decl.type_uid;
+    }
+  | exception Not_found -> begin
+      match path with
+      | Pident id -> IdTbl.find_same id env.types
+      | Pdot(p, s) ->
+          let sc = find_structure_components p env in
+          NameMap.find s sc.comp_types
+      | Papply _ -> raise Not_found
+      | Pextra_ty (p, extra) -> begin
+          match extra with
+          | Pcstr_ty s ->
+              let cstr = find_cstr p s env in
+              type_of_cstr path cstr
+          | Pext_ty ->
+              let cda = find_extension_full p env in
+              type_of_cstr path cda.cda_description
+        end
+    end
+and find_cstr path name env =
+  let tda = find_type_data path env in
+  match tda.tda_descriptions with
+  | Type_variant (cstrs, _) ->
+      List.find (fun cstr -> cstr.cstr_name = name) cstrs
+  | Type_record _ | Type_abstract _ | Type_open -> raise Not_found
+
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let find_cltype path env =
   match path with
   | Pident id -> (IdTbl.find_same id env.cltypes).cltda_declaration
   | Pdot(p, s) ->
       let sc = find_structure_components p env in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       (NameMap.find s sc.comp_cltypes).cltda_declaration
   | Papply _ | Pextra_ty _ -> raise Not_found
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      (NameMap.find s sc.comp_modtypes).mtda_declaration
+  | Papply _ -> raise Not_found
+=======
+      (NameMap.find s sc.comp_modtypes).mtda_declaration
+  | Papply _ | Pextra_ty _ -> raise Not_found
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let find_value path env =
   (find_value_full path env).vda_description
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      NameMap.find s sc.comp_classes
+  | Papply _ -> raise Not_found
+=======
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      NameMap.find s sc.comp_classes
+  | Papply _ | Pextra_ty _ -> raise Not_found
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let find_class path env =
   (find_class_full path env).clda_declaration
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      (NameMap.find s sc.comp_cltypes).cltda_declaration
+  | Papply _ -> raise Not_found
+=======
+  | Pdot(p, s) ->
+      let sc = find_structure_components p env in
+      (NameMap.find s sc.comp_cltypes).cltda_declaration
+  | Papply _ | Pextra_ty _ -> raise Not_found
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let find_ident_label id env =
+  TycompTbl.find_same id env.labels
+
+let type_of_cstr path = function
+  | {cstr_inlined = Some decl; _} ->
+      let labels =
+        List.map snd (Datarepr.labels_of_type path decl)
+      in
+      begin match decl.type_kind with
+      | Type_record (_, repr) ->
+        {
+          tda_declaration = decl;
+          tda_descriptions = Type_record (labels, repr);
+          tda_shape = Shape.leaf decl.type_uid;
+        }
+      | _ -> assert false
+      end
+  | _ -> assert false
+
+let find_type_data path env =
+  match Path.constructor_typath path with
+  | Regular p -> begin
+      match Path.Map.find p env.local_constraints with
+      | decl ->
+          {
+            tda_declaration = decl;
+            tda_descriptions = Type_abstract Abstract_def;
+            tda_shape = Shape.leaf decl.type_uid;
+          }
+      | exception Not_found -> find_type_full p env
+    end
+  | Cstr (ty_path, s) ->
+      (* This case corresponds to an inlined record *)
+      let tda =
+        try find_type_full ty_path env
+        with Not_found -> assert false
+      in
+      let cstr =
+        begin match tda.tda_descriptions with
+        | Type_variant (cstrs, _) -> begin
+            try
+              List.find (fun cstr -> cstr.cstr_name = s) cstrs
+            with Not_found -> assert false
+          end
+        | Type_record _ | Type_abstract _ | Type_open -> assert false
+        end
+      in
+      type_of_cstr path cstr
+  | LocalExt id ->
+      let cstr =
+        try (TycompTbl.find_same id env.constrs).cda_description
+        with Not_found -> assert false
+      in
+      type_of_cstr path cstr
+  | Ext (mod_path, s) ->
+      let comps =
+        try find_structure_components mod_path env
+        with Not_found -> assert false
+      in
+      let cstrs =
+        try NameMap.find s comps.comp_constrs
+        with Not_found -> assert false
+      in
+      let exts = List.filter is_ext cstrs in
+      match exts with
+      | [cda] -> type_of_cstr path cda.cda_description
+      | _ -> assert false
+
+let find_type p env =
+  (find_type_data p env).tda_declaration
+let find_type_descrs p env =
+=======
+let find_ident_label id env =
+  TycompTbl.find_same id env.labels
+
+let find_type p env =
+  (find_type_data p env).tda_declaration
+let find_type_descrs p env =
+>>>>>>> ocaml-flambda/flambda-backend:main
 let find_ident_constructor id env =
   (TycompTbl.find_same id env.constrs).cda_description
 
@@ -1388,16 +1623,46 @@ let find_constructor_address path env =
 
 let find_hash_type path env =
   match path with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Pident id ->
       let name = Ident.name id in
       let _, cltda =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let name = "#" ^ Ident.name id in
+      let _, tda =
+        IdTbl.find_name wrap_identity ~mark:false name env.types
+=======
+      let name = Ident.name id in
+      let _, cltda =
         IdTbl.find_name wrap_identity ~mark:false name env.cltypes
+>>>>>>> ocaml-flambda/flambda-backend:main
+        IdTbl.find_name wrap_identity ~mark:false name env.cltypes
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       in
       cltda.cltda_declaration.clty_hash_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      tda.tda_declaration
+  | Pdot(p, s) ->
+=======
+      cltda.cltda_declaration.clty_hash_type
   | Pdot(p, name) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
+  | Pdot(p, name) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let c = find_structure_components p env in
       let cltda = NameMap.find name c.comp_cltypes in
       cltda.cltda_declaration.clty_hash_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let name = "#" ^ s in
+      let tda = NameMap.find name c.comp_types in
+      tda.tda_declaration
+  | Papply _ ->
+      raise Not_found
+=======
+      let cltda = NameMap.find name c.comp_cltypes in
+      cltda.cltda_declaration.clty_hash_type
+  | Papply _ | Pextra_ty _ -> raise Not_found
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Papply _ | Pextra_ty _ -> raise Not_found
 
 let probes = ref String.Set.empty
@@ -1476,6 +1741,68 @@ let rec normalize_module_path lax env = function
   | Pextra_ty _ -> assert false
 
 and expand_module_path lax env path =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        error (Missing_module(loc, path,
+                              normalize_module_path true env path))
+
+let normalize_path_prefix oloc env path =
+  match path with
+    Pdot(p, s) ->
+      let p2 = normalize_module_path oloc env p in
+      if p == p2 then path else Pdot(p2, s)
+  | Pident _ ->
+      path
+  | Papply _ ->
+      assert false
+
+let normalize_type_path oloc env path =
+  (* Inlined version of Path.is_constructor_typath:
+     constructor type paths (i.e. path pointing to an inline
+     record argument of a constructpr) are built as a regular
+     type path followed by a capitalized constructor name. *)
+  match path with
+  | Pident _ ->
+      path
+  | Pdot(p, s) ->
+      let p2 =
+        if Path.is_uident s && not (Path.is_uident (Path.last p)) then
+          (* Cstr M.t.C *)
+          normalize_path_prefix oloc env p
+        else
+          (* Regular M.t, Ext M.C *)
+          normalize_module_path oloc env p
+      in
+      if p == p2 then path else Pdot (p2, s)
+  | Papply _ ->
+      assert false
+
+let rec normalize_modtype_path env path =
+  let path = normalize_path_prefix None env path in
+=======
+        error (Missing_module(loc, path,
+                              normalize_module_path true env path))
+
+let rec normalize_path_prefix oloc env path =
+  match path with
+  | Pdot(p, s) ->
+      let p2 = normalize_module_path oloc env p in
+      if p == p2 then path else Pdot(p2, s)
+  | Pident _ ->
+      path
+  | Pextra_ty (p, extra) ->
+      let p2 = normalize_path_prefix oloc env p in
+      if p == p2 then path else Pextra_ty (p2, extra)
+  | Papply _  ->
+      assert false
+
+let normalize_type_path = normalize_path_prefix
+
+let normalize_value_path = normalize_path_prefix
+
+let rec normalize_modtype_path env path =
+  let path = normalize_path_prefix None env path in
+>>>>>>> ocaml-flambda/flambda-backend:main
   try match find_module_lazy ~alias:true path env with
     {md_type=Mty_alias path1} ->
       let path' = normalize_module_path lax env path1 in
@@ -2122,8 +2449,7 @@ and store_constructor ~check type_decl type_id cstr_id cstr env =
               (constructor_usage_complaint ~rebind:false priv used));
     end;
   end);
-  Builtin_attributes.mark_alerts_used cstr.cstr_attributes;
-  Builtin_attributes.mark_warn_on_literal_pattern_used
+  Builtin_attributes.mark_warn_on_literal_pattern_used cstr.cstr_attributes;
     cstr.cstr_attributes;
   let cda_shape = Shape.leaf cstr.cstr_uid in
   { env with
@@ -2438,7 +2764,10 @@ let enter_value ?check name desc env =
   let id = Ident.create_local name in
   let desc = Subst.Lazy.of_value_description desc in
   let addr = value_declaration_address env id desc in
-  let env = store_value ?check (Mode.Value.legacy) id addr desc (Shape.leaf desc.val_uid) env in
+  let env =
+    store_value ?check Mode.Value.legacy id addr desc (Shape.leaf desc.val_uid)
+      env
+  in
   (id, env)
 
 let enter_type ~scope name info env =
@@ -2870,8 +3199,8 @@ let add_language_extension_types env =
    turned on.  We can't do this at startup because command line flags haven't
    been parsed yet. So, we make the initial environment lazy.
 
-   If language extensions are adjusted after [initial_safe_string] and
-   [initial_unsafe_string] are forced, these environments may be inaccurate.
+   If language extensions are adjusted after [initial] is forced, these
+   environments may be inaccurate.
 *)
 let initial = add_language_extension_types initial
 
@@ -3580,7 +3909,30 @@ let find_label_by_name lid env =
   let loc = Location.(in_file !input_name) in
   lookup_label ~errors:false ~use:false ~loc Projection lid env
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (* Stable name lookup for printing *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(* Ordinary lookup functions *)
+=======
+(* Stable name lookup for printing *)
+
+let find_index_tbl ident tbl  =
+  let lbs = IdTbl.find_all_idents (Ident.name ident) tbl in
+  let find_ident (n,p) = match p with
+    | Some id -> if Ident.same ident id then Some n else None
+    | _ -> None
+  in
+  Seq.find_map find_ident @@ Seq.mapi (fun i x -> i,x) lbs
+
+let find_value_index id env = find_index_tbl id env.values
+let find_type_index id env = find_index_tbl id env.types
+let find_module_index id env = find_index_tbl id env.modules
+let find_modtype_index id env = find_index_tbl id env.modtypes
+let find_class_index id env = find_index_tbl id env.classes
+let find_cltype_index id env = find_index_tbl id env.cltypes
+
+(* Ordinary lookup functions *)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let find_index_tbl ident tbl  =
   let lbs = IdTbl.find_all_idents (Ident.name ident) tbl in
@@ -4043,12 +4395,7 @@ let report_lookup_error _loc env ppf = function
            "but modules are not module types"
     end
   | Unbound_cltype lid ->
-      fprintf ppf "Unbound class type %a" !print_longident lid;
-      begin match lid with
-      | Lident "float" ->
-        Misc.did_you_mean ppf (fun () -> ["float#"])
-      | Lident _ | Ldot _ | Lapply _ ->
-        spellcheck ppf extract_cltypes env lid
+      spellcheck ppf extract_cltypes env lid
       end;
   | Unbound_instance_variable s ->
       fprintf ppf "Unbound instance variable %s" s;

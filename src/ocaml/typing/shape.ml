@@ -146,6 +146,32 @@ let print fmt =
     | Var id ->
         Format.fprintf fmt "%a%a" Ident.print id print_uid_opt uid
     | Abs (id, t) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        Format.fprintf fmt "Abs@[%a@,(@[%a,@ @[%a@]@])@]"
+          print_uid_opt uid Ident.print id aux t
+    | App (t1, t2) ->
+        Format.fprintf fmt "@[%a(@,%a)%a@]" aux t1 aux t2
+          print_uid_opt uid
+=======
+        let rec collect_idents = function
+          | { uid = None; desc = Abs(id, t) } ->
+            let (ids, body) = collect_idents t in
+            id :: ids, body
+          | body ->
+            ([], body)
+        in
+        let (other_idents, body) = collect_idents t in
+        let pp_idents fmt idents =
+          let pp_sep fmt () = Format.fprintf fmt ",@ " in
+          Format.pp_print_list ~pp_sep Ident.print fmt idents
+        in
+        Format.fprintf fmt "Abs@[%a@,(@[%a,@ @[%a@]@])@]"
+          print_uid_opt uid pp_idents (id :: other_idents) aux body
+    | App (t1, t2) ->
+        Format.fprintf fmt "@[%a(@,%a)%a@]" aux t1 aux t2
+          print_uid_opt uid
+>>>>>>> ocaml-flambda/flambda-backend:main
         let rec collect_idents = function
           | { uid = None; desc = Abs(id, t) } ->
             let (ids, body) = collect_idents t in
@@ -517,6 +543,21 @@ let of_path ~find_shape ~namespace =
     | Pident id -> find_shape ns id
     | Pdot (path, name) -> proj (aux Module path) (name, ns)
     | Papply (p1, p2) -> app (aux Module p1) ~arg:(aux Module p2)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  in
+  aux namespace
+
+=======
+    | Pextra_ty (path, extra) -> begin
+        match extra with
+          Pcstr_ty _ -> aux Type path
+        | Pext_ty -> aux Extension_constructor path
+      end
+  in
+  aux namespace
+
+>>>>>>> ocaml-flambda/flambda-backend:main
     | Pextra_ty (path, extra) -> begin
         match extra with
           Pcstr_ty _ -> aux Type path

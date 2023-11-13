@@ -56,6 +56,14 @@ type type_kind =
 
 type kind_mismatch = type_kind * type_kind
 
+type type_kind =
+  | Kind_abstract
+  | Kind_record
+  | Kind_variant
+  | Kind_open
+
+type kind_mismatch = type_kind * type_kind
+
 type label_mismatch =
   | Type of Errortrace.equality_error
   | Mutability of position

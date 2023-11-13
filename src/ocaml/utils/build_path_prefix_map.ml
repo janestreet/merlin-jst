@@ -92,6 +92,59 @@ let decode_map str =
   in
   let pairs = String.split_on_char ':' str in
   match List.map decode_or_empty pairs with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | exception (Shortcut err) -> Error err
+  | map -> Ok map
+
+let rewrite_opt prefix_map path =
+  let is_prefix = function
+    | None -> false
+    | Some { target = _; source } ->
+      String.length source <= String.length path
+      && String.equal source (String.sub path 0 (String.length source))
+  in
+  match
+    List.find is_prefix
+      (* read key/value pairs from right to left, as the spec demands *)
+      (List.rev prefix_map)
+  with
+  | exception Not_found -> None
+  | None -> None
+  | Some { source; target } ->
+      Some (target ^ (String.sub path (String.length source)
+                       (String.length path - String.length source)))
+
+let rewrite prefix_map path =
+  match rewrite_opt prefix_map path with
+  | None -> path
+  | Some path -> path
+=======
+  | exception (Shortcut err) -> Error err
+  | map -> Ok map
+
+let make_target path : pair option -> path option = function
+  | None -> None
+  | Some { target; source } ->
+    let is_prefix =
+      String.length source <= String.length path
+        && String.equal source (String.sub path 0 (String.length source)) in
+    if is_prefix then
+      Some (target ^ (String.sub path (String.length source)
+                       (String.length path - String.length source)))
+    else None
+
+let rewrite_first prefix_map path =
+  List.find_map (make_target path) (List.rev prefix_map)
+
+let rewrite_all prefix_map path =
+  List.filter_map (make_target path) (List.rev prefix_map)
+
+let rewrite prefix_map path =
+  match rewrite_first prefix_map path with
+  | None -> path
+  | Some path -> path
+>>>>>>> ocaml-flambda/flambda-backend:main
   | exception (Shortcut err) -> Error err
   | map -> Ok map
 

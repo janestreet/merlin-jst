@@ -19,7 +19,12 @@ open Lexing
 open Location
 open Typedtree
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let fmt_position f l =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
   if l.pos_lnum = -1
   then fprintf f "%s[%d]" l.pos_fname l.pos_cnum
   else fprintf f "%s[%d,%d+%d]" l.pos_fname l.pos_lnum l.pos_bol
@@ -32,7 +37,12 @@ let fmt_location f loc =
     fprintf f "(%a..%a)" fmt_position loc.loc_start fmt_position loc.loc_end;
     if loc.loc_ghost then fprintf f " ghost";
   end
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let rec fmt_longident_aux f x =
   match x with
@@ -40,8 +50,14 @@ let rec fmt_longident_aux f x =
   | Longident.Ldot (y, s) -> fprintf f "%a.%s" fmt_longident_aux y s;
   | Longident.Lapply (y, z) ->
       fprintf f "%a(%a)" fmt_longident_aux y fmt_longident_aux z
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let fmt_longident f x = fprintf f "\"%a\"" fmt_longident_aux x.txt;;
+=======
+let fmt_longident f x = fprintf f "\"%a\"" fmt_longident_aux x.txt
+>>>>>>> ocaml-flambda/flambda-backend:main
 let fmt_longident f x = fprintf f "\"%a\"" fmt_longident_aux x.txt
 
 let fmt_ident = Ident.print
@@ -53,38 +69,108 @@ let fmt_modname f = function
 let rec fmt_path_aux f x =
   match x with
   | Path.Pident (s) -> fprintf f "%a" fmt_ident s
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Path.Pdot (y, s) | Path.(Pextra_ty (y, Pcstr_ty s)) ->
       fprintf f "%a.%s" fmt_path_aux y s
-  | Path.Papply (y, z) ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      fprintf f "%a(%a)" fmt_path_aux y fmt_path_aux z;
+;;
+=======
       fprintf f "%a(%a)" fmt_path_aux y fmt_path_aux z
+  | Path.Pextra_ty (y, Pext_ty) -> fmt_path_aux f y
+>>>>>>> ocaml-flambda/flambda-backend:main
+  | Path.Papply (y, z) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+      fprintf f "%a(%a)" fmt_path_aux y fmt_path_aux z
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let fmt_path f x = fprintf f "\"%a\"" fmt_path_aux x;;
+=======
+let fmt_path f x = fprintf f "\"%a\"" fmt_path_aux x
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Path.Pextra_ty (y, Pext_ty) -> fmt_path_aux f y
 
 let fmt_path f x = fprintf f "\"%a\"" fmt_path_aux x
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let fmt_constant f x =
-  match x with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Const_int (i) -> fprintf f "Const_int %d" i;
+  | Const_char (c) -> fprintf f "Const_char %02x" (Char.code c);
+=======
   | Const_int (i) -> fprintf f "Const_int %d" i
   | Const_char (c) -> fprintf f "Const_char %02x" (Char.code c)
+>>>>>>> ocaml-flambda/flambda-backend:main
+  match x with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+  | Const_int (i) -> fprintf f "Const_int %d" i
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      fprintf f "Const_string(%S,%a,None)" s fmt_location strloc;
+=======
+      fprintf f "Const_string(%S,%a,None)" s fmt_location strloc
+>>>>>>> ocaml-flambda/flambda-backend:main
+  | Const_char (c) -> fprintf f "Const_char %02x" (Char.code c)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Const_string (s, strloc, None) ->
       fprintf f "Const_string(%S,%a,None)" s fmt_location strloc
   | Const_string (s, strloc, Some delim) ->
       fprintf f "Const_string (%S,%a,Some %S)" s fmt_location strloc delim
   | Const_float (s) -> fprintf f "Const_float %s" s
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      fprintf f "Const_string (%S,%a,Some %S)" s fmt_location strloc delim;
+  | Const_float (s) -> fprintf f "Const_float %s" s;
+  | Const_int32 (i) -> fprintf f "Const_int32 %ld" i;
+  | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i;
+  | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i;
+;;
+=======
+      fprintf f "Const_string (%S,%a,Some %S)" s fmt_location strloc delim
+  | Const_float (s) -> fprintf f "Const_float %s" s
   | Const_int32 (i) -> fprintf f "Const_int32 %ld" i
   | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i
   | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i
+>>>>>>> ocaml-flambda/flambda-backend:main
+  | Const_int32 (i) -> fprintf f "Const_int32 %ld" i
+  | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i
+  | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let fmt_mutable_flag f x =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Immutable -> fprintf f "Immutable";
+  | Mutable -> fprintf f "Mutable";
+;;
+=======
+  | Immutable -> fprintf f "Immutable"
+  | Mutable -> fprintf f "Mutable"
+>>>>>>> ocaml-flambda/flambda-backend:main
   match x with
   | Immutable -> fprintf f "Immutable"
   | Mutable -> fprintf f "Mutable"
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let fmt_virtual_flag f x =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Virtual -> fprintf f "Virtual";
+  | Concrete -> fprintf f "Concrete";
+;;
+=======
+  | Virtual -> fprintf f "Virtual"
+  | Concrete -> fprintf f "Concrete"
+>>>>>>> ocaml-flambda/flambda-backend:main
   match x with
   | Virtual -> fprintf f "Virtual"
   | Concrete -> fprintf f "Concrete"
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let fmt_override_flag f x =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Override -> fprintf f "Override";
+  | Fresh -> fprintf f "Fresh";
+;;
+=======
+  | Override -> fprintf f "Override"
+  | Fresh -> fprintf f "Fresh"
+>>>>>>> ocaml-flambda/flambda-backend:main
   match x with
   | Override -> fprintf f "Override"
   | Fresh -> fprintf f "Fresh"
@@ -99,13 +185,31 @@ let fmt_rec_flag f x =
   | Nonrecursive -> fprintf f "Nonrec"
   | Recursive -> fprintf f "Rec"
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let fmt_direction_flag f x =
   match x with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Upto -> fprintf f "Up";
+  | Downto -> fprintf f "Down";
+;;
+=======
+  | Upto -> fprintf f "Up"
+  | Downto -> fprintf f "Down"
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Upto -> fprintf f "Up"
   | Downto -> fprintf f "Down"
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let fmt_private_flag f x =
   match x with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Public -> fprintf f "Public";
+  | Private -> fprintf f "Private";
+;;
+=======
+  | Public -> fprintf f "Public"
+  | Private -> fprintf f "Private"
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Public -> fprintf f "Public"
   | Private -> fprintf f "Private"
 
@@ -113,11 +217,24 @@ let line i f s (*...*) =
   fprintf f "%s" (String.make (2*i) ' ');
   fprintf f s (*...*)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let list i f ppf l =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | [] -> line i ppf "[]\n";
+=======
+  | [] -> line i ppf "[]\n"
+>>>>>>> ocaml-flambda/flambda-backend:main
   match l with
   | [] -> line i ppf "[]\n"
   | _ :: _ ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      line i ppf "[\n";
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+     line i ppf "]\n";
+;;
+=======
+     line i ppf "]\n"
+>>>>>>> ocaml-flambda/flambda-backend:main
      List.iter (f (i+1) ppf) l;
      line i ppf "]\n"
 
@@ -134,15 +251,35 @@ let option i f ppf x =
   match x with
   | None -> line i ppf "None\n"
   | Some x ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       line i ppf "Some\n";
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      f (i+1) ppf x;
+;;
+=======
       f (i+1) ppf x
+>>>>>>> ocaml-flambda/flambda-backend:main
+      f (i+1) ppf x
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let longident i ppf li = line i ppf "%a\n" fmt_longident li
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let longident i ppf li = line i ppf "%a\n" fmt_longident li;;
+let string i ppf s = line i ppf "\"%s\"\n" s;;
+=======
+let longident i ppf li = line i ppf "%a\n" fmt_longident li
+let string i ppf s = line i ppf "\"%s\"\n" s
+>>>>>>> ocaml-flambda/flambda-backend:main
 let string i ppf s = line i ppf "\"%s\"\n" s
 let arg_label i ppf = function
   | Nolabel -> line i ppf "Nolabel\n"
   | Optional s -> line i ppf "Optional \"%s\"\n" s
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Labelled s -> line i ppf "Labelled \"%s\"\n" s
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 
 let typevar_jkind ~print_quote ppf (v, l) =
@@ -163,14 +300,30 @@ let typevar_layout' ppf (v, l) =
   let pptv = fmt_ident in
   match l with
   | None -> fprintf ppf " %a" pptv v
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Some lay -> fprintf ppf " (%a : %a)"
                     pptv v
                     Jane_syntax.Layouts.Pprint.const_jkind lay
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Some lay -> fprintf ppf " (%a : %a)"
+                    pptv v
+                    Jane_syntax.Layouts.Pprint.const_jkind lay
+=======
+  | Some (_, lay) ->
+      fprintf ppf " (%a : %a)"
+        pptv v
+        Jane_syntax.Layouts.Pprint.const_jkind lay.txt
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let typevars ppf vs =
   List.iter (typevar_jkind ~print_quote:true ppf) vs
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let jkind_array i ppf jkinds =
   array (i+1) (fun _ ppf l -> fprintf ppf "%a;@ " Jkind.format l)
@@ -210,7 +363,7 @@ let attributes i ppf l =
     Printast.payload (i + 1) ppf a.Parsetree.attr_payload
   ) l
 
-let jkind_annotation i ppf jkind =
+let jkind_annotation i ppf (jkind, _) =
   line i ppf "%s" (Jkind.string_of_const jkind)
 
 let rec core_type i ppf x =
@@ -306,8 +459,9 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
   | Tpat_record (l, _c) ->
       line i ppf "Tpat_record\n";
       list i longident_x_pattern ppf l;
-  | Tpat_array (am, l) ->
+  | Tpat_array (am, arg_sort, l) ->
       line i ppf "Tpat_array %a\n" fmt_mutable_flag am;
+      line i ppf "%a\n" Jkind.Sort.format arg_sort;
       list i pattern ppf l;
   | Tpat_lazy p ->
       line i ppf "Tpat_lazy\n";
@@ -1098,10 +1252,22 @@ and label_x_bool_x_core_type_list i ppf x =
       line i ppf "Tinherit\n";
       core_type (i+1) ppf ct
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let interface ppf x = list 0 signature_item ppf x.sig_items;;
+=======
+let interface ppf x = list 0 signature_item ppf x.sig_items
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let interface ppf x = list 0 signature_item ppf x.sig_items
 
 let implementation ppf x = list 0 structure_item ppf x.str_items
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let implementation ppf x = list 0 structure_item ppf x.str_items;;
+=======
+let implementation ppf x = list 0 structure_item ppf x.str_items
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let implementation_with_coercion ppf Typedtree.{structure; _} =
   implementation ppf structure

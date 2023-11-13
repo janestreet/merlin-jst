@@ -513,7 +513,12 @@ module Vb = struct
         ?(text = []) ?value_constraint pat expr =
     {
      pvb_pat = pat;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      pvb_expr = expr;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+     pvb_constraint=value_constraint;
+>>>>>>> ocaml-flambda/flambda-backend:main
      pvb_constraint=value_constraint;
      pvb_attributes =
        add_text_attrs text (add_docs_attrs docs attrs);
@@ -540,13 +545,11 @@ module Type = struct
   let mk ?(loc = !default_loc) ?(attrs = [])
         ?(docs = empty_docs) ?(text = [])
       ?(params = [])
-      ?jkind
       ?(cstrs = [])
       ?(kind = Ptype_abstract)
       ?(priv = Public)
       ?manifest
       name =
-    let jkind_attrs = Option.to_list jkind in
     {
      ptype_name = name;
      ptype_params = params;
@@ -554,8 +557,7 @@ module Type = struct
      ptype_kind = kind;
      ptype_private = priv;
      ptype_manifest = manifest;
-     ptype_attributes =
-       jkind_attrs @ add_text_attrs text (add_docs_attrs docs attrs);
+     ptype_attributes = add_text_attrs text (add_docs_attrs docs attrs);
      ptype_loc = loc;
     }
 

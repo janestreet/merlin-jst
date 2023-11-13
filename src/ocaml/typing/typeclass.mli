@@ -109,6 +109,25 @@ type error =
   | Parameter_mismatch of Errortrace.unification_error
   | Bad_parameters of Ident.t * type_expr list * type_expr list
   | Bad_class_type_parameters of Ident.t * type_expr list * type_expr list
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Unbound_type_var of
+      (formatter -> unit) * (type_expr * bool * string * type_expr)
+  | Non_generalizable_class of Ident.t * Types.class_declaration
+  | Cannot_coerce_self of type_expr
+  | Non_collapsable_conjunction of
+      Ident.t * Types.class_declaration * Errortrace.unification_error
+=======
+  | Unbound_type_var of (formatter -> unit) * Ctype.closed_class_failure
+  | Non_generalizable_class of
+      { id : Ident.t
+      ; clty : Types.class_declaration
+      ; nongen_vars : type_expr list
+      }
+  | Cannot_coerce_self of type_expr
+  | Non_collapsable_conjunction of
+      Ident.t * Types.class_declaration * Errortrace.unification_error
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Class_match_failure of Ctype.class_match_failure list
   | Unbound_val of string
   | Unbound_type_var of (formatter -> unit) * Ctype.closed_class_failure
@@ -127,6 +146,7 @@ type error =
   | Closing_self_type of class_signature
   | Polymorphic_class_parameter
   | Non_value_binding of string * Jkind.Violation.t
+  | Non_value_let_binding of string * Jkind.sort
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error

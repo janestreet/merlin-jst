@@ -112,6 +112,26 @@ type error =
   | Multiply_bound_variable of string
   | Orpat_vars of Ident.t * Ident.t list
   | Expr_type_clash of
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      * expression_desc option
+  | Apply_non_function of type_expr
+  | Apply_wrong_label of arg_label * type_expr * bool
+  | Label_multiply_defined of string
+  | Label_missing of Ident.t list
+=======
+      * Parsetree.expression_desc option
+  | Apply_non_function of {
+      funct : Typedtree.expression;
+      func_ty : type_expr;
+      res_ty : type_expr;
+      previous_arg_loc : Location.t;
+      extra_arg_loc : Location.t;
+    }
+  | Apply_wrong_label of arg_label * type_expr * bool
+  | Label_multiply_defined of string
+  | Label_missing of Ident.t list
+>>>>>>> ocaml-flambda/flambda-backend:main
       Errortrace.unification_error * type_forcing_context option
       * Parsetree.expression_desc option
   | Apply_non_function of {
@@ -363,11 +383,22 @@ let re node =
 
 let rp node =
   Cmt_format.add_saved_type (Cmt_format.Partial_pattern (Value, node));
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   node
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let rcp node =
   Cmt_format.add_saved_type (Cmt_format.Partial_pattern (Computation, node));
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   node
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 
 
@@ -437,11 +468,11 @@ type expected_mode =
   }
 
 type position_and_mode = {
-  (* apply_position of the current application  *)
   apply_position : apply_position;
-  (* [Some m] if [position] is [Tail], where m is the mode of the surrounding
-     function's return mode *)
+  (** Runtime tail call behaviour of the application *)
   region_mode : Regionality.t option;
+  (** INVARIANT: [Some m] iff [apply_position] is [Tail], where [m] is the mode
+     of the surrounding region *)
 }
 
 let position_and_mode_default = {
@@ -449,8 +480,8 @@ let position_and_mode_default = {
   region_mode = None;
 }
 
-(** The function produces two values, apply_position and region_mode.
-    Invariant: if apply_position = Tail, then region_mode = Some ... *)
+(** Decides the runtime tail call behaviour based on lexical structures and user
+    annotation. *)
 let position_and_mode env (expected_mode : expected_mode) sexp
   : position_and_mode =
   let fail err =
@@ -480,8 +511,9 @@ let position_and_mode env (expected_mode : expected_mode) sexp
 let check_tail_call_local_returning loc env ap_mode {region_mode; _} =
   match region_mode with
   | Some region_mode -> begin
-    (* This application is at the tail of a function with a region;
-        if ap_mode is local, funct_ret_mode needs to be local as well. *)
+    (* This application will be performed after the current region is closed; if
+       ap_mode is local, the application allocates in the outer
+       region, and thus [region_mode] needs to be marked local as well*)
       match
         Regionality.submode (Regionality.of_locality ap_mode) region_mode
       with
@@ -615,14 +647,31 @@ let mode_exact mode =
 
 let mode_argument ~funct ~index ~position_and_mode ~partial_app alloc_mode =
   let vmode = Value.of_alloc alloc_mode in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   if partial_app then mode_default vmode
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  else match funct.exp_desc, index, (position : apply_position) with
+=======
+  else match funct.exp_desc, index, position_and_mode.apply_position with
+>>>>>>> ocaml-flambda/flambda-backend:main
   else match funct.exp_desc, index, position_and_mode.apply_position with
   | Texp_ident (_, _, {val_kind =
       Val_prim {Primitive.prim_name = ("%sequor"|"%sequand")}},
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
                 Id_prim _, _), 1, Tail ->
      (* The second argument to (&&) and (||) is in
         tail position if the call is *)
       (* vmode is wrong; fine because of mode crossing on boolean *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+     (* The second argument to (&&) and (||) is in
+        tail position if the call is *)
+      (* vmode is wrong; fine because of mode crossing on boolean *)
+     mode_return vmode
+=======
+     (* RHS of (&&) and (||) is at the tail of function region if the
+        application is. The argument mode is not constrained otherwise. *)
+     mode_with_position vmode (RTail (Option.get position_and_mode.region_mode, FTail))
+>>>>>>> ocaml-flambda/flambda-backend:main
      mode_with_position vmode (RTail (Option.get position_and_mode.region_mode, FTail))
   | Texp_ident (_, _, _, Id_prim _, _), _, _ ->
      (* Other primitives cannot be tail-called *)
@@ -979,14 +1028,29 @@ let unify_pat_types_return_equated_pairs ?(refine = None) loc env ty ty' =
 let unify_pat_types ?refine loc env ty ty' =
   ignore (unify_pat_types_return_equated_pairs ?refine loc env ty ty')
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 
 (** [sdesc_for_hint] is used by error messages to report literals in their
     original formatting *)
 let unify_pat ?refine ?sdesc_for_hint env pat expected_ty =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let unify_pat ?refine env pat expected_ty =
+=======
+
+(** [sdesc_for_hint] is used by error messages to report literals in their
+    original formatting *)
+let unify_pat ?refine ?sdesc_for_hint env pat expected_ty =
+>>>>>>> ocaml-flambda/flambda-backend:main
   try unify_pat_types ?refine pat.pat_loc env pat.pat_type expected_ty
   with Error (loc, env, Pattern_type_clash(err, None)) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     raise(error(loc, env, Pattern_type_clash(err, sdesc_for_hint)))
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    raise(Error(loc, env, Pattern_type_clash(err, Some pat.pat_desc)))
+=======
+    raise(Error(loc, env, Pattern_type_clash(err, sdesc_for_hint)))
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 (* unification of a type with a Tconstr with freshly created arguments *)
 let unify_head_only ~refine loc env ty constr =
@@ -1050,7 +1114,7 @@ type pattern_variable =
 
 type module_variable =
   {
-    mv_id : Ident.t;
+    mv_id: Ident.t;
     mv_name: string Location.loc;
     mv_loc: Location.t;
     mv_uid: Uid.t
@@ -1061,7 +1125,6 @@ type module_variable =
    allowed, the caller should take care to check that the introduced module
    bindings' types don't escape their scope; see the callsites in [type_let]
    and [type_cases] for examples.
-
    [Modules_ignored] indicates that the typing of patterns should not accumulate
    a list of module patterns to unpack. It's no different than using
    [Modules_allowed] and then ignoring the accumulated [module_variables] list,
@@ -1319,6 +1382,24 @@ and build_as_type_aux ~refine ~mode (env : Env.t ref) p =
       let ty =
         if keep then p.pat_type else
         let tyl = List.map (build_as_type env) pl in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        let ty_args, ty_res, _ = instance_constructor cstr in
+        List.iter2 (fun (p,ty) (arg, _) -> unify_pat env {p with pat_type = ty} arg)
+          (List.combine pl tyl) ty_args;
+        ty_res
+      in
+=======
+        let ty_args, ty_res, _ =
+          instance_constructor Keep_existentials_flexible cstr
+        in
+        List.iter2
+          (fun (p,ty) (arg, _) ->
+             unify_pat ~refine env {p with pat_type = ty} arg)
+          (List.combine pl tyl) ty_args;
+        ty_res
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
         let ty_args, ty_res, _ =
           instance_constructor Keep_existentials_flexible cstr
         in
@@ -1451,10 +1532,23 @@ let solve_constructor_annotation tps env name_list sty ty_args ty_ex =
         {name with txt = id})
       name_list
   in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let cty, ty, force =
     with_local_level ~post:(fun (_,ty,_) -> generalize_structure ty)
       (fun () -> Typetexp.transl_simple_type_delayed !env Alloc.Const.legacy sty)
   in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  begin_def ();
+  let cty, ty, force = Typetexp.transl_simple_type_delayed !env Alloc.Const.legacy sty in
+  end_def ();
+  generalize_structure ty;
+=======
+  let cty, ty, force =
+    with_local_level ~post:(fun (_,ty,_) -> generalize_structure ty)
+      (fun () ->
+         Typetexp.transl_simple_type_delayed !env Alloc.Const.legacy sty)
+  in
+>>>>>>> ocaml-flambda/flambda-backend:main
   tps.tps_pattern_force <- force :: tps.tps_pattern_force;
   let ty_args =
     let ty1 = instance ty and ty2 = instance ty in
@@ -1495,13 +1589,105 @@ let solve_Ppat_construct ~refine tps env loc constr no_existentials
   if constr.cstr_generalized then
     unify_head_only ~refine loc env (instance expected_ty) constr;
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   (* PR#7214: do not use gadt unification for toplevel lets *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let unify_res ty_res =
+=======
+  let unify_res ty_res expected_ty =
+>>>>>>> ocaml-flambda/flambda-backend:main
   let unify_res ty_res expected_ty =
     let refine =
       match refine, no_existentials with
       | None, None when constr.cstr_generalized -> Some false
       | _ -> refine
     in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    in
+    unify_pat_types_return_equated_pairs ~refine loc env ty_res expected_ty
+  in
+  let expansion_scope = get_gadt_equations_level () in
+  let ty_args_ty, ty_args_gf, ty_res, equated_types, existential_ctyp =
+    match existential_styp with
+      None ->
+        let ty_args, ty_res, _ =
+          instance_constructor ~in_pattern:(env, expansion_scope) constr in
+        let ty_args_ty, ty_args_gf = List.split ty_args in
+        ty_args_ty, ty_args_gf, ty_res, unify_res ty_res, None
+    | Some (name_list, sty) ->
+        let in_pattern =
+          if name_list = [] then Some (env, expansion_scope) else None in
+        let ty_args, ty_res, ty_ex =
+          instance_constructor ?in_pattern constr in
+        let equated_types = unify_res ty_res in
+        let ty_args_ty, ty_args_gf = List.split ty_args in
+        let ty_args_ty, existential_ctyp =
+          solve_constructor_annotation tps env name_list sty ty_args_ty ty_ex in
+        ty_args_ty, ty_args_gf, ty_res, equated_types, existential_ctyp
+  in
+  if constr.cstr_existentials <> [] then
+    lower_variables_only !env expansion_scope ty_res;
+  end_def ();
+  generalize_structure expected_ty;
+  generalize_structure ty_res;
+  List.iter generalize_structure ty_args_ty;
+  if !Clflags.principal && refine = None then begin
+    (* Do not warn for couter examples *)
+    let exception Warn_only_once in
+    try
+      TypePairs.iter
+=======
+    in
+    unify_pat_types_return_equated_pairs ~refine loc env ty_res expected_ty
+  in
+
+  let ty_args_ty, ty_args_gf, equated_types, existential_ctyp =
+    with_local_level_iter ~post: generalize_structure begin fun () ->
+      let expected_ty = instance expected_ty in
+      let expansion_scope = get_gadt_equations_level () in
+      let ty_args_ty, ty_args_gf, ty_res, equated_types, existential_ctyp =
+        match existential_styp with
+          None ->
+            let ty_args, ty_res, _ =
+              instance_constructor
+                (Make_existentials_abstract { env; scope = expansion_scope })
+                constr
+            in
+            let ty_args_ty, ty_args_gf = List.split ty_args in
+            ty_args_ty, ty_args_gf, ty_res, unify_res ty_res expected_ty, None
+        | Some (name_list, sty) ->
+            let existential_treatment =
+              if name_list = [] then
+                Make_existentials_abstract { env; scope = expansion_scope }
+              else
+                (* we will unify them (in solve_constructor_annotation) with the
+                   local types provided by the user *)
+                Keep_existentials_flexible
+            in
+            let ty_args, ty_res, ty_ex =
+              instance_constructor existential_treatment constr
+            in
+            let equated_types = unify_res ty_res expected_ty in
+            let ty_args_ty, ty_args_gf = List.split ty_args in
+            let ty_args_ty, existential_ctyp =
+              solve_constructor_annotation tps env name_list sty ty_args_ty
+                ty_ex
+            in
+            ty_args_ty, ty_args_gf, ty_res, equated_types, existential_ctyp
+      in
+      if constr.cstr_existentials <> [] then
+        lower_variables_only !env expansion_scope ty_res;
+      ((ty_args_ty, ty_args_gf, equated_types, existential_ctyp),
+       expected_ty :: ty_res :: ty_args_ty)
+    end
+  in
+  if !Clflags.principal && refine = None then begin
+    (* Do not warn for counter-examples *)
+    let exception Warn_only_once in
+    try
+      TypePairs.iter
+>>>>>>> ocaml-flambda/flambda-backend:main
     unify_pat_types_return_equated_pairs ~refine loc env ty_res expected_ty
   in
 
@@ -1568,6 +1754,7 @@ let solve_Ppat_construct ~refine tps env loc constr no_existentials
   (ty_args_ty, ty_args_gf, existential_ctyp)
 
 let solve_Ppat_record_field ~refine loc env label label_lid record_ty =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   with_local_level_iter ~post:generalize_structure begin fun () ->
     let (_, ty_arg, ty_res) = instance_label false label in
     begin try
@@ -1578,18 +1765,47 @@ let solve_Ppat_record_field ~refine loc env label label_lid record_ty =
     end;
     (ty_arg, [ty_res; ty_arg])
   end
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  begin_def ();
+  let (_, ty_arg, ty_res) = instance_label false label in
+  begin try
+    unify_pat_types ~refine loc env ty_res (instance record_ty)
+  with Error(_loc, _env, Pattern_type_clash(err, _)) ->
+    raise(Error(label_lid.loc, !env,
+                Label_mismatch(label_lid.txt, err)))
+  end;
+  end_def ();
+  generalize_structure ty_res;
+  generalize_structure ty_arg;
+  ty_arg
+=======
+  with_local_level_iter ~post:generalize_structure begin fun () ->
+    let (_, ty_arg, ty_res) = instance_label false label in
+    begin try
+      unify_pat_types ~refine loc env ty_res (instance record_ty)
+    with Error(_loc, _env, Pattern_type_clash(err, _)) ->
+      raise(Error(label_lid.loc, !env,
+                  Label_mismatch(label_lid.txt, err)))
+    end;
+    (ty_arg, [ty_res; ty_arg])
+  end
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let solve_Ppat_array ~refine loc env mutability expected_ty =
   let type_some_array = match mutability with
     | Immutable -> Predef.type_iarray
     | Mutable -> Predef.type_array
   in
-  (* CR layouts v4: in the future we'll have arrays of other jkinds *)
-  let ty_elt = newgenvar (Jkind.value ~why:Array_element) in
+  (* CR layouts v4: The code below is written this way to make it easier to update
+     when we generalize array to contain non-value jkinds. When that happens,
+     change the next two lines to use [Jkind.of_new_sort_var]. *)
+  let jkind = Jkind.value ~why:Array_element in
+  let arg_sort = Jkind.sort_of_jkind jkind in
+  let ty_elt = newgenvar jkind in
   let expected_ty = generic_instance expected_ty in
   unify_pat_types ~refine
     loc env (type_some_array ty_elt) expected_ty;
-  ty_elt
+  ty_elt, arg_sort
 
 let solve_Ppat_lazy  ~refine loc env expected_ty =
   let nv = newgenvar (Jkind.value ~why:Lazy_expression) in
@@ -2087,6 +2303,13 @@ let disambiguate_lid_a_list loc closed env usage expected_type lid_a_list =
       disambiguate_label_by_ids closed ids in
     Label.disambiguate ~warn ~filter usage lid env expected_type scope in
   let lbl_a_list =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    List.map (fun (lid,a) -> lid, process_label lid, a) lid_a_list in
+  if !w_pr then
+    Location.prerr_warning loc
+      (Warnings.Not_principal "this type-based record disambiguation")
+=======
     (* If one label is qualified [{ foo = ...; M.bar = ... }],
        we will disambiguate all labels using one of the qualifying modules,
        as if the user had written [{ M.foo = ...; M.bar = ... }].
@@ -2099,6 +2322,112 @@ let disambiguate_lid_a_list loc closed env usage expected_type lid_a_list =
        themselves, instead of the "ghost" qualification [M.foo]
        that does not come from the source program. *)
     let lbl_list =
+      List.map (fun (lid, _) ->
+          match lid.txt with
+          | Longident.Ldot _ -> Some (process_label lid)
+          | _ -> None
+        ) lid_a_list
+    in
+    (* Find a module prefix (if any) to qualify unqualified labels *)
+    let qual =
+      List.find_map (function
+          | {txt = Longident.Ldot (modname, _); _}, _ -> Some modname
+          | _ -> None
+        ) lid_a_list
+    in
+    (* Prefix unqualified labels with [qual] and resolve them.
+
+       Prefixing unqualified labels does not change the final
+       disambiguation result, it restricts the set of candidates
+       without removing any valid choice.
+       It matters if users activated warnings for ambiguous or
+       out-of-scope resolutions -- they get less warnings by
+       qualifying at least one of the fields. *)
+    List.map2 (fun lid_a lbl ->
+        match lbl, lid_a with
+        | Some lbl, (lid, a) -> lid, lbl, a
+        | None, (lid, a) ->
+            let qual_lid =
+              match qual, lid.txt with
+              | Some modname, Longident.Lident s ->
+                  {lid with txt = Longident.Ldot (modname, s)}
+              | _ -> lid
+            in
+            lid, process_label qual_lid, a
+      ) lid_a_list lbl_list
+  in
+  if !w_pr then
+    Location.prerr_warning loc
+      (Warnings.Not_principal "this type-based record disambiguation")
+>>>>>>> ocaml-flambda/flambda-backend:main
+    (* If one label is qualified [{ foo = ...; M.bar = ... }],
+       we will disambiguate all labels using one of the qualifying modules,
+       as if the user had written [{ M.foo = ...; M.bar = ... }].
+
+       #11630: It is important to process first the
+       user-qualified labels, instead of processing all labels in
+       order, so that error messages coming from the lookup of
+       M (maybe no such module/path exists) are shown to the user
+       in context of a qualified field [M.bar] they wrote
+       themselves, instead of the "ghost" qualification [M.foo]
+       that does not come from the source program. *)
+    let lbl_list =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      (Warnings.Name_out_of_scope (!w_scope_ty, List.rev !w_scope, true));
+  lbl_a_list
+
+let rec find_record_qual = function
+  | [] -> None
+  | ({ txt = Longident.Ldot (modname, _) }, _) :: _ -> Some modname
+  | _ :: rest -> find_record_qual rest
+
+let map_fold_cont f xs k =
+  List.fold_right (fun x k ys -> f x (fun y -> k (y :: ys)))
+    xs (fun ys -> k (List.rev ys)) []
+
+let type_label_a_list
+      ?labels loc closed env usage type_lbl_a expected_type lid_a_list k =
+  let lbl_a_list =
+    match lid_a_list, labels with
+      ({txt=Longident.Lident s}, _)::_, Some labels when Hashtbl.mem labels s ->
+        (* Special case for rebuilt syntax trees *)
+        List.map
+          (function lid, a -> match lid.txt with
+            Longident.Lident s -> lid, Hashtbl.find labels s, a
+          | _ -> assert false)
+          lid_a_list
+    | _ ->
+        let lid_a_list =
+          match find_record_qual lid_a_list with
+            None -> lid_a_list
+          | Some modname ->
+              List.map
+                (fun (lid, a as lid_a) ->
+                  match lid.txt with Longident.Lident s ->
+                    {lid with txt=Longident.Ldot (modname, s)}, a
+                  | _ -> lid_a)
+                lid_a_list
+        in
+        disambiguate_lid_a_list loc closed env usage expected_type lid_a_list
+  in
+  (* Invariant: records are sorted in the typed tree *)
+  let lbl_a_list =
+=======
+      (Warnings.Name_out_of_scope (!w_scope_ty, List.rev !w_scope, true));
+  lbl_a_list
+
+let map_fold_cont f xs k =
+  List.fold_right (fun x k ys -> f x (fun y -> k (y :: ys)))
+    xs (fun ys -> k (List.rev ys)) []
+
+let type_label_a_list loc closed env usage type_lbl_a expected_type lid_a_list =
+  let lbl_a_list =
+    disambiguate_lid_a_list loc closed env usage expected_type lid_a_list
+  in
+  (* Invariant: records are sorted in the typed tree *)
+  let lbl_a_list =
+>>>>>>> ocaml-flambda/flambda-backend:main
       List.map (fun (lid, _) ->
           match lid.txt with
           | Longident.Ldot _ -> Some (process_label lid)
@@ -2256,6 +2585,202 @@ let rec has_literal_pattern p =
   | Ppat_type _
   | Ppat_var _
   | Ppat_unpack _
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                 env,
+                 Pattern_type_clash(Errortrace.unification_error ~trace, None)))
+
+type pattern_checking_mode =
+  | Normal
+  (** We are checking user code. *)
+  | Counter_example of counter_example_checking_info
+  (** In [Counter_example] mode, we are checking a counter-example
+      candidate produced by Parmatch. This is a syntactic pattern that
+      represents a set of values by using or-patterns (p_1 | ... | p_n)
+      to enumerate all alternatives in the counter-example
+      search. These or-patterns occur at every choice point, possibly
+      deep inside the pattern.
+
+      Parmatch does not use type information, so this pattern may
+      exhibit two issues:
+      - some parts of the pattern may be ill-typed due to GADTs, and
+      - some wildcard patterns may not match any values: their type is
+        empty.
+
+      The aim of [type_pat] in the [Counter_example] mode is to refine
+      this syntactic pattern into a well-typed pattern, and ensure
+      that it matches at least one concrete value.
+      - It filters ill-typed branches of or-patterns.
+        (see {!splitting_mode} below)
+      - It tries to check that wildcard patterns are non-empty.
+        (see {!explosion_fuel})
+  *)
+
+and counter_example_checking_info = {
+    explosion_fuel: int;
+    splitting_mode: splitting_mode;
+    constrs: (string, Types.constructor_description) Hashtbl.t;
+    labels: (string, Types.label_description) Hashtbl.t;
+  }
+(**
+    [explosion_fuel] controls the checking of wildcard patterns.  We
+    eliminate potentially-empty wildcard patterns by exploding them
+    into concrete sub-patterns, for example (K1 _ | K2 _) or
+    { l1: _; l2: _ }. [explosion_fuel] is the depth limit on wildcard
+    explosion. Such depth limit is required to avoid non-termination
+    and compilation-time blowups.
+
+    [splitting_mode] controls the handling of or-patterns.  In
+    [Counter_example] mode, we only need to select one branch that
+    leads to a well-typed pattern. Checking all branches is expensive,
+    we use different search strategies (see {!splitting_mode}) to
+    reduce the number of explored alternatives.
+
+    [constrs] and [labels] contain metadata produced by [Parmatch] to
+    type-check the given syntactic pattern. [Parmatch] produces
+    counter-examples by turning typed patterns into
+    [Parsetree.pattern]. In this process, constructor and label paths
+    are lost, and are replaced by generated strings. [constrs] and
+    [labels] map those synthetic names back to the typed descriptions
+    of the original names.
+ *)
+
+(** Due to GADT constraints, an or-pattern produced within
+    a counter-example may have ill-typed branches. Consider for example
+
+    {[
+      type _ tag = Int : int tag | Bool : bool tag
+    ]}
+
+    then [Parmatch] will propose the or-pattern [Int | Bool] whenever
+    a pattern of type [tag] is required to form a counter-example. For
+    example, a function expects a (int tag option) and only [None] is
+    handled by the user-written pattern. [Some (Int | Bool)] is not
+    well-typed in this context, only the sub-pattern [Some Int] is.
+    In this example, the expected type coming from the context
+    suffices to know which or-pattern branch must be chosen.
+
+    In the general case, choosing a branch can have non-local effects
+    on the typability of the term. For example, consider a tuple type
+    ['a tag * ...'a...], where the first component is a GADT.  All
+    constructor choices for this GADT lead to a well-typed branch in
+    isolation (['a] is unconstrained), but choosing one of them adds
+    a constraint on ['a] that may make the other tuple elements
+    ill-typed.
+
+    In general, after choosing each possible branch of the or-pattern,
+    [type_pat] has to check the rest of the pattern to tell if this
+    choice leads to a well-typed term. This may lead to an explosion
+    of typing/search work -- the rest of the term may in turn contain
+    alternatives.
+
+    We use careful strategies to try to limit counterexample-checking
+    time; [splitting_mode] represents those strategies.
+*)
+and splitting_mode =
+  | Backtrack_or
+  (** Always backtrack in or-patterns.
+
+      [Backtrack_or] selects a single alternative from an or-pattern
+      by using backtracking, trying to choose each branch in turn, and
+      to complete it into a valid sub-pattern. We call this
+      "splitting" the or-pattern.
+
+      We use this mode when looking for unused patterns or sub-patterns,
+      in particular to check a refutation clause (p -> .).
+    *)
+  | Refine_or of { inside_nonsplit_or: bool; }
+  (** Only backtrack when needed.
+
+      [Refine_or] tries another approach for refining or-pattern.
+
+      Instead of always splitting each or-pattern, It first attempts to
+      find branches that do not introduce new constraints (because they
+      do not contain GADT constructors). Those branches are such that,
+      if they fail, all other branches will fail.
+
+      If we find one such branch, we attempt to complete the subpattern
+      (checking what's outside the or-pattern), ignoring other
+      branches -- we never consider another branch choice again. If all
+      branches are constrained, it falls back to splitting the
+      or-pattern.
+
+      We use this mode when checking exhaustivity of pattern matching.
+  *)
+
+(** This exception is only used internally within [type_pat_aux], in
+    counter-example mode, to jump back to the parent or-pattern in the
+    [Refine_or] strategy.
+
+    Such a parent exists precisely when [inside_nonsplit_or = true];
+    it's an invariant that we always setup an exception handler for
+    [Need_backtrack] when we set this flag. *)
+exception Need_backtrack
+
+(** This exception is only used internally within [type_pat_aux], in
+    counter-example mode. We use it to discard counter-example candidates
+    that do not match any value. *)
+exception Empty_branch
+
+type abort_reason = Adds_constraints | Empty
+
+(** Remember current typing state for backtracking.
+   No variable information, as we only backtrack on
+   patterns without variables (cf. assert statements). *)
+type state =
+ { snapshot: snapshot;
+   levels: Ctype.levels;
+   env: Env.t; }
+let save_state env =
+  { snapshot = Btype.snapshot ();
+    levels = Ctype.save_levels ();
+    env = !env; }
+let set_state s env =
+  Btype.backtrack s.snapshot;
+  Ctype.set_levels s.levels;
+  env := s.env
+
+(** Find the first alternative in the tree of or-patterns for which
+   [f] does not raise an error. If all fail, the last error is
+   propagated *)
+let rec find_valid_alternative f pat =
+  match pat.ppat_desc with
+  | Ppat_or(p1,p2) ->
+      (try find_valid_alternative f p1 with
+       | Empty_branch | Error _ -> find_valid_alternative f p2
+      )
+  | _ -> f pat
+
+let no_explosion = function
+  | Normal -> Normal
+  | Counter_example info ->
+     Counter_example { info with explosion_fuel = 0 }
+
+let get_splitting_mode = function
+  | Normal -> None
+  | Counter_example {splitting_mode} -> Some splitting_mode
+
+let enter_nonsplit_or mode = match mode with
+  | Normal -> Normal
+  | Counter_example info ->
+     let splitting_mode = match info.splitting_mode with
+       | Backtrack_or ->
+          (* in Backtrack_or mode, or-patterns are always split *)
+          assert false
+       | Refine_or _ ->
+          Refine_or {inside_nonsplit_or = true}
+     in Counter_example { info with splitting_mode }
+
+(** The typedtree has two distinct syntactic categories for patterns,
+   "value" patterns, matching on values, and "computation" patterns
+=======
+                 env,
+                 Pattern_type_clash(Errortrace.unification_error ~trace, None)))
+
+
+(** The typedtree has two distinct syntactic categories for patterns,
+   "value" patterns, matching on values, and "computation" patterns
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Ppat_extension _ ->
      false
   | Ppat_exception p
@@ -2485,6 +3010,145 @@ and type_pat_aux
       end
   | Ppat_alias(sq, name) ->
       let q = type_pat tps Value sq expected_ty in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Value -> as_computation_pattern pat
+  | Computation -> pat
+
+(* type_pat propagates the expected type.
+   Unification may update the typing environment.
+
+   In counter-example mode, [Empty_branch] is raised when the counter-example
+   does not match any value.  *)
+let rec type_pat
+  : type k r . type_pat_state -> k pattern_category ->
+      no_existentials: existential_restriction option ->
+      mode: pattern_checking_mode -> alloc_mode:expected_pat_mode ->
+      env: Env.t ref -> Parsetree.pattern ->
+      type_expr -> (k general_pattern -> r) -> r
+  = fun tps category ~no_existentials ~mode ~alloc_mode
+        ~env sp expected_ty k ->
+  Builtin_attributes.warning_scope sp.ppat_attributes
+    (fun () ->
+       type_pat_aux tps category ~no_existentials ~mode
+         ~alloc_mode ~env sp expected_ty k
+    )
+
+and type_pat_aux
+  : type k r . type_pat_state -> k pattern_category -> no_existentials:_
+         -> mode:_ -> alloc_mode:expected_pat_mode -> env:_ -> _ -> _
+         -> (k general_pattern -> r) -> r
+  = fun tps category ~no_existentials ~mode
+      ~alloc_mode ~env sp expected_ty k ->
+  let type_pat tps category ?(mode=mode) ?(alloc_mode=alloc_mode) ?(env=env) =
+    type_pat tps category ~no_existentials ~mode ~alloc_mode ~env
+  in
+  let loc = sp.ppat_loc in
+  let refine =
+    match mode with Normal -> None | Counter_example _ -> Some true in
+  let solve_expected (x : pattern) : pattern =
+    unify_pat ~refine env x (instance expected_ty);
+    x
+  in
+  let rp x =
+    let crp (x : k general_pattern) : k general_pattern =
+      match category with
+      | Value -> rp x
+      | Computation -> rcp x in
+    if mode = Normal then crp x else x in
+  let rp k x = k (rp x)
+  and rvp k x = k (rp (pure category x))
+  and rcp k x = k (rp (only_impure category x)) in
+  let construction_not_used_in_counterexamples = (mode = Normal) in
+  let must_backtrack_on_gadt = match get_splitting_mode mode with
+    | None -> false
+    | Some Backtrack_or -> false
+    | Some (Refine_or {inside_nonsplit_or}) -> inside_nonsplit_or
+  in
+  let type_pat_array mutability spl pat_attributes =
+    (* Sharing the code between the two array cases means we're guaranteed to
+       keep them in sync, at the cost of a worse diff with upstream; it
+       shouldn't be too bad.  We can inline this when we upstream this code and
+       combine the two array pattern constructors. *)
+    let ty_elt = solve_Ppat_array ~refine loc env mutability expected_ty in
+      map_fold_cont (fun p ->
+        let alloc_mode =
+          match mutability with
+          | Mutable -> simple_pat_mode Value.legacy
+          | Immutable -> alloc_mode
+        in
+        type_pat ~alloc_mode tps Value p ty_elt) spl (fun pl ->
+          rvp k {
+          pat_desc = Tpat_array (mutability, pl);
+          pat_loc = loc; pat_extra=[];
+          pat_type = instance expected_ty;
+          pat_attributes;
+          pat_env = !env })
+  in
+  match Jane_syntax.Pattern.of_ast sp with
+  | Some (jpat, attrs) -> begin
+=======
+  | Value -> as_computation_pattern pat
+  | Computation -> pat
+
+(** [type_pat] propagates the expected type, and
+    unification may update the typing environment. *)
+let rec type_pat
+  : type k . type_pat_state -> k pattern_category ->
+      no_existentials: existential_restriction option ->
+      alloc_mode:expected_pat_mode ->
+      env: Env.t ref -> Parsetree.pattern -> type_expr -> k general_pattern
+  = fun tps category ~no_existentials ~alloc_mode ~env sp expected_ty ->
+  Builtin_attributes.warning_scope sp.ppat_attributes
+    (fun () ->
+       type_pat_aux tps category ~no_existentials
+         ~alloc_mode ~env sp expected_ty
+    )
+
+and type_pat_aux
+  : type k . type_pat_state -> k pattern_category -> no_existentials:_ ->
+         alloc_mode:expected_pat_mode -> env:_ -> _ -> _ -> k general_pattern
+  = fun tps category ~no_existentials ~alloc_mode ~env sp expected_ty ->
+  let type_pat tps category ?(alloc_mode=alloc_mode) ?(env=env) =
+    type_pat tps category ~no_existentials ~alloc_mode ~env
+  in
+  let loc = sp.ppat_loc in
+  let refine = None in
+  let solve_expected (x : pattern) : pattern =
+    unify_pat ~refine ~sdesc_for_hint:sp.ppat_desc env x (instance expected_ty);
+    x
+  in
+  let crp (x : k general_pattern) : k general_pattern =
+    match category with
+    | Value -> rp x
+    | Computation -> rcp x
+  in
+  (* record {general,value,computation} pattern *)
+  let rp = crp
+  and rvp x = crp (pure category x)
+  and rcp x = crp (only_impure category x) in
+  let type_pat_array mutability spl pat_attributes =
+    (* Sharing the code between the two array cases means we're guaranteed to
+       keep them in sync, at the cost of a worse diff with upstream; it
+       shouldn't be too bad.  We can inline this when we upstream this code and
+       combine the two array pattern constructors. *)
+    let ty_elt, arg_sort = solve_Ppat_array ~refine loc env mutability expected_ty in
+    let alloc_mode =
+      match mutability with
+      | Mutable -> simple_pat_mode Value.legacy
+      | Immutable -> alloc_mode
+    in
+    let pl = List.map (fun p -> type_pat ~alloc_mode tps Value p ty_elt) spl in
+    rvp {
+      pat_desc = Tpat_array (mutability, arg_sort, pl);
+      pat_loc = loc; pat_extra=[];
+      pat_type = instance expected_ty;
+      pat_attributes;
+      pat_env = !env }
+  in
+  match Jane_syntax.Pattern.of_ast sp with
+  | Some (jpat, attrs) -> begin
+>>>>>>> ocaml-flambda/flambda-backend:main
       let ty_var, mode = solve_Ppat_alias ~refine ~mode:alloc_mode.mode env q in
       let id, uid =
         enter_variable ~is_as_variable:true tps name.loc name mode
@@ -2624,8 +3288,112 @@ and type_pat_aux
              type_pat ~alloc_mode tps Value p ty)
           sargs (List.combine ty_args_ty ty_args_gf)
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       rvp { pat_desc=Tpat_construct(lid, constr, args, existential_ctyp);
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          type_pat_array Immutable spl attrs
+      | Jpat_layout (Lpat_constant cst) ->
+          let desc = unboxed_constant_or_raise !env loc cst in
+          rvp k @@ solve_expected {
+            pat_desc = desc;
+=======
+          type_pat_array Immutable spl attrs
+      | Jpat_layout (Lpat_constant cst) ->
+          let desc = unboxed_constant_or_raise !env loc cst in
+          rvp @@ solve_expected {
+            pat_desc = desc;
+>>>>>>> ocaml-flambda/flambda-backend:main
             pat_loc = loc; pat_extra=[];
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | None ->
+  match sp.ppat_desc with
+    Ppat_any ->
+      let k' d = rvp k {
+        pat_desc = d;
+        pat_loc = loc; pat_extra=[];
+        pat_type = instance expected_ty;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+      in
+      begin match mode with
+      | Normal -> k' Tpat_any
+      | Counter_example {explosion_fuel; _} when explosion_fuel <= 0 ->
+          k' Tpat_any
+      | Counter_example ({explosion_fuel; _} as info) ->
+         let open Parmatch in
+         begin match ppat_of_type !env expected_ty with
+         | PT_empty -> raise Empty_branch
+         | PT_any -> k' Tpat_any
+         | PT_pattern (explosion, sp, constrs, labels) ->
+            let explosion_fuel =
+              match explosion with
+              | PE_single -> explosion_fuel - 1
+              | PE_gadt_cases ->
+                  if must_backtrack_on_gadt then raise Need_backtrack;
+                  explosion_fuel - 5
+            in
+            let mode =
+              Counter_example { info with explosion_fuel; constrs; labels }
+            in
+            type_pat tps category ~mode sp expected_ty k
+         end
+      end
+  | Ppat_var name ->
+      let ty = instance expected_ty in
+      let alloc_mode = mode_cross_to_min !env expected_ty alloc_mode.mode in
+      let id, uid = (* PR#7330 *)
+        if name.txt = "*extension*" then
+          Ident.create_local name.txt, Uid.internal_not_actually_unique
+        else
+          enter_variable tps loc name alloc_mode ty sp.ppat_attributes
+      in
+      rvp k {
+        pat_desc = Tpat_var (id, name, uid, alloc_mode);
+        pat_loc = loc; pat_extra=[];
+        pat_type = ty;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+  | Ppat_unpack name ->
+      assert construction_not_used_in_counterexamples;
+      let t = instance expected_ty in
+      begin match name.txt with
+      | None ->
+          rvp k {
+            pat_desc = Tpat_any;
+            pat_loc = sp.ppat_loc;
+            pat_extra=[Tpat_unpack, name.loc, sp.ppat_attributes];
+=======
+  | None ->
+  match sp.ppat_desc with
+    Ppat_any ->
+      rvp {
+        pat_desc = Tpat_any;
+        pat_loc = loc; pat_extra=[];
+        pat_type = instance expected_ty;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+  | Ppat_var name ->
+      let ty = instance expected_ty in
+      let alloc_mode = mode_cross_to_min !env expected_ty alloc_mode.mode in
+      let id, uid =
+        enter_variable tps loc name alloc_mode ty sp.ppat_attributes
+      in
+      rvp {
+        pat_desc = Tpat_var (id, name, uid, alloc_mode);
+        pat_loc = loc; pat_extra=[];
+        pat_type = ty;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+  | Ppat_unpack name ->
+      let t = instance expected_ty in
+      begin match name.txt with
+      | None ->
+          rvp {
+            pat_desc = Tpat_any;
+            pat_loc = sp.ppat_loc;
+            pat_extra=[Tpat_unpack, name.loc, sp.ppat_attributes];
+>>>>>>> ocaml-flambda/flambda-backend:main
             pat_type = instance expected_ty;
             pat_attributes = sp.ppat_attributes;
             pat_env = !env }
@@ -2640,7 +3408,25 @@ and type_pat_aux
           Some sp, [ty] -> Some (type_pat tps Value sp ty)
         | _             -> None
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       rvp {
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+             the comment on [may_contain_modules]. *)
+          let id, uid = enter_variable tps loc v alloc_mode.mode
+                          t ~is_module:true sp.ppat_attributes in
+          rvp k {
+            pat_desc = Tpat_var (id, v, uid, alloc_mode.mode);
+            pat_loc = sp.ppat_loc;
+            pat_extra=[Tpat_unpack, loc, sp.ppat_attributes];
+=======
+             the comment on [may_contain_modules]. *)
+          let id, uid = enter_variable tps loc v alloc_mode.mode
+                          t ~is_module:true sp.ppat_attributes in
+          rvp {
+            pat_desc = Tpat_var (id, v, uid, alloc_mode.mode);
+            pat_loc = sp.ppat_loc;
+            pat_extra=[Tpat_unpack, loc, sp.ppat_attributes];
+>>>>>>> ocaml-flambda/flambda-backend:main
         pat_desc = Tpat_variant(tag, arg, ref row);
         pat_loc = loc; pat_extra = [];
         pat_type = pat_type;
@@ -2649,6 +3435,54 @@ and type_pat_aux
   | Ppat_record(lid_sp_list, closed) ->
       assert (lid_sp_list <> []);
       let expected_type, record_ty =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            pat_env = !env }
+      end
+  | Ppat_alias(sq, name) ->
+      assert construction_not_used_in_counterexamples;
+      type_pat tps Value sq expected_ty (fun q ->
+        let ty_var, mode = solve_Ppat_alias ~refine ~mode:alloc_mode.mode env q in
+        let mode = mode_cross_to_min !env expected_ty mode in
+        let id, uid =
+          enter_variable ~is_as_variable:true tps name.loc name mode
+            ty_var sp.ppat_attributes
+        in
+        rvp k {
+          pat_desc = Tpat_alias(q, id, name, uid, mode);
+          pat_loc = loc; pat_extra=[];
+          pat_type = q.pat_type;
+          pat_attributes = sp.ppat_attributes;
+          pat_env = !env })
+  | Ppat_constant cst ->
+      let cst = constant_or_raise !env loc cst in
+      rvp k @@ solve_expected {
+        pat_desc = Tpat_constant cst;
+        pat_loc = loc; pat_extra=[];
+        pat_type = type_constant cst;
+=======
+            pat_env = !env }
+      end
+  | Ppat_alias(sq, name) ->
+      let q = type_pat tps Value sq expected_ty in
+      let ty_var, mode = solve_Ppat_alias ~refine ~mode:alloc_mode.mode env q in
+      let mode = mode_cross_to_min !env expected_ty mode in
+      let id, uid =
+        enter_variable ~is_as_variable:true tps name.loc name mode ty_var
+          sp.ppat_attributes
+      in
+      rvp { pat_desc = Tpat_alias(q, id, name, uid, mode);
+            pat_loc = loc; pat_extra=[];
+            pat_type = q.pat_type;
+            pat_attributes = sp.ppat_attributes;
+            pat_env = !env }
+  | Ppat_constant cst ->
+      let cst = constant_or_raise !env loc cst in
+      rvp @@ solve_expected {
+        pat_desc = Tpat_constant cst;
+        pat_loc = loc; pat_extra=[];
+        pat_type = type_constant cst;
+>>>>>>> ocaml-flambda/flambda-backend:main
         match extract_concrete_record !env expected_ty with
         | Record_type(p0, p, _, _) ->
             let ty = generic_instance expected_ty in
@@ -2744,15 +3578,85 @@ and type_pat_aux
            pat_loc = loc; pat_extra = [];
            pat_type = instance expected_ty;
            pat_attributes = sp.ppat_attributes;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
            pat_env = !env }
   | Ppat_lazy sp1 ->
       let nv = solve_Ppat_lazy ~refine loc env expected_ty in
       let p1 = type_pat tps Value sp1 nv in
       rvp {
         pat_desc = Tpat_lazy p1;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      in
+      let p = if c1 <= c2 then loop c1 c2 else loop c2 c1 in
+      let p = {p with ppat_loc=loc} in
+      type_pat tps category ~mode:(no_explosion mode) p expected_ty k
+        (* TODO: record 'extra' to remember about interval *)
+  | Ppat_interval _ ->
+      raise (Error (loc, !env, Invalid_interval))
+  | Ppat_tuple spl ->
+      let spl_ann = solve_Ppat_tuple ~refine ~alloc_mode loc env spl expected_ty in
+      map_fold_cont
+        (fun (p,t,alloc_mode) -> type_pat tps Value ~alloc_mode p t)
+        spl_ann
+        (fun pl ->
+        rvp k {
+        pat_desc = Tpat_tuple pl;
+=======
+      in
+      let p = if c1 <= c2 then loop c1 c2 else loop c2 c1 in
+      let p = {p with ppat_loc=loc} in
+      type_pat tps category p expected_ty
+        (* TODO: record 'extra' to remember about interval *)
+  | Ppat_interval _ ->
+      raise (Error (loc, !env, Invalid_interval))
+  | Ppat_tuple spl ->
+      let spl_ann =
+        solve_Ppat_tuple ~refine ~alloc_mode loc env spl expected_ty
+      in
+      let pl =
+        List.map (fun (p,t,alloc_mode) -> type_pat tps Value ~alloc_mode p t)
+          spl_ann
+      in
+      rvp {
+        pat_desc = Tpat_tuple pl;
+>>>>>>> ocaml-flambda/flambda-backend:main
         pat_loc = loc; pat_extra=[];
         pat_type = instance expected_ty;
         pat_attributes = sp.ppat_attributes;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        pat_env = !env })
+  | Ppat_construct(lid, sarg) ->
+      let expected_type =
+        match extract_concrete_variant !env expected_ty with
+=======
+        pat_env = !env }
+  | Ppat_construct(lid, sarg) ->
+      let expected_type =
+        match extract_concrete_variant !env expected_ty with
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            raise (Error (loc, !env, error))
+      in
+      let constr =
+        match lid.txt, mode with
+        | Longident.Lident s, Counter_example {constrs; _} ->
+           (* assert: cf. {!counter_example_checking_info} documentation *)
+            assert (Hashtbl.mem constrs s);
+            Hashtbl.find constrs s
+        | _ ->
+        let candidates =
+          Env.lookup_all_constructors Env.Pattern ~loc:lid.loc lid.txt !env in
+        wrap_disambiguate "This variant pattern is expected to have"
+=======
+            raise (Error (loc, !env, error))
+      in
+      let constr =
+        let candidates =
+          Env.lookup_all_constructors Env.Pattern ~loc:lid.loc lid.txt !env in
+        wrap_disambiguate "This variant pattern is expected to have"
+>>>>>>> ocaml-flambda/flambda-backend:main
         pat_env = !env }
   | Ppat_constraint(sp_constrained, sty) ->
       (* Pretend separate = true *)
@@ -3151,10 +4055,106 @@ let rec check_counter_example_pat
       in
       map_fold_cont (fun (p,t,_) -> check_rec p t) tpl_ann (fun pl ->
         mkp k (Tpat_tuple pl)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           ~pat_type:(newty (Ttuple(List.map (fun p -> p.pat_type) pl))))
   | Tpat_construct(cstr_lid, constr, targs, _) ->
       if constr.cstr_generalized && must_backtrack_on_gadt then
         raise Need_backtrack;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          (Constructor.disambiguate Env.Pattern lid !env expected_type)
+          candidates
+      in
+      if constr.cstr_generalized && must_backtrack_on_gadt then
+        raise Need_backtrack;
+      begin match no_existentials, constr.cstr_existentials with
+      | None, _ | _, [] -> ()
+      | Some r, (_ :: _ as exs)  ->
+=======
+          (Constructor.disambiguate Env.Pattern lid !env expected_type)
+          candidates
+      in
+      begin match no_existentials, constr.cstr_existentials with
+      | None, _ | _, [] -> ()
+      | Some r, (_ :: _ as exs)  ->
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        Option.iter (fun (_, sarg) -> check_non_escaping sarg) sarg
+      end;
+
+      map_fold_cont
+        (fun (p,(ty, gf)) ->
+           let alloc_mode = modality_unbox_left gf alloc_mode.mode in
+           let alloc_mode = simple_pat_mode alloc_mode in
+           type_pat ~alloc_mode tps Value p ty)
+        (List.combine sargs (List.combine ty_args_ty ty_args_gf))
+        (fun args ->
+          rvp k {
+            pat_desc=Tpat_construct(lid, constr, args, existential_ctyp);
+            pat_loc = loc; pat_extra=[];
+            pat_type = instance expected_ty;
+            pat_attributes = sp.ppat_attributes;
+            pat_env = !env })
+  | Ppat_variant(tag, sarg) ->
+      if tag = Parmatch.some_private_tag then
+        assert (match mode with Normal -> false | Counter_example _ -> true);
+      let constant = (sarg = None) in
+      let arg_type, row, pat_type =
+        solve_Ppat_variant ~refine loc env tag constant expected_ty in
+      let k arg =
+        rvp k {
+        pat_desc = Tpat_variant(tag, arg, ref row);
+        pat_loc = loc; pat_extra = [];
+        pat_type = pat_type;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+      in begin
+        (* PR#6235: propagate type information *)
+        match sarg, arg_type with
+          Some p, [ty] -> type_pat tps Value p ty (fun p -> k (Some p))
+        | _            -> k None
+      end
+  | Ppat_record(lid_sp_list, closed) ->
+      assert (lid_sp_list <> []);
+      let expected_type, record_ty =
+=======
+        Option.iter (fun (_, sarg) -> check_non_escaping sarg) sarg
+      end;
+
+      let args =
+        List.map2
+          (fun p (ty, gf) ->
+             let alloc_mode = modality_unbox_left gf alloc_mode.mode in
+             let alloc_mode = simple_pat_mode alloc_mode in
+             type_pat ~alloc_mode tps Value p ty)
+          sargs (List.combine ty_args_ty ty_args_gf)
+      in
+      rvp { pat_desc=Tpat_construct(lid, constr, args, existential_ctyp);
+            pat_loc = loc; pat_extra=[];
+            pat_type = instance expected_ty;
+            pat_attributes = sp.ppat_attributes;
+            pat_env = !env }
+  | Ppat_variant(tag, sarg) ->
+      assert (tag <> Parmatch.some_private_tag);
+      let constant = (sarg = None) in
+      let arg_type, row, pat_type =
+        solve_Ppat_variant ~refine loc env tag constant expected_ty in
+      let arg =
+        (* PR#6235: propagate type information *)
+        match sarg, arg_type with
+          Some sp, [ty] -> Some (type_pat tps Value sp ty)
+        | _             -> None
+      in
+      rvp {
+        pat_desc = Tpat_variant(tag, arg, ref row);
+        pat_loc = loc; pat_extra = [];
+        pat_type = pat_type;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+  | Ppat_record(lid_sp_list, closed) ->
+      assert (lid_sp_list <> []);
+      let expected_type, record_ty =
+>>>>>>> ocaml-flambda/flambda-backend:main
       let (ty_args, _, existential_ctyp) =
         solve_Ppat_construct ~refine type_pat_state env loc constr None None
           expected_ty
@@ -3176,13 +4176,466 @@ let rec check_counter_example_pat
           Some p, [ty] -> check_rec p ty (fun p -> k (Some p))
         | _            -> k None
       end
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tpat_record(fields, closed) ->
       let record_ty = generic_instance expected_ty in
       let type_label_pat (label_lid, label, targ) k =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          let error = Wrong_expected_kind(Record, Pattern, expected_ty) in
+          raise (Error (loc, !env, error))
+      in
+      let type_label_pat (label_lid, label, sarg) k =
+=======
+          let error = Wrong_expected_kind(Record, Pattern, expected_ty) in
+          raise (Error (loc, !env, error))
+      in
+      let type_label_pat (label_lid, label, sarg) =
+>>>>>>> ocaml-flambda/flambda-backend:main
         let ty_arg =
           solve_Ppat_record_field ~refine loc env label label_lid record_ty in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         check_rec targ ty_arg (fun arg -> k (label_lid, label, arg))
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        let alloc_mode =
+          modality_unbox_left label.lbl_global alloc_mode.mode
+        in
+        let alloc_mode = simple_pat_mode alloc_mode in
+        type_pat tps Value ~alloc_mode sarg ty_arg (fun arg ->
+          k (label_lid, label, arg))
+=======
+        let alloc_mode =
+          modality_unbox_left label.lbl_global alloc_mode.mode
+        in
+        let alloc_mode = simple_pat_mode alloc_mode in
+        (label_lid, label, type_pat tps Value ~alloc_mode sarg ty_arg)
+>>>>>>> ocaml-flambda/flambda-backend:main
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          pat_env = !env;
+        }
+      in
+      let k' pat = rvp k @@ solve_expected pat in
+      begin match mode with
+      | Normal ->
+          k' (wrap_disambiguate "This record pattern is expected to have"
+               (mk_expected expected_ty)
+               (type_label_a_list loc false !env Env.Projection
+                  type_label_pat expected_type lid_sp_list)
+               make_record_pat)
+      | Counter_example {labels; _} ->
+          type_label_a_list ~labels loc false !env Env.Projection
+            type_label_pat expected_type lid_sp_list
+            (fun lbl_pat_list -> k' (make_record_pat lbl_pat_list))
+      end
+  | Ppat_array spl ->
+      type_pat_array Mutable spl sp.ppat_attributes
+  | Ppat_or(sp1, sp2) ->
+      begin match mode with
+      | Normal ->
+          (* Reset pattern forces for just [tps2] because later we append
+             [tps1] and [tps2]'s pattern forces, and we don't want to
+             duplicate [tps]'s pattern forces.
+          *)
+          let tps1 = copy_type_pat_state tps in
+          let tps2 = {(copy_type_pat_state tps) with tps_pattern_force = []} in
+          let equation_level = !gadt_equations_level in
+          let outter_lev = get_current_level () in
+          (* introduce a new scope *)
+          begin_def ();
+          let lev = get_current_level () in
+          gadt_equations_level := Some lev;
+          let type_pat_rec tps env sp =
+            type_pat tps category sp expected_ty ~env (fun x -> x) in
+          let env1 = ref !env in
+          let p1 = type_pat_rec tps1 env1 sp1 in
+          let env2 = ref !env in
+          let p2 = type_pat_rec tps2 env2 sp2 in
+          end_def ();
+          gadt_equations_level := equation_level;
+          let p1_variables = tps1.tps_pattern_variables in
+          let p2_variables = tps2.tps_pattern_variables in
+          (* Make sure no variable with an ambiguous type gets added to the
+             environment. *)
+          List.iter (fun { pv_type; pv_loc; _ } ->
+            check_scope_escape pv_loc !env1 outter_lev pv_type
+          ) p1_variables;
+          List.iter (fun { pv_type; pv_loc; _ } ->
+            check_scope_escape pv_loc !env2 outter_lev pv_type
+          ) p2_variables;
+          let vars, alpha_env =
+            enter_orpat_variables loc !env p1_variables p2_variables in
+          (* Propagate the outcome of checking the or-pattern back to
+             the type_pat_state that the caller passed in.
+          *)
+          blit_type_pat_state
+            ~src:
+              { tps_pattern_variables = vars;
+                (* We want to propagate all pattern forces, regardless of
+                   which branch they were found in.
+                *)
+                tps_pattern_force =
+                  tps2.tps_pattern_force @ tps1.tps_pattern_force;
+                tps_module_variables = tps1.tps_module_variables;
+              }
+            ~dst:tps;
+          let p2 = alpha_pat alpha_env p2 in
+          rp k { pat_desc = Tpat_or (p1, p2, None);
+                 pat_loc = loc; pat_extra = [];
+                 pat_type = instance expected_ty;
+                 pat_attributes = sp.ppat_attributes;
+                 pat_env = !env }
+      | Counter_example {splitting_mode; _} ->
+          (* We are in counter-example mode, but try to avoid backtracking *)
+          let must_split =
+            match splitting_mode with
+            | Backtrack_or -> true
+            | Refine_or _ -> false in
+          let state = save_state env in
+          let split_or sp =
+            let typ pat = type_pat tps category pat expected_ty k in
+            find_valid_alternative (fun pat -> set_state state env; typ pat) sp
+          in
+          if must_split then split_or sp else
+          let type_pat_result env sp : (_, abort_reason) result =
+            let mode = enter_nonsplit_or mode in
+            match
+              type_pat tps category ~mode sp expected_ty ~env (fun x -> x)
+            with
+            | res -> Ok res
+            | exception Need_backtrack -> Error Adds_constraints
+            | exception Empty_branch -> Error Empty
+          in
+          let p1 = type_pat_result (ref !env) sp1 in
+          let p2 = type_pat_result (ref !env) sp2 in
+          match p1, p2 with
+          | Error Empty, Error Empty ->
+              raise Empty_branch
+          | Error Adds_constraints, Error _
+          | Error _, Error Adds_constraints ->
+              let inside_nonsplit_or =
+                match splitting_mode with
+                | Backtrack_or -> false
+                | Refine_or {inside_nonsplit_or} -> inside_nonsplit_or in
+              if inside_nonsplit_or
+              then raise Need_backtrack
+              else split_or sp
+          | Ok p, Error _
+          | Error _, Ok p ->
+              rp k p
+          | Ok p1, Ok p2 ->
+              rp k { pat_desc = Tpat_or (p1, p2, None);
+                     pat_loc = loc; pat_extra = [];
+                     pat_type = instance expected_ty;
+                     pat_attributes = sp.ppat_attributes;
+                     pat_env = !env }
+      end
+  | Ppat_lazy sp1 ->
+      let nv = solve_Ppat_lazy ~refine loc env expected_ty in
+      (* do not explode under lazy: PR#7421 *)
+      type_pat tps Value ~mode:(no_explosion mode) sp1 nv (fun p1 ->
+        rvp k {
+        pat_desc = Tpat_lazy p1;
+        pat_loc = loc; pat_extra=[];
+        pat_type = instance expected_ty;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env })
+  | Ppat_constraint(sp', sty) ->
+      assert construction_not_used_in_counterexamples;
+      (* Pretend separate = true *)
+      let cty, ty, expected_ty' =
+        let mode_annots = mode_annots_from_pat_attrs sp in
+=======
+          pat_env = !env;
+        }
+      in
+      let lbl_a_list =
+        wrap_disambiguate "This record pattern is expected to have"
+          (mk_expected expected_ty)
+          (type_label_a_list loc false !env Env.Projection
+             type_label_pat expected_type)
+          lid_sp_list
+      in
+      rvp @@ solve_expected (make_record_pat lbl_a_list)
+  | Ppat_array spl ->
+      type_pat_array Mutable spl sp.ppat_attributes
+  | Ppat_or(sp1, sp2) ->
+      (* Reset pattern forces for just [tps2] because later we append
+         [tps1] and [tps2]'s pattern forces, and we don't want to
+         duplicate [tps]'s pattern forces.
+      *)
+      let tps1 = copy_type_pat_state tps in
+      let tps2 = {(copy_type_pat_state tps) with tps_pattern_force = []} in
+      let equation_level = !gadt_equations_level in
+      let outter_lev = get_current_level () in
+      (* Introduce a new scope using with_local_level without generalizations *)
+      let env1, p1, env2, p2 =
+        with_local_level begin fun () ->
+          let lev = get_current_level () in
+          gadt_equations_level := Some lev;
+          let type_pat_rec tps env sp =
+            type_pat tps category sp expected_ty ~env
+          in
+          let env1 = ref !env in
+          let p1 = type_pat_rec tps1 env1 sp1 in
+          let env2 = ref !env in
+          let p2 = type_pat_rec tps2 env2 sp2 in
+          (env1, p1, env2, p2)
+        end ~post:(fun _ -> gadt_equations_level := equation_level)
+      in
+      let p1_variables = tps1.tps_pattern_variables in
+      let p2_variables = tps2.tps_pattern_variables in
+      (* Make sure no variable with an ambiguous type gets added to the
+         environment. *)
+      List.iter (fun { pv_type; pv_loc; _ } ->
+        check_scope_escape pv_loc !env1 outter_lev pv_type
+      ) p1_variables;
+      List.iter (fun { pv_type; pv_loc; _ } ->
+        check_scope_escape pv_loc !env2 outter_lev pv_type
+      ) p2_variables;
+      let vars, alpha_env =
+        enter_orpat_variables loc !env p1_variables p2_variables in
+      (* Propagate the outcome of checking the or-pattern back to
+         the type_pat_state that the caller passed in.
+      *)
+      blit_type_pat_state
+        ~src:
+          { tps_pattern_variables = vars;
+            (* We want to propagate all pattern forces, regardless of
+               which branch they were found in.
+            *)
+            tps_pattern_force =
+              tps2.tps_pattern_force @ tps1.tps_pattern_force;
+            tps_module_variables = tps1.tps_module_variables;
+          }
+        ~dst:tps;
+      let p2 = alpha_pat alpha_env p2 in
+      rp { pat_desc = Tpat_or (p1, p2, None);
+           pat_loc = loc; pat_extra = [];
+           pat_type = instance expected_ty;
+           pat_attributes = sp.ppat_attributes;
+           pat_env = !env }
+  | Ppat_lazy sp1 ->
+      let nv = solve_Ppat_lazy ~refine loc env expected_ty in
+      let p1 = type_pat tps Value sp1 nv in
+      rvp {
+        pat_desc = Tpat_lazy p1;
+        pat_loc = loc; pat_extra=[];
+        pat_type = instance expected_ty;
+        pat_attributes = sp.ppat_attributes;
+        pat_env = !env }
+  | Ppat_constraint(sp_constrained, sty) ->
+      (* Pretend separate = true *)
+      let cty, ty, expected_ty' =
+        let mode_annots = mode_annots_from_pat_attrs sp in
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        in
+        solve_Ppat_constraint ~refine tps loc env type_modes sty expected_ty
+      in
+      type_pat ~alloc_mode tps category sp' expected_ty' (fun p ->
+        (*Format.printf "%a@.%a@."
+          Printtyp.raw_type_expr ty
+          Printtyp.raw_type_expr p.pat_type;*)
+        let extra = (Tpat_constraint cty, loc, sp'.ppat_attributes) in
+        let p : k general_pattern =
+          { p with pat_type = ty; pat_extra = extra::p.pat_extra }
+        in k p)
+  | Ppat_type lid ->
+      assert construction_not_used_in_counterexamples;
+      let (path, p) = build_or_pat !env loc lid in
+      k @@ pure category @@ solve_expected
+        { p with pat_extra = (Tpat_type (path, lid), loc, sp.ppat_attributes)
+        :: p.pat_extra }
+  | Ppat_open (lid,p) ->
+      assert construction_not_used_in_counterexamples;
+      let path, new_env =
+        !type_open Asttypes.Fresh !env sp.ppat_loc lid in
+      env := new_env;
+      type_pat tps category ~env p expected_ty (fun p ->
+        let new_env = !env in
+        begin match Env.remove_last_open path new_env with
+        | None -> assert false
+        | Some closed_env -> env := closed_env
+        end;
+        k { p with pat_extra = (Tpat_open (path,lid,new_env),
+                                loc, sp.ppat_attributes) :: p.pat_extra }
+      )
+  | Ppat_exception p ->
+      let alloc_mode = simple_pat_mode Value.legacy in
+      type_pat tps Value ~alloc_mode p Predef.type_exn (fun p_exn ->
+      rcp k {
+        pat_desc = Tpat_exception p_exn;
+        pat_loc = sp.ppat_loc;
+        pat_extra = [];
+        pat_type = expected_ty;
+        pat_env = !env;
+        pat_attributes = sp.ppat_attributes;
+      })
+  | Ppat_extension ext ->
+      raise (Error_forward (Builtin_attributes.error_of_extension ext))
+
+let type_pat tps category ?no_existentials ?(mode=Normal)
+    ?(lev=get_current_level()) ~alloc_mode env sp expected_ty =
+  Misc.protect_refs [Misc.R (gadt_equations_level, Some lev)] (fun () ->
+        type_pat tps category ~no_existentials ~mode
+          ~alloc_mode ~env sp expected_ty (fun x -> x)
+    )
+
+(* this function is passed to Partial.parmatch
+   to type check gadt nonexhaustiveness *)
+let partial_pred ~lev ~splitting_mode ?(explode=0)
+      env expected_ty constrs labels p =
+  let env = ref env in
+  let state = save_state env in
+  let mode =
+    Counter_example {
+        splitting_mode;
+        explosion_fuel = explode;
+        constrs; labels;
+      } in
+  try
+    let tps = create_type_pat_state Modules_ignored in
+    let alloc_mode = simple_pat_mode Value.min_mode in
+    let typed_p = type_pat tps Value ~lev ~mode ~alloc_mode env p expected_ty in
+    set_state state env;
+    (* types are invalidated but we don't need them here *)
+    Some typed_p
+  with Error _ | Empty_branch ->
+    set_state state env;
+    None
+
+let check_partial ?(lev=get_current_level ()) env expected_ty loc cases =
+  let explode = match cases with [_] -> 5 | _ -> 0 in
+  let splitting_mode = Refine_or {inside_nonsplit_or = false} in
+  Parmatch.check_partial
+    (partial_pred ~lev ~splitting_mode ~explode env expected_ty)
+    loc cases
+
+let check_unused ?(lev=get_current_level ()) env expected_ty cases =
+  Parmatch.check_unused
+    (fun refute constrs labels spat ->
+      match
+        partial_pred ~lev ~splitting_mode:Backtrack_or ~explode:5
+          env expected_ty constrs labels spat
+      with
+        Some pat when refute ->
+          raise (Error (spat.ppat_loc, env, Unrefuted_pattern pat))
+      | r -> r)
+    cases
+
+let type_pattern category ~lev ~alloc_mode env spat expected_ty allow_modules =
+  let tps = create_type_pat_state allow_modules in
+  let new_env = ref env in
+=======
+        in
+        solve_Ppat_constraint ~refine tps loc env type_modes sty expected_ty
+      in
+      let p = type_pat ~alloc_mode tps category sp_constrained expected_ty' in
+      let extra = (Tpat_constraint cty, loc, sp_constrained.ppat_attributes) in
+      { p with pat_type = ty; pat_extra = extra::p.pat_extra }
+  | Ppat_type lid ->
+      let (path, p) = build_or_pat !env loc lid in
+      pure category @@ solve_expected
+        { p with pat_extra = (Tpat_type (path, lid), loc, sp.ppat_attributes)
+        :: p.pat_extra }
+  | Ppat_open (lid,p) ->
+      let path, new_env =
+        !type_open Asttypes.Fresh !env sp.ppat_loc lid in
+      env := new_env;
+      let p = type_pat tps category ~env p expected_ty in
+      let new_env = !env in
+      begin match Env.remove_last_open path new_env with
+      | None -> assert false
+      | Some closed_env -> env := closed_env
+      end;
+      { p with pat_extra = (Tpat_open (path,lid,new_env),
+                                loc, sp.ppat_attributes) :: p.pat_extra }
+  | Ppat_exception p ->
+      let alloc_mode = simple_pat_mode Value.legacy in
+      let p_exn = type_pat tps Value ~alloc_mode p Predef.type_exn in
+      rcp {
+        pat_desc = Tpat_exception p_exn;
+        pat_loc = sp.ppat_loc;
+        pat_extra = [];
+        pat_type = expected_ty;
+        pat_env = !env;
+        pat_attributes = sp.ppat_attributes;
+      }
+  | Ppat_extension ext ->
+      raise (Error_forward (Builtin_attributes.error_of_extension ext))
+
+let type_pat tps category ?no_existentials
+    ?(lev=get_current_level()) ~alloc_mode env sp expected_ty =
+  Misc.protect_refs [Misc.R (gadt_equations_level, Some lev)] (fun () ->
+        type_pat tps category ~no_existentials ~alloc_mode ~env sp expected_ty
+    )
+
+let type_pattern category ~lev ~alloc_mode env spat expected_ty allow_modules =
+  let tps = create_type_pat_state allow_modules in
+  let new_env = ref env in
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  (patl, !new_env, forces, pvs, mvs)
+
+let type_class_arg_pattern cl_num val_env met_env l spat =
+  if !Clflags.principal then Ctype.begin_def ();
+  let tps = create_type_pat_state Modules_rejected in
+  (* CR layouts: will change when we relax jkind restrictions in classes. *)
+  let nv = newvar (Jkind.value ~why:Class_argument) in
+  let alloc_mode = simple_pat_mode Value.legacy in
+  let pat =
+    type_pat tps Value ~no_existentials:In_class_args ~alloc_mode
+      (ref val_env) spat nv in
+  if has_variants pat then begin
+    Parmatch.pressure_variants val_env [pat];
+    finalize_variants pat;
+  end;
+  List.iter (fun f -> f()) tps.tps_pattern_force;
+  (* CR layouts v5: value restriction here to be relaxed *)
+  if is_optional l then
+    unify_pat (ref val_env) pat
+      (type_option (newvar (Jkind.value ~why:Type_argument)));
+  let pvs = tps.tps_pattern_variables in
+  if !Clflags.principal then begin
+    Ctype.end_def ();
+    iter_pattern_variables_type generalize_structure pvs;
+  end;
+  let (pv, val_env, met_env) =
+    List.fold_right
+      (fun {pv_id; pv_uid; pv_type; pv_loc; pv_as_var; pv_attributes}
+=======
+  (patl, !new_env, forces, pvs, mvs)
+
+let type_class_arg_pattern cl_num val_env met_env l spat =
+  let pvs, pat =
+    with_local_level_if_principal begin fun () ->
+      let tps = create_type_pat_state Modules_rejected in
+      let nv = newvar (Jkind.value ~why:Class_argument) in
+      let alloc_mode = simple_pat_mode Value.legacy in
+      let pat =
+        type_pat tps Value ~no_existentials:In_class_args ~alloc_mode
+          (ref val_env) spat nv in
+      if has_variants pat then begin
+        Parmatch.pressure_variants val_env [pat];
+        finalize_variants pat;
+      end;
+      List.iter (fun f -> f()) tps.tps_pattern_force;
+      (* CR layouts v5: value restriction here to be relaxed *)
+      if is_optional l then
+        unify_pat (ref val_env) pat
+          (type_option (newvar (Jkind.value ~why:Type_argument)));
+      tps.tps_pattern_variables, pat
+    end
+      ~post:(fun (pvs, _) -> iter_pattern_variables_type generalize_structure
+                               pvs)
+  in
+  let (pv, val_env, met_env) =
+    List.fold_right
+      (fun {pv_id; pv_uid; pv_type; pv_loc; pv_as_var; pv_attributes}
+>>>>>>> ocaml-flambda/flambda-backend:main
       map_fold_cont type_label_pat fields
         (fun fields -> mkp k (Tpat_record (fields, closed)))
   | Tpat_array (mut, tpl) ->
@@ -3293,6 +4746,369 @@ let check_unused
       | r -> r)
     cases
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+(** Some delayed checks, to be executed after typing the whole
+    compilation unit or toplevel phrase *)
+let delayed_checks = ref []
+let reset_delayed_checks () = delayed_checks := []
+let add_delayed_check f =
+  delayed_checks := (f, Warnings.backup ()) :: !delayed_checks
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let delayed_checks = ref []
+let reset_delayed_checks () = delayed_checks := []
+let add_delayed_check f =
+  delayed_checks := (f, Warnings.backup ()) :: !delayed_checks
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+(** In [check_counter_example_pat], we will check a counter-example candidate
+    produced by Parmatch. This is a pattern that represents a set of values by
+    using or-patterns (p_1 | ... | p_n) to enumerate all alternatives in the
+    counter-example search. These or-patterns occur at every choice point,
+    possibly deep inside the pattern.
+
+    Parmatch does not use type information, so this pattern may
+    exhibit two issues:
+    - some parts of the pattern may be ill-typed due to GADTs, and
+    - some wildcard patterns may not match any values: their type is
+      empty.
+
+    The aim of [check_counter_example_pat] is to refine this untyped pattern
+    into a well-typed pattern, and ensure that it matches at least one
+    concrete value.
+    - It filters ill-typed branches of or-patterns.
+      (see {!splitting_mode} below)
+    - It tries to check that wildcard patterns are non-empty.
+      (see {!explosion_fuel})
+  *)
+
+type counter_example_checking_info = {
+    explosion_fuel: int;
+    splitting_mode: splitting_mode;
+  }
+(**
+    [explosion_fuel] controls the checking of wildcard patterns.  We
+    eliminate potentially-empty wildcard patterns by exploding them
+    into concrete sub-patterns, for example (K1 _ | K2 _) or
+    { l1: _; l2: _ }. [explosion_fuel] is the depth limit on wildcard
+    explosion. Such depth limit is required to avoid non-termination
+    and compilation-time blowups.
+
+    [splitting_mode] controls the handling of or-patterns.  In
+    [Counter_example] mode, we only need to select one branch that
+    leads to a well-typed pattern. Checking all branches is expensive,
+    we use different search strategies (see {!splitting_mode}) to
+    reduce the number of explored alternatives.
+ *)
+
+(** Due to GADT constraints, an or-pattern produced within
+    a counter-example may have ill-typed branches. Consider for example
+
+    {[
+      type _ tag = Int : int tag | Bool : bool tag
+    ]}
+
+    then [Parmatch] will propose the or-pattern [Int | Bool] whenever
+    a pattern of type [tag] is required to form a counter-example. For
+    example, a function expects a (int tag option) and only [None] is
+    handled by the user-written pattern. [Some (Int | Bool)] is not
+    well-typed in this context, only the sub-pattern [Some Int] is.
+    In this example, the expected type coming from the context
+    suffices to know which or-pattern branch must be chosen.
+
+    In the general case, choosing a branch can have non-local effects
+    on the typability of the term. For example, consider a tuple type
+    ['a tag * ...'a...], where the first component is a GADT.  All
+    constructor choices for this GADT lead to a well-typed branch in
+    isolation (['a] is unconstrained), but choosing one of them adds
+    a constraint on ['a] that may make the other tuple elements
+    ill-typed.
+
+    In general, after choosing each possible branch of the or-pattern,
+    [check_counter_example_pat] has to check the rest of the pattern to
+    tell if this choice leads to a well-typed term. This may lead to an
+    explosion of typing/search work -- the rest of the term may in turn
+    contain alternatives.
+
+    We use careful strategies to try to limit counterexample-checking
+    time; [splitting_mode] represents those strategies.
+*)
+and splitting_mode =
+  | Backtrack_or
+  (** Always backtrack in or-patterns.
+
+      [Backtrack_or] selects a single alternative from an or-pattern
+      by using backtracking, trying to choose each branch in turn, and
+      to complete it into a valid sub-pattern. We call this
+      "splitting" the or-pattern.
+
+      We use this mode when looking for unused patterns or sub-patterns,
+      in particular to check a refutation clause (p -> .).
+    *)
+  | Refine_or of { inside_nonsplit_or: bool; }
+  (** Only backtrack when needed.
+
+      [Refine_or] tries another approach for refining or-pattern.
+
+      Instead of always splitting each or-pattern, It first attempts to
+      find branches that do not introduce new constraints (because they
+      do not contain GADT constructors). Those branches are such that,
+      if they fail, all other branches will fail.
+
+      If we find one such branch, we attempt to complete the subpattern
+      (checking what's outside the or-pattern), ignoring other
+      branches -- we never consider another branch choice again. If all
+      branches are constrained, it falls back to splitting the
+      or-pattern.
+
+      We use this mode when checking exhaustivity of pattern matching.
+  *)
+
+(** This exception is only used internally within [check_counter_example_pat],
+    to jump back to the parent or-pattern in the [Refine_or] strategy.
+
+    Such a parent exists precisely when [inside_nonsplit_or = true];
+    it's an invariant that we always setup an exception handler for
+    [Need_backtrack] when we set this flag. *)
+exception Need_backtrack
+
+(** This exception is only used internally within [check_counter_example_pat].
+    We use it to discard counter-example candidates that do not match any
+    value. *)
+exception Empty_branch
+
+type abort_reason = Adds_constraints | Empty
+
+(** Remember current typing state for backtracking.
+    No variable information, as we only backtrack on
+    patterns without variables (cf. assert statements).
+    In the GADT mode, [env] may be extended by unification,
+    and therefore it needs to be saved along with a [snapshot]. *)
+type unification_state =
+ { snapshot: snapshot;
+   env: Env.t; }
+let save_state env =
+  { snapshot = Btype.snapshot ();
+    env = !env; }
+let set_state s env =
+  Btype.backtrack s.snapshot;
+  env := s.env
+
+(** Find the first alternative in the tree of or-patterns for which
+    [f] does not raise an error. If all fail, the last error is
+    propagated *)
+let rec find_valid_alternative f pat =
+  match pat.pat_desc with
+  | Tpat_or(p1,p2,_) ->
+      (try find_valid_alternative f p1 with
+       | Empty_branch | Error _ -> find_valid_alternative f p2
+      )
+  | _ -> f pat
+
+let no_explosion info = { info with explosion_fuel = 0 }
+
+let enter_nonsplit_or info =
+  let splitting_mode = match info.splitting_mode with
+  | Backtrack_or ->
+      (* in Backtrack_or mode, or-patterns are always split *)
+      assert false
+  | Refine_or _ ->
+      Refine_or {inside_nonsplit_or = true}
+  in { info with splitting_mode }
+
+let rec check_counter_example_pat
+          ~info ~env type_pat_state tp expected_ty k =
+  let check_rec ?(info=info) ?(env=env) =
+    check_counter_example_pat ~info ~env type_pat_state in
+  let loc = tp.pat_loc in
+  let refine = Some true in
+  let alloc_mode = simple_pat_mode Value.min_mode in
+  let solve_expected (x : pattern) : pattern =
+    unify_pat ~refine env x (instance expected_ty);
+    x
+  in
+  (* "make pattern" and "make pattern then continue" *)
+  let mp ?(pat_type = expected_ty) desc =
+    { pat_desc = desc; pat_loc = loc; pat_extra=[];
+      pat_type = instance pat_type; pat_attributes = []; pat_env = !env } in
+  let mkp k ?pat_type desc = k (mp ?pat_type desc) in
+  let must_backtrack_on_gadt =
+    match info.splitting_mode with
+    | Backtrack_or -> false
+    | Refine_or {inside_nonsplit_or} -> inside_nonsplit_or
+  in
+  match tp.pat_desc with
+    Tpat_any | Tpat_var _ ->
+      let k' () = mkp k tp.pat_desc in
+      if info.explosion_fuel <= 0 then k' () else
+      let decrease n = {info with explosion_fuel = info.explosion_fuel - n} in
+      begin match Parmatch.pats_of_type !env expected_ty with
+      | [] -> raise Empty_branch
+      | [{pat_desc = Tpat_any}] -> k' ()
+      | [tp] -> check_rec ~info:(decrease 1) tp expected_ty k
+      | tp :: tpl ->
+          if must_backtrack_on_gadt then raise Need_backtrack;
+          let tp =
+            List.fold_left
+              (fun tp tp' -> {tp with pat_desc = Tpat_or (tp, tp', None)})
+              tp tpl
+          in
+          check_rec ~info:(decrease 5) tp expected_ty k
+      end
+  | Tpat_alias (p, _, _, _, _) -> check_rec ~info p expected_ty k
+  | Tpat_constant cst ->
+      let cst = constant_or_raise !env loc (Untypeast.constant cst) in
+      k @@ solve_expected (mp (Tpat_constant cst) ~pat_type:(type_constant cst))
+  | Tpat_tuple tpl ->
+      let tpl_ann =
+        solve_Ppat_tuple ~refine ~alloc_mode loc env tpl
+          expected_ty
+      in
+      map_fold_cont (fun (p,t,_) -> check_rec p t) tpl_ann
+        (fun pl ->
+           mkp k (Tpat_tuple pl)
+             ~pat_type:(newty (Ttuple(List.map (fun p -> p.pat_type) pl))))
+  | Tpat_construct(cstr_lid, constr, targs, _) ->
+      if constr.cstr_generalized && must_backtrack_on_gadt then
+        raise Need_backtrack;
+      let (ty_args, _, existential_ctyp) =
+        solve_Ppat_construct ~refine type_pat_state env loc constr None None
+          expected_ty
+      in
+      map_fold_cont
+        (fun (p,t) -> check_rec p t)
+        (List.combine targs ty_args)
+        (fun args ->
+          mkp k (Tpat_construct(cstr_lid, constr, args, existential_ctyp)))
+  | Tpat_variant(tag, targ, _) ->
+      let constant = (targ = None) in
+      let arg_type, row, pat_type =
+        solve_Ppat_variant ~refine loc env tag constant expected_ty in
+      let k arg =
+        mkp k ~pat_type (Tpat_variant(tag, arg, ref row))
+      in begin
+        (* PR#6235: propagate type information *)
+        match targ, arg_type with
+          Some p, [ty] -> check_rec p ty (fun p -> k (Some p))
+        | _            -> k None
+      end
+  | Tpat_record(fields, closed) ->
+      let record_ty = generic_instance expected_ty in
+      let type_label_pat (label_lid, label, targ) k =
+        let ty_arg =
+          solve_Ppat_record_field ~refine loc env label label_lid record_ty in
+        check_rec targ ty_arg (fun arg -> k (label_lid, label, arg))
+      in
+      map_fold_cont type_label_pat fields
+        (fun fields -> mkp k (Tpat_record (fields, closed)))
+  | Tpat_array (mut, original_arg_sort, tpl) ->
+      let ty_elt, arg_sort = solve_Ppat_array ~refine loc env mut expected_ty in
+      assert (Jkind.Sort.equate original_arg_sort arg_sort);
+      map_fold_cont (fun p -> check_rec p ty_elt) tpl
+        (fun pl -> mkp k (Tpat_array (mut, arg_sort, pl)))
+  | Tpat_or(tp1, tp2, _) ->
+      (* We are in counter-example mode, but try to avoid backtracking *)
+      let must_split =
+        match info.splitting_mode with
+        | Backtrack_or -> true
+        | Refine_or _ -> false in
+      let state = save_state env in
+      let split_or tp =
+        let type_alternative pat =
+          set_state state env; check_rec pat expected_ty k in
+        find_valid_alternative type_alternative tp
+      in
+      if must_split then split_or tp else
+      let check_rec_result env tp : (_, abort_reason) result =
+        let info = enter_nonsplit_or info in
+        match check_rec ~info tp expected_ty ~env (fun x -> x) with
+        | res -> Ok res
+        | exception Need_backtrack -> Error Adds_constraints
+        | exception Empty_branch -> Error Empty
+      in
+      let p1 = check_rec_result (ref !env) tp1 in
+      let p2 = check_rec_result (ref !env) tp2 in
+      begin match p1, p2 with
+      | Error Empty, Error Empty ->
+          raise Empty_branch
+      | Error Adds_constraints, Error _
+      | Error _, Error Adds_constraints ->
+          let inside_nonsplit_or =
+            match info.splitting_mode with
+            | Backtrack_or -> false
+            | Refine_or {inside_nonsplit_or} -> inside_nonsplit_or in
+          if inside_nonsplit_or
+          then raise Need_backtrack
+          else split_or tp
+      | Ok p, Error _
+      | Error _, Ok p ->
+          k p
+      | Ok p1, Ok p2 ->
+          mkp k (Tpat_or (p1, p2, None))
+      end
+  | Tpat_lazy tp1 ->
+      let nv = solve_Ppat_lazy ~refine loc env expected_ty in
+      (* do not explode under lazy: PR#7421 *)
+      check_rec ~info:(no_explosion info) tp1 nv
+        (fun p1 -> mkp k (Tpat_lazy p1))
+
+let check_counter_example_pat ~counter_example_args
+    ?(lev=get_current_level()) env tp expected_ty =
+  (* [check_counter_example_pat] doesn't use [type_pat_state] in an interesting
+     way -- one of the functions it calls writes an entry into
+     [tps_pattern_forces] -- so we can just ignore module patterns. *)
+  let type_pat_state = create_type_pat_state Modules_ignored in
+  Misc.protect_refs [Misc.R (gadt_equations_level, Some lev)] (fun () ->
+    check_counter_example_pat
+      ~info:counter_example_args ~env type_pat_state tp expected_ty (fun x -> x)
+    )
+
+(* this function is passed to Partial.parmatch
+   to type check gadt nonexhaustiveness *)
+let partial_pred ~lev ~splitting_mode ?(explode=0)
+      env expected_ty p =
+  let env = ref env in
+  let state = save_state env in
+  let counter_example_args =
+      {
+        splitting_mode;
+        explosion_fuel = explode;
+      } in
+  try
+    let typed_p =
+      check_counter_example_pat ~lev ~counter_example_args env p
+        expected_ty
+    in
+    set_state state env;
+    (* types are invalidated but we don't need them here *)
+    Some typed_p
+  with Error _ | Empty_branch ->
+    set_state state env;
+    None
+
+let check_partial
+      ?(lev=get_current_level ()) env expected_ty loc cases
+  =
+  let explode = match cases with [_] -> 5 | _ -> 0 in
+  let splitting_mode = Refine_or {inside_nonsplit_or = false} in
+  Parmatch.check_partial
+    (partial_pred ~lev ~splitting_mode ~explode env expected_ty)
+    loc cases
+
+let check_unused
+      ?(lev=get_current_level ()) env expected_ty cases
+  =
+  Parmatch.check_unused
+    (fun refute pat ->
+      match
+        partial_pred ~lev ~splitting_mode:Backtrack_or ~explode:5
+          env expected_ty pat
+      with
+        Some pat' when refute ->
+          raise (Error (pat.pat_loc, env, Unrefuted_pattern pat'))
+      | r -> r)
+    cases
+
 (** Some delayed checks, to be executed after typing the whole
     compilation unit or toplevel phrase *)
 let delayed_checks = ref []
@@ -3368,7 +5184,8 @@ type untyped_apply_arg =
         ty_arg : type_expr;
         sort_arg : Jkind.sort;
         mode_arg : Alloc.t;
-        level: int; }
+        level: int;
+        next_arg_loc: Location.t option }
 
 type untyped_omitted_param =
   { mode_fun: Alloc.t;
@@ -3522,6 +5339,40 @@ let collect_unknown_apply_args env funct ty_fun mode_fun rev_args sargs ret_tvar
                   Msupport.resume_raise
                     (error(funct.exp_loc, env, Incoherent_label_order))
             | _ ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                raise(Error(funct.exp_loc, env, Apply_non_function
+                              (expand_head env funct.exp_type)))
+        in
+        let arg =
+          Unknown_arg { sarg; ty_arg_mono; mode_fun; mode_arg; sort_arg }
+=======
+                let previous_arg_loc =
+                  (* [rev_args] is the arguments typed until now, in reverse
+                     order of appearance. Not all arguments have a location
+                     attached (eg. an optional argument that is not passed). *)
+                  rev_args
+                  |> List.find_map
+                       (function
+                         | (_, Arg ( Known_arg { sarg; _ }
+                                   | Unknown_arg { sarg; _ })) ->
+                           Some sarg.pexp_loc
+                         | (_,
+                            Arg (Eliminated_optional_arg { next_arg_loc })) ->
+                           next_arg_loc
+                         | (_, Omitted _) -> None)
+                  |> Option.value ~default:funct.exp_loc
+                in
+                raise(Error(funct.exp_loc, env, Apply_non_function {
+                    funct;
+                    func_ty = expand_head env funct.exp_type;
+                    res_ty = expand_head env ty_res;
+                    previous_arg_loc;
+                    extra_arg_loc = sarg.pexp_loc; }))
+        in
+        let arg =
+          Unknown_arg { sarg; ty_arg_mono; mode_fun; mode_arg; sort_arg }
+>>>>>>> ocaml-flambda/flambda-backend:main
                 let previous_arg_loc =
                   (* [rev_args] is the arguments typed until now, in reverse
                      order of appearance. Not all arguments have a location
@@ -3599,12 +5450,13 @@ let collect_apply_args env funct ignore_labels ty_fun ty_fun0 mode_fun sargs ret
             { sarg; ty_arg; ty_arg0; commuted; sort_arg;
               mode_fun; mode_arg; wrapped_in_some })
         in
-        let eliminate_optional_arg () =
+        let eliminate_optional_arg next_arg_loc =
           may_warn funct.exp_loc
             (Warnings.Non_principal_labels "eliminated optional argument");
           Arg
             (Eliminated_optional_arg
-               { mode_fun; ty_arg; mode_arg; sort_arg; level = lv })
+               { mode_fun; ty_arg; mode_arg; sort_arg; level = lv;
+                 next_arg_loc })
         in
         let remaining_sargs, arg =
           if ignore_labels then begin
@@ -3621,7 +5473,7 @@ let collect_apply_args env funct ignore_labels ty_fun ty_fun0 mode_fun sargs ret
                   List.exists (function (Nolabel, _) -> true | _ -> false)
                     sargs
                 then
-                  (sargs, eliminate_optional_arg ())
+                  (sargs, eliminate_optional_arg (Some sarg.pexp_loc))
                 else
                   raise(error(sarg.pexp_loc, env,
                               Apply_wrong_label(l', ty_fun', optional)))
@@ -3641,7 +5493,7 @@ let collect_apply_args env funct ignore_labels ty_fun ty_fun0 mode_fun sargs ret
             | None ->
                 sargs,
                 if optional && List.mem_assoc Nolabel sargs then
-                  eliminate_optional_arg ()
+                  eliminate_optional_arg None
                 else begin
                   (* No argument was given for this parameter, we abstract over
                      it. *)
@@ -3863,72 +5715,139 @@ let check_recursive_class_bindings env ids exprs =
          raise(error(expr.cl_loc, env, Illegal_class_expr)))
     exprs
 
-(* Is the return value annotated with "local_" *)
-let is_local_returning_expr e =
-  let combine (local1, loc1) (local2, loc2) =
-    match local1, local2 with
-    | true, true -> true, loc1
-    | false, false -> false, loc1
-    | false, true ->
-        raise(Error(loc1, Env.empty, Local_return_annotation_mismatch loc2))
-    | true, false ->
-        raise(Error(loc2, Env.empty, Local_return_annotation_mismatch loc1))
-  in
-  let rec loop e =
-    match Jane_syntax.Expression.of_ast e with
-    | Some (jexp, _attrs) -> begin
-        match jexp with
-        | Jexp_comprehension   _ -> false, e.pexp_loc
-        | Jexp_immutable_array _ -> false, e.pexp_loc
-        | Jexp_layout (Lexp_constant _) -> false, e.pexp_loc
-        | Jexp_layout (Lexp_newtype (_, _, e)) -> loop e
-        | Jexp_n_ary_function _ -> false, e.pexp_loc
+module Is_local_returning : sig
+  val function_ : Parsetree.case list -> bool
+end = struct
+
+  (* Is the return value annotated with "local_"?
+     [assert false] can work either way *)
+
+  type local_returning_flag =
+    | Local of Location.t  (* location of a local return *)
+    | Not of Location.t  (* location of a non-local return *)
+    | Either
+
+  let combine flag1 flag2 =
+    match flag1, flag2 with
+    | (Local _ as flag), Local _
+    | (Local _ as flag), Either
+    | (Not _ as flag), Not _
+    | (Not _ as flag), Either
+    | Either, (Local _ as flag)
+    | Either, (Not _ as flag)
+    | (Either as flag), Either ->
+      flag
+
+    | Local local_loc, Not not_local_loc
+    | Not not_local_loc, Local local_loc ->
+       raise(Error(not_local_loc, Env.empty,
+                   Local_return_annotation_mismatch local_loc))
+
+  let expr e =
+    let rec loop e =
+      match Jane_syntax.Expression.of_ast e with
+      | Some (jexp, _attrs) -> begin
+          match jexp with
+          | Jexp_comprehension   _ -> Not e.pexp_loc
+          | Jexp_immutable_array _ -> Not e.pexp_loc
+          | Jexp_layout (Lexp_constant _) -> Not e.pexp_loc
+          | Jexp_layout (Lexp_newtype (_, _, e)) -> loop e
+          | Jexp_n_ary_function _ -> Not e.pexp_loc
+        end
+      | None      ->
+      match e.pexp_desc with
+      | Pexp_apply
+          ({ pexp_desc = Pexp_extension(
+             {txt = "extension.local"|"ocaml.local"|"local"}, PStr []) },
+           [Nolabel, _]) ->
+          Local e.pexp_loc
+      | Pexp_apply
+          ({ pexp_desc = Pexp_extension(
+             {txt = "extension.unique"|"ocaml.unique"|"unique"}, PStr []) },
+           [Nolabel, exp]) ->
+          loop exp
+      | Pexp_apply
+          ({ pexp_desc = Pexp_extension(
+            {txt = "extension.once" | "ocaml.once" | "once"}, PStr []) },
+          [Nolabel, exp]) ->
+          loop exp
+      | Pexp_assert { pexp_desc = Pexp_construct ({ txt = Lident "false" },
+                                                  None) } ->
+          Either
+      | Pexp_ident _ | Pexp_constant _ | Pexp_apply _ | Pexp_tuple _
+      | Pexp_construct _ | Pexp_variant _ | Pexp_record _ | Pexp_field _
+      | Pexp_setfield _ | Pexp_array _ | Pexp_while _ | Pexp_for _ | Pexp_send _
+      | Pexp_new _ | Pexp_setinstvar _ | Pexp_override _ | Pexp_assert _
+      | Pexp_lazy _ | Pexp_object _ | Pexp_pack _ | Pexp_function _ | Pexp_fun _
+      | Pexp_letop _ | Pexp_extension _ | Pexp_unreachable ->
+          Not e.pexp_loc
+      | Pexp_let(_, _, e) | Pexp_sequence(_, e) | Pexp_constraint(e, _)
+      | Pexp_coerce(e, _, _) | Pexp_letmodule(_, _, e) | Pexp_letexception(_, e)
+      | Pexp_poly(e, _) | Pexp_newtype(_, e) | Pexp_open(_, e)
+      | Pexp_ifthenelse(_, e, None)->
+          loop e
+      | Pexp_ifthenelse(_, e1, Some e2)-> combine (loop e1) (loop e2)
+      | Pexp_match(_, cases) -> begin
+          match cases with
+          | [] -> Not e.pexp_loc
+          | first :: rest ->
+              List.fold_left
+                (fun acc pc -> combine acc (loop pc.pc_rhs))
+                (loop first.pc_rhs) rest
+        end
+      | Pexp_try(e, cases) ->
+          List.fold_left
+            (fun acc pc -> combine acc (loop pc.pc_rhs))
+            (loop e) cases
+    in
+    loop e
+
+  let function_ cases =
+    let rec loop_cases cases =
+      match cases with
+      | [] -> Either
+      | [{pc_lhs = _; pc_guard = None; pc_rhs = e}] ->
+          loop_body e
+      | case :: cases ->
+          let is_local_returning_case case =
+            expr case.pc_rhs
+          in
+          List.fold_left
+            (fun acc case -> combine acc (is_local_returning_case case))
+            (is_local_returning_case case) cases
+    and loop_body e =
+      if Builtin_attributes.has_curry e.pexp_attributes then
+        expr e
+      else begin
+        match Jane_syntax.Expression.of_ast e with
+        | Some (jexp, _attrs) -> begin
+            match jexp with
+            | Jexp_n_ary_function (_, _, Pfunction_cases (cases, _, _)) ->
+                loop_cases cases
+            | Jexp_n_ary_function (_, _, Pfunction_body body) ->
+                loop_body body
+            | Jexp_comprehension _ | Jexp_immutable_array _ ->
+                expr e
+            | Jexp_layout (Lexp_constant _) ->
+                Not e.pexp_loc
+            | Jexp_layout (Lexp_newtype (_, _, body)) ->
+                loop_body body
+          end
+        | None -> match e.pexp_desc, e.pexp_attributes with
+        | Pexp_fun(_, _, _, e), _ -> loop_body e
+        | Pexp_function cases, _ -> loop_cases cases
+        | Pexp_constraint (e, _), _ -> loop_body e
+        | Pexp_let (Nonrecursive, _, e),
+            [{Parsetree.attr_name = {txt="#default"};_}] -> loop_body e
+        | _ -> expr e
       end
-    | None      ->
-    match e.pexp_desc with
-    | Pexp_apply
-        ({ pexp_desc = Pexp_extension(
-           {txt = "extension.local"|"ocaml.local"|"local"}, PStr []) },
-         [Nolabel, _]) ->
-        true, e.pexp_loc
-    | Pexp_apply
-        ({ pexp_desc = Pexp_extension(
-           {txt = "extension.unique"|"ocaml.unique"|"unique"}, PStr []) },
-         [Nolabel, exp]) ->
-        loop exp
-    | Pexp_apply
-        ({ pexp_desc = Pexp_extension(
-          {txt = "extension.once" | "ocaml.once" | "once"}, PStr []) },
-        [Nolabel, exp]) ->
-        loop exp
-    | Pexp_ident _ | Pexp_constant _ | Pexp_apply _ | Pexp_tuple _
-    | Pexp_construct _ | Pexp_variant _ | Pexp_record _ | Pexp_field _
-    | Pexp_setfield _ | Pexp_array _ | Pexp_while _ | Pexp_for _ | Pexp_send _
-    | Pexp_new _ | Pexp_setinstvar _ | Pexp_override _ | Pexp_assert _
-    | Pexp_lazy _ | Pexp_object _ | Pexp_pack _ | Pexp_function _ | Pexp_fun _
-    | Pexp_letop _ | Pexp_extension _ | Pexp_unreachable ->
-        false, e.pexp_loc
-    | Pexp_let(_, _, e) | Pexp_sequence(_, e) | Pexp_constraint(e, _)
-    | Pexp_coerce(e, _, _) | Pexp_letmodule(_, _, e) | Pexp_letexception(_, e)
-    | Pexp_poly(e, _) | Pexp_newtype(_, e) | Pexp_open(_, e)
-    | Pexp_ifthenelse(_, e, None)->
-        loop e
-    | Pexp_ifthenelse(_, e1, Some e2)-> combine (loop e1) (loop e2)
-    | Pexp_match(_, cases) -> begin
-        match cases with
-        | [] -> false, e.pexp_loc
-        | first :: rest ->
-            List.fold_left
-              (fun acc pc -> combine acc (loop pc.pc_rhs))
-              (loop first.pc_rhs) rest
-      end
-    | Pexp_try(e, cases) ->
-        List.fold_left
-          (fun acc pc -> combine acc (loop pc.pc_rhs))
-          (loop e) cases
-  in
-  let local, _ = loop e in
-  local
+    in
+    match loop_cases cases with
+    | Local _ -> true
+    | Either | Not _ -> false
+      (* [fun _ -> assert false] must not be local-returning for
+         backward compatibility *)
+end
 
 let rec is_an_uncurried_function e =
   if Builtin_attributes.has_curry e.pexp_attributes then false
@@ -3944,40 +5863,6 @@ let rec is_an_uncurried_function e =
        is_an_uncurried_function e
     | _ -> false
   end
-
-let is_local_returning_function cases =
-  let rec loop_cases cases =
-    match cases with
-    | [] -> false
-    | [{pc_lhs = _; pc_guard = None; pc_rhs = e}] ->
-        loop_body e
-    | cases ->
-        List.for_all (fun case -> is_local_returning_expr case.pc_rhs) cases
-  and loop_body e =
-    if Builtin_attributes.has_curry e.pexp_attributes then
-      is_local_returning_expr e
-    else begin
-      match Jane_syntax.Expression.of_ast e with
-      | Some (jexp, _attrs) -> begin
-          match jexp with
-          | Jexp_n_ary_function (_, _, Pfunction_cases (cases, _, _)) ->
-              loop_cases cases
-          | Jexp_n_ary_function (_, _, Pfunction_body body) ->
-              loop_body body
-          | Jexp_comprehension _ | Jexp_immutable_array _ ->
-              is_local_returning_expr e
-          | Jexp_layout (Lexp_constant _ | Lexp_newtype _) -> false
-        end
-      | None -> match e.pexp_desc, e.pexp_attributes with
-      | Pexp_fun(_, _, _, e), _ -> loop_body e
-      | Pexp_function cases, _ -> loop_cases cases
-      | Pexp_constraint (e, _), _ -> loop_body e
-      | Pexp_let (Nonrecursive, _, e),
-          [{Parsetree.attr_name = {txt="#default"};_}] -> loop_body e
-      | _ -> is_local_returning_expr e
-    end
-  in
-  loop_cases cases
 
 (* The "rest of the function" extends from the start of the first parameter
    to the end of the overall function. The parser does not construct such
@@ -4255,6 +6140,120 @@ let check_univars env kind exp ty_expected vars =
       (Ctype.expanded_diff env ~got:ty ~expected:ty_expected) :: errs
     in
     raise (error(exp.exp_loc, env,
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                 Less_general(kind, Errortrace.unification_error ~trace)))
+  in
+  let pty = instance ty_expected in
+  begin_def ();
+  let exp_ty, vars =
+    match get_desc pty with
+      Tpoly (body, tl) ->
+        (* Enforce scoping for type_let:
+           since body is not generic,  instance_poly only makes
+           copies of nodes that have a Tvar as descendant *)
+        let univars, ty' = instance_poly true tl body in
+        let vars, exp_ty = instance_parameterized_type vars exp.exp_type in
+        List.iter2 (fun uvar var ->
+          (* This checks that the term doesn't require more specific jkinds
+             than allowed by the univars. *)
+          (* CR layouts: expand_head here is needed for examples like:
+
+             type 'a t = 'a
+             let id (x : 'a t) = x
+             let foo : 'a . 'a -> 'a = fun x -> id x
+
+             Here, while checking foo, ['a] gets unified with ['a t].  This is
+             fine because ['a t] is actually just ['a], but it does mean we need
+             to expand the var to find the variable with the jkind we want to
+             check.
+
+             However, I should come back and think about his more carefully:
+             1) [polyfy], which is called below, also does this expansion.
+                It would be nice to just move the jkind check there,
+                but there was some reason I didn't do this originally (something
+                about unifications statefully changing things between now and
+                then).  Revisit.
+             2) [polyfy] actually calls [expand_head] twice!  why?!
+          *)
+          match get_desc (expand_head env var) with
+          | Tvar { jkind = jkind2; } -> begin
+              match check_type_jkind env uvar jkind2 with
+              | Ok _ -> ()
+              | Error err ->
+                error exp_ty ty_expected
+                  [Errortrace.Bad_jkind (uvar,err)]
+            end
+          | _ -> error exp_ty ty_expected [])
+          univars vars;
+        unify_exp_types exp.exp_loc env exp_ty ty';
+        exp_ty, vars
+    | _ -> assert false
+  in
+  end_def ();
+  generalize exp_ty;
+  List.iter generalize vars;
+  let ty, complete = polyfy env exp_ty vars in
+  if not complete then error ty ty_expected []
+
+=======
+                 Less_general(kind, Errortrace.unification_error ~trace)))
+  in
+  let pty = instance ty_expected in
+  let exp_ty, vars =
+    with_local_level_iter ~post:generalize begin fun () ->
+      match get_desc pty with
+        Tpoly (body, tl) ->
+          (* Enforce scoping for type_let:
+             since body is not generic,  instance_poly only makes
+             copies of nodes that have a Tunivar as descendant *)
+          let univars, ty' = instance_poly true tl body in
+          let vars, exp_ty = instance_parameterized_type vars exp.exp_type in
+          List.iter2 (fun uvar var ->
+            (* This checks that the term doesn't require more specific jkinds
+               than allowed by the univars. *)
+            (* CR layouts: expand_head here is needed for examples like:
+
+               type 'a t = 'a
+               let id (x : 'a t) = x
+               let foo : 'a . 'a -> 'a = fun x -> id x
+
+               Here, while checking foo, ['a] gets unified with ['a t].  This is
+               fine because ['a t] is actually just ['a], but it does mean we need
+               to expand the var to find the variable with the jkind we want to
+               check.
+
+               However, I should come back and think about his more carefully:
+               1) [polyfy], which is called below, also does this expansion.
+                  It would be nice to just move the jkind check there,
+                  but there was some reason I didn't do this originally (something
+                  about unifications statefully changing things between now and
+                  then).  Revisit.
+               2) [polyfy] actually calls [expand_head] twice!  why?!
+            *)
+            match get_desc (expand_head env var) with
+            | Tvar { jkind = jkind2; } -> begin
+                match check_type_jkind env uvar jkind2 with
+                | Ok _ -> ()
+                | Error err ->
+                  error exp_ty ty_expected
+                    [Errortrace.Bad_jkind (uvar,err)]
+              end
+            | _ ->
+              (* It would be semantically correct for this case to error. But
+                 these errors are caught below anyway, and erroring earlier
+                 results in small differences in error messages vs upstream. *)
+              ())
+            univars vars;
+          unify_exp_types exp.exp_loc env exp_ty ty';
+          ((exp_ty, vars), exp_ty::vars)
+      | _ -> assert false
+    end
+  in
+  let ty, complete = polyfy env exp_ty vars in
+  if not complete then error ty ty_expected []
+
+>>>>>>> ocaml-flambda/flambda-backend:main
                  Less_general(kind, Errortrace.unification_error ~trace)))
   in
   let pty = instance ty_expected in
@@ -4364,7 +6363,13 @@ let check_statement exp =
    The check can be disabled by explicitly annotating the expression with a type
    constraint, eg [(e : _ -> _)].
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
    If [statement] is [true] and the [ignored-partial-application] is {em not}
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+   triggered, then the [non-unit-statement] check is performaed (see
+=======
+   triggered, then the [non-unit-statement] check is performed (see
+>>>>>>> ocaml-flambda/flambda-backend:main
    triggered, then the [non-unit-statement] check is performed (see
    [check_statement]).
 
@@ -4423,6 +6428,19 @@ let check_partial_application ~statement exp =
       add_delayed_check doit
   | _ ->
       doit ()
+
+let pattern_needs_partial_application_check p =
+  let rec check : type a. a general_pattern -> bool = fun p ->
+    not (List.exists (function (Tpat_constraint _, _, _) -> true | _ -> false)
+          p.pat_extra) &&
+    match p.pat_desc with
+    | Tpat_any -> true
+    | Tpat_exception _ -> true
+    | Tpat_or (p1, p2, _) -> check p1 && check p2
+    | Tpat_value p -> check (p :> value general_pattern)
+    | _ -> false
+  in
+  check p
 
 let pattern_needs_partial_application_check p =
   let rec check : type a. a general_pattern -> bool = fun p ->
@@ -4605,7 +6623,13 @@ let name_cases default lst =
     original formatting *)
 let unify_exp ?sdesc_for_hint env exp expected_ty =
   let loc = proper_exp_loc exp in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   try
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    raise (Error(loc, env, Expr_type_clash(err, tfc, Some exp.exp_desc)))
+=======
+    raise (Error(loc, env, Expr_type_clash(err, tfc, sdesc_for_hint)))
+>>>>>>> ocaml-flambda/flambda-backend:main
     unify_exp_types loc env exp.exp_type expected_ty
   with Error(loc, env, Expr_type_clash(err, tfc, None)) ->
     raise (error(loc, env, Expr_type_clash(err, tfc, sdesc_for_hint)))
@@ -4761,6 +6785,90 @@ let pat_modes ~force_toplevel rec_mode_var (attrs, spat) =
   in
   attrs, pat_mode, exp_mode, spat
 
+(* Generalize expressions *)
+let generalize_structure_exp exp = generalize_structure exp.exp_type
+let may_lower_contravariant_then_generalize env exp =
+  if maybe_expansive exp then lower_contravariant env exp.exp_type;
+  generalize exp.exp_type
+
+(* value binding elaboration *)
+
+let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; pvb_attributes=attrs; _ } =
+  let open Ast_helper in
+  let mode_annot_attrs =
+    Builtin_attributes.filter_attributes
+      Builtin_attributes.mode_annotation_attributes_filter
+      attrs
+  in
+  match ct with
+  | None -> expr
+  | Some (Pvc_constraint { locally_abstract_univars=[]; typ }) ->
+      begin match typ.ptyp_desc with
+      | Ptyp_poly _ -> expr
+      | _ ->
+          let loc = { expr.pexp_loc with Location.loc_ghost = true } in
+          Exp.constraint_ ~loc ~attrs:mode_annot_attrs expr typ
+      end
+  | Some (Pvc_coercion { ground; coercion}) ->
+      let loc = { expr.pexp_loc with Location.loc_ghost = true } in
+      Exp.coerce ~loc expr ground coercion
+  | Some (Pvc_constraint { locally_abstract_univars=vars;typ}) ->
+      let loc_start = pat.ppat_loc.Location.loc_start in
+      let loc = { expr.pexp_loc with loc_start; loc_ghost=true } in
+      let expr = Exp.constraint_ ~loc ~attrs:mode_annot_attrs expr typ in
+      List.fold_right (Exp.newtype ~loc) vars expr
+
+let vb_pat_constraint ~force_toplevel rec_mode_var
+      ({pvb_pat=pat; pvb_expr = exp; pvb_attributes = attrs; _ } as vb) =
+  let mode_annot_attrs =
+    Builtin_attributes.filter_attributes
+      Builtin_attributes.mode_annotation_attributes_filter
+      attrs
+  in
+  let spat =
+    let open Ast_helper in
+    match vb.pvb_constraint, pat.ppat_desc, exp.pexp_desc with
+    | Some (Pvc_constraint {locally_abstract_univars=[]; typ}
+           | Pvc_coercion { coercion=typ; _ }),
+      _, _ ->
+        Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat typ
+          ~attrs:mode_annot_attrs
+    | Some (Pvc_constraint {locally_abstract_univars=vars; typ }), _, _ ->
+        let varified = Typ.varify_constructors vars typ in
+        let t = Typ.poly ~loc:typ.ptyp_loc vars varified in
+        let loc_end = typ.ptyp_loc.Location.loc_end in
+        let loc =  { pat.ppat_loc with loc_end; loc_ghost=true } in
+        Pat.constraint_ ~loc pat t
+          ~attrs:mode_annot_attrs
+    | None, (Ppat_any | Ppat_constraint _), _ -> pat
+    | None, _, Pexp_coerce (_, _, sty)
+    | None, _, Pexp_constraint (_, sty) when !Clflags.principal ->
+        (* propagate type annotation to pattern,
+           to allow it to be generalized in -principal mode *)
+        Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat sty
+          ~attrs:mode_annot_attrs
+    | _ -> pat
+  in
+  let pat_mode, exp_mode =
+    if force_toplevel
+    then simple_pat_mode Value.legacy, mode_legacy
+    else match rec_mode_var with
+    | None -> begin
+        match pat_tuple_arity spat with
+        | Not_local_tuple | Maybe_local_tuple ->
+            let mode = Value.newvar () in
+            simple_pat_mode mode, mode_default mode
+        | Local_tuple arity ->
+            let modes = List.init arity (fun _ -> Value.newvar ()) in
+            let mode = Value.regional_to_local (Value.join modes) in
+            tuple_pat_mode mode modes, mode_tuple mode modes
+      end
+    | Some mode ->
+        simple_pat_mode mode, mode_exact mode
+  in
+  vb.pvb_attributes, pat_mode, exp_mode, spat
+
+
 let rec type_exp ?recarg env expected_mode sexp =
   (* We now delegate everything to type_expect *)
   type_expect ?recarg env expected_mode sexp
@@ -4814,10 +6922,21 @@ and type_expect_
   let loc = sexp.pexp_loc in
   let desc = sexp.pexp_desc in
   (* Record the expression type before unifying it with the expected type *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let with_explanation = with_explanation explanation in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+  (* Unify the result with [ty_expected], enforcing the current level *)
+>>>>>>> ocaml-flambda/flambda-backend:main
   (* Unify the result with [ty_expected], enforcing the current level *)
   let rue exp =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     with_explanation (fun () ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      unify_exp env (re exp) (instance ty_expected));
+=======
+      unify_exp ~sdesc_for_hint:desc env (re exp) (instance ty_expected));
+>>>>>>> ocaml-flambda/flambda-backend:main
       unify_exp ~sdesc_for_hint:desc env (re exp) (instance ty_expected));
     exp
   in
@@ -4870,6 +6989,18 @@ and type_expect_
       in
       submode ~loc ~env ?shared_context mode expected_mode;
       exp
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Pexp_constant(Pconst_string (str, _, _) as cst) ->
+      let cst = constant_or_raise env loc cst in
+      (* Terrible hack for format strings *)
+      let ty_exp = expand_head env (protect_expansion env ty_expected) in
+=======
+  | Pexp_constant(Pconst_string (str, _, _) as cst) -> (
+      let cst = constant_or_raise env loc cst in
+      (* Terrible hack for format strings *)
+      let ty_exp = expand_head env (protect_expansion env ty_expected) in
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Pexp_constant(Pconst_string (str, _, _) as cst) -> (
     let cst = constant_or_raise env loc cst in
     (* Terrible hack for format strings *)
@@ -5362,16 +7493,51 @@ and type_expect_
             ~fields: [l, rf_present arg_type]
             ~more:   (newvar (Jkind.value ~why:Row_variable))
             ~closed: false
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             ~fixed:  None
             ~name:   None
         in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          true
+        | _ -> false
+      in
+      if is_format then begin
+        let format_parsetree =
+          { (type_format loc str env) with pexp_loc = sexp.pexp_loc }  in
+        type_expect ?in_function env expected_mode
+          format_parsetree ty_expected_explained
+      end else begin
+=======
+          true
+        | _ -> false
+      in
+      if is_format then
+        let format_parsetree =
+          { (type_format loc str env) with pexp_loc = sexp.pexp_loc }  in
+        type_expect ?in_function env expected_mode
+          format_parsetree ty_expected_explained
+      else
+>>>>>>> ocaml-flambda/flambda-backend:main
         rue {
           exp_desc = Texp_variant(l, arg);
           exp_loc = loc; exp_extra = [];
           exp_type = newty (Tvariant row);
           exp_attributes = sexp.pexp_attributes;
           exp_env = env }
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       end
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      end
+  | Pexp_constant cst ->
+      let cst = constant_or_raise env loc cst in
+      rue {
+=======
+  )
+  | Pexp_constant cst ->
+      let cst = constant_or_raise env loc cst in
+      rue {
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Pexp_record(lid_sexp_list, opt_sexp) ->
     let saved_levels = save_levels () in
     begin try
@@ -5386,10 +7552,176 @@ and type_expect_
                 submode ~loc ~env mode (mode_subcomponent expected_mode);
                 let exp = type_exp ~recarg env (mode_default mode) sexp in
                 exp, mode
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        exp_attributes = sexp.pexp_attributes;
+        exp_env = env }
+  | Pexp_let(Nonrecursive,
+             [{pvb_pat=spat; pvb_expr=sval; pvb_attributes=[]}], sbody)
+    when may_contain_gadts spat ->
+    (* TODO: allow non-empty attributes? *)
+      type_expect ?in_function env expected_mode
+        {sexp with
+         pexp_desc = Pexp_match (sval, [Ast_helper.Exp.case spat sbody])}
+=======
+        exp_attributes = sexp.pexp_attributes;
+        exp_env = env }
+  | Pexp_let(Nonrecursive,
+             [{pvb_pat=spat; pvb_attributes=[]; _ } as vb], sbody)
+    when may_contain_gadts spat ->
+      (* TODO: allow non-empty attributes? *)
+      let sval = vb_exp_constraint vb in
+      type_expect ?in_function env expected_mode
+        {sexp with
+         pexp_desc = Pexp_match (sval, [Ast_helper.Exp.case spat sbody])}
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let may_contain_modules =
+        List.exists (fun pvb -> may_contain_modules pvb.pvb_pat) spat_sexp_list
+      in
+      (* If the patterns contain module unpacks, there is a possibility that
+          the types of the let body or bound expressions mention types
+          introduced by those unpacks. The below code checks for scope escape
+          via both of these pathways (body, bound expressions).
+      *)
+      let outer_level = get_current_level () in
+      let allow_modules =
+        if may_contain_modules
+        then begin
+          begin_def ();
+          let scope = create_scope () in
+          Modules_allowed { scope }
+        end else Modules_rejected
+      in
+      let (pat_exp_list, new_env) =
+        type_let existential_context env rec_flag spat_sexp_list allow_modules
+      in
+      let in_function =
+        match sexp.pexp_attributes with
+        | [{Parsetree.attr_name = {txt="#default"};_}] -> in_function
+        | _ -> None
+      in
+      let body =
+        type_expect ?in_function
+          new_env expected_mode sbody ty_expected_explained
+      in
+      let () =
+        if rec_flag = Recursive then
+          check_recursive_bindings env pat_exp_list
+      in
+      (* The "bound expressions" component of the scope escape check.
+
+         This kind of scope escape is relevant only for recursive
+         module definitions.
+      *)
+      if rec_flag = Recursive && may_contain_modules then begin
+        List.iter
+          (fun vb ->
+             (* [type_let] already generalized bound expressions' types
+                in-place. We first take an instance before checking scope
+                escape at the outer level to avoid losing generality of
+                types added to [new_env].
+             *)
+             let bound_exp = vb.vb_expr in
+             let bound_exp_type = Ctype.instance bound_exp.exp_type in
+             let loc = proper_exp_loc bound_exp in
+             let outer_var =
+               newvar2 outer_level (Jkind.any ~why:Dummy_jkind)
+             in
+             (* Checking unification within an environment extended with the
+                module bindings allows us to correctly accept more programs.
+                This environment allows unification to identify more cases where
+                a type introduced by the module is equal to a type introduced at
+                an outer scope. *)
+             unify_exp_types loc new_env bound_exp_type outer_var)
+          pat_exp_list
+      end;
+      if may_contain_modules then begin
+        end_def ();
+        (* The "body" component of the scope escape check. *)
+        unify_exp new_env body (newvar (Jkind.any ~why:Dummy_jkind));
+      end;
+      re {
+        exp_desc = Texp_let(rec_flag, pat_exp_list, body);
+        exp_loc = loc; exp_extra = [];
+=======
+      let may_contain_modules =
+        List.exists (fun pvb -> may_contain_modules pvb.pvb_pat) spat_sexp_list
+      in
+      let outer_level = get_current_level () in
+      let (pat_exp_list, body, _new_env) =
+        (* If the patterns contain module unpacks, there is a possibility that
+           the types of the let body or bound expressions mention types
+           introduced by those unpacks. The below code checks for scope escape
+           via both of these pathways (body, bound expressions).
+        *)
+        with_local_level_if may_contain_modules begin fun () ->
+          let allow_modules =
+            if may_contain_modules
+            then
+              let scope = create_scope () in
+              Modules_allowed { scope }
+            else Modules_rejected
+          in
+          let (pat_exp_list, new_env) =
+            type_let existential_context env rec_flag spat_sexp_list
+              allow_modules
+          in
+          let in_function =
+            match sexp.pexp_attributes with
+            | [{Parsetree.attr_name = {txt="#default"};_}] -> in_function
+            | _ -> None
+          in
+          let body =
+            type_expect ?in_function
+              new_env expected_mode sbody ty_expected_explained
+          in
+          let () =
+            if rec_flag = Recursive then
+              check_recursive_bindings env pat_exp_list
+          in
+          (* The "bound expressions" component of the scope escape check.
+
+             This kind of scope escape is relevant only for recursive
+             module definitions.
+          *)
+          if rec_flag = Recursive && may_contain_modules then begin
+            List.iter
+              (fun vb ->
+                 (* [type_let] already generalized bound expressions' types
+                    in-place. We first take an instance before checking scope
+                    escape at the outer level to avoid losing generality of
+                    types added to [new_env].
+                 *)
+                let bound_exp = vb.vb_expr in
+                let bound_exp_type = Ctype.instance bound_exp.exp_type in
+                let loc = proper_exp_loc bound_exp in
+                let outer_var =
+                  newvar2 outer_level (Jkind.any ~why:Dummy_jkind)
+                in
+                (* Checking unification within an environment extended with the
+                   module bindings allows us to correctly accept more programs.
+                   This environment allows unification to identify more cases
+                   where a type introduced by the module is equal to a type
+                   introduced at an outer scope. *)
+                unify_exp_types loc new_env bound_exp_type outer_var)
+              pat_exp_list
+          end;
+          (pat_exp_list, body, new_env)
+        end
+        ~post:(fun (_pat_exp_list, body, new_env) ->
+          (* The "body" component of the scope escape check. *)
+          unify_exp new_env body (newvar (Jkind.any ~why:Dummy_jkind)))
+      in
+      re {
+        exp_desc = Texp_let(rec_flag, pat_exp_list, body);
+        exp_loc = loc; exp_extra = [];
+>>>>>>> ocaml-flambda/flambda-backend:main
               end ~post:(fun (exp, _) -> generalize_structure_exp exp)
             in
             Some (exp, mode)
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let ty_record, expected_type =
         let expected_opath =
           match extract_concrete_record env ty_expected with
@@ -5397,6 +7729,21 @@ and type_expect_
           | Maybe_a_record_type -> None
           | Not_a_record_type ->
             let err =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let open Ast_helper in
+      let default_loc = default.pexp_loc in
+      (* Defaults are always global. They can be moved out of the function's
+         region by Simplf.split_default_wrapper, or they could be evaluated
+         later than expected by Translcore.push_defaults *)
+=======
+      let open Ast_helper in
+      let default_loc = default.pexp_loc in
+      let default_ghost = {default.pexp_loc with loc_ghost = true} in
+      (* Defaults are always global. They can be moved out of the function's
+         region by Simplf.split_default_wrapper, or they could be evaluated
+         later than expected by Translcore.push_defaults *)
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
               Wrong_expected_kind(Record, Expression explanation, ty_expected)
             in
             raise (error (loc, env, err))
@@ -5410,6 +7757,30 @@ and type_expect_
             | Maybe_a_record_type -> None
             | Not_a_record_type ->
               let err = Expr_not_a_record_type exp.exp_type in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        raise(Error(spat.ppat_loc, env, Optional_poly_param));
+      let scases = [
+        Exp.case
+          (Pat.construct ~loc:default_loc
+             (mknoloc (Longident.(Ldot (Lident "*predef*", "Some"))))
+             (Some ([], Pat.var ~loc:default_loc (mknoloc "*sth*"))))
+          (Exp.ident ~loc:default_loc (mknoloc (Longident.Lident "*sth*")));
+
+        Exp.case
+          (Pat.construct ~loc:default_loc
+=======
+        raise(Error(spat.ppat_loc, env, Optional_poly_param));
+      let scases = [
+        Exp.case
+          (Pat.construct ~loc:default_ghost
+             (mknoloc (Longident.(Ldot (Lident "*predef*", "Some"))))
+             (Some ([], Pat.var ~loc:default_ghost (mknoloc "*sth*"))))
+          (Exp.ident ~loc:default_ghost (mknoloc (Longident.Lident "*sth*")));
+
+        Exp.case
+          (Pat.construct ~loc:default_loc
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
               raise (error (exp.exp_loc, env, err))
         in
         match expected_opath, opt_exp_opath with
@@ -5423,8 +7794,65 @@ and type_expect_
               with_local_level ~post:generalize_structure
                 (fun () -> newconstr p' (instance_list decl.type_params))
             in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        if TypeSet.mem ty seen then false else
+          match get_desc ty with
+            Tarrow (_l, ty_arg, ty_fun, _com) ->
+              (try unify_var env
+                     (newvar (Jkind.any ~why:Dummy_jkind)) ty_arg
+               with Unify _ -> assert false);
+              ret_tvar (TypeSet.add ty seen) ty_fun
+          | Tvar _ ->
+=======
+        if TypeSet.mem ty seen then false else
+          match get_desc ty with
+            Tarrow (_l, ty_arg, ty_fun, _com) ->
+              (try enforce_current_level env ty_arg
+               with Unify _ -> assert false);
+              ret_tvar (TypeSet.add ty seen) ty_fun
+          | Tvar _ ->
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            false
+      in
+      let type_sfunct sfunct =
+        begin_def (); (* one more level for non-returning functions *)
+        if !Clflags.principal then begin_def ();
+        let funct = type_exp env funct_expected_mode sfunct in
+        if !Clflags.principal then begin
+          end_def ();
+          generalize_structure funct.exp_type
+        end;
+        let ty = instance funct.exp_type in
+        end_def ();
+        let rt = wrap_trace_gadt_instances env (ret_tvar TypeSet.empty) ty in
+        rt, funct
+      in
+=======
+            false
+      in
+      let type_sfunct sfunct =
+        (* one more level for warning on non-returning functions *)
+        let funct, ty =
+          with_local_level
+            begin fun () ->
+              let funct =
+                with_local_level_if_principal
+                  (fun () -> type_exp env funct_expected_mode sfunct)
+                  ~post: generalize_structure_exp
+              in
+              let ty = instance funct.exp_type in
+              (funct, ty)
+            end
+        in
+        let rt = wrap_trace_gadt_instances env (ret_tvar TypeSet.empty) ty in
+        rt, funct
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
             ty, opt_exp_opath
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let closed = (opt_sexp = None) in
       let lbl_exp_list =
         wrap_disambiguate "This record expression is expected to have"
@@ -5433,10 +7861,84 @@ and type_expect_
              (type_label_exp true env expected_mode loc ty_record)
              expected_type)
           lid_sexp_list
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      begin_def ();
+      let expected_ty, sort = new_rep_var ~why:Match () in
+      let arg =
+        type_expect env arg_expected_mode sarg (mk_expected expected_ty)
+=======
+      let arg, sort =
+        with_local_level begin fun () ->
+          let expected_ty, sort = new_rep_var ~why:Match () in
+          let arg =
+            type_expect env arg_expected_mode sarg (mk_expected expected_ty)
+          in
+          arg, sort
+        end ~post:(fun (arg, _) ->
+          may_lower_contravariant_then_generalize env arg)
+>>>>>>> ocaml-flambda/flambda-backend:main
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       with_explanation (fun () ->
         unify_exp_types loc env (instance ty_record) (instance ty_expected));
       let alloc_mode =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      end_def ();
+      if maybe_expansive arg then lower_contravariant env arg.exp_type;
+      generalize arg.exp_type;
+      let cases, partial =
+        type_cases Computation env arg_pat_mode expected_mode
+          arg.exp_type ty_expected_explained true loc caselist in
+      re {
+        exp_desc = Texp_match(arg, sort, cases, partial);
+        exp_loc = loc; exp_extra = [];
+=======
+      let cases, partial =
+        type_cases Computation env arg_pat_mode expected_mode
+          arg.exp_type ty_expected_explained true loc caselist in
+      if
+        List.for_all (fun c -> pattern_needs_partial_application_check c.c_lhs)
+          cases
+      then check_partial_application ~statement:false arg;
+      re {
+        exp_desc = Texp_match(arg, sort, cases, partial);
+        exp_loc = loc; exp_extra = [];
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        match opt_sexp with
+          None -> None
+        | Some sexp ->
+            if !Clflags.principal then begin_def ();
+            (* TODO: mode can be more relaxed than this if fields are global *)
+            let mode = Value.newvar () in
+            submode ~loc ~env mode (mode_subcomponent expected_mode);
+            let exp = type_exp ~recarg env (mode_default mode) sexp in
+            if !Clflags.principal then begin
+              end_def ();
+              generalize_structure exp.exp_type
+            end;
+            Some (exp, mode)
+      in
+      let ty_record, expected_type =
+=======
+        match opt_sexp with
+          None -> None
+        | Some sexp ->
+            let exp, mode =
+              with_local_level_if_principal begin fun () ->
+                (* TODO: mode can be more relaxed than this if fields are global *)
+                let mode = Value.newvar () in
+                submode ~loc ~env mode (mode_subcomponent expected_mode);
+                let exp = type_exp ~recarg env (mode_default mode) sexp in
+                exp, mode
+              end ~post:(fun (exp, _) -> generalize_structure_exp exp)
+            in
+            Some (exp, mode)
+      in
+      let ty_record, expected_type =
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         if List.exists
             (function
               | _, { lbl_repres = Record_unboxed; _ }, _ -> false
@@ -5445,7 +7947,27 @@ and type_expect_
           Some (register_allocation expected_mode)
         else
           None
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        | Some(_, _, true), Some _ -> ty_expected, expected_opath
+        | (None | Some (_, _, false)), Some (_, p', _) ->
+            let decl = Env.find_type p' env in
+            begin_def ();
+            let ty = newconstr p' (instance_list decl.type_params) in
+            end_def ();
+            generalize_structure ty;
+            ty, opt_exp_opath
+=======
+        | Some(_, _, true), Some _ -> ty_expected, expected_opath
+        | (None | Some (_, _, false)), Some (_, p', _) ->
+            let decl = Env.find_type p' env in
+            let ty =
+              with_local_level ~post:generalize_structure
+                (fun () -> newconstr p' (instance_list decl.type_params))
+            in
+            ty, opt_exp_opath
+>>>>>>> ocaml-flambda/flambda-backend:main
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       (* type_label_a_list returns a list of labels sorted by lbl_num *)
       (* note: check_duplicates would better be implemented in
          type_label_a_list directly *)
@@ -5455,6 +7977,21 @@ and type_expect_
         | _ :: rem ->
             check_duplicates rem
         | [] -> ()
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        wrap_disambiguate "This record expression is expected to have"
+          (mk_expected ty_record)
+          (type_label_a_list loc closed env Env.Construct
+             (fun e k -> k (type_label_exp true env expected_mode loc ty_record e))
+             expected_type lid_sexp_list)
+          (fun x -> x)
+=======
+        wrap_disambiguate "This record expression is expected to have"
+          (mk_expected ty_record)
+          (type_label_a_list loc closed env Env.Construct
+             (type_label_exp true env expected_mode loc ty_record)
+             expected_type)
+          lid_sexp_list
+>>>>>>> ocaml-flambda/flambda-backend:main
       in
       check_duplicates lbl_exp_list;
       let opt_exp, label_definitions =
@@ -5514,6 +8051,50 @@ and type_expect_
                   Kept (ty_arg1, lbl.lbl_mut,
                         unique_use ~loc ~env mode expected_mode.mode)
                 end
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        | _ -> None
+      in
+      let mode = modality_unbox_left label.lbl_global rmode in
+      if !Clflags.principal then
+        begin_def ();
+
+      (* ty_arg is the type of field *)
+      (* ty_res is the type of record *)
+      (* they could share type variables *)
+      (* which are now instantiated *)
+      let (_, ty_arg, ty_res) = instance_label false label in
+
+      (* we now link the two record types *)
+      unify_exp env record ty_res;
+
+      if !Clflags.principal then begin
+          end_def ();
+          generalize_structure ty_arg
+        end;
+      let mode = mode_cross_to_min env ty_arg mode in
+      let uu = unique_use ~loc ~env mode expected_mode.mode in
+      ruem ~mode ~expected_mode {
+=======
+        | _ -> None
+      in
+      let mode = modality_unbox_left label.lbl_global rmode in
+      let ty_arg =
+        with_local_level_if_principal begin fun () ->
+          (* ty_arg is the type of field *)
+          (* ty_res is the type of record *)
+          (* they could share type variables *)
+          (* which are now instantiated *)
+          let (_, ty_arg, ty_res) = instance_label false label in
+          (* we now link the two record types *)
+          unify_exp env record ty_res;
+          ty_arg
+        end ~post:generalize_structure
+      in
+      let mode = mode_cross_to_min env ty_arg mode in
+      let uu = unique_use ~loc ~env mode expected_mode.mode in
+      ruem ~mode ~expected_mode {
+>>>>>>> ocaml-flambda/flambda-backend:main
             in
             let label_definitions = Array.map unify_kept lbl.lbl_all in
             Some {exp with exp_type = ty_exp}, label_definitions
@@ -5715,9 +8296,34 @@ and type_expect_
           let type_mode =
             mode_annots_or_default mode_annots ~default:Alloc.Const.legacy
           in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           Typetexp.transl_simple_type env ~closed:false type_mode sty
         end
         ~post:(fun cty -> generalize_structure cty.ctyp_type)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        exp_attributes = sexp.pexp_attributes;
+        exp_env = env }
+  | Pexp_constraint (sarg, sty) ->
+     (* Pretend separate = true, 1% slowdown for lablgtk *)
+      begin_def ();
+      let mode_annots = mode_annots_from_exp_attrs sexp in
+      let type_mode =
+        mode_annots_or_default mode_annots ~default:Alloc.Const.legacy
+=======
+        exp_attributes = sexp.pexp_attributes;
+        exp_env = env }
+  | Pexp_constraint (sarg, sty) ->
+      (* Pretend separate = true, 1% slowdown for lablgtk *)
+      let cty =
+        with_local_level begin fun () ->
+          let mode_annots = mode_annots_from_exp_attrs sexp in
+          let type_mode =
+            mode_annots_or_default mode_annots ~default:Alloc.Const.legacy
+          in
+          Typetexp.transl_simple_type env ~closed:false type_mode sty
+        end
+        ~post:(fun cty -> generalize_structure cty.ctyp_type)
+>>>>>>> ocaml-flambda/flambda-backend:main
       in
       let ty = cty.ctyp_type in
       let ty' = instance ty in
@@ -5753,9 +8359,172 @@ and type_expect_
               end
               ~post:(fun (arg,_) -> enforce_current_level env arg.exp_type)
             in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            begin_def ();
+            let arg = type_exp env expected_mode sarg in
+            end_def ();
+            let tv = newvar (Jkind.any ~why:Dummy_jkind) in
+            let gen = generalizable (get_level tv) arg.exp_type in
+            unify_var env tv arg.exp_type;
+=======
+            let arg, gen =
+              let lv = get_current_level () in
+              with_local_level begin fun () ->
+                let arg = type_exp env expected_mode sarg in
+                (arg, generalizable lv arg.exp_type)
+              end
+              ~post:(fun (arg,_) -> enforce_current_level env arg.exp_type)
+            in
+>>>>>>> ocaml-flambda/flambda-backend:main
             begin match arg.exp_desc, !self_coercion, get_desc ty' with
               Texp_ident(_, _, {val_kind=Val_self _}, _, _), (path,r) :: _,
               Tconstr(path',_,_) when Path.same path path' ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            end;
+            (arg, ty', None, cty')
+        | Some sty ->
+            begin_def ();
+            let (cty, ty, force) =
+              Typetexp.transl_simple_type_delayed env type_mode sty
+            and (cty', ty', force') =
+              Typetexp.transl_simple_type_delayed env type_mode sty'
+            in
+            end_def ();
+            generalize_structure ty;
+            generalize_structure ty';
+            begin try
+              let force'' = subtype env (instance ty) (instance ty') in
+              force (); force' (); force'' ()
+=======
+            end;
+            (arg, ty', None, cty')
+        | Some sty ->
+            let cty, ty, force, cty', ty', force' =
+              with_local_level_iter ~post:generalize_structure begin fun () ->
+                let (cty, ty, force) =
+                  Typetexp.transl_simple_type_delayed env type_mode sty
+                and (cty', ty', force') =
+                  Typetexp.transl_simple_type_delayed env type_mode sty'
+                in
+                ((cty, ty, force, cty', ty', force'),
+                 [ty; ty'])
+              end
+            in
+            begin try
+              let force'' = subtype env (instance ty) (instance ty') in
+              force (); force' (); force'' ()
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                       arg.exp_extra;
+      }
+  | Pexp_send (e, {txt=met}) ->
+      if !Clflags.principal then begin_def ();
+      let obj = type_exp env mode_legacy e in
+      let pm = position_and_mode env expected_mode sexp in
+      let (meth, typ) =
+        match obj.exp_desc with
+        | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _, _) ->
+            let id, typ =
+              match meths with
+              | Self_concrete meths ->
+                  let id =
+                    match Meths.find met meths with
+                    | id -> id
+                    | exception Not_found ->
+                        let valid_methods =
+                          Meths.fold (fun lab _ acc -> lab :: acc) meths []
+                        in
+                        raise (Error(e.pexp_loc, env,
+                          Undefined_self_method (met, valid_methods)))
+                  in
+                  let typ = Btype.method_type met sign in
+                  id, typ
+              | Self_virtual meths_ref -> begin
+                  match Meths.find met !meths_ref with
+                  | id -> id, Btype.method_type met sign
+                  | exception Not_found ->
+                      let id = Ident.create_local met in
+                      let ty = newvar (Jkind.value ~why:Object_field) in
+                      meths_ref := Meths.add met id !meths_ref;
+                      add_method env met Private Virtual ty sign;
+                      Location.prerr_warning loc
+                        (Warnings.Undeclared_virtual_method met);
+                      id, ty
+                end
+            in
+            Tmeth_val id, typ
+        | Texp_ident(_, _, {val_kind = Val_anc (sign, meths, cl_num)}, _, _) ->
+            let id =
+              match Meths.find met meths with
+              | id -> id
+              | exception Not_found ->
+                  let valid_methods =
+                    Meths.fold (fun lab _ acc -> lab :: acc) meths []
+                  in
+                  raise (Error(e.pexp_loc, env,
+                    Undefined_self_method (met, valid_methods)))
+            in
+            let typ = Btype.method_type met sign in
+            let (self_path, _) =
+              Env.find_value_by_name
+                (Longident.Lident ("self-" ^ cl_num)) env
+            in
+            Tmeth_ancestor(id, self_path), typ
+        | _ ->
+            let ty =
+              match filter_method env met obj.exp_type with
+              | ty -> ty
+              | exception Filter_method_failed err ->
+                let error =
+                  match err with
+                  | Unification_error err ->
+                      Expr_type_clash(err, explanation, None)
+                  | Not_an_object ty ->
+                      Not_an_object(ty, explanation)
+                  | Not_a_method ->
+                      let valid_methods =
+                        match get_desc (expand_head env obj.exp_type) with
+                        | Tobject (fields, _) ->
+                            let (fields, _) = Ctype.flatten_fields fields in
+                            let collect_fields li (meth, meth_kind, _meth_ty) =
+                              if field_kind_repr meth_kind = Fpublic
+                              then meth::li else li
+                            in
+                            Some (List.fold_left collect_fields [] fields)
+                        | _ -> None
+                      in
+                      Undefined_method(obj.exp_type, met, valid_methods)
+                  | Not_a_value err ->
+                      Not_a_value (err, explanation)
+                in
+                raise (Error(e.pexp_loc, env, error))
+            in
+            Tmeth_name met, ty
+      in
+      if !Clflags.principal then begin
+        end_def ();
+        generalize_structure typ;
+      end;
+      let typ =
+        match get_desc typ with
+        | Tpoly (ty, []) ->
+=======
+                       arg.exp_extra;
+      }
+  | Pexp_send (e, {txt=met}) ->
+      let pm = position_and_mode env expected_mode sexp in
+      let (obj,meth,typ) =
+        with_local_level_if_principal
+          (fun () -> type_send env loc explanation e met)
+          ~post:(fun (_,_,typ) -> generalize_structure typ)
+      in
+      let typ =
+        match get_desc typ with
+        | Tpoly (ty, []) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
                 (* prerr_endline "self coercion"; *)
                 r := loc :: !r;
                 force ()
@@ -5867,6 +8636,112 @@ and type_expect_
         in
         Msupport.erroneous_type_register ty_expected;
         raise_error
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          assert false
+      end
+  | Pexp_letmodule(name, smodl, sbody) ->
+      let ty = newvar (Jkind.any ~why:Dummy_jkind) in
+      (* remember original level *)
+      begin_def ();
+      let modl, pres, id, new_env = Typetexp.TyVarEnv.with_local_scope begin fun () ->
+        let modl, md_shape = !type_module env smodl in
+        Mtype.lower_nongen (get_level ty) modl.mod_type;
+        let pres =
+          match modl.mod_type with
+          | Mty_alias _ -> Mp_absent
+          | _ -> Mp_present
+        in
+        let scope = create_scope () in
+        let md =
+          { md_type = modl.mod_type; md_attributes = []; md_loc = name.loc;
+            md_uid = Uid.mk ~current_unit:(Env.get_unit_name ()); }
+        in
+        let (id, new_env) =
+          match name.txt with
+          | None -> None, env
+          | Some name ->
+            let id, env =
+              Env.enter_module_declaration ~scope ~shape:md_shape name pres md env
+            in
+            Some id, env
+        in
+        modl, pres, id, new_env
+      end in
+      (* ideally, we should catch Expr_type_clash errors
+         in type_expect triggered by escaping identifiers from the local module
+         and refine them into Scoping_let_module errors
+      *)
+      let body =
+        type_expect new_env expected_mode sbody ty_expected_explained
+      in
+      (* go back to original level *)
+      end_def ();
+      Ctype.unify_var new_env ty body.exp_type;
+      re {
+        exp_desc = Texp_letmodule(id, name, pres, modl, body);
+        exp_loc = loc; exp_extra = [];
+        exp_type = ty;
+        exp_attributes = sexp.pexp_attributes;
+        exp_env = env }
+  | Pexp_letexception(cd, sbody) ->
+=======
+          assert false
+      end
+  | Pexp_letmodule(name, smodl, sbody) ->
+      let lv = get_current_level () in
+      let (id, pres, modl, _, body) =
+        with_local_level begin fun () ->
+          let modl, pres, id, new_env =
+            Typetexp.TyVarEnv.with_local_scope begin fun () ->
+              let modl, md_shape = !type_module env smodl in
+              Mtype.lower_nongen lv modl.mod_type;
+              let pres =
+                match modl.mod_type with
+                | Mty_alias _ -> Mp_absent
+                | _ -> Mp_present
+              in
+              let scope = create_scope () in
+              let md =
+                { md_type = modl.mod_type; md_attributes = [];
+                  md_loc = name.loc;
+                  md_uid = Uid.mk ~current_unit:(Env.get_unit_name ()); }
+              in
+              let (id, new_env) =
+                match name.txt with
+                | None -> None, env
+                | Some name ->
+                    let id, env =
+                      Env.enter_module_declaration
+                        ~scope ~shape:md_shape name pres md env
+                    in
+                    Some id, env
+              in
+              modl, pres, id, new_env
+            end
+          in
+          (* Ideally, we should catch Expr_type_clash errors
+             in type_expect triggered by escaping identifiers
+             from the local module and refine them into
+             Scoping_let_module errors
+           *)
+          let body = type_expect new_env expected_mode sbody ty_expected_explained in
+          (id, pres, modl, new_env, body)
+        end
+        ~post: begin fun (_id, _pres, _modl, new_env, body) ->
+          (* Ensure that local definitions do not leak. *)
+          (* required for implicit unpack *)
+          enforce_current_level new_env body.exp_type
+        end
+      in
+      re {
+        exp_desc = Texp_letmodule(id, name, pres, modl, body);
+        exp_loc = loc; exp_extra = [];
+        exp_type = body.exp_type;
+        exp_attributes = sexp.pexp_attributes;
+        exp_env = env }
+  | Pexp_letexception(cd, sbody) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
           (error(e.pexp_loc, env,
                 Undefined_method (obj.exp_type, met, valid_methods)));
         rue {
@@ -6036,10 +8911,100 @@ and type_expect_
         | [l] -> l
         | _ :: s -> innermost_location s
       in
+      let rec innermost_location loc_stack =
+        match loc_stack with
+        | [] -> loc
+        | [l] -> l
+        | _ :: s -> innermost_location s
+      in
       rue {
         exp_desc = Texp_assert (cond, innermost_location sexp.pexp_loc_stack);
         exp_loc = loc; exp_extra = [];
         exp_type;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        exp_env = env;
+      }
+  | Pexp_poly(sbody, sty) ->
+      if !Clflags.principal then begin_def ();
+      let ty, cty =
+        match sty with None -> protect_expansion env ty_expected, None
+        | Some sty ->
+            let sty = Ast_helper.Typ.force_poly sty in
+            let cty =
+              Typetexp.transl_simple_type env ~closed:false Alloc.Const.legacy sty
+            in
+            cty.ctyp_type, Some cty
+      in
+      if !Clflags.principal then begin
+        end_def ();
+        generalize_structure ty
+      end;
+      if sty <> None then
+        with_explanation (fun () ->
+          unify_exp_types loc env (instance ty) (instance ty_expected));
+=======
+        exp_env = env;
+      }
+  | Pexp_poly(sbody, sty) ->
+      let ty, cty =
+        with_local_level_if_principal
+          ~post:(fun (ty,_) -> generalize_structure ty)
+          begin fun () ->
+            match sty with None -> protect_expansion env ty_expected, None
+            | Some sty ->
+                let sty = Ast_helper.Typ.force_poly sty in
+                let cty =
+                  Typetexp.transl_simple_type env ~closed:false
+                    Alloc.Const.legacy sty
+                in
+                cty.ctyp_type, Some cty
+          end
+      in
+      if sty <> None then
+        with_explanation (fun () ->
+          unify_exp_types loc env (instance ty) (instance ty_expected));
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            { exp with exp_type = instance ty }
+        | Tpoly (ty', tl) ->
+            (* One more level to generalize locally *)
+            begin_def ();
+            if !Clflags.principal then begin_def ();
+            let vars, ty'' = instance_poly true tl ty' in
+            if !Clflags.principal then begin
+              end_def ();
+              generalize_structure ty''
+            end;
+            let exp = type_expect env expected_mode sbody (mk_expected ty'') in
+            end_def ();
+            generalize_and_check_univars env "method" exp ty_expected vars;
+            { exp with exp_type = instance ty }
+        | Tvar _ ->
+            let exp = type_exp env expected_mode sbody in
+=======
+            { exp with exp_type = instance ty }
+        | Tpoly (ty', tl) ->
+            (* One more level to generalize locally *)
+            let (exp,_) =
+              with_local_level begin fun () ->
+                let vars, ty'' =
+                  with_local_level_if_principal
+                    (fun () -> instance_poly true tl ty')
+                    ~post:(fun (_,ty'') -> generalize_structure ty'')
+                in
+                let exp = type_expect env expected_mode sbody (mk_expected ty'') in
+                (exp, vars)
+              end
+              ~post: begin fun (exp,vars) ->
+                generalize_and_check_univars env "method" exp ty_expected vars
+              end
+            in
+            { exp with exp_type = instance ty }
+        | Tvar _ ->
+            let exp = type_exp env expected_mode sbody in
+>>>>>>> ocaml-flambda/flambda-backend:main
         exp_attributes = sexp.pexp_attributes;
         exp_env = env;
       }
@@ -6064,6 +9029,100 @@ and type_expect_
         exp_desc = Texp_object (desc, meths);
         exp_loc = loc; exp_extra = [];
         exp_type = desc.cstr_type.csig_self;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            let ty_acc = newty (Ttuple [ty_acc; ty]) in
+            loop spat_acc ty_acc Jkind.Sort.value rest
+      in
+      if !Clflags.principal then begin_def ();
+      let let_loc = slet.pbop_op.loc in
+      let op_path, op_desc = type_binding_op_ident env slet.pbop_op in
+      let op_type = instance op_desc.val_type in
+      let spat_params, ty_params, param_sort =
+        let initial_jkind, initial_sort = match sands with
+          | [] ->
+            Jkind.of_new_sort_var ~why:Function_argument
+          (* CR layouts v5: eliminate value requirement for tuple elements *)
+          | _ -> Jkind.value ~why:Tuple_element, Jkind.Sort.value
+        in
+        loop slet.pbop_pat (newvar initial_jkind) initial_sort sands
+      in
+      let ty_func_result, body_sort = new_rep_var ~why:Function_result () in
+      let arrow_desc = Nolabel, Alloc.legacy, Alloc.legacy in
+      let ty_func =
+        newty (Tarrow(arrow_desc, newmono ty_params, ty_func_result, commu_ok))
+      in
+      let ty_result, op_result_sort = new_rep_var ~why:Function_result () in
+      let ty_andops, sort_andops = new_rep_var ~why:Function_argument () in
+      let ty_op =
+        newty (Tarrow(arrow_desc, newmono ty_andops,
+          newty (Tarrow(arrow_desc, newmono ty_func,
+            ty_result, commu_ok)), commu_ok))
+      in
+      begin try
+        unify env op_type ty_op
+      with Unify err ->
+        raise(Error(let_loc, env, Letop_type_clash(slet.pbop_op.txt, err)))
+      end;
+      if !Clflags.principal then begin
+        end_def ();
+        generalize_structure ty_andops;
+        generalize_structure ty_params;
+        generalize_structure ty_func_result;
+        generalize_structure ty_result
+      end;
+      let exp, exp_sort, ands =
+        type_andops env slet.pbop_exp sands sort_andops ty_andops
+      in
+=======
+            let ty_acc = newty (Ttuple [ty_acc; ty]) in
+            loop spat_acc ty_acc Jkind.Sort.value rest
+      in
+      let op_path, op_desc, op_type, spat_params, ty_params, param_sort,
+          ty_func_result, body_sort, ty_result, op_result_sort,
+          ty_andops, sort_andops =
+        with_local_level_iter_if_principal
+          ~post:generalize_structure begin fun () ->
+          let let_loc = slet.pbop_op.loc in
+          let op_path, op_desc = type_binding_op_ident env slet.pbop_op in
+          let op_type = instance op_desc.val_type in
+          let spat_params, ty_params, param_sort =
+            let initial_jkind, initial_sort = match sands with
+              | [] ->
+                Jkind.of_new_sort_var ~why:Function_argument
+              (* CR layouts v5: eliminate value requirement for tuple elements *)
+              | _ -> Jkind.value ~why:Tuple_element, Jkind.Sort.value
+            in
+            loop slet.pbop_pat (newvar initial_jkind) initial_sort sands
+          in
+          let ty_func_result, body_sort = new_rep_var ~why:Function_result () in
+          let arrow_desc = Nolabel, Alloc.legacy, Alloc.legacy in
+          let ty_func =
+            newty (Tarrow(arrow_desc, newmono ty_params, ty_func_result,
+                          commu_ok))
+          in
+          let ty_result, op_result_sort = new_rep_var ~why:Function_result () in
+          let ty_andops, sort_andops = new_rep_var ~why:Function_argument () in
+          let ty_op =
+            newty (Tarrow(arrow_desc, newmono ty_andops,
+              newty (Tarrow(arrow_desc, newmono ty_func, ty_result, commu_ok)),
+                     commu_ok))
+          in
+          begin try
+            unify env op_type ty_op
+          with Unify err ->
+            raise(Error(let_loc, env, Letop_type_clash(slet.pbop_op.txt, err)))
+          end;
+          ((op_path, op_desc, op_type, spat_params, ty_params, param_sort,
+            ty_func_result, body_sort, ty_result, op_result_sort,
+            ty_andops, sort_andops),
+           [ty_andops; ty_params; ty_func_result; ty_result])
+        end
+      in
+      let exp, exp_sort, ands =
+        type_andops env slet.pbop_exp sands sort_andops ty_andops
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
         exp_attributes = sexp.pexp_attributes;
         exp_env = env;
       }
@@ -6319,6 +9378,80 @@ and type_expect_
     in
     check_probe_name name name_loc env;
     let env = Env.add_escape_lock Probe env in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | Some (loc_fun, ty_fun, _) -> (loc_fun, ty_fun)
+    | None -> (loc, instance ty_expected)
+  in
+  let separate = !Clflags.principal || Env.has_local_constraints env in
+  if separate then begin_def ();
+  let uncurried_function =
+    match caselist with
+    | [{pc_lhs = _; pc_guard = None; pc_rhs = e}] ->
+        is_an_uncurried_function e
+    | _ -> false
+  in
+  let ty_expected' = instance ty_expected in
+  let { ty_arg; arg_mode; arg_sort; ty_ret; ret_mode; ret_sort } =
+    let force_tpoly =
+      (* If [has_poly] is true then we rely on the later call to
+         type_pat to enforce the invariant that the parameter type
+         be a [Tpoly] node *)
+      not has_poly
+    in
+    try filter_arrow env ty_expected' arg_label ~force_tpoly
+    with Filter_arrow_failed err ->
+      let first = Option.is_none in_function in
+      let err =
+        error_of_filter_arrow_failure ~explanation ~first ty_fun err
+      in
+      raise (Error(loc_fun, env, err))
+  in
+  apply_mode_annots ~loc ~env ~ty_expected mode_annots arg_mode;
+  if separate then begin
+    end_def ();
+    generalize_structure ty_arg;
+    generalize_structure ty_ret
+  end;
+  if not has_poly && not (tpoly_is_mono ty_arg) && !Clflags.principal
+       && get_level ty_arg < Btype.generic_level then begin
+    let snap = Btype.snapshot () in
+=======
+    | Some (loc_fun, ty_fun, _) -> (loc_fun, ty_fun)
+    | None -> (loc, instance ty_expected)
+  in
+  let uncurried_function =
+    match caselist with
+    | [{pc_lhs = _; pc_guard = None; pc_rhs = e}] ->
+        is_an_uncurried_function e
+    | _ -> false
+  in
+  let separate = !Clflags.principal || Env.has_local_constraints env in
+  let { ty_arg; arg_mode; arg_sort; ty_ret; ret_mode; ret_sort } =
+    with_local_level_iter_if separate ~post:generalize_structure begin fun () ->
+      let force_tpoly =
+        (* If [has_poly] is true then we rely on the later call to
+           type_pat to enforce the invariant that the parameter type
+           be a [Tpoly] node *)
+        not has_poly
+      in
+      let { ty_arg; ty_ret; _ } as filtered_arrow =
+        try filter_arrow env (instance ty_expected) arg_label ~force_tpoly
+        with Filter_arrow_failed err ->
+          let first = Option.is_none in_function in
+          let err =
+            error_of_filter_arrow_failure ~explanation ~first ty_fun err
+          in
+          raise (Error(loc_fun, env, err))
+      in
+      (filtered_arrow, [ty_arg; ty_ret])
+    end
+  in
+  apply_mode_annots ~loc ~env ~ty_expected mode_annots arg_mode;
+  if not has_poly && not (tpoly_is_mono ty_arg) && !Clflags.principal
+       && get_level ty_arg < Btype.generic_level then begin
+    let snap = Btype.snapshot () in
+>>>>>>> ocaml-flambda/flambda-backend:main
     let env = Env.add_share_lock Probe env in
     Env.add_probe name;
     let exp = type_expect env mode_legacy arg
@@ -6508,7 +9641,7 @@ and type_function
     match in_function with
     | Some (_, _, region_locked) -> env, region_locked
     | None ->
-      let region_locked = not (is_local_returning_function caselist) in
+      let region_locked = not (Is_local_returning.function_ caselist) in
       let env =
         Env.add_closure_lock
           ?closure_context:expected_mode.closure_context
@@ -6883,6 +10016,162 @@ and type_format loc str env =
             mk_int_opt width_opt; mk_string char_set; mk_fmt rest ]
         | Scan_get_counter (cnt, rest) ->
           mk_constr "Scan_get_counter" [ mk_counter cnt; mk_fmt rest ]
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+and type_label_exp create env (expected_mode : expected_mode) loc ty_expected
+          (lid, label, sarg) =
+  (* Here also ty_expected may be at generic_level *)
+  begin_def ();
+  let separate = !Clflags.principal || Env.has_local_constraints env in
+  if separate then (begin_def (); begin_def ());
+  let (vars, ty_arg, ty_res) = instance_label true label in
+  if separate then begin
+    end_def ();
+    (* Generalize label information *)
+    generalize_structure ty_arg;
+    generalize_structure ty_res
+  end;
+  begin try
+    unify env (instance ty_res) (instance ty_expected)
+  with Unify err ->
+    raise (Error(lid.loc, env, Label_mismatch(lid.txt, err)))
+  end;
+  (* Instantiate so that we can generalize internal nodes *)
+  let ty_arg = instance ty_arg in
+  if separate then begin
+    end_def ();
+    (* Generalize information merged from ty_expected *)
+    generalize_structure ty_arg
+  end;
+  if label.lbl_private = Private then
+    if create then
+      raise (Error(loc, env, Private_type ty_expected))
+    else
+      raise (Error(lid.loc, env, Private_label(lid.txt, ty_expected)));
+  let arg =
+    let snap = if vars = [] then None else Some (Btype.snapshot ()) in
+    let rmode =
+      match label.lbl_repres with
+      | Record_unboxed | Record_inlined (_, Variant_unboxed) ->
+        expected_mode
+      | _ -> mode_subcomponent expected_mode
+    in
+    let arg_mode = mode_box_modality label.lbl_global rmode in
+    let arg =
+      type_argument env arg_mode sarg ty_arg (instance ty_arg)
+    in
+    end_def ();
+    try
+      if (vars = []) then arg
+      else begin
+        if maybe_expansive arg then
+          lower_contravariant env arg.exp_type;
+        generalize_and_check_univars env "field value" arg label.lbl_arg vars;
+        {arg with exp_type = instance arg.exp_type}
+      end
+    with exn when maybe_expansive arg -> try
+      (* Try to retype without propagating ty_arg, cf PR#4862 *)
+      Option.iter Btype.backtrack snap;
+      begin_def ();
+      let arg = type_exp env arg_mode sarg in
+      end_def ();
+      lower_contravariant env arg.exp_type;
+      begin_def ();
+      let arg = {arg with exp_type = instance arg.exp_type} in
+      unify_exp env arg (instance ty_arg);
+      end_def ();
+      generalize_and_check_univars env "field value" arg label.lbl_arg vars;
+      {arg with exp_type = instance arg.exp_type}
+    with Error (_, _, Less_general _) as e -> raise e
+    | _ -> raise exn    (* In case of failure return the first error *)
+  in
+  (lid, label, arg)
+
+=======
+and type_label_exp create env (expected_mode : expected_mode) loc ty_expected
+          (lid, label, sarg) =
+  (* Here also ty_expected may be at generic_level *)
+  let separate = !Clflags.principal || Env.has_local_constraints env in
+  let rmode =
+    match label.lbl_repres with
+    | Record_unboxed | Record_inlined (_, Variant_unboxed) ->
+      expected_mode
+    | _ -> mode_subcomponent expected_mode
+  in
+  let arg_mode = mode_box_modality label.lbl_global rmode in
+  (* #4682: we try two type-checking approaches for [arg] using backtracking:
+     - first try: we try with [ty_arg] as expected type;
+     - second try; if that fails, we backtrack and try without
+  *)
+  let (vars, ty_arg, snap, arg) =
+    (* try the first approach *)
+    with_local_level begin fun () ->
+      let (vars, ty_arg) =
+        with_local_level_iter_if separate begin fun () ->
+          let (vars, ty_arg, ty_res) =
+            with_local_level_iter_if separate ~post:generalize_structure
+              begin fun () ->
+                let ((_, ty_arg, ty_res) as r) = instance_label true label in
+                (r, [ty_arg; ty_res])
+              end
+          in
+          begin try
+            unify env (instance ty_res) (instance ty_expected)
+          with Unify err ->
+            raise (Error(lid.loc, env, Label_mismatch(lid.txt, err)))
+          end;
+          (* Instantiate so that we can generalize internal nodes *)
+          let ty_arg = instance ty_arg in
+          ((vars, ty_arg), [ty_arg])
+        end
+        ~post:generalize_structure
+      in
+      if label.lbl_private = Private then
+        if create then
+          raise (Error(loc, env, Private_type ty_expected))
+        else
+          raise (Error(lid.loc, env, Private_label(lid.txt, ty_expected)));
+      let snap = if vars = [] then None else Some (Btype.snapshot ()) in
+      let arg = type_argument env arg_mode sarg ty_arg (instance ty_arg) in
+      (vars, ty_arg, snap, arg)
+    end
+    (* Note: there is no generalization logic here as could be expected,
+       because it is part of the backtracking logic below. *)
+  in
+  let arg =
+    try
+      if (vars = []) then arg
+      else begin
+        (* We detect if the first try failed here,
+           during generalization. *)
+        if maybe_expansive arg then
+          lower_contravariant env arg.exp_type;
+        generalize_and_check_univars env "field value" arg label.lbl_arg vars;
+        {arg with exp_type = instance arg.exp_type}
+      end
+    with first_try_exn when maybe_expansive arg -> try
+      (* backtrack and try the second approach *)
+      Option.iter Btype.backtrack snap;
+      let arg = with_local_level (fun () -> type_exp env arg_mode sarg)
+          ~post:(fun arg -> lower_contravariant env arg.exp_type)
+      in
+      let arg =
+        with_local_level begin fun () ->
+          let arg = {arg with exp_type = instance arg.exp_type} in
+          unify_exp env arg (instance ty_arg);
+          arg
+        end
+        ~post: begin fun arg ->
+          generalize_and_check_univars env "field value" arg label.lbl_arg vars
+        end
+      in
+      {arg with exp_type = instance arg.exp_type}
+    with Error (_, _, Less_general _) as e -> raise e
+    | _ -> raise first_try_exn
+  in
+  (lid, label, arg)
+
+>>>>>>> ocaml-flambda/flambda-backend:main
         | Scan_next_char rest ->
           mk_constr "Scan_next_char" [ mk_fmt rest ]
         | Ignored_param (ign, rest) ->
@@ -6993,7 +10282,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
     not tvar && List.for_all ((=) Nolabel) ls
   in
   let inferred = is_inferred sarg in
-  let rec loosen_ret_modes ty' ty =
+  let rec loosen_arrow_modes ty' ty =
     let expty = expand_head env ty in
     let expty' = expand_head env ty' in
     let lv = get_level expty in
@@ -7002,9 +10291,10 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
     | Tarrow((l, marg, mret), ty_arg', ty_res', _),
       Tarrow(_, ty_arg,  ty_res,  _)
       when lv' = generic_level || not !Clflags.principal ->
-      let ty_res', ty_res, changed = loosen_ret_modes ty_res' ty_res in
+      let ty_res', ty_res, changed = loosen_arrow_modes ty_res' ty_res in
       let mret, changed' = Alloc.newvar_below_comonadic mret in
-      if changed || changed' then
+      let marg, changed'' = Alloc.newvar_above marg in
+      if changed || changed' || changed'' then
         newty2 ~level:lv' (Tarrow((l, marg, mret), ty_arg', ty_res', commu_ok)),
         newty2 ~level:lv  (Tarrow((l, marg, mret), ty_arg,  ty_res,  commu_ok)),
         true
@@ -7021,7 +10311,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
         then Some (Btype.snapshot ())
         else None
       in
-      let t', t, changed = loosen_ret_modes ty_expected' ty_expected in
+      let t', t, changed = loosen_arrow_modes ty_expected' ty_expected in
       if not changed then Option.iter Btype.backtrack snap;
       t', t
     else
@@ -7177,7 +10467,13 @@ and type_apply_arg env ~app_loc ~funct ~index ~position_and_mode ~partial_app (l
   match arg with
   | Arg (Unknown_arg { sarg; ty_arg_mono; mode_arg; sort_arg }) ->
       let mode, _ = Alloc.newvar_below mode_arg in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let expected_mode =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        mode_argument ~funct ~index ~position ~partial_app mode in
+=======
+        mode_argument ~funct ~index ~position_and_mode ~partial_app mode in
+>>>>>>> ocaml-flambda/flambda-backend:main
         mode_argument ~funct ~index ~position_and_mode ~partial_app mode in
       let arg =
         type_expect env expected_mode sarg (mk_expected ty_arg_mono)
@@ -7220,6 +10516,65 @@ and type_apply_arg env ~app_loc ~funct ~index ~position_and_mode ~partial_app (l
               Location.prerr_warning app_loc
                 (Warnings.Not_principal "applying a higher-rank function here");
           end;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+              Location.prerr_warning app_loc
+                (Warnings.Not_principal "applying a higher-rank function here");
+          end;
+          begin_def ();
+          let separate =
+            !Clflags.principal || Env.has_local_constraints env
+          in
+          if separate then begin_def ();
+          let vars, ty_arg' = instance_poly false vars ty_arg' in
+          if separate then begin
+            end_def ();
+            generalize_structure ty_arg';
+          end;
+          let (ty_arg0', vars0) = tpoly_get_poly ty_arg0 in
+          let vars0, ty_arg0' = instance_poly false vars0 ty_arg0' in
+          List.iter2 (fun ty ty' -> unify_var env ty ty') vars vars0;
+          let arg =
+            type_argument env expected_mode sarg ty_arg' ty_arg0'
+          in
+          end_def ();
+          if maybe_expansive arg then
+            lower_contravariant env arg.exp_type;
+          generalize_and_check_univars env "argument" arg ty_arg vars;
+          {arg with exp_type = instance arg.exp_type}
+        end
+      in
+=======
+              Location.prerr_warning app_loc
+                (Warnings.Not_principal "applying a higher-rank function here");
+          end;
+          let separate =
+            !Clflags.principal || Env.has_local_constraints env
+          in
+          let arg, _, _ =
+            with_local_level begin fun () ->
+              let vars, ty_arg' =
+                with_local_level_if separate begin fun () ->
+                  instance_poly false vars ty_arg'
+                end ~post:(fun (_, ty_arg') -> generalize_structure ty_arg')
+              in
+              let (ty_arg0', vars0) = tpoly_get_poly ty_arg0 in
+              let vars0, ty_arg0' = instance_poly false vars0 ty_arg0' in
+              List.iter2 (fun ty ty' -> unify_var env ty ty') vars vars0;
+              let arg =
+                type_argument env expected_mode sarg ty_arg' ty_arg0'
+              in
+              arg, ty_arg, vars
+            end
+            ~post:(fun (arg, ty_arg, vars) ->
+              if maybe_expansive arg then
+                lower_contravariant env arg.exp_type;
+              generalize_and_check_univars env "argument" arg ty_arg vars);
+          in
+          {arg with exp_type = instance arg.exp_type}
+        end
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
           let separate =
             !Clflags.principal || Env.has_local_constraints env
           in
@@ -7278,7 +10633,13 @@ and type_application env app_loc expected_mode position_and_mode
           ~partial_app:false arg_mode
       in
       let exp = type_expect env arg_mode sarg (mk_expected ty_arg) in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       check_partial_application ~statement:false exp;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      ([Nolabel, Arg (exp, arg_sort)], ty_ret, ap_mode, pm)
+=======
+      ([Nolabel, Arg (exp, arg_sort)], ty_ret, ap_mode, position_and_mode)
+>>>>>>> ocaml-flambda/flambda-backend:main
       ([Nolabel, Arg (exp, arg_sort)], ty_ret, ap_mode, position_and_mode)
   | _ ->
       let ty = funct.exp_type in
@@ -7299,6 +10660,66 @@ and type_application env app_loc expected_mode position_and_mode
            true)
         end
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+           true)
+        end
+      in
+      if !Clflags.principal then begin_def () ;
+      let ty_ret, mode_ret, untyped_args =
+        collect_apply_args env funct ignore_labels ty (instance ty)
+          (Value.regional_to_local_alloc funct_mode) sargs ret_tvar
+      in
+      let partial_app = is_partial_apply untyped_args in
+      let pm = if partial_app then position_and_mode_default else pm in
+      let args =
+        List.mapi (fun index arg ->
+            type_apply_arg env ~app_loc ~funct ~index
+              ~position:(pm.apply_position) ~partial_app arg)
+          untyped_args
+      in
+      let ty_ret, mode_ret, args =
+        type_omitted_parameters expected_mode env ty_ret mode_ret args
+      in
+      check_local_application_complete ~env ~app_loc untyped_args;
+      if !Clflags.principal then begin
+        end_def () ;
+        generalize_structure ty_ret
+      end;
+      let ap_mode = Alloc.locality mode_ret in
+      let mode_ret =
+        mode_cross_to_min env ty_ret (Value.of_alloc mode_ret)
+=======
+           true)
+        end
+      in
+      let ty_ret, mode_ret, args, position_and_mode =
+        with_local_level_if_principal begin fun () ->
+          let ty_ret, mode_ret, untyped_args =
+            collect_apply_args env funct ignore_labels ty (instance ty)
+              (Value.regional_to_local_alloc funct_mode) sargs ret_tvar
+          in
+          let partial_app = is_partial_apply untyped_args in
+          let position_and_mode =
+            if partial_app then position_and_mode_default else position_and_mode
+          in
+          let args =
+            List.mapi (fun index arg ->
+                type_apply_arg env ~app_loc ~funct ~index
+                  ~position_and_mode ~partial_app arg)
+              untyped_args
+          in
+          let ty_ret, mode_ret, args =
+            type_omitted_parameters expected_mode env ty_ret mode_ret args
+          in
+          check_local_application_complete ~env ~app_loc untyped_args;
+          ty_ret, mode_ret, args, position_and_mode
+        end ~post:(fun (ty_ret, _, _, _) -> generalize_structure ty_ret)
+      in
+      let ap_mode = Alloc.locality mode_ret in
+      let mode_ret =
+        mode_cross_to_min env ty_ret (Value.of_alloc mode_ret)
+>>>>>>> ocaml-flambda/flambda-backend:main
       let ty_ret, mode_ret, args, position_and_mode =
         with_local_level_if_principal begin fun () ->
           let ty_ret, mode_ret, untyped_args =
@@ -7363,6 +10784,67 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
     | Some se -> [se] in
   if List.length sargs <> constr.cstr_arity then
     raise(error(loc, env, Constructor_arity_mismatch
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    raise(Error(loc, env, Constructor_arity_mismatch
+                            (lid.txt, constr.cstr_arity, List.length sargs)));
+  let separate = !Clflags.principal || Env.has_local_constraints env in
+  if separate then (begin_def (); begin_def ());
+  let (ty_args, ty_res, _) = instance_constructor constr in
+  let texp =
+    re {
+      exp_desc = Texp_construct(lid, constr, [], None);
+      exp_loc = loc; exp_extra = [];
+      exp_type = ty_res;
+      exp_attributes = attrs;
+      exp_env = env } in
+  if separate then begin
+    end_def ();
+    generalize_structure ty_res;
+    with_explanation explanation (fun () ->
+      unify_exp env {texp with exp_type = instance ty_res}
+        (instance ty_expected));
+    end_def ();
+    List.iter (fun (arg, _) -> generalize_structure arg) ty_args;
+    generalize_structure ty_res;
+  end;
+  let ty_args0, ty_res =
+    match instance_list (ty_res :: (List.map fst ty_args)) with
+      t :: tl -> tl, t
+=======
+    raise(Error(loc, env, Constructor_arity_mismatch
+                            (lid.txt, constr.cstr_arity, List.length sargs)));
+  let separate = !Clflags.principal || Env.has_local_constraints env in
+  let ty_args, ty_res, texp =
+    with_local_level_iter_if separate ~post:generalize_structure begin fun () ->
+      let ty_args, ty_res, texp =
+        with_local_level_if separate begin fun () ->
+          let (ty_args, ty_res, _) =
+            instance_constructor Keep_existentials_flexible constr
+          in
+          let texp =
+            re {
+            exp_desc = Texp_construct(lid, constr, [], None);
+            exp_loc = loc; exp_extra = [];
+            exp_type = ty_res;
+            exp_attributes = attrs;
+            exp_env = env } in
+          (ty_args, ty_res, texp)
+        end
+        ~post: begin fun (_, ty_res, texp) ->
+          generalize_structure ty_res;
+          with_explanation explanation (fun () ->
+            unify_exp env {texp with exp_type = instance ty_res}
+              (instance ty_expected));
+        end
+      in
+      ((ty_args, ty_res, texp), ty_res::(List.map fst ty_args))
+    end
+  in
+  let ty_args0, ty_res =
+    match instance_list (ty_res :: (List.map fst ty_args)) with
+      t :: tl -> tl, t
+>>>>>>> ocaml-flambda/flambda-backend:main
                             (lid.txt, constr.cstr_arity, List.length sargs)));
   let separate = !Clflags.principal || Env.has_local_constraints env in
   let ty_args, ty_res, texp =
@@ -7431,6 +10913,40 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
   if constr.cstr_private = Private then
     begin match constr.cstr_repr with
     | Variant_extensible ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(* Typing of statements (expressions whose values are discarded) *)
+
+and type_statement ?explanation ?(position=RNontail) env sexp =
+  begin_def();
+  let exp = type_exp env (mode_max_with_position position) sexp in
+  end_def();
+  let ty = expand_head env exp.exp_type in
+  (* We're requiring the statement to have a representable jkind.  But that
+     doesn't actually rule out things like "assert false"---we'll just end up
+     getting a sort variable for its jkind. *)
+  (* CR layouts v10: Abstract jkinds will introduce cases where we really
+     have [any] and can't get a sort here. *)
+  let tv, sort = new_rep_var ~why:Statement () in
+  if is_Tvar ty && get_level ty > get_level tv then
+    Location.prerr_warning
+      (final_subexpression exp).exp_loc
+      Warnings.Nonreturning_statement;
+=======
+(* Typing of statements (expressions whose values are discarded) *)
+
+and type_statement ?explanation ?(position=RNontail) env sexp =
+  (* Raise the current level to detect non-returning functions *)
+  let exp =
+    with_local_level
+      (fun () -> type_exp env (mode_max_with_position position) sexp)
+  in
+  let ty = expand_head env exp.exp_type in
+  if is_Tvar ty && get_level ty > get_current_level () then
+    Location.prerr_warning
+      (final_subexpression exp).exp_loc
+      Warnings.Nonreturning_statement;
+>>>>>>> ocaml-flambda/flambda-backend:main
         raise(error(loc, env, Private_constructor (constr, ty_res)))
     | Variant_boxed _ | Variant_unboxed ->
         raise (error(loc, env, Private_type ty_res));
@@ -7464,14 +10980,39 @@ and type_statement ?explanation ?(position=RNontail) env sexp =
        doesn't actually rule out things like "assert false"---we'll just end up
        getting a sort variable for its jkind. *)
     (* CR layouts v10: Abstract jkinds will introduce cases where we really
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
        have [any] and can't get a sort here. *)
     let tv, sort = new_rep_var ~why:Statement () in
     if not !has_errors then check_partial_application ~statement:true exp;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      unify_exp env exp expected_ty);
+    exp, Jkind.Sort.value
+  else begin
+    check_partial_application ~statement:true exp;
+=======
+      unify_exp env exp expected_ty);
+    exp, Jkind.Sort.value
+  else begin
+    (* We're requiring the statement to have a representable jkind.  But that
+       doesn't actually rule out things like "assert false"---we'll just end up
+       getting a sort variable for its jkind. *)
+    (* CR layouts v10: Abstract jkinds will introduce cases where we really have
+       [any] and can't get a sort here. *)
+    let tv, sort = new_rep_var ~why:Statement () in
+    check_partial_application ~statement:true exp;
+>>>>>>> ocaml-flambda/flambda-backend:main
     with_explanation explanation (fun () ->
       try unify_var env ty tv
       with Unify err ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         raise(error(exp.exp_loc, env,
           Expr_type_clash(err, None, Some sexp.pexp_desc))));
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        raise(Error(exp.exp_loc, env, Expr_type_clash(err, None, Some exp.exp_desc))));
+=======
+        raise(Error(exp.exp_loc, env,
+          Expr_type_clash(err, None, Some sexp.pexp_desc))));
+>>>>>>> ocaml-flambda/flambda-backend:main
     exp, sort
   end
 
@@ -7491,6 +11032,212 @@ and type_cases
   let may_contain_gadts = List.exists may_contain_gadts patterns in
   let may_contain_modules = List.exists may_contain_modules patterns in
   let create_inner_level = may_contain_gadts || may_contain_modules in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | _ -> true
+  in
+  let outer_level = get_current_level () in
+  if create_inner_level then begin_def ();
+  let lev = get_current_level () in
+  let allow_modules =
+    if may_contain_modules then begin
+      (* The corresponding check for scope escape is done together with the
+         check for GADT-induced existentials. *)
+      Modules_allowed { scope = lev }
+    end else Modules_rejected
+  in
+  let take_partial_instance =
+    if erase_either
+    then Some false else None
+  in
+  begin_def (); (* propagation of the argument *)
+  let pattern_force = ref [] in
+(*  Format.printf "@[%i %i@ %a@]@." lev (get_current_level())
+    Printtyp.raw_type_expr ty_arg; *)
+  let half_typed_cases =
+    List.map
+      (fun ({pc_lhs; pc_guard = _; pc_rhs = _} as case) ->
+        if !Clflags.principal then begin_def (); (* propagation of pattern *)
+        begin_def ();
+        let ty_arg = instance ?partial:take_partial_instance ty_arg in
+        end_def ();
+        generalize_structure ty_arg;
+        let (pat, ext_env, force, pvs, mvs) =
+          type_pattern category ~lev ~alloc_mode:pmode env pc_lhs ty_arg
+            allow_modules
+        in
+        pattern_force := force @ !pattern_force;
+        let pat =
+          if !Clflags.principal then begin
+            end_def ();
+            iter_pattern_variables_type generalize_structure pvs;
+            { pat with pat_type = instance pat.pat_type }
+          end else pat
+        in
+        (* Ensure that no ambivalent pattern type escapes its branch *)
+        check_scope_escape pat.pat_loc env outer_level ty_arg;
+        { typed_pat = pat;
+          pat_type_for_unif = ty_arg;
+          untyped_case = case;
+          branch_env = ext_env;
+          pat_vars = pvs;
+          module_vars = mvs;
+          contains_gadt = contains_gadt (as_comp_pattern category pat); }
+        )
+      caselist in
+  let patl = List.map (fun { typed_pat; _ } -> typed_pat) half_typed_cases in
+  let does_contain_gadt =
+    List.exists (fun { contains_gadt; _ } -> contains_gadt) half_typed_cases
+  in
+  let ty_res, do_copy_types =
+    if does_contain_gadt && not !Clflags.principal then
+      correct_levels ty_res, Env.make_copy_of_types env
+    else ty_res, (fun env -> env)
+  in
+  (* Unify all cases (delayed to keep it order-free) *)
+  let ty_arg' = newvar (Jkind.any ~why:Dummy_jkind) in
+  let unify_pats ty =
+    List.iter (fun { typed_pat = pat; pat_type_for_unif = pat_ty; _ } ->
+      unify_pat_types pat.pat_loc (ref env) pat_ty ty
+    ) half_typed_cases
+  in
+  unify_pats ty_arg';
+  (* Check for polymorphic variants to close *)
+  if List.exists has_variants patl then begin
+      Parmatch.pressure_variants_in_computation_pattern env
+        (List.map (as_comp_pattern category) patl);
+      List.iter finalize_variants patl
+  end;
+  (* `Contaminating' unifications start here *)
+  List.iter (fun f -> f()) !pattern_force;
+  (* Post-processing and generalization *)
+  if take_partial_instance <> None then unify_pats (instance ty_arg);
+  List.iter (fun { pat_vars; _ } ->
+    iter_pattern_variables_type
+      (fun t -> unify_var env (newvar (Jkind.any ~why:Dummy_jkind)) t)
+      pat_vars
+  ) half_typed_cases;
+  end_def ();
+  generalize ty_arg';
+  List.iter (fun { pat_vars; _ } ->
+    iter_pattern_variables_type generalize pat_vars
+  ) half_typed_cases;
+  (* type bodies *)
+  let in_function = if List.length caselist = 1 then in_function else None in
+  let ty_res' = instance ty_res in
+  if !Clflags.principal then begin_def ();
+  let cases =
+    List.map
+      (fun { typed_pat = pat; branch_env = ext_env;
+             pat_vars = pvs; module_vars = mvs;
+=======
+    | _ -> true
+  in
+  let outer_level = get_current_level () in
+  with_local_level_iter_if create_inner_level begin fun () ->
+  let lev = get_current_level () in
+  let allow_modules =
+    if may_contain_modules
+    then
+      (* The corresponding check for scope escape is done together with
+         the check for GADT-induced existentials by
+         [with_local_level_iter_if create_inner_level].
+      *)
+      Modules_allowed { scope = lev }
+    else Modules_rejected
+  in
+  let take_partial_instance =
+    if erase_either
+    then Some false else None
+  in
+  let half_typed_cases, ty_res, do_copy_types, ty_arg' =
+   (* propagation of the argument *)
+    with_local_level begin fun () ->
+      let pattern_force = ref [] in
+      (*  Format.printf "@[%i %i@ %a@]@." lev (get_current_level())
+          Printtyp.raw_type_expr ty_arg; *)
+      let half_typed_cases =
+        List.map
+        (fun ({pc_lhs; pc_guard = _; pc_rhs = _} as case) ->
+          let htc =
+            with_local_level_if_principal begin fun () ->
+              let ty_arg =
+                (* propagation of pattern *)
+                with_local_level ~post:generalize_structure
+                  (fun () -> instance ?partial:take_partial_instance ty_arg)
+              in
+              let (pat, ext_env, force, pvs, mvs) =
+                type_pattern category ~lev ~alloc_mode:pmode env pc_lhs ty_arg
+                  allow_modules
+              in
+              pattern_force := force @ !pattern_force;
+              { typed_pat = pat;
+                pat_type_for_unif = ty_arg;
+                untyped_case = case;
+                branch_env = ext_env;
+                pat_vars = pvs;
+                module_vars = mvs;
+                contains_gadt = contains_gadt (as_comp_pattern category pat); }
+            end
+            ~post: begin fun htc ->
+              iter_pattern_variables_type generalize_structure htc.pat_vars;
+            end
+          in
+          (* Ensure that no ambivalent pattern type escapes its branch *)
+          check_scope_escape htc.typed_pat.pat_loc env outer_level
+            htc.pat_type_for_unif;
+          let pat = htc.typed_pat in
+          {htc with typed_pat = { pat with pat_type = instance pat.pat_type }}
+        )
+        caselist in
+      let patl =
+        List.map (fun { typed_pat; _ } -> typed_pat) half_typed_cases in
+      let does_contain_gadt =
+        List.exists (fun { contains_gadt; _ } -> contains_gadt) half_typed_cases
+      in
+      let ty_res, do_copy_types =
+        if does_contain_gadt && not !Clflags.principal then
+          correct_levels ty_res, Env.make_copy_of_types env
+        else ty_res, (fun env -> env)
+      in
+      (* Unify all cases (delayed to keep it order-free) *)
+      let ty_arg' = newvar (Jkind.any ~why:Dummy_jkind) in
+      let unify_pats ty =
+        List.iter (fun { typed_pat = pat; pat_type_for_unif = pat_ty; _ } ->
+          unify_pat_types pat.pat_loc (ref env) pat_ty ty
+        ) half_typed_cases
+      in
+      unify_pats ty_arg';
+      (* Check for polymorphic variants to close *)
+      if List.exists has_variants patl then begin
+        Parmatch.pressure_variants_in_computation_pattern env
+          (List.map (as_comp_pattern category) patl);
+        List.iter finalize_variants patl
+      end;
+      (* `Contaminating' unifications start here *)
+      List.iter (fun f -> f()) !pattern_force;
+      (* Post-processing and generalization *)
+      if take_partial_instance <> None then unify_pats (instance ty_arg);
+      List.iter (fun { pat_vars; _ } ->
+        iter_pattern_variables_type (enforce_current_level env) pat_vars
+      ) half_typed_cases;
+      (half_typed_cases, ty_res, do_copy_types, ty_arg')
+    end
+    ~post: begin fun (half_typed_cases, _, _, ty_arg') ->
+      generalize ty_arg';
+      List.iter (fun { pat_vars; _ } ->
+        iter_pattern_variables_type generalize pat_vars
+      ) half_typed_cases
+    end
+  in
+  (* type bodies *)
+  let in_function = if List.length caselist = 1 then in_function else None in
+  let ty_res' = instance ty_res in
+  let cases = with_local_level_if_principal ~post:ignore begin fun () ->
+    List.map
+      (fun { typed_pat = pat; branch_env = ext_env;
+             pat_vars = pvs; module_vars = mvs;
+>>>>>>> ocaml-flambda/flambda-backend:main
   let ty_arg =
     if (may_contain_gadts || erase_either) && not !Clflags.principal
     then correct_levels ty_arg else ty_arg
@@ -7694,19 +11441,156 @@ and type_cases
     else
       (* Check for unused cases, do not delay because of gadts *)
       unused_check false
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   );
   ((cases, partial), [ty_res'])
   end
   (* Ensure that existential types do not escape *)
   ~post:(fun ty_res' -> unify_exp_types loc env ty_res'
                             (newvar (Jkind.any ~why:Dummy_jkind)))
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  else
+    (* Check for unused cases, do not delay because of gadts *)
+    unused_check false;
+  if create_inner_level then begin
+    end_def ();
+    (* Ensure that existential types do not escape *)
+    unify_exp_types loc env ty_res'
+      (newvar (Jkind.any ~why:Dummy_jkind));
+  end;
+  cases, partial
+=======
+  else
+    (* Check for unused cases, do not delay because of gadts *)
+    unused_check false;
+  ((cases, partial), [ty_res'])
+  end
+  (* Ensure that existential types do not escape *)
+  ~post:(fun ty_res' -> unify_exp_types loc env ty_res'
+                          (newvar (Jkind.any ~why:Dummy_jkind)))
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 and type_newtype ~loc ~env ~expected_mode ~rue ~attributes
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       name label_loc jkind_annot_opt sbody =
   let jkind =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      name jkind_annot_opt sbody =
+  let jkind =
+=======
+      name jkind_annot_opt sbody =
+  let jkind, jkind_annot =
+>>>>>>> ocaml-flambda/flambda-backend:main
     Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
       ~default:(Jkind.value ~why:Univar) jkind_annot_opt
   in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    else
+      newvar jkind
+  in
+  (* remember original level *)
+  begin_def ();
+  (* Create a fake abstract type declaration for name. *)
+  let decl = new_local_type ~loc jkind in
+  let scope = create_scope () in
+  let (id, new_env) = Env.enter_type ~scope name decl env in
+
+  let body = type_exp new_env expected_mode sbody in
+  (* Replace every instance of this type constructor in the resulting
+     type. *)
+  let seen = Hashtbl.create 8 in
+  let rec replace t =
+    if Hashtbl.mem seen (get_id t) then ()
+    else begin
+      Hashtbl.add seen (get_id t) ();
+      match get_desc t with
+      | Tconstr (Path.Pident id', _, _) when id == id' -> link_type t ty
+      | _ -> Btype.iter_type_expr replace t
+    end
+  in
+  let ety = Subst.type_expr Subst.identity body.exp_type in
+  replace ety;
+  (* back to original level *)
+  end_def ();
+  (* lower the levels of the result type *)
+  (* unify_var env ty ety; *)
+
+  (* non-expansive if the body is non-expansive, so we don't introduce
+     any new extra node in the typed AST. *)
+  rue { body with exp_loc = loc; exp_type = ety;
+        exp_extra =
+        (Texp_newtype (name, Option.map Location.get_txt jkind_annot_opt),
+         loc, attributes) :: body.exp_extra }
+
+(* Typing of let bindings *)
+
+and type_let
+    ?(check = fun s -> Warnings.Unused_var s)
+    ?(check_strict = fun s -> Warnings.Unused_var_strict s)
+    ?(force_toplevel = false)
+    existential_context
+    env rec_flag spat_sexp_list allow_modules =
+  let open Ast_helper in
+  begin_def();
+  if !Clflags.principal then begin_def ();
+
+  let is_fake_let =
+    match spat_sexp_list with
+    | [{pvb_expr={pexp_desc=Pexp_match(
+           {pexp_desc=Pexp_ident({ txt = Longident.Lident name})},_)}}]
+      when String.starts_with ~prefix:"*opt*" name ->
+        true (* the fake let-declaration introduced by fun ?(x = e) -> ... *)
+    | _ ->
+        false
+  in
+  let rec sexp_is_fun sexp =
+    match Jane_syntax.Expression.of_ast sexp with
+    | Some (jexp, _attrs) -> jexp_is_fun jexp
+=======
+    else
+      newvar jkind
+  in
+  (* Use [with_local_level] just for scoping *)
+  let body, ety = with_local_level begin fun () ->
+    (* Create a fake abstract type declaration for name. *)
+    let decl = new_local_type ~loc jkind in
+    let scope = create_scope () in
+    let (id, new_env) = Env.enter_type ~scope name decl env in
+
+    let body = type_exp new_env expected_mode sbody in
+    (* Replace every instance of this type constructor in the resulting
+       type. *)
+    let seen = Hashtbl.create 8 in
+    let rec replace t =
+      if Hashtbl.mem seen (get_id t) then ()
+      else begin
+        Hashtbl.add seen (get_id t) ();
+        match get_desc t with
+        | Tconstr (Path.Pident id', _, _) when id == id' -> link_type t ty
+        | _ -> Btype.iter_type_expr replace t
+      end
+    in
+    let ety = Subst.type_expr Subst.identity body.exp_type in
+    replace ety;
+    (body, ety)
+  end
+  in
+  (* non-expansive if the body is non-expansive, so we don't introduce
+     any new extra node in the typed AST. *)
+  rue { body with exp_loc = loc; exp_type = ety;
+        exp_extra =
+        (Texp_newtype (name, jkind_annot),
+         loc, attributes) :: body.exp_extra }
+
+(* Typing of let bindings *)
+
+and type_let ?check ?check_strict ?(force_toplevel = false)
+    existential_context env rec_flag spat_sexp_list allow_modules =
+  let rec sexp_is_fun sexp =
+    match Jane_syntax.Expression.of_ast sexp with
+    | Some (jexp, _attrs) -> jexp_is_fun jexp
+>>>>>>> ocaml-flambda/flambda-backend:main
   let ty =
     if Typetexp.valid_tyvar_name name then
       newvar ~name jkind
@@ -7782,11 +11666,130 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
   let rec_mode_var =
     match rec_flag with
     | Recursive when entirely_functions -> Some (Value.newvar ())
-    | Recursive -> Some Value.legacy
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
     | Nonrecursive -> None
   in
-  let spatl =  List.map vb_pat_constraint spat_sexp_list in
-  let spatl = List.map (pat_modes ~force_toplevel rec_mode_var) spatl in
+  let spatl =
+    List.map
+      (fun {pvb_pat=spat; pvb_expr=sexp; pvb_attributes=attrs} ->
+         let spat =
+           match spat.ppat_desc, sexp.pexp_desc with
+           | (Ppat_any | Ppat_constraint _), _ -> spat
+           | _, Pexp_coerce (_, _, sty)
+           | _, Pexp_constraint (_, sty) when !Clflags.principal ->
+               (* propagate type annotation to pattern,
+                  to allow it to be generalized in -principal mode *)
+               Pat.constraint_
+                 ~loc:(Location.ghostify spat.ppat_loc)
+                 spat
+                 sty
+           | _ -> spat
+         in
+         let pat_mode, exp_mode =
+           if force_toplevel
+           then simple_pat_mode Value.legacy, mode_legacy
+           else match rec_mode_var with
+           | None -> begin
+               match pat_tuple_arity spat with
+               | Not_local_tuple | Maybe_local_tuple ->
+                   let mode = Value.newvar () in
+                   simple_pat_mode mode, mode_default mode
+               | Local_tuple arity ->
+                   let modes =
+                     List.init arity (fun _ -> Value.newvar ())
+                   in
+                   let mode =
+                     Value.regional_to_local (Value.join modes)
+                   in
+                   tuple_pat_mode mode modes, mode_tuple mode modes
+             end
+           | Some mode ->
+               simple_pat_mode mode, mode_exact mode
+         in
+         attrs, pat_mode, exp_mode, spat)
+      spat_sexp_list in
+  let is_recursive = (rec_flag = Recursive) in
+  let nvs, sorts =
+    List.split (List.map (fun _ -> new_rep_var ~why:Let_binding ()) spatl)
+  in
+  if is_recursive then begin_def ();
+  let (pat_list, new_env, force, pvs, mvs) =
+    type_pattern_list Value existential_context env spatl nvs allow_modules
+  in
+  (* Note [add_module_variables after checking expressions]
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+     Don't call [add_module_variables] here, because its use of [type_module]
+     will fail until after we have type-checked the expression of the let.
+     Example: [let m : (module S) = ... in let (module M) = m in ...]
+     We learn the signature [S] from the type of [m] in the RHS of the second
+     let, and we need that knowledge for [type_module] to succeed. If we
+     type-checked expressions before patterns, then we could call
+     [add_module_variables] here.
+  *)
+  let new_env = add_pattern_variables new_env pvs in
+  if is_recursive then begin
+    end_def ();
+    iter_pattern_variables_type generalize pvs
+  end;
+  let attrs_list = List.map (fun (attrs, _, _, _) -> attrs) spatl in
+  (* If recursive, first unify with an approximation of the expression *)
+  if is_recursive then
+    List.iter2
+      (fun (_, pat) binding ->
+        let pat =
+          match get_desc pat.pat_type with
+          | Tpoly (ty, tl) ->
+              {pat with pat_type =
+               snd (instance_poly ~keep_names:true false tl ty)}
+          | _ -> pat
+        in
+        type_approx env binding.pvb_expr pat.pat_type)
+      pat_list spat_sexp_list;
+  (* Polymorphic variant processing *)
+  List.iter
+    (fun (_, pat) ->
+      if has_variants pat then begin
+        Parmatch.pressure_variants env [pat];
+        finalize_variants pat
+      end)
+    pat_list;
+  (* Generalize the structure *)
+  let pat_list =
+    if !Clflags.principal then begin
+      end_def ();
+      iter_pattern_variables_type generalize_structure pvs;
+      List.map (fun (m, pat) ->
+        let ty = pat.pat_type in
+        generalize_structure ty;
+        m, {pat with pat_type = instance ty}, ty
+      ) pat_list
+    end else begin
+      List.map (fun (m, pat) -> (m, pat, pat.pat_type)) pat_list
+    end
+  in
+  (* Only bind pattern variables after generalizing *)
+  List.iter (fun f -> f()) force;
+  let exp_env =
+    (* See Note [add_module_variables after checking expressions]
+
+       We can't defer type-checking module variables with recursive definitions,
+       so things like [let rec (module M) = m in ...] always fail, even if the
+       type of [m] is known.
+    *)
+    if is_recursive then add_module_variables new_env mvs
+    else if entirely_functions
+    then begin
+      (* Add ghost bindings to help detecting missing "rec" keywords.
+
+         We only add those if the body of the definition is obviously a
+=======
+    | Nonrecursive -> None
+  in
+  let spatl =
+    List.map (vb_pat_constraint ~force_toplevel rec_mode_var) spat_sexp_list
+  in
   let attrs_list = List.map (fun (attrs, _, _, _) -> attrs) spatl in
   let is_recursive = (rec_flag = Recursive) in
 
@@ -7804,7 +11807,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
               type_pattern_list Value existential_context env spatl nvs
                 allow_modules
             ) ~post:(fun (_, _, _, pvs, _) ->
-              iter_pattern_variables_type generalize pvs)
+                       iter_pattern_variables_type generalize pvs)
           in
           (* If recursive, first unify with an approximation of the
              expression *)
@@ -7818,7 +11821,8 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
                        snd (instance_poly ~keep_names:true false tl ty)}
                   | _ -> pat
                 in
-                type_approx env binding.pvb_expr pat.pat_type)
+                let bound_expr = vb_exp_constraint binding in
+                type_approx env bound_expr pat.pat_type)
               pat_list spat_sexp_list;
           (* Polymorphic variant processing *)
           List.iter
@@ -7945,7 +11949,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
     List.iter
       (fun {vb_pat=pat} -> match pat.pat_desc with
            Tpat_var _ -> ()
-         | _ -> raise(error(pat.pat_loc, env, Illegal_letrec_pat)))
+         | _ -> raise(Error(pat.pat_loc, env, Illegal_letrec_pat)))
       l;
   List.iter (fun vb ->
       if pattern_needs_partial_application_check vb.vb_pat then
@@ -7964,7 +11968,8 @@ and type_let_def_wrap_warnings
   let is_fake_let =
     match spat_sexp_list with
     | [{pvb_expr={pexp_desc=Pexp_match(
-           {pexp_desc=Pexp_ident({ txt = Longident.Lident "*opt*"})},_)}}] ->
+           {pexp_desc=Pexp_ident({ txt = Longident.Lident name})},_)}}]
+      when String.starts_with ~prefix:"*opt" name ->
         true (* the fake let-declaration introduced by fun ?(x = e) -> ... *)
     | _ ->
         false
@@ -7983,11 +11988,230 @@ and type_let_def_wrap_warnings
       (* Add ghost bindings to help detecting missing "rec" keywords.
 
          We only add those if the body of the definition is obviously a
-         function. The rationale is that, in other cases, the hint is probably
-         wrong (and the user is using "advanced features" anyway (lazy,
-         recursive values...)).
+>>>>>>> ocaml-flambda/flambda-backend:main
+    | Recursive -> Some Value.legacy
+    | Nonrecursive -> None
+  in
+  let spatl =  List.map vb_pat_constraint spat_sexp_list in
+  let spatl = List.map (pat_modes ~force_toplevel rec_mode_var) spatl in
+  let attrs_list = List.map (fun (attrs, _, _, _) -> attrs) spatl in
+  let is_recursive = (rec_flag = Recursive) in
 
-         [pvb_loc] (below) is the location of the first let-binding (in case of
+  let (pat_list, exp_list, new_env, mvs, sorts, _pvs) =
+    with_local_level begin fun () ->
+      if existential_context = At_toplevel then Typetexp.TyVarEnv.reset ();
+      let (pat_list, new_env, force, pvs, mvs), sorts =
+        with_local_level_if_principal begin fun () ->
+          let nvs, sorts =
+            List.split (List.map (fun _ -> new_rep_var ~why:Let_binding ())
+                          spatl)
+          in
+          let (pat_list, _new_env, _force, _pvs, _mvs as res) =
+            with_local_level_if is_recursive (fun () ->
+              type_pattern_list Value existential_context env spatl nvs
+                allow_modules
+            ) ~post:(fun (_, _, _, pvs, _) ->
+              iter_pattern_variables_type generalize pvs)
+          in
+          (* If recursive, first unify with an approximation of the
+             expression *)
+          if is_recursive then
+            List.iter2
+              (fun (_, pat) binding ->
+                let pat =
+                  match get_desc pat.pat_type with
+                  | Tpoly (ty, tl) ->
+                      {pat with pat_type =
+                       snd (instance_poly ~keep_names:true false tl ty)}
+                  | _ -> pat
+                in
+                type_approx env binding.pvb_expr pat.pat_type)
+              pat_list spat_sexp_list;
+          (* Polymorphic variant processing *)
+          List.iter
+            (fun (_, pat) ->
+              if has_variants pat then begin
+                Parmatch.pressure_variants env [pat];
+                finalize_variants pat
+              end)
+            pat_list;
+          res, sorts
+        end
+        ~post: begin fun ((pat_list, _, _, pvs, _), _) ->
+          (* Generalize the structure *)
+          iter_pattern_variables_type generalize_structure pvs;
+          List.iter (fun (_, pat) -> generalize_structure pat.pat_type) pat_list
+        end
+      in
+      (* Note [add_module_variables after checking expressions]
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         Don't call [add_module_variables] here, because its use of
+         [type_module] will fail until after we have type-checked the expression
+         of the let. Example: [let m : (module S) = ... in let (module M) = m in
+         ...] We learn the signature [S] from the type of [m] in the RHS of the
+         second let, and we need that knowledge for [type_module] to succeed. If
+         we type-checked expressions before patterns, then we could call
+         [add_module_variables] here.
+      *)
+      let new_env = add_pattern_variables new_env pvs in
+      let mode_pat_typ_list =
+        List.map
+          (fun (m, pat) ->
+             let ty = pat.pat_type in
+             m, {pat with pat_type = instance ty}, ty)
+          pat_list
+      in
+      (* Only bind pattern variables after generalizing *)
+      List.iter (fun f -> f()) force;
+
+      let exp_list =
+        (* See Note [add_module_variables after checking expressions]
+           We can't defer type-checking module variables with recursive
+           definitions, so things like [let rec (module M) = m in ...] always
+           fail, even if the type of [m] is known.
+        *)
+        let exp_env =
+          if is_recursive then add_module_variables new_env mvs else env
+        in
+        type_let_def_wrap_warnings ?check ?check_strict ~is_recursive
+          ~entirely_functions
+          ~exp_env ~new_env ~spat_sexp_list ~attrs_list ~mode_pat_typ_list ~pvs
+          (fun exp_env ({pvb_attributes; _} as vb) mode expected_ty ->
+            let sexp = vb_exp_constraint vb in
+            match get_desc expected_ty with
+            | Tpoly (ty, tl) ->
+                let vars, ty' =
+                  with_local_level_if_principal
+                    ~post:(fun (_,ty') -> generalize_structure ty')
+                    (fun () -> instance_poly ~keep_names:true true tl ty)
+                in
+                let exp =
+                  Builtin_attributes.warning_scope pvb_attributes (fun () ->
+                    type_expect exp_env mode sexp (mk_expected ty'))
+                in
+                exp, Some vars
+            | _ ->
+                let exp =
+                  Builtin_attributes.warning_scope pvb_attributes (fun () ->
+                    type_expect exp_env mode sexp (mk_expected expected_ty))
+                in
+                exp, None)
+      in
+      List.iter2
+        (fun (_, pat, _) (attrs, exp) ->
+          Builtin_attributes.warning_scope ~ppwarning:false attrs
+            (fun () ->
+              ignore(check_partial env pat.pat_type pat.pat_loc
+                       [case pat exp] : Typedtree.partial)
+            )
+        )
+        mode_pat_typ_list
+        (List.map2 (fun (attrs, _, _, _) (e, _) -> attrs, e) spatl exp_list);
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+         a let .. and ..), and is where the missing "rec" hint suggests to add a
+         "rec" keyword. *)
+      match spat_sexp_list with
+      | {pvb_loc; _} :: _ -> maybe_add_pattern_variables_ghost pvb_loc env pvs
+      | _ -> assert false
+    end
+    else env in
+
+  let current_slot = ref None in
+  let rec_needed = ref false in
+  let warn_about_unused_bindings =
+    List.exists
+      (fun attrs ->
+         Builtin_attributes.warning_scope ~ppwarning:false attrs (fun () ->
+           Warnings.is_active (check "") || Warnings.is_active (check_strict "")
+           || (is_recursive && (Warnings.is_active Warnings.Unused_rec_flag))))
+      attrs_list
+  in
+  let mode_typ_slot_list =
+    (* Algorithm to detect unused declarations in recursive bindings:
+       - During type checking of the definitions, we capture the 'value_used'
+         events on the bound identifiers and record them in a slot corresponding
+         to the current definition (!current_slot).
+         In effect, this creates a dependency graph between definitions.
+
+       - After type checking the definition (!current_slot = None),
+         when one of the bound identifier is effectively used, we trigger
+         again all the events recorded in the corresponding slot.
+         The effect is to traverse the transitive closure of the graph created
+         in the first step.
+
+       We also keep track of whether *all* variables in a given pattern
+       are unused. If this is the case, for local declarations, the issued
+       warning is 26, not 27.
+     *)
+    List.map2
+      (fun attrs (mode, pat, expected_ty) ->
+         Builtin_attributes.warning_scope ~ppwarning:false attrs (fun () ->
+           if not warn_about_unused_bindings then mode, expected_ty, None
+           else
+             let some_used = ref false in
+             (* has one of the identifier of this pattern been used? *)
+             let slot = ref [] in
+             List.iter
+               (fun id ->
+                  let vd = Env.find_value (Path.Pident id) new_env in
+                  (* note: Env.find_value does not trigger the value_used
+                           event *)
+                  let name = Ident.name id in
+                  let used = ref false in
+                  if not (name = "" || name.[0] = '_' || name.[0] = '#') then
+                    add_delayed_check
+                      (fun () ->
+                         if not !used then
+                           Location.prerr_warning vd.Subst.Lazy.val_loc
+                             ((if !some_used then check_strict else check) name)
+                      );
+                  Env.set_value_used_callback
+                    vd
+                    (fun () ->
+                       match !current_slot with
+                       | Some slot ->
+                         slot := vd.val_uid :: !slot; rec_needed := true
+                       | None ->
+                         List.iter Env.mark_value_used (get_ref slot);
+                         used := true;
+                         some_used := true
+                    )
+               )
+               (Typedtree.pat_bound_idents pat);
+             mode, expected_ty, Some slot
+         ))
+      attrs_list
+      pat_list
+  in
+  let exp_list =
+    List.map2
+      (fun {pvb_expr=sexp; pvb_attributes; _} (mode, expected_ty, slot) ->
+        if is_recursive then current_slot := slot;
+        match get_desc expected_ty with
+        | Tpoly (ty, tl) ->
+            if !Clflags.principal then begin_def ();
+            let vars, ty' = instance_poly ~keep_names:true true tl ty in
+            if !Clflags.principal then begin
+              end_def ();
+              generalize_structure ty'
+            end;
+            let exp =
+              Builtin_attributes.warning_scope pvb_attributes (fun () ->
+                type_expect exp_env mode sexp (mk_expected ty'))
+            in
+            exp, Some vars
+        | _ ->
+            let exp =
+              Builtin_attributes.warning_scope pvb_attributes (fun () ->
+                type_expect exp_env mode sexp (mk_expected expected_ty))
+            in
+            exp, None)
+      spat_sexp_list mode_typ_slot_list in
+  current_slot := None;
+  if is_recursive && not !rec_needed then begin
+    let {pvb_pat; pvb_attributes} = List.hd spat_sexp_list in
+=======
          a let .. and ..), and is where the missing "rec" hint suggests to add a
          "rec" keyword. *)
       match spat_sexp_list with
@@ -8066,6 +12290,252 @@ and type_let_def_wrap_warnings
   current_slot := None;
   if is_recursive && not !rec_needed then begin
     let {pvb_pat; pvb_attributes} = List.hd spat_sexp_list in
+>>>>>>> ocaml-flambda/flambda-backend:main
+      (mode_pat_typ_list, exp_list, new_env, mvs, sorts,
+       List.map (fun pv -> { pv with pv_type = instance pv.pv_type}) pvs)
+    end
+    ~post: begin fun (mode_pat_typ_list, exp_list, _, _, _, pvs) ->
+      List.iter2
+        (fun (_, pat, _) (exp, _) ->
+          if maybe_expansive exp then lower_contravariant env pat.pat_type)
+        mode_pat_typ_list exp_list;
+      iter_pattern_variables_type generalize pvs;
+      List.iter2
+        (fun (_, _, expected_ty) (exp, vars) ->
+          match vars with
+          | None ->
+          (* We generalize expressions even if they are not bound to a variable
+             and do not have an expliclit polymorphic type annotation.  This is
+             not needed in general, however those types may be shown by the
+             interactive toplevel, for example:
+             {[
+               let _ = Array.get;;
+               - : 'a array -> int -> 'a = <fun>
+             ]}
+             so we do it anyway. *)
+              generalize exp.exp_type
+          | Some vars ->
+              if maybe_expansive exp then
+                lower_contravariant env exp.exp_type;
+              generalize_and_check_univars env "definition"
+                exp expected_ty vars)
+        mode_pat_typ_list exp_list
+    end
+  in
+  let l = List.combine pat_list exp_list in
+  let l = List.combine sorts l in
+  let l =
+    List.map2
+      (fun (s, ((_,p,_), (e, _))) pvb ->
+        {vb_pat=p; vb_expr=e; vb_sort = s; vb_attributes=pvb.pvb_attributes;
+         vb_loc=pvb.pvb_loc;
+        })
+      l spat_sexp_list
+  in
+  if is_recursive then
+    List.iter
+      (fun {vb_pat=pat} -> match pat.pat_desc with
+           Tpat_var _ -> ()
+         | _ -> raise(error(pat.pat_loc, env, Illegal_letrec_pat)))
+      l;
+  List.iter (fun vb ->
+      if pattern_needs_partial_application_check vb.vb_pat then
+        check_partial_application ~statement:false vb.vb_expr
+    ) l;
+  (* See Note [add_module_variables after checking expressions] *)
+  let new_env = add_module_variables new_env mvs in
+  (l, new_env)
+
+and type_let_def_wrap_warnings
+    ?(check = fun s -> Warnings.Unused_var s)
+    ?(check_strict = fun s -> Warnings.Unused_var_strict s)
+    ~is_recursive ~entirely_functions ~exp_env ~new_env ~spat_sexp_list
+    ~attrs_list ~mode_pat_typ_list ~pvs
+    type_def =
+  let is_fake_let =
+    match spat_sexp_list with
+    | [{pvb_expr={pexp_desc=Pexp_match(
+           {pexp_desc=Pexp_ident({ txt = Longident.Lident "*opt*"})},_)}}] ->
+        true (* the fake let-declaration introduced by fun ?(x = e) -> ... *)
+    | _ ->
+        false
+  in
+  let check = if is_fake_let then check_strict else check in
+  let warn_about_unused_bindings =
+    List.exists
+      (fun attrs ->
+         Builtin_attributes.warning_scope ~ppwarning:false attrs (fun () ->
+           Warnings.is_active (check "") || Warnings.is_active (check_strict "")
+           || (is_recursive && (Warnings.is_active Warnings.Unused_rec_flag))))
+      attrs_list
+  in
+  let exp_env =
+    if not is_recursive && entirely_functions then begin
+      (* Add ghost bindings to help detecting missing "rec" keywords.
+
+         We only add those if the body of the definition is obviously a
+         function. The rationale is that, in other cases, the hint is probably
+         wrong (and the user is using "advanced features" anyway (lazy,
+         recursive values...)).
+
+         [pvb_loc] (below) is the location of the first let-binding (in case of
+         a let .. and ..), and is where the missing "rec" hint suggests to add a
+         "rec" keyword. *)
+      match spat_sexp_list with
+      | {pvb_loc; _} :: _ ->
+          maybe_add_pattern_variables_ghost pvb_loc exp_env pvs
+      | _ -> assert false
+    end
+    else exp_env
+  in
+  (* Algorithm to detect unused declarations in recursive bindings:
+     - During type checking of the definitions, we capture the 'value_used'
+       events on the bound identifiers and record them in a slot corresponding
+       to the current definition (!current_slot).
+       In effect, this creates a dependency graph between definitions.
+
+     - After type checking the definition (!current_slot = None),
+       when one of the bound identifier is effectively used, we trigger
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+         Location.prerr_warning pvb_pat.ppat_loc Warnings.Unused_rec_flag
+      )
+  end;
+  List.iter2
+    (fun (_,pat,_) (attrs, exp) ->
+       Builtin_attributes.warning_scope ~ppwarning:false attrs
+         (fun () ->
+            ignore(check_partial env pat.pat_type pat.pat_loc
+                     [case pat exp] : Typedtree.partial)
+         )
+    )
+    pat_list
+    (List.map2 (fun (attrs, _, _, _) (e, _) -> attrs, e) spatl exp_list);
+  let pvs = List.map (fun pv -> { pv with pv_type = instance pv.pv_type}) pvs in
+  end_def();
+  List.iter2
+    (fun (_,pat,_) (exp, _) ->
+       if maybe_expansive exp then
+         lower_contravariant env pat.pat_type)
+    pat_list exp_list;
+  iter_pattern_variables_type generalize pvs;
+  List.iter2
+    (fun (_,_,expected_ty) (exp, vars) ->
+       match vars with
+       | None ->
+         (* We generalize expressions even if they are not bound to a variable
+            and do not have an expliclit polymorphic type annotation.  This is
+            not needed in general, however those types may be shown by the
+            interactive toplevel, for example:
+            {[
+              let _ = Array.get;;
+              - : 'a array -> int -> 'a = <fun>
+            ]}
+            so we do it anyway. *)
+         generalize exp.exp_type
+       | Some vars ->
+           if maybe_expansive exp then
+             lower_contravariant env exp.exp_type;
+           generalize_and_check_univars env "definition" exp expected_ty vars)
+    pat_list exp_list;
+  let l = List.combine pat_list exp_list in
+  let l = List.combine sorts l in
+  let l =
+    List.map2
+      (fun (s, ((_,p,_), (e, _))) pvb ->
+        {vb_pat=p; vb_expr=e; vb_sort = s; vb_attributes=pvb.pvb_attributes;
+         vb_loc=pvb.pvb_loc;
+        })
+      l spat_sexp_list
+  in
+  if is_recursive then
+    List.iter
+      (fun {vb_pat=pat} -> match pat.pat_desc with
+           Tpat_var _ -> ()
+         | _ -> raise(Error(pat.pat_loc, env, Illegal_letrec_pat)))
+      l;
+  List.iter (function
+      | {vb_pat = {pat_desc = Tpat_any; pat_extra; _}; vb_expr; _} ->
+          if not (List.exists (function (Tpat_constraint _, _, _) -> true
+                                      | _ -> false) pat_extra) then
+            check_partial_application ~statement:false vb_expr
+      | _ -> ()) l;
+  (* See Note [add_module_variables after checking expressions] *)
+  let new_env = add_module_variables new_env mvs in
+  (l, new_env)
+
+and type_andops env sarg sands expected_sort expected_ty =
+  (* Pass arguments to [loop] to avoid allocating closure; [env] and [let_sarg]
+=======
+         Location.prerr_warning pvb_pat.ppat_loc Warnings.Unused_rec_flag
+      )
+  end;
+  exp_list
+
+and type_andops env sarg sands expected_sort expected_ty =
+  (* Pass arguments to [loop] to avoid allocating closure; [env] and [let_sarg]
+>>>>>>> ocaml-flambda/flambda-backend:main
+       again all the events recorded in the corresponding slot.
+       The effect is to traverse the transitive closure of the graph created
+       in the first step.
+
+     We also keep track of whether *all* variables in a given pattern
+     are unused. If this is the case, for local declarations, the issued
+     warning is 26, not 27.
+   *)
+  let current_slot = ref None in
+  let rec_needed = ref false in
+  let mode_typ_slot_list =
+    List.map2
+      (fun attrs (mode, pat, expected_ty) ->
+        Builtin_attributes.warning_scope ~ppwarning:false attrs (fun () ->
+          if not warn_about_unused_bindings then mode, expected_ty, None
+          else
+            let some_used = ref false in
+            (* has one of the identifier of this pattern been used? *)
+            let slot = ref [] in
+            List.iter
+              (fun id ->
+                let vd = Env.find_value (Path.Pident id) new_env in
+                (* note: Env.find_value does not trigger the value_used
+                   event *)
+                let name = Ident.name id in
+                let used = ref false in
+                if not (name = "" || name.[0] = '_' || name.[0] = '#') then
+                  add_delayed_check
+                    (fun () ->
+                      if not !used then
+                        Location.prerr_warning vd.Subst.Lazy.val_loc
+                          ((if !some_used then check_strict else check) name)
+                    );
+                Env.set_value_used_callback
+                  vd
+                  (fun () ->
+                    match !current_slot with
+                    | Some slot ->
+                        slot := vd.val_uid :: !slot; rec_needed := true
+                    | None ->
+                        List.iter Env.mark_value_used (get_ref slot);
+                        used := true;
+                        some_used := true
+                  )
+              )
+              (Typedtree.pat_bound_idents pat);
+            mode, expected_ty, Some slot
+           ))
+      attrs_list
+      mode_pat_typ_list
+  in
+  let exp_list =
+    List.map2
+      (fun case (mode, expected_ty, slot) ->
+        if is_recursive then current_slot := slot;
+        type_def exp_env case mode expected_ty)
+      spat_sexp_list mode_typ_slot_list
+  in
+  current_slot := None;
+  if is_recursive && not !rec_needed then begin
+    let {pvb_pat; pvb_attributes} = List.hd spat_sexp_list in
     (* See PR#6677 *)
     Builtin_attributes.warning_scope ~ppwarning:false pvb_attributes
       (fun () ->
@@ -8079,6 +12549,82 @@ and type_andops env sarg sands expected_sort expected_ty =
      get passed down unchanged. *)
   let rec loop env let_sarg rev_sands expected_sort expected_ty =
     match rev_sands with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        expected_sort,
+        []
+    | { pbop_op = sop; pbop_exp = sexp; pbop_loc = loc; _ } :: rest ->
+        if !Clflags.principal then begin_def ();
+        let op_path, op_desc = type_binding_op_ident env sop in
+        let op_type = op_desc.val_type in
+        let ty_arg, sort_arg = new_rep_var ~why:Function_argument () in
+        let ty_rest, sort_rest = new_rep_var ~why:Function_argument () in
+        let ty_result, op_result_sort = new_rep_var ~why:Function_result () in
+        let arrow_desc = (Nolabel,Alloc.legacy,Alloc.legacy) in
+        let ty_rest_fun =
+          newty (Tarrow(arrow_desc, newmono ty_arg, ty_result, commu_ok))
+        in
+        let ty_op =
+          newty (Tarrow(arrow_desc, newmono ty_rest, ty_rest_fun, commu_ok))
+        in
+        begin try
+          unify env op_type ty_op
+        with Unify err ->
+          raise(Error(sop.loc, env, Andop_type_clash(sop.txt, err)))
+        end;
+        if !Clflags.principal then begin
+          end_def ();
+          generalize_structure ty_rest;
+          generalize_structure ty_arg;
+          generalize_structure ty_result
+        end;
+        let let_arg, sort_let_arg, rest =
+          loop env let_sarg rest sort_rest ty_rest
+        in
+        let exp =
+          type_expect env mode_legacy sexp (mk_expected ty_arg)
+        in
+        begin try
+          unify env (instance ty_result) (instance expected_ty)
+        with Unify err ->
+=======
+        expected_sort,
+        []
+    | { pbop_op = sop; pbop_exp = sexp; pbop_loc = loc; _ } :: rest ->
+        let op_path, op_desc, op_type, ty_arg, sort_arg, ty_rest, sort_rest,
+            ty_result, op_result_sort =
+          with_local_level_iter_if_principal begin fun () ->
+            let op_path, op_desc = type_binding_op_ident env sop in
+            let op_type = instance op_desc.val_type in
+            let ty_arg, sort_arg = new_rep_var ~why:Function_argument () in
+            let ty_rest, sort_rest = new_rep_var ~why:Function_argument () in
+            let ty_result, op_result_sort =
+              new_rep_var ~why:Function_result ()
+            in
+            let arrow_desc = (Nolabel, Alloc.legacy, Alloc.legacy) in
+            let ty_rest_fun =
+              newty (Tarrow(arrow_desc, newmono ty_arg, ty_result, commu_ok)) in
+            let ty_op =
+              newty (Tarrow(arrow_desc, newmono ty_rest, ty_rest_fun, commu_ok)) in
+            begin try
+              unify env op_type ty_op
+            with Unify err ->
+              raise(Error(sop.loc, env, Andop_type_clash(sop.txt, err)))
+            end;
+            ((op_path, op_desc, op_type, ty_arg, sort_arg, ty_rest, sort_rest,
+              ty_result, op_result_sort),
+             [ty_rest; ty_arg; ty_result])
+          end
+          ~post:generalize_structure
+        in
+        let let_arg, sort_let_arg, rest =
+          loop env let_sarg rest sort_rest ty_rest
+        in
+        let exp = type_expect env mode_legacy sexp (mk_expected ty_arg) in
+        begin try
+          unify env (instance ty_result) (instance expected_ty)
+        with Unify err ->
+>>>>>>> ocaml-flambda/flambda-backend:main
     | [] ->
         type_expect env mode_legacy let_sarg
           (mk_expected expected_ty),
@@ -8378,6 +12924,50 @@ and type_comprehension_expr
           | Mutable   -> Predef.type_array
           | Immutable -> Predef.type_iarray
         in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        comp,
+        Jkind.Array_element
+  in
+  if !Clflags.principal then begin_def ();
+  (* CR layouts v4: When this changes from [value], you will also have to
+     update the use of [transl_exp] in transl_array_comprehension.ml. See
+     a companion CR layouts v4 at the point of interest in that file. *)
+  let element_ty = newvar (Jkind.value ~why:reason) in
+  unify_exp_types
+    loc
+    env
+    (instance (container_type element_ty))
+    (instance ty_expected);
+  if !Clflags.principal then begin
+    end_def();
+    generalize_structure element_ty;
+  end;
+  let new_env, comp_clauses =
+    (* To understand why we don't provide modes here, see "What modes should
+       comprehensions use?", above *)
+=======
+        comp,
+        Jkind.Array_element
+  in
+  let element_ty =
+    with_local_level_if_principal begin fun () ->
+      (* CR layouts v4: When this changes from [value], you will also have to
+         update the use of [transl_exp] in transl_array_comprehension.ml. See
+         a companion CR layouts v4 at the point of interest in that file. *)
+      let element_ty = newvar (Jkind.value ~why:reason) in
+      unify_exp_types
+        loc
+        env
+        (instance (container_type element_ty))
+        (instance ty_expected);
+      element_ty
+    end ~post:generalize_structure
+  in
+  let new_env, comp_clauses =
+    (* To understand why we don't provide modes here, see "What modes should
+       comprehensions use?", above *)
+>>>>>>> ocaml-flambda/flambda-backend:main
         Array_comprehension amut,
         container_type,
         (fun tcomp -> Texp_array_comprehension (amut, tcomp)),
@@ -8555,6 +13145,101 @@ and type_unboxed_constant ~loc ~env ~rue ~attributes cst =
     exp_attributes = attributes;
     exp_env = env }
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let maybe_check_uniqueness_exp exp =
+  if Language_extension.is_enabled Unique then
+=======
+(* Typing of method call *)
+and type_send env loc explanation e met =
+  let obj = type_exp env mode_legacy e in
+  let (meth, typ) =
+    match obj.exp_desc with
+    | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _, _) ->
+        let id, typ =
+          match meths with
+          | Self_concrete meths ->
+              let id =
+                match Meths.find met meths with
+                | id -> id
+                | exception Not_found ->
+                    let valid_methods =
+                      Meths.fold (fun lab _ acc -> lab :: acc) meths []
+                    in
+                    raise (Error(e.pexp_loc, env,
+                                 Undefined_self_method (met, valid_methods)))
+              in
+              let typ = Btype.method_type met sign in
+              id, typ
+          | Self_virtual meths_ref -> begin
+              match Meths.find met !meths_ref with
+              | id -> id, Btype.method_type met sign
+              | exception Not_found ->
+                  let id = Ident.create_local met in
+                  let ty = newvar (Jkind.value ~why:Object_field) in
+                  meths_ref := Meths.add met id !meths_ref;
+                  add_method env met Private Virtual ty sign;
+                  Location.prerr_warning loc
+                    (Warnings.Undeclared_virtual_method met);
+                  id, ty
+          end
+        in
+        Tmeth_val id, typ
+    | Texp_ident(_, _, {val_kind = Val_anc (sign, meths, cl_num)}, _, _) ->
+        let id =
+          match Meths.find met meths with
+          | id -> id
+          | exception Not_found ->
+              let valid_methods =
+                Meths.fold (fun lab _ acc -> lab :: acc) meths []
+              in
+              raise (Error(e.pexp_loc, env,
+                           Undefined_self_method (met, valid_methods)))
+        in
+        let typ = Btype.method_type met sign in
+        let (self_path, _) =
+          Env.find_value_by_name
+            (Longident.Lident ("self-" ^ cl_num)) env
+        in
+        Tmeth_ancestor(id, self_path), typ
+    | _ ->
+        let ty =
+          match filter_method env met obj.exp_type with
+          | ty -> ty
+          | exception Filter_method_failed err ->
+              let error =
+                match err with
+                | Unification_error err ->
+                    Expr_type_clash(err, explanation, None)
+                | Not_an_object ty ->
+                    Not_an_object(ty, explanation)
+                | Not_a_method ->
+                    let valid_methods =
+                      match get_desc (expand_head env obj.exp_type) with
+                      | Tobject (fields, _) ->
+                          let (fields, _) = Ctype.flatten_fields fields in
+                          let collect_fields li (meth, meth_kind, _meth_ty) =
+                            if field_kind_repr meth_kind = Fpublic
+                            then meth::li else li
+                          in
+                          Some (List.fold_left collect_fields [] fields)
+                      | _ -> None
+                    in
+                    Undefined_method(obj.exp_type, met, valid_methods)
+                | Not_a_value err ->
+                    Not_a_value (err, explanation)
+              in
+              raise (Error(e.pexp_loc, env, error))
+        in
+        Tmeth_name met, ty
+  in
+  (obj,meth,typ)
+
+
+let maybe_check_uniqueness_exp exp =
+  if Language_extension.is_enabled Unique then
+>>>>>>> ocaml-flambda/flambda-backend:main
 (* Typing of method call *)
 and type_send env loc explanation e met =
   let obj = type_exp env mode_legacy e in
@@ -8649,6 +13334,7 @@ let maybe_check_uniqueness_value_bindings vbl =
     check_uniqueness_value_bindings vbl
 
 (* Typing of toplevel bindings *)
+
 let type_binding env rec_flag ?force_toplevel spat_sexp_list =
   let (pat_exp_list, new_env) =
     type_let
@@ -8671,6 +13357,25 @@ let type_let existential_ctx env rec_flag spat_sexp_list =
 (* Typing of toplevel expressions *)
 
 let type_expression env jkind sexp =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  Typetexp.TyVarEnv.reset ();
+  begin_def();
+  let expected = mk_expected (newvar jkind) in
+  let exp = type_expect env mode_legacy sexp expected in
+  end_def();
+  if maybe_expansive exp then lower_contravariant env exp.exp_type;
+  generalize exp.exp_type;
+=======
+  let exp =
+    with_local_level begin fun () ->
+      Typetexp.TyVarEnv.reset ();
+      let expected = mk_expected (newvar jkind) in
+      type_expect env mode_legacy sexp expected
+    end
+    ~post:(may_lower_contravariant_then_generalize env)
+  in
+>>>>>>> ocaml-flambda/flambda-backend:main
   let exp =
     with_local_level begin fun () ->
       Typetexp.TyVarEnv.reset ();
@@ -8770,9 +13475,22 @@ let report_expr_type_clash_hints exp diff =
   match exp with
   | Some (Pexp_constant const) -> report_literal_type_constraint const diff
   | Some (Pexp_apply _) -> report_partial_application diff
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | _ -> []
-
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let report_pattern_type_clash_hints
+      (type k) (pat : k pattern_desc option) diff =
+=======
 let report_pattern_type_clash_hints pat diff =
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+let report_pattern_type_clash_hints pat diff =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Some (Tpat_constant const) -> report_literal_type_constraint const diff
+=======
+  | Some (Ppat_constant const) -> report_literal_type_constraint const diff
+>>>>>>> ocaml-flambda/flambda-backend:main
   match pat with
   | Some (Ppat_constant const) -> report_literal_type_constraint const diff
   | _ -> []
@@ -8966,6 +13684,42 @@ let report_too_many_arg_error ~funct ~func_ty ~previous_arg_loc
      @ It is applied to too many arguments@]"
     report_this_function funct Printtyp.type_expr func_ty
 
+let report_this_function ppf funct =
+  if Typedtree.exp_is_nominal funct then
+    let pexp = Untypeast.untype_expression funct in
+    Format.fprintf ppf "The function '%a'" Pprintast.expression pexp
+  else Format.fprintf ppf "This function"
+
+let report_too_many_arg_error ~funct ~func_ty ~previous_arg_loc
+    ~extra_arg_loc ~returns_unit loc =
+  let open Location in
+  let cnum_offset off (pos : Lexing.position) =
+    { pos with pos_cnum = pos.pos_cnum + off }
+  in
+  let app_loc =
+    (* Span the application, including the extra argument. *)
+    { loc_start = loc.loc_start;
+      loc_end = extra_arg_loc.loc_end;
+      loc_ghost = false }
+  and tail_loc =
+    (* Possible location for a ';'. The location is widened to overlap the end
+       of the argument. *)
+    let arg_end = previous_arg_loc.loc_end in
+    { loc_start = cnum_offset ~-1 arg_end;
+      loc_end = cnum_offset ~+1 arg_end;
+      loc_ghost = false }
+  in
+  let hint_semicolon = if returns_unit then [
+      msg ~loc:tail_loc "@{<hint>Hint@}: Did you forget a ';'?";
+    ] else [] in
+  let sub = hint_semicolon @ [
+    msg ~loc:extra_arg_loc "This extra argument is not expected.";
+  ] in
+  errorf ~loc:app_loc ~sub
+    "@[<v>@[<2>%a has type@ %a@]\
+     @ It is applied to too many arguments@]"
+    report_this_function funct Printtyp.type_expr func_ty
+
 let report_error ~loc env = function
   | Constructor_arity_mismatch(lid, expected, provided) ->
       Location.errorf ~loc
@@ -9023,10 +13777,38 @@ let report_error ~loc env = function
         Tarrow _ ->
           let returns_unit = match get_desc res_ty with
             | Tconstr (p, _, _) -> Path.same p Predef.path_unit
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             | _ -> false
           in
           report_too_many_arg_error ~funct ~func_ty ~previous_arg_loc
             ~extra_arg_loc ~returns_unit loc
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+           fprintf ppf "This expression has type")
+        (function ppf ->
+           fprintf ppf "but an expression was expected of type");
+  | Apply_non_function typ ->
+      begin match get_desc typ with
+        Tarrow _ ->
+          Location.errorf ~loc
+            "@[<v>@[<2>This function has type@ %a@]\
+             @ @[It is applied to too many arguments;@ %s@]@]"
+            Printtyp.type_expr typ "maybe you forgot a `;'.";
+=======
+           fprintf ppf "This expression has type")
+        (function ppf ->
+           fprintf ppf "but an expression was expected of type");
+  | Apply_non_function {
+      funct; func_ty; res_ty; previous_arg_loc; extra_arg_loc
+    } ->
+      begin match get_desc func_ty with
+        Tarrow _ ->
+          let returns_unit = match get_desc res_ty with
+            | Tconstr (p, _, _) -> Path.same p Predef.path_unit
+            | _ -> false
+          in
+          report_too_many_arg_error ~funct ~func_ty ~previous_arg_loc
+            ~extra_arg_loc ~returns_unit loc
+>>>>>>> ocaml-flambda/flambda-backend:main
       | _ ->
           Location.errorf ~loc "@[<v>@[<2>This expression has type@ %a@]@ %s@]"
             Printtyp.type_expr func_ty

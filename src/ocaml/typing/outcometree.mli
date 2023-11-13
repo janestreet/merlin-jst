@@ -57,7 +57,7 @@ type out_value =
   | Oval_variant of string * out_value option
 
 type out_jkind =
-  | Olay_const of Jane_asttypes.const_jkind
+  | Olay_const of Jkind.const
   | Olay_var of string
 
 type out_type_param =
@@ -82,16 +82,35 @@ type out_type =
   | Otyp_abstract
   | Otyp_open
   | Otyp_alias of {non_gen:bool; aliased:out_type; alias:string}
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Otyp_arrow of string * out_alloc_mode * out_type * out_alloc_mode * out_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Otyp_class of bool * out_ident * out_type list
+=======
+  | Otyp_class of out_ident * out_type list
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Otyp_class of out_ident * out_type list
   | Otyp_constr of out_ident * out_type list
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Otyp_manifest of out_type * out_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Otyp_object of (string * out_type) list * bool option
+=======
+  | Otyp_object of { fields: (string * out_type) list; open_row:bool}
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Otyp_object of { fields: (string * out_type) list; open_row:bool}
   | Otyp_record of (string * out_mutable_or_global * out_type) list
   | Otyp_stuff of string
   | Otyp_sum of out_constructor list
   | Otyp_tuple of out_type list
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Otyp_var of bool * string
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Otyp_variant of
+      bool * out_variant * bool * (string list) option
+=======
+  | Otyp_variant of out_variant * bool * (string list) option
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Otyp_variant of out_variant * bool * (string list) option
   | Otyp_poly of out_vars_jkinds * out_type
   | Otyp_module of out_ident * (string * out_type) list

@@ -177,6 +177,29 @@ let print_with_scope ppf id = print ~with_scope:true ppf id
 
 let print ppf id = print ~with_scope:false ppf id
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+type 'a tbl =
+    Empty
+  | Node of 'a tbl * 'a data * 'a tbl * int
+=======
+(* For the documentation of ['a Ident.tbl], see ident.mli.
+
+   The implementation is a copy-paste specialization of
+   a balanced-tree implementation similar to Map.
+     ['a tbl]
+   is a slightly more compact version of
+     [(Ident.t * 'a) list Map.Make(String)]
+
+   This implementation comes from Caml Light where duplication was
+   unavoidable in absence of functors. It works well enough, and so
+   far we have not had strong incentives to do the deduplication work
+   (implementation, tests, benchmarks, etc.).
+*)
+type 'a tbl =
+    Empty
+  | Node of 'a tbl * 'a data * 'a tbl * int
+>>>>>>> ocaml-flambda/flambda-backend:main
 (* For the documentation of ['a Ident.tbl], see ident.mli.
 
    The implementation is a copy-paste specialization of
@@ -321,6 +344,21 @@ let rec find_all n = function
         (k.ident, k.data) :: get_all k.previous
       else
         find_all n (if c < 0 then l else r)
+
+let get_all_seq k () =
+  Seq.unfold (Option.map (fun k -> (k.ident, k.data), k.previous))
+    k ()
+
+let rec find_all_seq n tbl () =
+  match tbl with
+  | Empty -> Seq.Nil
+  | Node(l, k, r, _) ->
+      let c = String.compare n (name k.ident) in
+      if c = 0 then
+        Seq.Cons((k.ident, k.data), get_all_seq k.previous)
+      else
+        find_all_seq n (if c < 0 then l else r) ()
+
 
 let get_all_seq k () =
   Seq.unfold (Option.map (fun k -> (k.ident, k.data), k.previous))

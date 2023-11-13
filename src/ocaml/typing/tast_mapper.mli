@@ -14,7 +14,6 @@
 (**************************************************************************)
 
 open Asttypes
-open Jane_asttypes
 open Typedtree
 
 (** {1 A generic Typedtree mapper} *)
@@ -39,8 +38,15 @@ type mapper =
     expr: mapper -> expression -> expression;
     extension_constructor: mapper -> extension_constructor ->
       extension_constructor;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     jkind_annotation: mapper -> const_jkind -> const_jkind;
     location: mapper -> Location.t -> Location.t;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    jkind_annotation: mapper -> const_jkind -> const_jkind;
+=======
+    jkind_annotation: mapper -> Jkind.annotation -> Jkind.annotation;
+    location: mapper -> Location.t -> Location.t;
+>>>>>>> ocaml-flambda/flambda-backend:main
     module_binding: mapper -> module_binding -> module_binding;
     module_coercion: mapper -> module_coercion -> module_coercion;
     module_declaration: mapper -> module_declaration -> module_declaration;

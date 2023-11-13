@@ -75,6 +75,7 @@ let constructor_args ~current_unit priv cd_args cd_res path rep =
           type_arity = arity;
           type_kind = Type_record (lbls, rep);
           type_jkind = jkind;
+          type_jkind_annotation = None;
           type_private = priv;
           type_manifest = None;
           type_variance = Variance.unknown_signature ~injective:true ~arity;
@@ -129,7 +130,13 @@ let constructor_descrs ~current_unit ty_path decl cstrs rep =
       (* This is the representation of the inner record, IF there is one *)
       let record_repr = Record_inlined (cstr_tag, rep) in
       constructor_args ~current_unit decl.type_private cd_args cd_res
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         (Path.Pextra_ty (ty_path, Pcstr_ty cstr_name)) record_repr
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        (Path.Pdot (ty_path, cstr_name)) record_repr
+=======
+        Path.(Pextra_ty (ty_path, Pcstr_ty cstr_name)) record_repr
+>>>>>>> ocaml-flambda/flambda-backend:main
     in
     let cstr =
       { cstr_name;
@@ -164,7 +171,14 @@ let extension_descr ~current_unit path_ext ext =
   let cstr_tag = Extension (path_ext, ext.ext_arg_jkinds) in
   let existentials, cstr_args, cstr_inlined =
     constructor_args ~current_unit ext.ext_private ext.ext_args ext.ext_ret_type
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       Path.(Pextra_ty (path_ext, Pext_ty)) (Record_inlined (cstr_tag, Variant_extensible))
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      path_ext (Record_inlined (cstr_tag, Variant_extensible))
+=======
+      Path.(Pextra_ty (path_ext, Pext_ty))
+      (Record_inlined (cstr_tag, Variant_extensible))
+>>>>>>> ocaml-flambda/flambda-backend:main
   in
     { cstr_name = Path.last path_ext;
       cstr_res = ty_res;

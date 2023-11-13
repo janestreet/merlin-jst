@@ -18,7 +18,6 @@ Allows the implementation of typed tree inspection using open recursion
 *)
 
 open Asttypes
-open Jane_asttypes
 open Typedtree
 
 type iterator =
@@ -39,8 +38,15 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     jkind_annotation: iterator -> const_jkind -> unit;
     location: iterator -> Location.t -> unit;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    jkind_annotation: iterator -> const_jkind -> unit;
+=======
+    jkind_annotation: iterator -> Jkind.annotation -> unit;
+    location: iterator -> Location.t -> unit;
+>>>>>>> ocaml-flambda/flambda-backend:main
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
     module_declaration: iterator -> module_declaration -> unit;

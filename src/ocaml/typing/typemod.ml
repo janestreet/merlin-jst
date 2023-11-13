@@ -194,7 +194,18 @@ let type_open_ ?used_slot ?toplevel ovf env loc lid =
       assert false
 
 let initial_env ~loc ~initially_opened_module
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     ~open_implicit_modules =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let env =
+    if safe_string then
+      Lazy.force Env.initial_safe_string
+    else
+      Lazy.force Env.initial_unsafe_string
+  in
+=======
+  let env = Lazy.force Env.initial in
+>>>>>>> ocaml-flambda/flambda-backend:main
   let env = Lazy.force Env.initial in
   let open_module env m =
     let open Asttypes in
@@ -596,6 +607,7 @@ let merge_constraint initial_env loc sg lid constr =
             type_arity = arity;
             type_kind = Type_abstract Abstract_def;
             type_jkind = Jkind.value ~why:(Unknown "merge_constraint");
+            type_jkind_annotation = None;
             type_private = Private;
             type_manifest = None;
             type_variance =
@@ -1581,7 +1593,8 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
           Typedecl.transl_value_decl env item.psig_loc sdesc
         in
         Signature_names.check_value names tdesc.val_loc tdesc.val_id;
-        Env.register_uid tdesc.val_val.val_uid ~loc:tdesc.val_loc ~attributes:tdesc.val_attributes;
+        Env.register_uid tdesc.val_val.val_uid ~loc:tdesc.val_loc
+          ~attributes:tdesc.val_attributes;
         mksig (Tsig_value tdesc) env loc,
         [Sig_value(tdesc.val_id, tdesc.val_val, Exported)],
         newenv
@@ -1592,7 +1605,8 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
         List.iter (fun td ->
           Signature_names.check_type names td.typ_loc td.typ_id;
           if not (Btype.is_row_name (Ident.name td.typ_id)) then
-            Env.register_uid td.typ_type.type_uid ~loc:td.typ_loc ~attributes:td.typ_attributes
+            Env.register_uid td.typ_type.type_uid ~loc:td.typ_loc
+              ~attributes:td.typ_attributes
         ) decls;
         let newenv = Env.update_short_paths newenv in
         let sig_items =
@@ -1637,7 +1651,8 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
         let constructors = tyext.tyext_constructors in
         List.iter (fun ext ->
           Signature_names.check_typext names ext.ext_loc ext.ext_id;
-          Env.register_uid ext.ext_type.ext_uid ~loc:ext.ext_loc ~attributes:ext.ext_attributes
+          Env.register_uid ext.ext_type.ext_uid ~loc:ext.ext_loc
+            ~attributes:ext.ext_attributes
         ) constructors;
         let tsg = map_ext (fun es ext ->
             Sig_typext(ext.ext_id, ext.ext_type, es, Exported)
@@ -1687,9 +1702,9 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
             in
             let newenv = Env.update_short_paths newenv in
             Signature_names.check_module names pmd.pmd_name.loc id;
-            Env.register_uid md.md_uid ~loc:md.md_loc ~attributes:md.md_attributes;
             Some id, newenv
         in
+        Env.register_uid md.md_uid ~loc:md.md_loc ~attributes:md.md_attributes;
         let sig_item =
           mksig (Tsig_module {md_id=id; md_name=pmd.pmd_name;
                               md_presence=pres; md_type=tmty;
@@ -1771,7 +1786,8 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
     | Psig_modtype pmtd ->
         let newenv, mtd, decl = transl_modtype_decl env pmtd in
         Signature_names.check_modtype names pmtd.pmtd_loc mtd.mtd_id;
-        Env.register_uid decl.mtd_uid ~loc:mtd.mtd_loc ~attributes:mtd.mtd_attributes;
+        Env.register_uid decl.mtd_uid ~loc:mtd.mtd_loc
+          ~attributes:mtd.mtd_attributes;
         mksig (Tsig_modtype mtd) env loc,
         [Sig_modtype (mtd.mtd_id, decl, Exported)],
         newenv
@@ -1807,7 +1823,15 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
           Signature_names.check_type names loc cls.cls_obj_id;
           Signature_names.check_class names loc cls.cls_id;
           Signature_names.check_class_type names loc cls.cls_ty_id;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           Env.register_uid cls.cls_decl.cty_uid ~loc:cls.cls_decl.cty_loc ~attributes:cls.cls_decl.cty_attributes;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          Signature_names.check_type names loc cls.cls_typesharp_id;
+          Env.register_uid cls.cls_decl.cty_uid ~loc:cls.cls_decl.cty_loc ~attributes:cls.cls_decl.cty_attributes;
+=======
+          Env.register_uid cls.cls_decl.cty_uid ~loc:cls.cls_decl.cty_loc
+            ~attributes:cls.cls_decl.cty_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
         ) classes;
         let tsg =
           map_rec (fun rs cls ->
@@ -1840,7 +1864,17 @@ and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signat
             let open Typeclass in
             [Sig_class_type(decl.clsty_ty_id, decl.clsty_ty_decl, rs,
                             Exported);
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
              Sig_type(decl.clsty_obj_id, decl.clsty_obj_abbr, rs, Exported)]
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+             Sig_type(decl.clsty_obj_id, decl.clsty_obj_abbr, rs, Exported);
+             Sig_type(decl.clsty_typesharp_id, decl.clsty_abbr, rs,
+                      Exported)
+            ]
+=======
+             Sig_type(decl.clsty_obj_id, decl.clsty_obj_abbr, rs, Exported);
+            ]
+>>>>>>> ocaml-flambda/flambda-backend:main
           ) classes []
           |> List.flatten
         in
@@ -2008,9 +2042,17 @@ let rec path_of_module mexp =
       Papply(path_of_module funct, path_of_module arg)
   | Tmod_constraint (mexp, _, _, _) ->
       path_of_module mexp
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | (Tmod_structure _ | Tmod_functor _ | Tmod_apply_unit _ | Tmod_unpack _ |
     Tmod_apply _ | Tmod_hole) ->
     raise Not_a_path
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | _ -> raise Not_a_path
+=======
+  | (Tmod_structure _ | Tmod_functor _ | Tmod_apply_unit _ | Tmod_unpack _ |
+    Tmod_apply _) ->
+    raise Not_a_path
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let path_of_module mexp =
  try Some (path_of_module mexp) with Not_a_path -> None
@@ -2019,9 +2061,17 @@ let path_of_module mexp =
    do not contain non-generalized type variable *)
 
 let rec nongen_modtype env f = function
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     Mty_ident _ -> None
   | Mty_alias _ -> None
   | Mty_for_hole -> None
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    Mty_ident _ -> false
+  | Mty_alias _ -> false
+=======
+    Mty_ident _ -> None
+  | Mty_alias _ -> None
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Mty_signature sg ->
       let env = Env.add_signature sg env in
       List.find_map (nongen_signature_item env f) sg
@@ -2051,21 +2101,64 @@ let check_nongen_modtype env loc mty =
         Non_generalizable_module { vars; item; mty }
       in
       raise(Error(loc, env, error))
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     )
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Mty_strengthen (mty,_ ,_) -> nongen_modtype env f mty
+
+and nongen_signature_item env f = function
+    Sig_value(_id, desc, _) -> f env desc.val_type
+  | Sig_module(_id, _, md, _, _) -> nongen_modtype env f md.md_type
+  | _ -> false
+=======
+  | Mty_strengthen (mty,_ ,_) -> nongen_modtype env f mty
+
+and nongen_signature_item env f = function
+  | Sig_value(_id, desc, _) ->
+      f env desc.val_type
+      |> Option.map (fun vars -> (vars, desc))
+  | Sig_module(_id, _, md, _, _) -> nongen_modtype env f md.md_type
+  | _ -> None
+
+let check_nongen_modtype env loc mty =
+  nongen_modtype env Ctype.nongen_vars_in_schema mty
+  |> Option.iter (fun (vars, item) ->
+      let vars = Btype.TypeSet.elements vars in
+      let error =
+        Non_generalizable_module { vars; item; mty }
+      in
+      raise(Error(loc, env, error))
+    )
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let check_nongen_signature_item env sig_item =
   match sig_item with
     Sig_value(_id, vd, _) ->
       Ctype.nongen_vars_in_schema env vd.val_type
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       |> Option.iter (fun vars ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      if nongen_modtype env Ctype.nongen_schema md.md_type then
+        raise(Error(md.md_loc, env, Non_generalizable_module md.md_type))
+=======
+      check_nongen_modtype env md.md_loc md.md_type
+>>>>>>> ocaml-flambda/flambda-backend:main
           let vars = Btype.TypeSet.elements vars in
           let error =
             Non_generalizable { vars; expression = vd.val_type }
           in
           raise (Error (vd.val_loc, env, error))
         )
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Sig_module (_id, _, md, _, _) ->
       check_nongen_modtype env md.md_loc md.md_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let rm _env ty = Ctype.remove_mode_and_jkind_variables ty; false in
+  List.exists (nongen_signature_item env rm) sg |> ignore
+=======
+  let rm _env ty = Ctype.remove_mode_and_jkind_variables ty; None in
+  List.find_map (nongen_signature_item env rm) sg |> ignore
+>>>>>>> ocaml-flambda/flambda-backend:main
   | _ -> ()
 
 let check_nongen_signature env sg =
@@ -2323,9 +2416,43 @@ let wrap_constraint_with_shape env mark arg mty
 type argument_summary = {
   is_syntactic_unit: bool;
   arg: Typedtree.module_expr;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   path: Path.t option;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  arg_is_syntactic_unit: bool;
+  arg: Typedtree.module_expr;
+  arg_path: Path.t option;
+  shape: Shape.t
+=======
+  arg: argument_summary option (* None for () *)
+>>>>>>> ocaml-flambda/flambda-backend:main
   shape: Shape.t
 }
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let simplify_app_summary app_view =
+  let mty = app_view.arg.mod_type in
+  match app_view.arg_is_syntactic_unit , app_view.arg_path with
+  | true,   _ -> Includemod.Error.Unit, mty
+  | false, Some p -> Includemod.Error.Named p, mty
+  | false, None -> Includemod.Error.Anonymous, mty
+
+let rec type_module ?(alias=false) sttn funct_body anchor env smod =
+  Builtin_attributes.warning_scope smod.pmod_attributes
+=======
+let simplify_app_summary app_view = match app_view.arg with
+  | None ->
+    Includemod.Error.Unit, Mty_signature []
+  | Some arg ->
+    let mty = arg.arg.mod_type in
+    match arg.is_syntactic_unit , arg.path with
+    | true , _      -> Includemod.Error.Empty_struct, mty
+    | false, Some p -> Includemod.Error.Named p, mty
+    | false, None   -> Includemod.Error.Anonymous, mty
+
+let rec type_module ?(alias=false) sttn funct_body anchor env smod =
+  Builtin_attributes.warning_scope smod.pmod_attributes
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 type application_summary = {
   loc: Location.t;
@@ -2489,9 +2616,30 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
   | Pmod_unpack sexp ->
       let exp =
         Ctype.with_local_level_if_principal
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           (fun () -> Typecore.type_exp env sexp)
           ~post:Typecore.generalize_structure_exp
       in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      },
+      final_shape
+  | Pmod_unpack sexp ->
+      if !Clflags.principal then Ctype.begin_def ();
+      let exp = Typecore.type_exp env sexp in
+      if !Clflags.principal then begin
+        Ctype.end_def ();
+        Ctype.generalize_structure exp.exp_type
+      end;
+=======
+      },
+      final_shape
+  | Pmod_unpack sexp ->
+      let exp =
+        Ctype.with_local_level_if_principal
+          (fun () -> Typecore.type_exp env sexp)
+          ~post:Typecore.generalize_structure_exp
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
       let mty =
         match get_desc (Ctype.expand_head env exp.exp_type) with
           Tpackage (p, fl) ->
@@ -2552,23 +2700,74 @@ and type_application loc strengthen funct_body env smod =
           attributes = smod.pmod_attributes;
           f_loc = f.pmod_loc;
           arg = None
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         } in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    match smod.pmod_desc with
+    | Pmod_apply(f, sarg) ->
+        let arg, shape = type_module true funct_body None env sarg in
+        let summary =
+          { loc=smod.pmod_loc;
+            attributes=smod.pmod_attributes;
+            f_loc = f.pmod_loc;
+            arg_is_syntactic_unit = sarg.pmod_desc = Pmod_structure [];
+            arg;
+            arg_path = path_of_module arg;
+            shape
+          }
+        in
+=======
+    match smod.pmod_desc with
+    | Pmod_apply(f, sarg) ->
+        let arg, shape = type_module true funct_body None env sarg in
+        let summary = {
+          loc = smod.pmod_loc;
+          attributes = smod.pmod_attributes;
+          f_loc = f.pmod_loc;
+          arg = Some {
+            is_syntactic_unit = sarg.pmod_desc = Pmod_structure [];
+            arg;
+            path = path_of_module arg;
+            shape;
+          }
+        } in
+        extract_application funct_body env (summary::sargs) f
+    | Pmod_apply_unit f ->
+        let summary = {
+          loc = smod.pmod_loc;
+          attributes = smod.pmod_attributes;
+          f_loc = f.pmod_loc;
+          arg = None
+        } in
+>>>>>>> ocaml-flambda/flambda-backend:main
         extract_application funct_body env (summary::sargs) f
     | _ -> smod, sargs
   in
   let sfunct, args = extract_application funct_body env [] smod in
   let funct, funct_shape =
     let has_path { arg } = match arg with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       | None | Some { path = None } -> false
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+    let strengthen = strengthen && List.for_all has_path args in
+>>>>>>> ocaml-flambda/flambda-backend:main
       | Some { path = Some _ } -> true
     in
     let strengthen = strengthen && List.for_all has_path args in
     type_module strengthen funct_body None env sfunct
   in
   List.fold_left (type_one_application ~ctx:(loc, funct, args) funct_body env)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     (funct, funct_shape) args
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    funct_body env (funct, funct_shape)  app_view =
+=======
+    funct_body env (funct, funct_shape) app_view =
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 and type_one_application ~ctx:(apply_loc,md_f,args)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     funct_body env (funct, funct_shape) app_view =
   match Mtype.scrape_alias env funct.mod_type with
   | Mty_functor (Unit, mty_res) ->
@@ -2583,21 +2782,94 @@ and type_one_application ~ctx:(apply_loc,md_f,args)
             Builtin_attributes.warning_scope arg.arg.mod_attributes @@ fun () ->
             Location.prerr_warning arg.arg.mod_loc
               Warnings.Generative_application_expects_unit
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      if not app_view.arg_is_syntactic_unit then
+        raise (Error (app_view.f_loc, env, Apply_generative));
+=======
+      begin match app_view.arg with
+        | None -> ()
+        | Some arg ->
+          if arg.is_syntactic_unit then
+            (* this call to warning_scope allows e.g.
+               [ F (struct end [@warning "-73"]) ]
+               not to warn; useful when generating code that must
+               work over multiple versions of OCaml *)
+            Builtin_attributes.warning_scope arg.arg.mod_attributes @@ fun () ->
+            Location.prerr_warning arg.arg.mod_loc
+              Warnings.Generative_application_expects_unit
           else
             raise (Error (app_view.f_loc, env, Apply_generative));
       end;
+>>>>>>> ocaml-flambda/flambda-backend:main
+          else
+            raise (Error (app_view.f_loc, env, Apply_generative));
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+      end;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      { mod_desc = Tmod_apply(funct, app_view.arg, Tcoerce_none);
+=======
+      { mod_desc = Tmod_apply_unit funct;
+>>>>>>> ocaml-flambda/flambda-backend:main
       if funct_body && Mtype.contains_type env funct.mod_type then
         raise (Error (apply_loc, env, Not_allowed_in_functor_body));
       { mod_desc = Tmod_apply_unit funct;
         mod_type = mty_res;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         mod_env = env;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      Shape.app funct_shape ~arg:app_view.shape
+=======
+      Shape.app funct_shape ~arg:Shape.dummy_mod
+>>>>>>> ocaml-flambda/flambda-backend:main
         mod_attributes = app_view.attributes;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         mod_loc = funct.mod_loc },
       Shape.app funct_shape ~arg:Shape.dummy_mod
   | Mty_functor (Named (param, mty_param), mty_res) as mty_functor ->
       let apply_error () =
         let args = List.map simplify_app_summary args in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let coercion =
+        try
+          Includemod.modtypes
+            ~loc:app_view.arg.mod_loc ~mark:Mark_both env
+            app_view.arg.mod_type mty_param
+        with Includemod.Error _ ->
+          let args = List.map simplify_app_summary args in
+          let mty_f = md_f.mod_type in
+          let lid_app = None in
+          raise(Includemod.Apply_error {loc=apply_loc;env;lid_app;mty_f;args})
+=======
+      let apply_error () =
+        let args = List.map simplify_app_summary args in
         let mty_f = md_f.mod_type in
+        let lid_app = None in
+        raise(Includemod.Apply_error {loc=apply_loc;env;lid_app;mty_f;args})
+      in
+      begin match app_view with
+      | { arg = None; _ } -> apply_error ()
+      | { loc = app_loc; attributes = app_attributes;
+          arg = Some { shape = arg_shape; path = arg_path; arg } } ->
+      let coercion =
+        try Includemod.modtypes
+              ~loc:arg.mod_loc ~mark:Mark_both env arg.mod_type mty_param
+        with Includemod.Error _ -> apply_error ()
+>>>>>>> ocaml-flambda/flambda-backend:main
+        let mty_f = md_f.mod_type in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let mty_appl =
+        match app_view.arg_path with
+        | Some path ->
+            let scope = Ctype.create_scope () in
+            let subst =
+=======
+      let mty_appl =
+        match arg_path with
+        | Some path ->
+            let scope = Ctype.create_scope () in
+            let subst =
+>>>>>>> ocaml-flambda/flambda-backend:main
         let lid_app = None in
         Includemod.Apply_error {loc=apply_loc;env;lid_app;mty_f;args}
       in
@@ -2637,20 +2909,38 @@ and type_one_application ~ctx:(apply_loc,md_f,args)
                   let parent_env = env in
                   let env =
                     Env.add_module ~arg:true param Mp_present arg.mod_type env
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
                   in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                  check_well_formed_module env app_view.loc
+=======
+                  check_well_formed_module env app_loc
+>>>>>>> ocaml-flambda/flambda-backend:main
                   check_well_formed_module env app_loc
                     "the signature of this functor application" mty_res;
                   try Mtype.nondep_supertype env [param] mty_res
                   with Ctype.Nondep_cannot_erase _ ->
                     let error = Cannot_eliminate_dependency
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
                                   (Functor_applied, mty_functor) in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                    raise (Error(app_view.loc, env, error))
+=======
+                    raise (Error(app_loc, env, error))
+>>>>>>> ocaml-flambda/flambda-backend:main
                     raise (Error(app_loc, parent_env, error))
             in
             (* TODO(merlin): we could perhaps log the "fatal error" cases...
                not sure it's worth the effort. *)
             (*
             begin match
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
               Includemod.modtypes
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                ~loc:app_view.loc ~mark:Mark_neither env mty_res nondep_mty
+=======
+                ~loc:app_loc ~mark:Mark_neither env mty_res nondep_mty
+>>>>>>> ocaml-flambda/flambda-backend:main
                 ~loc:app_loc ~mark:Mark_neither env mty_res nondep_mty
             with
             | Tcoerce_none -> ()
@@ -2669,10 +2959,21 @@ and type_one_application ~ctx:(apply_loc,md_f,args)
         "the signature of this functor application" mty_appl;
       { mod_desc = Tmod_apply(funct, arg, coercion);
         mod_type = mty_appl;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         mod_env = env;
         mod_attributes = app_attributes;
         mod_loc = app_loc },
       Shape.app ~arg:arg_shape funct_shape
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        mod_attributes = app_view.attributes;
+        mod_loc = app_view.loc },
+      Shape.app ~arg:app_view.shape funct_shape
+=======
+        mod_attributes = app_attributes;
+        mod_loc = app_loc },
+      Shape.app ~arg:arg_shape funct_shape
+    end
+>>>>>>> ocaml-flambda/flambda-backend:main
     end
   | Mty_alias path ->
       raise(Error(app_view.f_loc, env, Cannot_scrape_alias path))
@@ -2850,7 +3151,8 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
               Signature_names.check_value names first_loc id;
               let vd =  Env.find_value (Pident id) newenv in
               let vd = Subst.Lazy.force_value_description vd in
-              Env.register_uid vd.val_uid ~loc:vd.val_loc ~attributes:vd.val_attributes;
+              Env.register_uid vd.val_uid ~loc:vd.val_loc
+                ~attributes:vd.val_attributes;
               Sig_value(id, vd, Exported) :: acc,
               Shape.Map.add_value shape_map id vd.val_uid
             )
@@ -2864,7 +3166,8 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
     | Pstr_primitive sdesc ->
         let (desc, newenv) = Typedecl.transl_value_decl env loc sdesc in
         Signature_names.check_value names desc.val_loc desc.val_id;
-        Env.register_uid desc.val_val.val_uid ~loc:desc.val_val.val_loc ~attributes:desc.val_val.val_attributes;
+        Env.register_uid desc.val_val.val_uid ~loc:desc.val_val.val_loc
+          ~attributes:desc.val_val.val_attributes;
         Tstr_primitive desc,
         [Sig_value(desc.val_id, desc.val_val, Exported)],
         Shape.Map.add_value shape_map desc.val_id desc.val_val.val_uid,
@@ -2883,7 +3186,8 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
           (fun shape_map -> function
             | Sig_type (id, vd, _, _) ->
               if not (Btype.is_row_name (Ident.name id)) then begin
-                Env.register_uid vd.type_uid ~loc:vd.type_loc ~attributes:vd.type_attributes;
+                Env.register_uid vd.type_uid ~loc:vd.type_loc
+                  ~attributes:vd.type_attributes;
                 Shape.Map.add_type shape_map id vd.type_uid
               end else shape_map
             | _ -> assert false
@@ -2902,7 +3206,8 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         let constructors = tyext.tyext_constructors in
         let shape_map = List.fold_left (fun shape_map ext ->
             Signature_names.check_typext names ext.ext_loc ext.ext_id;
-            Env.register_uid ext.ext_type.ext_uid ~loc:ext.ext_loc ~attributes:ext.ext_attributes;
+            Env.register_uid ext.ext_type.ext_uid ~loc:ext.ext_loc
+              ~attributes:ext.ext_attributes;
             Shape.Map.add_extcons shape_map ext.ext_id ext.ext_type.ext_uid
           ) shape_map constructors
         in
@@ -3077,7 +3382,8 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         let newenv, mtd, decl = transl_modtype_decl env pmtd in
         let newenv = Env.update_short_paths newenv in
         Signature_names.check_modtype names pmtd.pmtd_loc mtd.mtd_id;
-        Env.register_uid decl.mtd_uid ~loc:decl.mtd_loc ~attributes:decl.mtd_attributes;
+        Env.register_uid decl.mtd_uid ~loc:decl.mtd_loc
+          ~attributes:decl.mtd_attributes;
         let id = mtd.mtd_id in
         let map = Shape.Map.add_module_type shape_map id decl.mtd_uid in
         Tstr_modtype mtd, [Sig_modtype (id, decl, Exported)], map, newenv
@@ -3097,7 +3403,15 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
             Signature_names.check_class names loc cls.cls_id;
             Signature_names.check_class_type names loc cls.cls_ty_id;
             Signature_names.check_type names loc cls.cls_obj_id;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             Env.register_uid cls.cls_decl.cty_uid ~loc ~attributes:cls.cls_decl.cty_attributes;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            Signature_names.check_type names loc cls.cls_typesharp_id;
+            Env.register_uid cls.cls_decl.cty_uid ~loc ~attributes:cls.cls_decl.cty_attributes;
+=======
+            Env.register_uid cls.cls_decl.cty_uid ~loc
+              ~attributes:cls.cls_decl.cty_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
             let map f id acc = f acc id cls.cls_decl.cty_uid in
             map Shape.Map.add_class cls.cls_id acc
             |> map Shape.Map.add_class_type cls.cls_ty_id
@@ -3160,16 +3474,60 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         Builtin_attributes.mark_alert_used attr;
         Tstr_attribute attr, [], shape_map, env
   in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let toplevel_sig =
     (* See comment on [type_structure] above *)
     sig_acc
   in
   let rec type_struct env shape_map sstr str_acc sig_acc sig_acc_include_functor =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let toplevel_sig = Option.value toplevel ~default:[] in
+  let rec type_struct env shape_map sstr str_acc sig_acc sig_acc_include_functor =
+=======
+  let toplevel_sig = Option.value toplevel ~default:[] in
+  let rec type_struct env shape_map sstr str_acc sig_acc
+            sig_acc_include_functor =
+>>>>>>> ocaml-flambda/flambda-backend:main
     match sstr with
     | [] ->
       (List.rev str_acc, List.rev sig_acc, shape_map, env)
     | pstr :: srem ->
         let previous_saved_types = Cmt_format.get_saved_types () in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        let desc, sg, shape_map, new_env = type_str_item env shape_map pstr sig_acc_include_functor in
+        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+                                    :: previous_saved_types);
+        type_struct new_env shape_map srem (str :: str_acc) (List.rev_append sg sig_acc)
+          (List.rev_append sg sig_acc_include_functor)
+  in
+  let previous_saved_types = Cmt_format.get_saved_types () in
+  let run () =
+    let (items, sg, shape_map, final_env) = type_struct env Shape.Map.empty sstr [] [] toplevel_sig in
+    let str = { str_items = items; str_type = sg; str_final_env = final_env } in
+    Cmt_format.set_saved_types
+      (Cmt_format.Partial_structure str :: previous_saved_types);
+=======
+        let desc, sg, shape_map, new_env =
+          type_str_item env shape_map pstr sig_acc_include_functor
+        in
+        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+                                    :: previous_saved_types);
+        type_struct new_env shape_map srem (str :: str_acc)
+          (List.rev_append sg sig_acc)
+          (List.rev_append sg sig_acc_include_functor)
+  in
+  let previous_saved_types = Cmt_format.get_saved_types () in
+  let run () =
+    let (items, sg, shape_map, final_env) =
+      type_struct env Shape.Map.empty sstr [] [] toplevel_sig
+    in
+    let str = { str_items = items; str_type = sg; str_final_env = final_env } in
+    Cmt_format.set_saved_types
+      (Cmt_format.Partial_structure str :: previous_saved_types);
+>>>>>>> ocaml-flambda/flambda-backend:main
         match type_str_item env shape_map pstr sig_acc_include_functor with
         | desc, sg, shape_map, new_env ->
             let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
@@ -3306,6 +3664,32 @@ let type_package env m p fl =
   (* Same as Pexp_letmodule *)
   (* remember original level *)
   let outer_scope = Ctype.get_current_level () in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  Ctype.begin_def ();
+  let modl, scope = Typetexp.TyVarEnv.with_local_scope begin fun () ->
+    let modl, _mod_shape = type_module env m in
+    let scope = Ctype.create_scope () in
+    modl, scope
+  end in
+  Mtype.lower_nongen outer_scope modl.mod_type;
+  let fl', env =
+    match fl with
+=======
+  let modl, scope =
+    Typetexp.TyVarEnv.with_local_scope begin fun () ->
+      (* type the module and create a scope in a raised level *)
+      Ctype.with_local_level begin fun () ->
+        let modl, _mod_shape = type_module env m in
+        let scope = Ctype.create_scope () in
+        modl, scope
+      end
+    end
+  in
+  Mtype.lower_nongen outer_scope modl.mod_type;
+  let fl', env =
+    match fl with
+>>>>>>> ocaml-flambda/flambda-backend:main
   let modl, scope =
     Typetexp.TyVarEnv.with_local_scope begin fun () ->
       (* type the module and create a scope in a raised level *)
@@ -3428,6 +3812,36 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
         let sourceintf =
           Filename.remove_extension sourcefile ^ !Config.interface_suffix in
         if !Clflags.cmi_file <> None || Sys.file_exists sourceintf then begin
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            try
+              Load_path.find_uncap (basename ^ ".cmi")
+            with Not_found ->
+              raise(Error(Location.in_file sourcefile, Env.empty,
+                          Interface_not_compiled sourceintf)) in
+          let dclsig =
+            Env.read_signature modulename intf_file ~add_binding:false in
+          let coercion, shape =
+            Profile.record_call "check_sig" (fun () ->
+              Includemod.compunit initial_env ~mark:Mark_positive
+=======
+            match !Clflags.cmi_file with
+            | None ->
+              let basename = modulename |> Compilation_unit.name_as_string in
+              (try
+                Load_path.find_uncap (basename ^ ".cmi")
+              with Not_found ->
+                raise(Error(Location.in_file sourcefile, Env.empty,
+                      Interface_not_compiled sourceintf)))
+            | Some cmi_file -> cmi_file
+          in
+          let dclsig =
+            Env.read_signature modulename intf_file ~add_binding:false
+          in
+          let coercion, shape =
+            Profile.record_call "check_sig" (fun () ->
+              Includemod.compunit initial_env ~mark:Mark_positive
+>>>>>>> ocaml-flambda/flambda-backend:main
           let intf_file =
             match !Clflags.cmi_file with
             | None ->
@@ -3720,6 +4134,45 @@ let report_error ~loc _env = function
         (Sig_component_kind.to_string kind) name
   | Non_generalizable { vars; expression } ->
       let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2 ] in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+           contains type variables that cannot be generalized@]" type_scheme typ
+  | Non_generalizable_module mty ->
+      Location.errorf ~loc
+        "@[The type of this module,@ %a,@ \
+           contains type variables that cannot be generalized@]" modtype mty
+  | Implementation_is_required intf_name ->
+      Location.errorf ~loc
+        "@[The interface %a@ declares values, not just types.@ \
+=======
+         contains the non-generalizable type variable(s): %a.@ %a@]"
+        prepared_type_scheme expression
+        (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
+           prepared_type_scheme) vars
+        Misc.print_see_manual manual_ref
+  | Non_generalizable_module { vars; mty; item } ->
+      let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2 ] in
+      prepare_for_printing vars;
+      add_type_to_preparation item.val_type;
+      let sub =
+        [ Location.msg ~loc:item.val_loc
+            "The type of this value,@ %a,@ \
+             contains the non-generalizable type variable(s) %a."
+            prepared_type_scheme
+            item.val_type
+            (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
+               prepared_type_scheme) vars
+        ]
+      in
+      Location.errorf ~loc ~sub
+        "@[The type of this module,@ %a,@ \
+         contains non-generalizable type variable(s).@ %a@]"
+        modtype mty
+        Misc.print_see_manual manual_ref
+  | Implementation_is_required intf_name ->
+      Location.errorf ~loc
+        "@[The interface %a@ declares values, not just types.@ \
+>>>>>>> ocaml-flambda/flambda-backend:main
       prepare_for_printing vars;
       add_type_to_preparation expression;
       Location.errorf ~loc
@@ -3766,6 +4219,79 @@ let report_error ~loc _env = function
         "@[This functor creates fresh types when applied.@ %s@]"
         "Including it is not allowed inside applicative functors."
   | Not_a_packed_module ty ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Cannot_hide_id Illegal_shadowing
+      { shadowed_item_kind; shadowed_item_id; shadowed_item_loc;
+        shadower_id; user_id; user_kind; user_loc } ->
+      let shadowed_item_kind= Sig_component_kind.to_string shadowed_item_kind in
+      Location.errorf ~loc
+        "@[<v>Illegal shadowing of included %s %a by %a@ \
+         %a:@;<1 2>%s %a came from this include@ \
+         %a:@;<1 2>The %s %s has no valid type if %a is shadowed@]"
+        shadowed_item_kind Ident.print shadowed_item_id Ident.print shadower_id
+        Location.print_loc shadowed_item_loc
+        (String.capitalize_ascii shadowed_item_kind)
+        Ident.print shadowed_item_id
+        Location.print_loc user_loc
+        (Sig_component_kind.to_string user_kind) (Ident.name user_id)
+        Ident.print shadowed_item_id
+  | Cannot_hide_id Appears_in_signature
+      { opened_item_kind; opened_item_id; user_id; user_kind; user_loc } ->
+      let opened_item_kind= Sig_component_kind.to_string opened_item_kind in
+      Location.errorf ~loc
+        "@[<v>The %s %a introduced by this open appears in the signature@ \
+         %a:@;<1 2>The %s %s has no valid type if %a is hidden@]"
+        opened_item_kind Ident.print opened_item_id
+        Location.print_loc user_loc
+        (Sig_component_kind.to_string user_kind) (Ident.name user_id)
+        Ident.print opened_item_id
+  | Invalid_type_subst_rhs ->
+      Location.errorf ~loc "Only type synonyms are allowed on the right of :="
+  | Unpackable_local_modtype_subst p ->
+=======
+  | Cannot_hide_id Illegal_shadowing
+      { shadowed_item_kind; shadowed_item_id; shadowed_item_loc;
+        shadower_id; user_id; user_kind; user_loc } ->
+      let shadowed =
+        Printtyp.namespaced_ident shadowed_item_kind shadowed_item_id
+      in
+      let shadower =
+        Printtyp.namespaced_ident shadowed_item_kind shadower_id
+      in
+      let shadowed_item_kind= Sig_component_kind.to_string shadowed_item_kind in
+      let shadowed_msg =
+        Location.msg ~loc:shadowed_item_loc
+          "@[%s %s came from this include.@]"
+          (String.capitalize_ascii shadowed_item_kind)
+          shadowed
+      in
+      let user_msg =
+        Location.msg ~loc:user_loc
+        "@[The %s %s has no valid type@ if %s is shadowed.@]"
+        (Sig_component_kind.to_string user_kind) (Ident.name user_id)
+        shadowed
+      in
+      Location.errorf ~loc ~sub:[shadowed_msg; user_msg]
+        "Illegal shadowing of included %s %s@ by %s."
+        shadowed_item_kind shadowed shadower
+  | Cannot_hide_id Appears_in_signature
+      { opened_item_kind; opened_item_id; user_id; user_kind; user_loc } ->
+      let opened_item_kind= Sig_component_kind.to_string opened_item_kind in
+      let opened_id = Ident.name opened_item_id in
+      let user_msg =
+        Location.msg ~loc:user_loc
+          "@[The %s %s has no valid type@ if %s is hidden.@]"
+        (Sig_component_kind.to_string user_kind) (Ident.name user_id)
+        opened_id
+      in
+      Location.errorf ~loc ~sub:[user_msg]
+        "The %s %s introduced by this open appears in the signature."
+        opened_item_kind opened_id
+  | Invalid_type_subst_rhs ->
+      Location.errorf ~loc "Only type synonyms are allowed on the right of :="
+  | Unpackable_local_modtype_subst p ->
+>>>>>>> ocaml-flambda/flambda-backend:main
       Location.errorf ~loc
         "This expression is not a packed module. It has type@ %a"
         type_expr ty

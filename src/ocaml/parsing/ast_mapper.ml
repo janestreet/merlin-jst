@@ -965,9 +965,33 @@ let default_mapper =
       | Pvc_coercion { ground; coercion } ->
           Pvc_coercion {
             ground = Option.map (this.typ this) ground;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             coercion = this.typ this coercion
           }
          in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+
+    value_binding =
+      (fun this {pvb_pat; pvb_expr; pvb_attributes; pvb_loc} ->
+=======
+
+
+    value_binding =
+      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_attributes; pvb_loc} ->
+         let map_ct (ct:Parsetree.value_constraint) = match ct with
+           | Pvc_constraint {locally_abstract_univars=vars; typ} ->
+               Pvc_constraint
+                 { locally_abstract_univars = List.map (map_loc this) vars;
+                   typ = this.typ this typ
+                 }
+           | Pvc_coercion { ground; coercion } ->
+               Pvc_coercion {
+                 ground = Option.map (this.typ this) ground;
+                 coercion = this.typ this coercion
+               }
+         in
+>>>>>>> ocaml-flambda/flambda-backend:main
          Vb.mk
            (this.pat this pvb_pat)
            (this.expr this pvb_expr)
@@ -1198,6 +1222,27 @@ module PpxContext = struct
       | "include_dirs" ->
           Clflags.include_dirs := get_list get_string payload
       | "load_path" ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          Load_path.init (get_list get_string payload)
+      | "open_modules" ->
+          Clflags.open_modules := get_list get_string payload
+      | "for_package" ->
+=======
+          (* Duplicates Compmisc.auto_include, since we can't reference Compmisc
+             from this module. *)
+          let auto_include find_in_dir fn =
+            if !Clflags.no_auto_include_otherlibs || !Clflags.no_std_include then
+              raise Not_found
+            else
+              let alert = Location.auto_include_alert in
+              Load_path.auto_include_otherlibs alert find_in_dir fn
+          in
+          Load_path.init ~auto_include (get_list get_string payload)
+      | "open_modules" ->
+          Clflags.open_modules := get_list get_string payload
+      | "for_package" ->
+>>>>>>> ocaml-flambda/flambda-backend:main
           (* Duplicates Compmisc.auto_include, since we can't reference Compmisc
              from this module. *)
           (* let auto_include find_in_dir fn =

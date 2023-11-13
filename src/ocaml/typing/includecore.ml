@@ -187,6 +187,20 @@ let of_kind = function
 
 type kind_mismatch = type_kind * type_kind
 
+type type_kind =
+  | Kind_abstract
+  | Kind_record
+  | Kind_variant
+  | Kind_open
+
+let of_kind = function
+  | Type_abstract _ -> Kind_abstract
+  | Type_record (_, _) -> Kind_record
+  | Type_variant (_, _) -> Kind_variant
+  | Type_open -> Kind_open
+
+type kind_mismatch = type_kind * type_kind
+
 type label_mismatch =
   | Type of Errortrace.equality_error
   | Mutability of position
@@ -468,7 +482,26 @@ let report_private_object_mismatch env ppf err =
   | Missing s -> pr "The implementation is missing the method %s" s
   | Types err -> report_type_inequality env ppf err
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let report_kind_mismatch first second ppf (kind1, kind2) =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let report_type_mismatch first second decl env ppf err =
+=======
+let report_kind_mismatch first second ppf (kind1, kind2) =
+  let pr fmt = Format.fprintf ppf fmt in
+  let kind_to_string = function
+  | Kind_abstract -> "abstract"
+  | Kind_record -> "a record"
+  | Kind_variant -> "a variant"
+  | Kind_open -> "an extensible variant" in
+  pr "%s is %s, but %s is %s."
+    (String.capitalize_ascii first)
+    (kind_to_string kind1)
+    second
+    (kind_to_string kind2)
+
+let report_type_mismatch first second decl env ppf err =
+>>>>>>> ocaml-flambda/flambda-backend:main
   let pr fmt = Format.fprintf ppf fmt in
   let kind_to_string = function
   | Kind_abstract -> "abstract"

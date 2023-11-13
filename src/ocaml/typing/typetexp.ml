@@ -18,7 +18,6 @@
 (* Typechecking of type expressions for the core language *)
 
 open Asttypes
-open Jane_asttypes
 open Misc
 open Parsetree
 open Typedtree
@@ -45,7 +44,11 @@ type cannot_quantify_reason =
    (e.g. [let f : ('a : immediate). ...]) and what the jkind was;
    it is original as compared to the inferred jkind after processing
    the body of the type *)
-type jkind_info = { original_jkind : jkind; defaulted : bool }
+type jkind_info =
+  { original_jkind : jkind;
+    jkind_annot : Jkind.annotation option;
+    defaulted : bool;
+  }
 
 type error =
   | Unbound_type_variable of string * string list
@@ -77,6 +80,7 @@ type error =
   | Non_sort of
       {vloc : sort_loc; typ : type_expr; err : Jkind.Violation.t}
   | Bad_jkind_annot of type_expr * Jkind.Violation.t
+  | Did_you_mean_unboxed of Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -97,12 +101,15 @@ module TyVarEnv : sig
   val with_univars : poly_univars -> (unit -> 'a) -> 'a
   (* evaluate with a locally extended set of univars *)
 
+  val ttyp_poly_arg : poly_univars -> (string * Jkind.annotation option) list
+  (* something suitable as an argument to [Ttyp_poly] *)
+
   val make_poly_univars : string Location.loc list -> poly_univars
   (* a version of [make_poly_univars_jkinds] that doesn't take jkinds *)
 
   val make_poly_univars_jkinds :
     context:(string -> Jkind.annotation_context) ->
-    (string Location.loc * jkind_annotation option) list -> poly_univars
+    (string Location.loc * Jane_asttypes.jkind_annotation option) list -> poly_univars
   (* see mli file *)
 
   val check_poly_univars : Env.t -> Location.t -> poly_univars -> type_expr list
@@ -135,6 +142,19 @@ module TyVarEnv : sig
        a new e.g. type signature. Optionally pass some univars that
        are in scope. *)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  val lookup_local : string -> type_expr
+    (* look up a local type variable; throws Not_found if it isn't in scope *)
+
+  val remember_used : string -> type_expr -> Location.t -> unit
+=======
+  val lookup_local :
+    row_context:type_expr option ref list -> string -> type_expr
+    (* look up a local type variable; throws Not_found if it isn't in scope *)
+
+  val remember_used : string -> type_expr -> Location.t -> unit
+>>>>>>> ocaml-flambda/flambda-backend:main
   val lookup_local :
     row_context:type_expr option ref list -> string -> type_expr
   (* look up a local type variable; throws Not_found if it isn't in scope *)
@@ -216,49 +236,166 @@ end = struct
      [used_variables], but will not be globalized in [globalize_used_variables].
   *)
   type pending_univar = {
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     univar: type_expr  (** the univar itself *);
     mutable associated: type_expr option ref list;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let assert_not_generic uvs =
+    assert (List.for_all (fun (_name, v, _lay) -> not_generic v) uvs)
+=======
+  let assert_univars uvs =
+    assert (List.for_all (fun (_name, v) -> not_generic v.univar) uvs)
+>>>>>>> ocaml-flambda/flambda-backend:main
      (** associated references to row variables that we want to generalize
        if possible *)
     jkind_info : jkind_info (** the original kind *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | (n, t, _) :: rest ->
+=======
+    | (n, t) :: rest ->
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   type poly_univars = (string * pending_univar) list
 
   let univars = ref ([] : poly_univars)
   let assert_univars uvs =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     assert (List.for_all (fun (_name, v) -> not_generic v.univar) uvs)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    assert_not_generic new_ones;
+=======
+    assert_univars new_ones;
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   let rec find_poly_univars name = function
     | [] -> raise Not_found
     | (n, t) :: rest ->
       if String.equal name n
       then t
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       else find_poly_univars name rest
 
   let with_univars new_ones f =
     assert_univars new_ones;
-    let old_univars = !univars in
-    univars := new_ones @ !univars;
-    Fun.protect
-      f
-      ~finally:(fun () -> univars := old_univars)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let mk_poly_univars_triple_with_jkind ~context var jkind =
+=======
+  let ttyp_poly_arg (poly_univars : poly_univars) = List.map
+      (fun (name, pending_univar) -> name, pending_univar.jkind_info.jkind_annot)
+      poly_univars
 
   let mk_pending_univar name jkind jkind_info =
     { univar = newvar ~name jkind; associated = []; jkind_info }
 
   let mk_poly_univars_tuple_with_jkind ~context var jkind =
-    let name = var.txt in
+>>>>>>> ocaml-flambda/flambda-backend:main
+    let old_univars = !univars in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+    univars := new_ones @ !univars;
+    Fun.protect
+      f
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
     let original_jkind = Jkind.of_annotation ~context:(context name) jkind in
     let jkind_info = { original_jkind; defaulted = false } in
+    name, newvar ~name original_jkind, jkind_info
+=======
+    let original_jkind, jkind_annot =
+      Jkind.of_annotation ~context:(context name) jkind
+    in
+    let jkind_info =
+      { original_jkind; jkind_annot = Some jkind_annot; defaulted = false }
+    in
+    name, mk_pending_univar name original_jkind jkind_info
+>>>>>>> ocaml-flambda/flambda-backend:main
+      ~finally:(fun () -> univars := old_univars)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let mk_poly_univars_triple_without_jkind var =
+=======
+  let mk_poly_univars_tuple_without_jkind var =
+>>>>>>> ocaml-flambda/flambda-backend:main
+  let mk_pending_univar name jkind jkind_info =
+    { univar = newvar ~name jkind; associated = []; jkind_info }
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+
+  let mk_poly_univars_tuple_with_jkind ~context var jkind =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    let jkind_info = { original_jkind; defaulted = true } in
+    name, newvar ~name original_jkind, jkind_info
+=======
+    let jkind_info = { original_jkind; jkind_annot = None; defaulted = true } in
+    name, mk_pending_univar name original_jkind jkind_info
+>>>>>>> ocaml-flambda/flambda-backend:main
+    let name = var.txt in
+    let original_jkind = Jkind.of_annotation ~context:(context name) jkind in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+    let jkind_info = { original_jkind; defaulted = false } in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    List.map mk_poly_univars_triple_without_jkind vars
+=======
+    List.map mk_poly_univars_tuple_without_jkind vars
+>>>>>>> ocaml-flambda/flambda-backend:main
     name, mk_pending_univar name original_jkind jkind_info
 
   let mk_poly_univars_tuple_without_jkind var =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     let name = var.txt in
     let original_jkind = Jkind.value ~why:Univar in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        | (v, None) -> mk_poly_univars_triple_without_jkind v
+        | (v, Some l) -> mk_poly_univars_triple_with_jkind ~context v l
+=======
+        | (v, None) -> mk_poly_univars_tuple_without_jkind v
+        | (v, Some l) -> mk_poly_univars_tuple_with_jkind ~context v l
+>>>>>>> ocaml-flambda/flambda-backend:main
     let jkind_info = { original_jkind; defaulted = true } in
     name, mk_pending_univar name original_jkind jkind_info
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let check_poly_univars env loc vars =
+    vars |> List.iter (fun (_, v, _) -> generalize v);
+    vars |> List.map (fun (name, ty1,
+                           ({ original_jkind; _ } as jkind_info)) ->
+      let v = Btype.proxy ty1 in
+      let cant_quantify reason =
+        raise (Error (loc, env, Cannot_quantify(name, reason)))
+      in
+      begin match get_desc v with
+      | Tvar { jkind } when not (Jkind.equate jkind original_jkind) ->
+        let reason =
+          Bad_univar_jkind { name; jkind_info; inferred_jkind = jkind }
+        in
+=======
+  let promote_generics_to_univars promoted vars =
+      List.fold_left
+        (fun acc v ->
+           match get_desc v with
+           | Tvar { name; jkind } when get_level v = Btype.generic_level ->
+               set_type_desc v (Tunivar { name; jkind });
+               v :: acc
+           | _ -> acc
+        )
+        promoted vars
+
+  let check_poly_univars env loc vars =
+    vars |> List.iter (fun (_, p) -> generalize p.univar);
+    let univars =
+      vars |> List.map (fun (name, {univar=ty1; jkind_info; _ }) ->
+      let v = Btype.proxy ty1 in
+      let cant_quantify reason =
+        raise (Error (loc, env, Cannot_quantify(name, reason)))
+      in
+      begin match get_desc v with
+      | Tvar { jkind } when
+          not (Jkind.equate jkind jkind_info.original_jkind) ->
+        let reason =
+          Bad_univar_jkind { name; jkind_info; inferred_jkind = jkind }
+        in
+>>>>>>> ocaml-flambda/flambda-backend:main
   let make_poly_univars vars =
     List.map mk_poly_univars_tuple_without_jkind vars
 
@@ -305,6 +442,27 @@ end = struct
          cant_quantify (Unified v)
       end;
       v)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+  let instance_poly_univars env loc vars =
+    let vs = check_poly_univars env loc vars in
+=======
+    in
+    (* Since we are promoting variables to univars in
+       {!promote_generics_to_univars}, even if a row variable is associated with
+       multiple univars we will promote it once, when checking the nearest
+       univar associated to this row variable.
+    *)
+    let promote_associated acc (_,v) =
+      let enclosed_rows = List.filter_map (!) v.associated in
+      promote_generics_to_univars acc enclosed_rows
+    in
+    List.fold_left promote_associated univars vars
+
+  let instance_poly_univars env loc vars =
+    let vs = check_poly_univars env loc vars in
+>>>>>>> ocaml-flambda/flambda-backend:main
     in
     (* Since we are promoting variables to univars in
        {!promote_generics_to_univars}, even if a row variable is associated with
@@ -335,12 +493,30 @@ end = struct
   let associate row_context p =
     let add l x = if List.memq x l then l else x :: l in
     p.associated <- List.fold_left add row_context p.associated
+  let associate row_context p =
+    let add l x = if List.memq x l then l else x :: l in
+    p.associated <- List.fold_left add row_context p.associated
 
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   (* throws Not_found if the variable is not in scope *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let lookup_local name =
+=======
   let lookup_local ~row_context name =
+>>>>>>> ocaml-flambda/flambda-backend:main
+  let lookup_local ~row_context name =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     try
       let p = find_poly_univars name !univars in
       associate row_context p;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      find_poly_univars name !univars
+=======
+      let p = find_poly_univars name !univars in
+      associate row_context p;
+      p.univar
+>>>>>>> ocaml-flambda/flambda-backend:main
       p.univar
     with Not_found ->
       instance (fst (TyVarMap.find name !used_variables))
@@ -416,13 +592,25 @@ let transl_modtype_longident = ref (fun _ -> assert false)
 let transl_modtype = ref (fun _ -> assert false)
 
 let sort_constraints_no_duplicates loc env l =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   List.sort
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    (fun mty (s, t) ->
+=======
+    (fun mty (s, _) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
     (fun (s1, _t1) (s2, _t2) ->
        if s1.txt = s2.txt then
          raise (Error (loc, env, Multiple_constraints_on_type s1.txt));
        compare s1.txt s2.txt)
     l
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+               ptype_manifest = if fake then None else Some t;
+=======
+               ptype_manifest = None;
+>>>>>>> ocaml-flambda/flambda-backend:main
 let create_package_mty loc p l =
   List.fold_left
     (fun mty (s, _) ->
@@ -444,6 +632,8 @@ let create_package_mty loc p l =
 
 let generalize_ctyp typ = generalize typ.ctyp_type
 
+let generalize_ctyp typ = generalize typ.ctyp_type
+
 let strict_ident c = (c = '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
 
 let validate_name = function
@@ -460,7 +650,7 @@ let valid_tyvar_name name =
   name <> "" && name.[0] <> '_'
 
 let transl_type_param_var env loc attrs name_opt
-      (jkind : jkind) (jkind_annot : const_jkind option) =
+      (jkind : jkind) jkind_annot =
   let tvar = Ttyp_var (name_opt, jkind_annot) in
   let name =
     match name_opt with
@@ -480,11 +670,11 @@ let transl_type_param_var env loc attrs name_opt
 let transl_type_param_jst env loc attrs path :
   Jane_syntax.Core_type.t -> _ =
   function
-  | Jtyp_layout (Ltyp_var { name; jkind = annot }) ->
-     let jkind =
-       Jkind.of_annotation ~context:(Type_parameter (path, name)) annot
+  | Jtyp_layout (Ltyp_var { name; jkind = jkind_annot }) ->
+     let jkind, jkind_annot =
+       Jkind.of_annotation ~context:(Type_parameter (path, name)) jkind_annot
      in
-     transl_type_param_var env loc attrs name jkind (Some annot.txt)
+     transl_type_param_var env loc attrs name jkind (Some jkind_annot)
   | Jtyp_layout (Ltyp_poly _ | Ltyp_alias _) ->
     Misc.fatal_error "non-type-variable in transl_type_param_jst"
 
@@ -515,7 +705,12 @@ let get_type_param_jkind path styp =
   match Jane_syntax.Core_type.of_ast styp with
   | None -> Jkind.of_new_sort ~why:Unannotated_type_parameter
   | Some (Jtyp_layout (Ltyp_var { name; jkind }), _attrs) ->
-    Jkind.of_annotation ~context:(Type_parameter (path, name)) jkind
+    let jkind, _ =
+      Jkind.of_annotation
+        ~context:(Type_parameter (path, name))
+        jkind
+    in
+    jkind
   | Some _ -> Misc.fatal_error "non-type-variable in get_type_param_jkind"
 
 let get_type_param_name styp =
@@ -574,18 +769,33 @@ let check_arg_type styp =
   end
 
 (* translate the ['a 'b ('c : immediate) .] part of a polytype,
-   returning something suitable as the first argument of Ttyp_poly and
-   a [poly_univars] *)
+   returning a [poly_univars] *)
 let transl_bound_vars : (_, _) Either.t -> _ =
-  let mk_one v = v.txt, None in
-  let mk_pair (v, l) = v.txt, Option.map Location.get_txt l in
   function
-  | Left vars_only -> List.map mk_one vars_only,
-                      TyVarEnv.make_poly_univars vars_only
-  | Right vars_jkinds -> List.map mk_pair vars_jkinds,
-                          TyVarEnv.make_poly_univars_jkinds
-                            ~context:(fun v -> Univar v) vars_jkinds
+  | Left vars_only -> TyVarEnv.make_poly_univars vars_only
+  | Right vars_jkinds -> TyVarEnv.make_poly_univars_jkinds
+                           ~context:(fun v -> Univar v) vars_jkinds
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let rec transl_type env policy mode styp =
+  Builtin_attributes.warning_scope styp.ptyp_attributes
+    (fun () -> transl_type_aux env policy mode styp)
+
+and transl_type_aux env policy mode styp =
+  let loc = styp.ptyp_loc in
+  let ctyp ctyp_desc ctyp_type =
+    { ctyp_desc; ctyp_type; ctyp_env = env;
+=======
+let rec transl_type env ~policy ?(aliased=false) ~row_context mode styp =
+  Builtin_attributes.warning_scope styp.ptyp_attributes
+    (fun () -> transl_type_aux env ~policy ~aliased ~row_context mode styp)
+
+and transl_type_aux env ~row_context ~aliased ~policy mode styp =
+  let loc = styp.ptyp_loc in
+  let ctyp ctyp_desc ctyp_type =
+    { ctyp_desc; ctyp_type; ctyp_env = env;
+>>>>>>> ocaml-flambda/flambda-backend:main
 let rec transl_type env ~policy ?(aliased=false) ~row_context mode styp =
   Msupport.with_saved_types
     ~warning_attribute:styp.ptyp_attributes ?save_part:None
@@ -610,7 +820,15 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
   in
   match Jane_syntax.Core_type.of_ast styp with
   | Some (etyp, attrs) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     let desc, typ = transl_type_aux_jst env ~policy ~row_context mode attrs loc etyp in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    let desc, typ = transl_type_aux_jst env policy mode attrs loc etyp in
+=======
+    let desc, typ =
+      transl_type_aux_jst env ~policy ~row_context mode attrs loc etyp
+    in
+>>>>>>> ocaml-flambda/flambda-backend:main
     ctyp desc typ
   | None ->
   match styp.ptyp_desc with
@@ -619,9 +837,17 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
        TyVarEnv.new_any_var loc env (Jkind.any ~why:Wildcard) policy
      in
      ctyp (Ttyp_var (None, None)) ty
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Ptyp_var name ->
       let desc, typ =
         transl_type_var env ~policy ~row_context styp.ptyp_loc name None
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let desc, typ = transl_type_var env policy styp.ptyp_loc name None in
+=======
+      let desc, typ =
+        transl_type_var env ~policy ~row_context styp.ptyp_loc name None
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
       in
       ctyp desc typ
   | Ptyp_arrow _ ->
@@ -686,9 +912,17 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       in
       loop mode args
   | Ptyp_tuple stl ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     assert (List.length stl >= 2);
     let ctys =
       List.map (transl_type env ~policy ~row_context Alloc.Const.legacy) stl
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    let ctys = List.map (transl_type env policy Alloc.Const.legacy) stl in
+=======
+    let ctys =
+      List.map (transl_type env ~policy ~row_context Alloc.Const.legacy) stl
+    in
+>>>>>>> ocaml-flambda/flambda-backend:main
     in
     List.iter (fun {ctyp_type; ctyp_loc} ->
       (* CR layouts v5: remove value requirement *)
@@ -718,6 +952,91 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       let args =
         List.map (transl_type env ~policy ~row_context Alloc.Const.legacy) stl
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        newconstr path (List.map (fun ctyp -> ctyp.ctyp_type) args) in
+      ctyp (Ttyp_constr (path, lid, args)) constr
+  | Ptyp_object (fields, o) ->
+      let ty, fields = transl_fields env policy o fields in
+      ctyp (Ttyp_object (fields, o)) (newobj ty)
+  | Ptyp_class(lid, stl) ->
+      let (path, decl, _is_variant) =
+        try
+          let path, decl = Env.find_type_by_name lid.txt env in
+          let rec check decl =
+            match decl.type_manifest with
+              None -> raise Not_found
+            | Some ty ->
+                match get_desc ty with
+                  Tvariant row when Btype.static_row row -> ()
+                | Tconstr (path, _, _) ->
+                    check (Env.find_type path env)
+                | _ -> raise Not_found
+          in check decl;
+          Location.deprecated styp.ptyp_loc
+            "old syntax for polymorphic variant type";
+          ignore(Env.lookup_type ~loc:lid.loc lid.txt env);
+          (path, decl,true)
+        with Not_found -> try
+          let lid2 =
+            match lid.txt with
+              Longident.Lident s     -> Longident.Lident ("#" ^ s)
+            | Longident.Ldot(r, s)   -> Longident.Ldot (r, "#" ^ s)
+            | Longident.Lapply(_, _) -> fatal_error "Typetexp.transl_type"
+          in
+          let path, decl = Env.find_type_by_name lid2 env in
+          ignore(Env.lookup_cltype ~loc:lid.loc lid.txt env);
+          (path, decl, false)
+        with Not_found ->
+          ignore (Env.lookup_cltype ~loc:lid.loc lid.txt env); assert false
+      in
+      if List.length stl <> decl.type_arity then
+        raise(Error(styp.ptyp_loc, env,
+                    Type_arity_mismatch(lid.txt, decl.type_arity,
+                                        List.length stl)));
+      let args = List.map (transl_type env policy Alloc.Const.legacy) stl in
+      let params = instance_list decl.type_params in
+      List.iter2
+        (fun (sty, cty) ty' ->
+           try unify_var env ty' cty.ctyp_type with Unify err ->
+=======
+        newconstr path (List.map (fun ctyp -> ctyp.ctyp_type) args) in
+      ctyp (Ttyp_constr (path, lid, args)) constr
+  | Ptyp_object (fields, o) ->
+      let ty, fields = transl_fields env ~policy ~row_context o fields in
+      ctyp (Ttyp_object (fields, o)) (newobj ty)
+  | Ptyp_class(lid, stl) ->
+      let (path, decl) =
+        match Env.lookup_cltype ~loc:lid.loc lid.txt env with
+        | (path, decl) -> (path, decl.clty_hash_type)
+        (* Raise a different error if it matches the name of an unboxed type *)
+        | exception
+            (Env.Error (Lookup_error (_, _, Unbound_cltype _)) as exn)
+          ->
+            let unboxed_lid : Longident.t =
+              match lid.txt with
+              | Lident s -> Lident (s ^ "#")
+              | Ldot (l, s) -> Ldot (l, s ^ "#")
+              | Lapply _ -> fatal_error "Typetexp.transl_type"
+            in
+            match Env.find_type_by_name unboxed_lid env with
+            | exception Not_found -> raise exn
+            | (_ : _ * _) ->
+                raise (Error (styp.ptyp_loc, env, Did_you_mean_unboxed lid.txt))
+      in
+      if List.length stl <> decl.type_arity then
+        raise(Error(styp.ptyp_loc, env,
+                    Type_arity_mismatch(lid.txt, decl.type_arity,
+                                        List.length stl)));
+      let args =
+        List.map (transl_type env ~policy ~row_context Alloc.Const.legacy) stl
+      in
+      let body = Option.get decl.type_manifest in
+      let (params, body) = instance_parameterized_type decl.type_params body in
+      List.iter2
+        (fun (sty, cty) ty' ->
+           try unify_var env ty' cty.ctyp_type with Unify err ->
+>>>>>>> ocaml-flambda/flambda-backend:main
       let params = instance_list decl.type_params in
       let unify_param =
         match decl.type_manifest with
@@ -761,6 +1080,68 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
         (List.combine stl args) params;
       let ty_args = List.map (fun ctyp -> ctyp.ctyp_type) args in
       let ty = Ctype.apply ~use_current_level:true env params body ty_args in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+             raise (Error(sty.ptyp_loc, env, Type_mismatch err))
+        )
+        (List.combine stl args) params;
+        let ty_args = List.map (fun ctyp -> ctyp.ctyp_type) args in
+      let ty = Ctype.expand_head env (newconstr path ty_args) in
+      let ty = match get_desc ty with
+        Tvariant row ->
+          let fields =
+            List.map
+              (fun (l,f) -> l,
+                match row_field_repr f with
+                | Rpresent oty -> rf_either_of oty
+                | _ -> f)
+              (row_fields row)
+          in
+          (* NB: row is always non-static here; more is thus never Tnil *)
+          let more =
+            TyVarEnv.new_var (Jkind.value ~why:Row_variable) policy
+          in
+          let row =
+            create_row ~fields ~more
+              ~closed:true ~fixed:None ~name:(Some (path, ty_args))
+          in
+          newty (Tvariant row)
+      | Tobject (fi, _) ->
+          let _, tv = flatten_fields fi in
+          TyVarEnv.add_pre_univar tv policy;
+          ty
+      | _ ->
+          assert false
+      in
+      ctyp (Ttyp_class (path, lid, args)) ty
+  | Ptyp_alias(st, alias) ->
+    let desc, typ = transl_type_alias env policy mode loc st (Some alias) None in
+    ctyp desc typ
+  | Ptyp_variant(fields, closed, present) ->
+      let name = ref None in
+=======
+             raise (Error(sty.ptyp_loc, env, Type_mismatch err))
+        )
+        (List.combine stl args) params;
+      let ty_args = List.map (fun ctyp -> ctyp.ctyp_type) args in
+      let ty = Ctype.apply ~use_current_level:true env params body ty_args in
+      let ty = match get_desc ty with
+        | Tobject (fi, _) ->
+            let _, tv = flatten_fields fi in
+            TyVarEnv.add_pre_univar tv policy;
+            ty
+        | _ ->
+            assert false
+      in
+      ctyp (Ttyp_class (path, lid, args)) ty
+  | Ptyp_alias(st, alias) ->
+    let desc, typ =
+      transl_type_alias env ~policy ~row_context mode loc st (Some alias) None
+    in
+    ctyp desc typ
+  | Ptyp_variant(fields, closed, present) ->
+      let name = ref None in
+>>>>>>> ocaml-flambda/flambda-backend:main
       let ty = match get_desc ty with
         | Tobject (fi, _) ->
             let _, tv = flatten_fields fi in
@@ -808,6 +1189,20 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
                    List.map
                      (transl_type env ~policy ~row_context Alloc.Const.legacy)
                      stl)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            let tl =
+              Builtin_attributes.warning_scope rf_attributes
+                (fun () ->
+                   List.map (transl_type env policy Alloc.Const.legacy) stl)
+=======
+            let tl =
+              Builtin_attributes.warning_scope rf_attributes
+                (fun () ->
+                   List.map
+                     (transl_type env ~policy ~row_context Alloc.Const.legacy)
+                     stl)
+>>>>>>> ocaml-flambda/flambda-backend:main
             in
             List.iter (fun {ctyp_type; ctyp_loc} ->
               (* CR layouts: at some point we'll allow different jkinds in
@@ -839,6 +1234,20 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
             let cty =
               transl_type env ~policy ~row_context Alloc.Const.legacy sty
             in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            add_typed_field styp.ptyp_loc l.txt f;
+              Ttag (l,c,tl)
+        | Rinherit sty ->
+          let cty = transl_type env policy Alloc.Const.legacy sty in
+=======
+            add_typed_field styp.ptyp_loc l.txt f;
+              Ttag (l,c,tl)
+        | Rinherit sty ->
+            let cty =
+              transl_type env ~policy ~row_context Alloc.Const.legacy sty
+            in
+>>>>>>> ocaml-flambda/flambda-backend:main
             let ty = cty.ctyp_type in
             let nm =
               match get_desc cty.ctyp_type with
@@ -874,7 +1283,17 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       let row_context =
         if aliased then row_context else more_slot :: row_context
       in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let tfields = List.map (add_field row_context) fields in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let tfields = List.map add_field fields in
+=======
+      let more_slot = ref None in
+      let row_context =
+        if aliased then row_context else more_slot :: row_context
+      in
+      let tfields = List.map (add_field row_context) fields in
+>>>>>>> ocaml-flambda/flambda-backend:main
       let fields = List.rev (Hashtbl.fold (fun _ p l -> p :: l) hfields []) in
       begin match present with None -> ()
       | Some present ->
@@ -897,8 +1316,15 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       let ty = newty (Tvariant (make_row more)) in
       ctyp (Ttyp_variant (tfields, closed, present)) ty
   | Ptyp_poly(vars, st) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let desc, typ =
         transl_type_poly env ~policy ~row_context mode styp.ptyp_loc
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        transl_type_poly env policy mode styp.ptyp_loc (Either.Left vars) st
+=======
+        transl_type_poly env ~policy ~row_context mode styp.ptyp_loc
+          (Either.Left vars) st
+>>>>>>> ocaml-flambda/flambda-backend:main
           (Either.Left vars) st
       in
       ctyp desc typ
@@ -921,7 +1347,32 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       let ptys =
         List.map (fun (s, pty) ->
           s, transl_type env ~policy ~row_context Alloc.Const.legacy pty
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         ) l in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    *)
+    (* CR layouts: and in the long term, rewrite all of this to eliminate
+       the [create_package_mty] hack that constructs fake source code. *)
+      let l, mty = create_package_mty true styp.ptyp_loc env (p, l) in
+      let mty = TyVarEnv.with_local_scope (fun () -> !transl_modtype env mty) in
+      let ptys = List.map (fun (s, pty) ->
+                             s, transl_type env policy Alloc.Const.legacy pty
+                          ) l in
+=======
+    *)
+    (* CR layouts: and in the long term, rewrite all of this to eliminate
+       the [create_package_mty] hack that constructs fake source code. *)
+      let loc = styp.ptyp_loc in
+      let l = sort_constraints_no_duplicates loc env l in
+      let mty = create_package_mty loc p l in
+      let mty =
+        TyVarEnv.with_local_scope (fun () -> !transl_modtype env mty) in
+      let ptys =
+        List.map (fun (s, pty) ->
+          s, transl_type env ~policy ~row_context Alloc.Const.legacy pty
+        ) l
+      in
+>>>>>>> ocaml-flambda/flambda-backend:main
       List.iter (fun (s,{ctyp_type=ty}) ->
         match
           Ctype.constrain_type_jkind env ty (Jkind.value ~why:Package_hack)
@@ -945,29 +1396,81 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
 and transl_type_aux_jst env ~policy ~row_context mode _attrs loc :
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       Jane_syntax.Core_type.t -> _ = function
   | Jtyp_layout typ ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Jtyp_layout typ -> transl_type_aux_jst_layout env policy mode loc typ
+=======
+  | Jtyp_layout typ ->
     transl_type_aux_jst_layout env ~policy ~row_context mode loc typ
+>>>>>>> ocaml-flambda/flambda-backend:main
+    transl_type_aux_jst_layout env ~policy ~row_context mode loc typ
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+and transl_type_aux_jst_layout env policy mode loc :
+=======
+and transl_type_aux_jst_layout env ~policy ~row_context mode loc :
+>>>>>>> ocaml-flambda/flambda-backend:main
 and transl_type_aux_jst_layout env ~policy ~row_context mode loc :
       Jane_syntax.Layouts.core_type -> _ = function
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Ltyp_var { name = None; jkind } ->
     let tjkind = Jkind.of_annotation ~context:(Type_wildcard loc) jkind in
     Ttyp_var (None, Some jkind.txt),
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    let tjkind = Jkind.of_annotation ~context:(Type_wildcard loc) jkind in
+    Ttyp_var (None, Some jkind.txt),
+    TyVarEnv.new_anon_var loc env tjkind policy
+=======
+    let tjkind, tjkind_annot =
+      Jkind.of_annotation ~context:(Type_wildcard loc) jkind
+    in
+    Ttyp_var (None, Some tjkind_annot),
     TyVarEnv.new_any_var loc env tjkind policy
+>>>>>>> ocaml-flambda/flambda-backend:main
+    TyVarEnv.new_any_var loc env tjkind policy
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Ltyp_var { name = Some name; jkind } ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    transl_type_var env policy loc name (Some jkind)
+=======
     transl_type_var env ~policy ~row_context loc name (Some jkind)
+>>>>>>> ocaml-flambda/flambda-backend:main
+    transl_type_var env ~policy ~row_context loc name (Some jkind)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Ltyp_poly { bound_vars; inner_type } ->
     transl_type_poly env ~policy ~row_context mode loc (Either.Right bound_vars)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    transl_type_poly env policy mode loc (Either.Right bound_vars) inner_type
+=======
+    transl_type_poly env ~policy ~row_context mode loc (Either.Right bound_vars)
       inner_type
+>>>>>>> ocaml-flambda/flambda-backend:main
+      inner_type
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Ltyp_alias { aliased_type; name; jkind } ->
     transl_type_alias env ~policy ~row_context mode loc aliased_type name
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    transl_type_alias env policy mode loc aliased_type name (Some jkind)
+=======
+    transl_type_alias env ~policy ~row_context mode loc aliased_type name
       (Some jkind)
+>>>>>>> ocaml-flambda/flambda-backend:main
+      (Some jkind)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+and transl_type_var env policy loc name jkind_annot_opt =
+=======
+and transl_type_var env ~policy ~row_context loc name jkind_annot_opt =
+>>>>>>> ocaml-flambda/flambda-backend:main
 and transl_type_var env ~policy ~row_context loc name jkind_annot_opt =
   let print_name = "'" ^ name in
   if not (valid_tyvar_name name) then
     raise (Error (loc, env, Invalid_variable_name print_name));
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let of_annot = Jkind.of_annotation ~context:(Type_variable print_name) in
   let ty = try
       let ty = TyVarEnv.lookup_local ~row_context name in
@@ -981,15 +1484,61 @@ and transl_type_var env ~policy ~row_context loc name jkind_annot_opt =
           | Error err ->
               raise (Error(jkind_annot.loc, env, Bad_jkind_annot (ty, err)))
       end;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let ty = try
+      let ty = TyVarEnv.lookup_local name in
+      begin match jkind_annot_opt with
+      | None -> ()
+      | Some jkind_annot ->
+         let jkind = of_annot jkind_annot in
+         match constrain_type_jkind env ty jkind with
+         | Ok () -> ()
+         | Error err ->
+            raise (Error(jkind_annot.loc, env, Bad_jkind_annot (ty, err)))
+      end;
       ty
-    with Not_found ->
-      let jkind = match jkind_annot_opt with
-        | None -> Jkind.any ~why:Unification_var
+=======
+  let ty, jkind_annot = try
+      let ty = TyVarEnv.lookup_local ~row_context name in
+      let jkind_annot =
+        match jkind_annot_opt with
+        | None -> None
+        | Some jkind_annot ->
+          let jkind, annot = of_annot jkind_annot in
+          match constrain_type_jkind env ty jkind with
+          | Ok () -> Some annot
+          | Error err ->
+              raise (Error(jkind_annot.loc, env, Bad_jkind_annot (ty, err)))
+      in
+      ty, jkind_annot
+>>>>>>> ocaml-flambda/flambda-backend:main
+      ty
+      let jkind, jkind_annot = match jkind_annot_opt with
+        | None -> Jkind.any ~why:Unification_var, None
+        | Some jkind_annot ->
+            let jkind, jkind_annot = of_annot jkind_annot in
+            jkind, Some jkind_annot
         | Some jkind_annot -> of_annot jkind_annot
       in
       let ty = TyVarEnv.new_var ~name jkind policy in
-      TyVarEnv.remember_used name ty loc;
+      ty, jkind_annot
+  in
+  Ttyp_var (Some name, jkind_annot), ty
+
+and transl_type_poly env ~policy ~row_context mode loc (vars : (_, _) Either.t)
+      st =
+  let typed_vars, new_univars, cty =
+    with_local_level begin fun () ->
+      let new_univars = transl_bound_vars vars in
+      let typed_vars = TyVarEnv.ttyp_poly_arg new_univars in
+      let cty = TyVarEnv.with_univars new_univars begin fun () ->
+        transl_type env ~policy ~row_context mode st
+      end in
+      (typed_vars, new_univars, cty)
+    end
+      ~post:(fun (_,_,cty) -> generalize_ctyp cty)
       ty
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   in
   Ttyp_var (Some name, Option.map Location.get_txt jkind_annot_opt), ty
 
@@ -1004,6 +1553,17 @@ and transl_type_poly env ~policy ~row_context mode loc (vars : (_, _) Either.t)
       (typed_vars, new_univars, cty)
     end
       ~post:(fun (_,_,cty) -> generalize_ctyp cty)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  Ttyp_var (Some name, Option.map Location.get_txt jkind_annot_opt), ty
+
+and transl_type_poly env policy mode loc (vars : (_, _) Either.t) st =
+  begin_def();
+  let typed_vars, new_univars = transl_bound_vars vars in
+  let cty = TyVarEnv.with_univars new_univars begin fun () ->
+    transl_type env policy mode st
+  end in
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
   in
   let ty = cty.ctyp_type in
   let ty_list = TyVarEnv.check_poly_univars env loc new_univars in
@@ -1011,33 +1571,100 @@ and transl_type_poly env ~policy ~row_context mode loc (vars : (_, _) Either.t)
   let ty' = Btype.newgenty (Tpoly(ty, ty_list)) in
   unify_var env (newvar (Jkind.any ~why:Dummy_jkind)) ty';
   Ttyp_poly (typed_vars, cty), ty'
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 and transl_type_alias env ~row_context ~policy mode alias_loc styp name_opt
       jkind_annot_opt =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+and transl_type_alias env policy mode alias_loc styp name_opt jkind_annot_opt =
+  let cty = match name_opt with
+=======
+and transl_type_alias env ~row_context ~policy mode alias_loc styp name_opt
+      jkind_annot_opt =
+  let cty, jkind_annot = match name_opt with
+>>>>>>> ocaml-flambda/flambda-backend:main
   let cty = match name_opt with
     | Some alias ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       begin try
         let t = TyVarEnv.lookup_local ~row_context alias in
         let cty =
           transl_type env ~policy ~aliased:true ~row_context mode styp
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        let t = TyVarEnv.lookup_local alias in
+        let cty = transl_type env policy mode styp in
+=======
+        let t = TyVarEnv.lookup_local ~row_context alias in
+        let cty =
+          transl_type env ~policy ~aliased:true ~row_context mode styp
+        in
+>>>>>>> ocaml-flambda/flambda-backend:main
         in
         begin try unify_var env t cty.ctyp_type with Unify err ->
           let err = Errortrace.swap_unification_error err in
           raise(Error(alias_loc, env, Alias_type_mismatch err))
-        end;
-        begin match jkind_annot_opt with
+        let jkind_annot = match jkind_annot_opt with
+        | None -> None
         | None -> ()
-        | Some jkind_annot ->
+          let jkind, annot =
           let jkind =
             Jkind.of_annotation ~context:(Type_variable alias) jkind_annot
           in
           begin match constrain_type_jkind env t jkind with
           | Ok () -> ()
           | Error err ->
-            raise (Error(jkind_annot.loc, env, Bad_jkind_annot(t, err)))
-          end
-        end;
+          end;
+          Some annot
+        in
+        cty, jkind_annot
         cty
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        if !Clflags.principal then begin_def ();
+        let jkind =
+          Jkind.(of_annotation_option_default
+            ~default:(any ~why:Dummy_jkind)
+            ~context:(Type_variable alias)
+            jkind_annot_opt)
+        in
+        let t = newvar jkind in
+        TyVarEnv.remember_used alias t alias_loc;
+        let cty = transl_type env policy mode styp in
+        begin try unify_var env t cty.ctyp_type with Unify err ->
+          let err = Errortrace.swap_unification_error err in
+          raise(Error(alias_loc, env, Alias_type_mismatch err))
+        end;
+        if !Clflags.principal then begin
+          end_def ();
+          generalize_structure t;
+        end;
+        let t = instance t in
+        let px = Btype.proxy t in
+        begin match get_desc px with
+=======
+        let t, ty, jkind_annot =
+          with_local_level_if_principal begin fun () ->
+            let jkind, jkind_annot =
+              Jkind.(of_annotation_option_default
+                ~default:(any ~why:Dummy_jkind)
+                ~context:(Type_variable alias)
+                jkind_annot_opt)
+            in
+            let t = newvar jkind in
+            TyVarEnv.remember_used alias t alias_loc;
+            let ty = transl_type env ~policy ~row_context mode styp in
+            begin try unify_var env t ty.ctyp_type with Unify err ->
+              let err = Errortrace.swap_unification_error err in
+              raise(Error(alias_loc, env, Alias_type_mismatch err))
+            end;
+            (t, ty, jkind_annot)
+          end
+          ~post: (fun (t, _, _) -> generalize_structure t)
+        in
+        let t = instance t in
+        let px = Btype.proxy t in
+        begin match get_desc px with
+>>>>>>> ocaml-flambda/flambda-backend:main
       with Not_found ->
         let t, ty =
           with_local_level_if_principal begin fun () ->
@@ -1067,7 +1694,13 @@ and transl_type_alias env ~row_context ~policy mode alias_loc styp name_opt
            set_type_desc px (Tunivar {name = Some alias; jkind})
         | _ -> ()
         end;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         { ty with ctyp_type = t }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        { cty with ctyp_type = t }
+=======
+        { ty with ctyp_type = t }, jkind_annot
+>>>>>>> ocaml-flambda/flambda-backend:main
       end
     | None ->
       let cty = transl_type env ~policy ~row_context mode styp in
@@ -1075,7 +1708,7 @@ and transl_type_alias env ~row_context ~policy mode alias_loc styp name_opt
       let jkind_annot = match jkind_annot_opt with
         | None -> Misc.fatal_error "anonymous alias without layout annotation"
         | Some jkind_annot -> jkind_annot
-      in
+      let jkind, annot =
       let jkind =
           Jkind.of_annotation
             ~context:(Type_wildcard jkind_annot.loc) jkind_annot
@@ -1086,9 +1719,9 @@ and transl_type_alias env ~row_context ~policy mode alias_loc styp name_opt
         raise (Error(jkind_annot.loc, env,
                      Bad_jkind_annot(cty_expr, err)))
       end;
-      cty
+      cty, Some annot
   in
-  Ttyp_alias (cty, name_opt, Option.map Location.get_txt jkind_annot_opt),
+  Ttyp_alias (cty, name_opt, jkind_annot),
   cty.ctyp_type
 
 and transl_fields env ~policy ~row_context o fields =
@@ -1109,9 +1742,18 @@ and transl_fields env ~policy ~row_context o fields =
     | Otag (s, ty1) -> begin
         let ty1 =
           Builtin_attributes.warning_scope of_attributes
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             (fun () ->
                transl_type env ~policy ~row_context Alloc.Const.legacy
                  (Ast_helper.Typ.force_poly ty1))
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            (fun () ->
+               transl_type env policy Alloc.Const.legacy
+                 (Ast_helper.Typ.force_poly ty1))
+=======
+            (fun () -> transl_type env ~policy ~row_context Alloc.Const.legacy
+                (Ast_helper.Typ.force_poly ty1))
+>>>>>>> ocaml-flambda/flambda-backend:main
         in
         begin
           match
@@ -1196,12 +1838,47 @@ let rec make_fixed_univars ty =
         Btype.iter_type_expr make_fixed_univars ty
     end
 
+let transl_type env policy mode styp =
+  transl_type env ~policy ~row_context:[] mode styp
+
 let make_fixed_univars ty =
   make_fixed_univars ty;
   Btype.unmark_type ty
 
 let transl_simple_type env ?univars ~closed mode styp =
   TyVarEnv.reset_locals ?univars ();
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let transl_simple_type_univars env styp =
+  TyVarEnv.reset_locals ();
+  let typ, univs = TyVarEnv.collect_univars begin fun () ->
+    begin_def ();
+    let policy = TyVarEnv.univars_policy in
+    let typ = transl_type env policy Alloc.Const.legacy styp in
+    TyVarEnv.globalize_used_variables policy env ();
+    end_def ();
+    generalize typ.ctyp_type;
+    typ
+  end in
+  make_fixed_univars typ.ctyp_type;
+    { typ with ctyp_type =
+=======
+
+let transl_simple_type_univars env styp =
+  TyVarEnv.reset_locals ();
+  let typ, univs =
+    TyVarEnv.collect_univars begin fun () ->
+      with_local_level ~post:generalize_ctyp begin fun () ->
+        let policy = TyVarEnv.univars_policy in
+        let typ = transl_type env policy Alloc.Const.legacy styp in
+        TyVarEnv.globalize_used_variables policy env ();
+        typ
+      end
+  end in
+  make_fixed_univars typ.ctyp_type;
+    { typ with ctyp_type =
+>>>>>>> ocaml-flambda/flambda-backend:main
   let policy = TyVarEnv.(if closed then fixed_policy else extensible_policy) in
   let typ = transl_type env policy mode styp in
   TyVarEnv.globalize_used_variables policy env ();
@@ -1216,6 +1893,102 @@ let transl_simple_type_univars env styp =
         let policy = TyVarEnv.univars_policy in
         let typ = transl_type env policy Alloc.Const.legacy styp in
         TyVarEnv.globalize_used_variables policy env ();
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let transl_simple_type_delayed env mode styp =
+  TyVarEnv.reset_locals ();
+  begin_def ();
+  let policy = TyVarEnv.extensible_policy in
+  let typ = transl_type env policy mode styp in
+  end_def ();
+  make_fixed_univars typ.ctyp_type;
+  (* This brings the used variables to the global level, but doesn't link them
+     to their other occurrences just yet. This will be done when [force] is
+     called. *)
+  let force = TyVarEnv.globalize_used_variables policy env in
+  (* Generalizes everything except the variables that were just globalized. *)
+  generalize typ.ctyp_type;
+  (typ, instance typ.ctyp_type, force)
+
+let transl_type_scheme_mono env styp =
+  begin_def();
+  let typ = transl_simple_type env ~closed:false Alloc.Const.legacy styp in
+  end_def();
+  (* This next line is very important: it stops [val] and [external]
+     declarations from having undefaulted jkind variables. Without
+     this line, we might accidentally export a jkind-flexible definition
+     from a compilation unit, which would lead to miscompilation. *)
+  remove_mode_and_jkind_variables typ.ctyp_type;
+  generalize typ.ctyp_type;
+  typ
+
+let transl_type_scheme_poly env attrs loc vars inner_type =
+  begin_def();
+  let typed_vars, univars = transl_bound_vars vars in
+  let typ =
+    transl_simple_type env ~univars ~closed:true Alloc.Const.legacy inner_type
+  in
+  end_def();
+  generalize typ.ctyp_type;
+  let _ = TyVarEnv.instance_poly_univars env loc univars in
+  { ctyp_desc = Ttyp_poly (typed_vars, typ);
+    ctyp_type = typ.ctyp_type;
+    ctyp_env = env;
+=======
+
+let transl_simple_type_delayed env mode styp =
+  TyVarEnv.reset_locals ();
+  let typ, force =
+    with_local_level begin fun () ->
+      let policy = TyVarEnv.extensible_policy in
+      let typ = transl_type env policy mode styp in
+      make_fixed_univars typ.ctyp_type;
+      (* This brings the used variables to the global level, but doesn't link
+         them to their other occurrences just yet. This will be done when
+         [force] is  called. *)
+      let force = TyVarEnv.globalize_used_variables policy env in
+      (typ, force)
+    end
+    (* Generalize everything except the variables that were just globalized. *)
+    ~post:(fun (typ,_) -> generalize_ctyp typ)
+  in
+  (typ, instance typ.ctyp_type, force)
+
+let transl_type_scheme_mono env styp =
+  let typ =
+    with_local_level begin fun () ->
+      TyVarEnv.reset ();
+      transl_simple_type env ~closed:false Alloc.Const.legacy styp
+    end
+    ~post:generalize_ctyp
+  in
+  (* This next line is very important: it stops [val] and [external]
+     declarations from having undefaulted jkind variables. Without
+     this line, we might accidentally export a jkind-flexible definition
+     from a compilation unit, which would lead to miscompilation. *)
+  remove_mode_and_jkind_variables typ.ctyp_type;
+  typ
+
+let transl_type_scheme_poly env attrs loc vars inner_type =
+  let typed_vars, univars, typ =
+    with_local_level begin fun () ->
+      TyVarEnv.reset ();
+      let univars = transl_bound_vars vars in
+      let typed_vars = TyVarEnv.ttyp_poly_arg univars in
+      let typ =
+        transl_simple_type env ~univars ~closed:true Alloc.Const.legacy
+          inner_type
+      in
+      (typed_vars, univars, typ)
+    end
+    ~post:(fun (_,_,typ) -> generalize_ctyp typ)
+  in
+  let _ : _ list = TyVarEnv.instance_poly_univars env loc univars in
+  { ctyp_desc = Ttyp_poly (typed_vars, typ);
+    ctyp_type = typ.ctyp_type;
+    ctyp_env = env;
+>>>>>>> ocaml-flambda/flambda-backend:main
         typ
       end
   end in
@@ -1437,6 +2210,9 @@ let report_error env ppf = function
     fprintf ppf "@[<b 2>Bad layout annotation:@ %a@]"
       (Jkind.Violation.report_with_offender
          ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) violation
+  | Did_you_mean_unboxed lid ->
+    fprintf ppf "@[%a isn't a class type.@ \
+                 Did you mean the unboxed type %a#?@]" longident lid longident lid
 
 let () =
   Location.register_error_of_exn

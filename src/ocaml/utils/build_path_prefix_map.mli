@@ -53,9 +53,24 @@ val rewrite_all : map -> path -> path list
     source, in priority order, it replaces this prefix with
     the corresponding target and adds the result to
     the returned list.
+val rewrite_all : map -> path -> path list
+(** [rewrite_all map path] finds all sources in [map]
+    that are a prefix of the input [path]. For each matching
+    source, in priority order, it replaces this prefix with
+    the corresponding target and adds the result to
+    the returned list.
     If there are no matches, it just returns [[]]. *)
+
+    If there are no matches, it just returns [[]]. *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 val rewrite : map -> path -> path
 (** [rewrite path] uses [rewrite_first] to try to find a
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+(** [rewrite path] uses [rewrite_first] to try to find a
+    mapping for path. If found, it returns that, otherwise
+    it just returns [path]. *)
+>>>>>>> ocaml-flambda/flambda-backend:main
     mapping for path. If found, it returns that, otherwise
     it just returns [path]. *)

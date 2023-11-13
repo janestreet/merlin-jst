@@ -58,11 +58,28 @@ let compare
   | i -> i
 ;;
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let in_file name =
+  let loc = { dummy_pos with pos_fname = name } in
+  { loc_start = loc; loc_end = loc; loc_ghost = true }
+;;
+=======
+let in_file = Warnings.ghost_loc_in_file
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let in_file = Warnings.ghost_loc_in_file
 
 let none = in_file "_none_"
 let is_none l = (l = none)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let none = in_file "_none_";;
+let is_none l = (l = none);;
+=======
+let none = in_file "_none_"
+let is_none l = (l = none)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let curr lexbuf = {
   loc_start = lexbuf.lex_start_p;
@@ -77,7 +94,12 @@ let init lexbuf fname =
     pos_bol = 0;
     pos_cnum = 0;
   }
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let ghostify l =
   if l.loc_ghost
@@ -93,24 +115,47 @@ let symbol_rloc () = {
 let symbol_gloc () = {
   loc_start = Parsing.symbol_start_pos ();
   loc_end = Parsing.symbol_end_pos ();
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   loc_ghost = true;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+};;
+=======
+}
+>>>>>>> ocaml-flambda/flambda-backend:main
 }
 
 let rhs_loc n = {
   loc_start = Parsing.rhs_start_pos n;
   loc_end = Parsing.rhs_end_pos n;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   loc_ghost = false;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+};;
+=======
+}
+>>>>>>> ocaml-flambda/flambda-backend:main
 }
 
 let rhs_interval m n = {
   loc_start = Parsing.rhs_start_pos m;
   loc_end = Parsing.rhs_end_pos n;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   loc_ghost = false;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+};;
+=======
+}
+>>>>>>> ocaml-flambda/flambda-backend:main
 }
 
 (* return file, line, char from the given position *)
 let get_pos_info pos =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 
 type 'a loc = {
@@ -151,6 +196,25 @@ let setup_terminal () =
 
    We also use for {!is_first_report}, see below.
 *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(* This is used by the toplevel to reset [num_loc_lines] before each phrase *)
+let reset () =
+  num_loc_lines := 0
+=======
+(* We use [num_loc_lines] to determine if the report about to be
+   printed is the first or a follow-up report of the current
+   "batch" -- contiguous reports without user input in between, for
+   example for the current toplevel phrase. We use this to print
+   a blank line between messages of the same batch.
+*)
+let is_first_message () =
+  !num_loc_lines = 0
+
+(* This is used by the toplevel to reset [num_loc_lines] before each phrase *)
+let reset () =
+  num_loc_lines := 0
+>>>>>>> ocaml-flambda/flambda-backend:main
 let num_loc_lines = ref 0
 
 (* We use [num_loc_lines] to determine if the report about to be
@@ -170,6 +234,13 @@ let reset () =
 let echo_eof () =
   print_newline ();
   incr num_loc_lines
+
+(* This is used by the toplevel and the report printers below. *)
+let separate_new_message ppf =
+  if not (is_first_message ()) then begin
+    Format.pp_print_newline ppf ();
+    incr num_loc_lines
+  end
 
 (* This is used by the toplevel and the report printers below. *)
 let separate_new_message ppf =
@@ -239,6 +310,35 @@ let rewrite_find_all_existing_dirs path =
       match (List.filter ok matches) with
       | [] -> raise Not_found
       | results -> results *)
+
+let rewrite_find_first_existing path =
+  match Misc.get_build_path_prefix_map () with
+  | None ->
+      if Sys.file_exists path then Some path
+      else None
+  | Some prefix_map ->
+    match Build_path_prefix_map.rewrite_all prefix_map path with
+    | [] ->
+      if Sys.file_exists path then Some path
+      else None
+    | matches ->
+      Some (List.find Sys.file_exists matches)
+
+let rewrite_find_all_existing_dirs path =
+  let ok path = Sys.file_exists path && Sys.is_directory path in
+  match Misc.get_build_path_prefix_map () with
+  | None ->
+      if ok path then [path]
+      else []
+  | Some prefix_map ->
+    match Build_path_prefix_map.rewrite_all prefix_map path with
+    | [] ->
+        if ok path then [path]
+        else []
+    | matches ->
+      match (List.filter ok matches) with
+      | [] -> raise Not_found
+      | results -> results
 
 let absolute_path s = (* This function could go into Filename *)
   let open Filename in
@@ -528,15 +628,33 @@ let highlight_quote ppf
            the line because we may point to a location after the end of the
            last token on the line, for instance:
            {[
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
              token
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          else if pos < rightmost.pos_cnum then begin
+=======
+          else if i < String.length line then begin
+>>>>>>> ocaml-flambda/flambda-backend:main
                        ^
              Did you forget ...
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
            ]} *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            if c = '\t' then Format.pp_print_char ppf '\t'
+=======
+            if line.[i] = '\t' then Format.pp_print_char ppf '\t'
+>>>>>>> ocaml-flambda/flambda-backend:main
         for i = 0 to rightmost.pos_cnum - line_start_cnum - 1 do
           let pos = line_start_cnum + i in
           if ISet.is_start iset ~pos <> None then
             Format.fprintf ppf "@{<%s>" highlight_tag;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           if ISet.mem iset ~pos then Format.pp_print_char ppf '^'
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        ) line;
+=======
+        done;
+>>>>>>> ocaml-flambda/flambda-backend:main
           else if i < String.length line then begin
             (* For alignment purposes, align using a tab for each tab in the
                source code *)
@@ -814,7 +932,14 @@ let batch_mode_printer : report_printer =
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     separate_new_message ppf;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    setup_colors ();
+=======
+    setup_colors ();
+    separate_new_message ppf;
+>>>>>>> ocaml-flambda/flambda-backend:main
     (* Make sure we keep [num_loc_lines] updated.
         The tabulation box is here to give submessage the option
         to be aligned with the main message box
@@ -992,6 +1117,40 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(******************************************************************************)
+(* Reporting errors on exceptions *)
+=======
+let auto_include_alert lib =
+  let message = Printf.sprintf "\
+    OCaml's lib directory layout changed in 5.0. The %s subdirectory has been \
+    automatically added to the search path, but you should add -I +%s to the \
+    command-line to silence this alert (e.g. by adding %s to the list of \
+    libraries in your dune file, or adding use_%s to your _tags file for \
+    ocamlbuild, or using -package %s for ocamlfind)." lib lib lib lib lib in
+  let alert =
+    {Warnings.kind="ocaml_deprecated_auto_include"; use=none; def=none;
+     message = Format.asprintf "@[@\n%a@]" Format.pp_print_text message}
+  in
+  prerr_alert none alert
+
+let deprecated_script_alert program =
+  let message = Printf.sprintf "\
+    Running %s where the first argument is an implicit basename with no \
+    extension (e.g. %s script-file) is deprecated. Either rename the script \
+    (%s script-file.ml) or qualify the basename (%s ./script-file)"
+    program program program program
+  in
+  let alert =
+    {Warnings.kind="ocaml_deprecated_cli"; use=none; def=none;
+     message = Format.asprintf "@[@\n%a@]" Format.pp_print_text message}
+  in
+  prerr_alert none alert
+
+(******************************************************************************)
+(* Reporting errors on exceptions *)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let auto_include_alert lib =
   let message = Printf.sprintf "\

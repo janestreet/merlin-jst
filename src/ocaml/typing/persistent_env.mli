@@ -30,6 +30,7 @@ type error =
   | Direct_reference_from_wrong_package of
       Compilation_unit.t * filepath * Compilation_unit.Prefix.t
 
+
 exception Error of error
 
 val report_error: Format.formatter -> error -> unit

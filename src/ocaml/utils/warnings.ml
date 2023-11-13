@@ -193,6 +193,19 @@ let number = function
   | Tmc_breaks_tailcall -> 72
   | Generative_application_expects_unit -> 73
   | Probe_name_too_long _ -> 190
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+;;
+
+let last_warning_number = 199
+=======
+;;
+(* DO NOT REMOVE the ;; above: it is used by
+   the testsuite/ests/warnings/mnemonics.mll test to determine where
+   the  definition of the number function above ends *)
+
+let last_warning_number = 199
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Unchecked_property_attribute _ -> 199
 ;;
 (* DO NOT REMOVE the ;; above: it is used by
@@ -207,6 +220,7 @@ type description =
     (* The first element of the list is the current name, any following ones are
        deprecated. The current name should always be derived mechanically from
        the constructor name. *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     description : string;
     since : Sys.ocaml_release_info option;
     (* The compiler version introducing this warning; only tagged for warnings
@@ -214,321 +228,825 @@ type description =
   }
 
   let since major minor = Some { Sys.major; minor; patchlevel=0; extra=None }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description : string; }
+=======
+    description : string;
+    since : Sys.ocaml_release_info option;
+    (* The compiler version introducing this warning; only tagged for warnings
+       created after 3.12, which introduced the numbered syntax. *)
+  }
+
+let since major minor = Some { Sys.major; minor; patchlevel=0; extra=None }
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let descriptions = [
   { number = 1;
     names = ["comment-start"];
     description = "Suspicious-looking start-of-comment mark.";
     since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 2;
     names =  ["comment-not-end"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Suspicious-looking end-of-comment mark." };
+=======
     description = "Suspicious-looking end-of-comment mark.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Suspicious-looking end-of-comment mark.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 3;
     names = [];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Deprecated synonym for the 'deprecated' alert." };
+=======
+    description = "Deprecated synonym for the 'deprecated' alert.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Deprecated synonym for the 'deprecated' alert.";
     since = None };
   { number = 4;
     names = ["fragile-match"];
     description =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       "Fragile pattern matching: matching that will remain complete even\n\
       \    if additional constructors are added to one of the variant types\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      \    matched." };
+=======
+      \    matched.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
       \    matched.";
     since = None };
   { number = 5;
     names = ["ignored-partial-application"];
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     description =
       "Partially applied function: expression whose result has function\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      \    type and is ignored." };
+=======
       \    type and is ignored.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      \    type and is ignored.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 6;
     names = ["labels-omitted"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Label omitted in function application." };
+=======
     description = "Label omitted in function application.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Label omitted in function application.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 7;
     names = ["method-override"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Method overridden." };
+=======
     description = "Method overridden.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Method overridden.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 8;
     names = ["partial-match"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Partial match: missing cases in pattern-matching." };
+=======
     description = "Partial match: missing cases in pattern-matching.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Partial match: missing cases in pattern-matching.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 9;
     names = ["missing-record-field-pattern"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Missing fields in a record pattern." };
+=======
+    description = "Missing fields in a record pattern.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Missing fields in a record pattern.";
     since = None };
   { number = 10;
     names = ["non-unit-statement"];
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     description =
       "Expression on the left-hand side of a sequence that doesn't have type\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      \    \"unit\" (and that is not a function, see warning number 5)." };
+=======
+      \    \"unit\" (and that is not a function, see warning number 5).";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
       \    \"unit\" (and that is not a function, see warning number 5).";
     since = None };
   { number = 11;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["redundant-case"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Redundant case in a pattern matching (unused match case)." };
+=======
       "Redundant case in a pattern matching (unused match case).";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      "Redundant case in a pattern matching (unused match case).";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 12;
     names = ["redundant-subpat"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Redundant sub-pattern in a pattern-matching." };
+=======
     description = "Redundant sub-pattern in a pattern-matching." ;
     since = None};
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Redundant sub-pattern in a pattern-matching." ;
+    since = None};
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 13;
     names = ["instance-variable-override"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Instance variable overridden." };
+=======
     description = "Instance variable overridden.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Instance variable overridden.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 14;
     names = ["illegal-backslash"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Illegal backslash escape in a string constant." };
+=======
     description = "Illegal backslash escape in a string constant.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Illegal backslash escape in a string constant.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 15;
     names = ["implicit-public-methods"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Private method made public implicitly." };
+=======
     description = "Private method made public implicitly.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Private method made public implicitly.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 16;
     names = ["unerasable-optional-argument"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unerasable optional argument." };
+=======
     description = "Unerasable optional argument.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unerasable optional argument.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 17;
     names = ["undeclared-virtual-method"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Undeclared virtual method." };
+=======
     description = "Undeclared virtual method.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Undeclared virtual method.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 18;
     names = ["not-principal"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Non-principal type." };
+=======
     description = "Non-principal type.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Non-principal type.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 19;
     names = ["non-principal-labels"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Type without principality." };
+=======
     description = "Type without principality.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Type without principality.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 20;
     names = ["ignored-extra-argument"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused function argument." };
+=======
     description = "Unused function argument.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused function argument.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 21;
     names = ["nonreturning-statement"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Non-returning statement." };
+=======
     description = "Non-returning statement.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Non-returning statement.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 22;
     names = ["preprocessor"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Preprocessor warning." };
+=======
     description = "Preprocessor warning.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Preprocessor warning.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 23;
     names = ["useless-record-with"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Useless record \"with\" clause." };
+=======
+    description = "Useless record \"with\" clause.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Useless record \"with\" clause.";
     since = None };
   { number = 24;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["bad-module-name"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    "Bad module name: the source file name is not a valid OCaml module name."};
+=======
     "Bad module name: the source file name is not a valid OCaml module name.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    "Bad module name: the source file name is not a valid OCaml module name.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 25;
     names = [];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Ignored: now part of warning 8." };
+=======
+    description = "Ignored: now part of warning 8.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Ignored: now part of warning 8.";
     since = None };
   { number = 26;
     names = ["unused-var"];
     description =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     "Suspicious unused variable: unused variable that is bound\n\
     \    with \"let\" or \"as\", and doesn't start with an underscore (\"_\")\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    \    character." };
+=======
+    \    character.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
     \    character.";
     since = None };
   { number = 27;
     names = ["unused-var-strict"];
     description =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     "Innocuous unused variable: unused variable that is not bound with\n\
     \    \"let\" nor \"as\", and doesn't start with an underscore (\"_\")\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    \    character." };
+=======
+    \    character.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
     \    character.";
     since = None };
   { number = 28;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["wildcard-arg-to-constant-constr"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Wildcard pattern given as argument to a constant constructor." };
+=======
+      "Wildcard pattern given as argument to a constant constructor.";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
       "Wildcard pattern given as argument to a constant constructor.";
     since = None };
   { number = 29;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["eol-in-string"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Unescaped end-of-line in a string constant (non-portable code)." };
+=======
+      "Unescaped end-of-line in a string constant (non-portable code).";
+    since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
       "Unescaped end-of-line in a string constant (non-portable code).";
     since = None };
   { number = 30;
     names = ["duplicate-definitions"];
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     description =
       "Two labels or constructors of the same name are defined in two\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      \    mutually recursive types." };
+=======
       \    mutually recursive types.";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      \    mutually recursive types.";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 31;
     names = ["module-linked-twice"];
     description =
       "A module is linked twice in the same executable.\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "A module is linked twice in the same executable." };
+=======
+    description =
+      "A module is linked twice in the same executable.\n\
       \    Ignored: now a hard error (since 5.1).";
     since = None };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      \    Ignored: now a hard error (since 5.1).";
+    since = None };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 32;
     names = ["unused-value-declaration"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused value declaration." };
+=======
     description = "Unused value declaration.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused value declaration.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 33;
     names = ["unused-open"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused open statement." };
+=======
     description = "Unused open statement.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused open statement.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 34;
     names = ["unused-type-declaration"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused type declaration." };
+=======
     description = "Unused type declaration.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused type declaration.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 35;
     names = ["unused-for-index"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused for-loop index." };
+=======
     description = "Unused for-loop index.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused for-loop index.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 36;
     names = ["unused-ancestor"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused ancestor variable." };
+=======
     description = "Unused ancestor variable.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused ancestor variable.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 37;
     names = ["unused-constructor"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused constructor." };
+=======
     description = "Unused constructor.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused constructor.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 38;
     names = ["unused-extension"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused extension constructor." };
+=======
     description = "Unused extension constructor.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused extension constructor.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 39;
     names = ["unused-rec-flag"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused rec flag." };
+=======
     description = "Unused rec flag.";
     since = since 4 0 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused rec flag.";
+    since = since 4 0 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 40;
     names = ["name-out-of-scope"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Constructor or label name used out of scope." };
+=======
     description = "Constructor or label name used out of scope.";
     since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Constructor or label name used out of scope.";
+    since = since 4 1 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 41;
     names = ["ambiguous-name"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Ambiguous constructor or label name." };
+=======
+    description = "Ambiguous constructor or label name.";
+    since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Ambiguous constructor or label name.";
     since = since 4 1 };
   { number = 42;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["disambiguated-name"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Disambiguated constructor or label name (compatibility warning)." };
+=======
       "Disambiguated constructor or label name (compatibility warning).";
     since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      "Disambiguated constructor or label name (compatibility warning).";
+    since = since 4 1 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 43;
     names = ["nonoptional-label"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Nonoptional label applied as optional." };
+=======
     description = "Nonoptional label applied as optional.";
     since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Nonoptional label applied as optional.";
+    since = since 4 1 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 44;
     names = ["open-shadow-identifier"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Open statement shadows an already defined identifier." };
+=======
+    description = "Open statement shadows an already defined identifier.";
+    since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Open statement shadows an already defined identifier.";
     since = since 4 1 };
   { number = 45;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["open-shadow-label-constructor"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Open statement shadows an already defined label or constructor." };
+=======
       "Open statement shadows an already defined label or constructor.";
     since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      "Open statement shadows an already defined label or constructor.";
+    since = since 4 1 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 46;
     names = ["bad-env-variable"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Error in environment variable." };
+=======
     description = "Error in environment variable.";
     since = since 4 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Error in environment variable.";
+    since = since 4 1 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 47;
     names = ["attribute-payload"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Illegal attribute payload." };
+=======
     description = "Illegal attribute payload.";
     since = since 4 2 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Illegal attribute payload.";
+    since = since 4 2 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 48;
     names = ["eliminated-optional-arguments"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Implicit elimination of optional arguments." };
+=======
     description = "Implicit elimination of optional arguments.";
     since = since 4 2 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Implicit elimination of optional arguments.";
+    since = since 4 2 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 49;
     names = ["no-cmi-file"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Absent cmi file when looking up module alias." };
+=======
     description = "Absent cmi file when looking up module alias.";
     since = since 4 2 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Absent cmi file when looking up module alias.";
+    since = since 4 2 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 50;
     names = ["unexpected-docstring"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unexpected documentation comment." };
+=======
+    description = "Unexpected documentation comment.";
+    since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Unexpected documentation comment.";
     since = since 4 3 };
   { number = 51;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["wrong-tailcall-expectation"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Function call annotated with an incorrect @tailcall attribute" };
+=======
       "Function call annotated with an incorrect @tailcall attribute.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      "Function call annotated with an incorrect @tailcall attribute.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 52;
     names = ["fragile-literal-pattern"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Fragile constant pattern." };
+=======
     description = "Fragile constant pattern.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Fragile constant pattern.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 53;
     names = ["misplaced-attribute"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Attribute cannot appear in this context." };
+=======
     description = "Attribute cannot appear in this context.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Attribute cannot appear in this context.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 54;
     names = ["duplicated-attribute"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Attribute used more than once on an expression." };
+=======
     description = "Attribute used more than once on an expression.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Attribute used more than once on an expression.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 55;
     names = ["inlining-impossible"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Inlining impossible." };
+=======
+    description = "Inlining impossible.";
+    since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Inlining impossible.";
     since = since 4 3 };
   { number = 56;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["unreachable-case"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "Unreachable case in a pattern-matching (based on type information)." };
+=======
       "Unreachable case in a pattern-matching (based on type information).";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      "Unreachable case in a pattern-matching (based on type information).";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 57;
     names = ["ambiguous-var-in-pattern-guard"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Ambiguous or-pattern variables under guard." };
+=======
     description = "Ambiguous or-pattern variables under guard.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Ambiguous or-pattern variables under guard.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 58;
     names = ["no-cmx-file"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Missing cmx file." };
+=======
     description = "Missing cmx file.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Missing cmx file.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 59;
     names = ["flambda-assignment-to-non-mutable-value"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Assignment to non-mutable value." };
+=======
     description = "Assignment to non-mutable value.";
     since = since 4 3 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Assignment to non-mutable value.";
+    since = since 4 3 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 60;
     names = ["unused-module"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused module declaration." };
+=======
     description = "Unused module declaration.";
     since = since 4 4 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused module declaration.";
+    since = since 4 4 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 61;
     names = ["unboxable-type-in-prim-decl"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unboxable type in primitive declaration." };
+=======
     description = "Unboxable type in primitive declaration.";
     since = since 4 4 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unboxable type in primitive declaration.";
+    since = since 4 4 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 62;
     names = ["constraint-on-gadt"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Type constraint on GADT type declaration." };
+=======
     description = "Type constraint on GADT type declaration.";
     since = since 4 6 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Type constraint on GADT type declaration.";
+    since = since 4 6 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 63;
     names = ["erroneous-printed-signature"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Erroneous printed signature." };
+=======
+    description = "Erroneous printed signature.";
+    since = since 4 8 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Erroneous printed signature.";
     since = since 4 8 };
   { number = 64;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["unsafe-array-syntax-without-parsing"];
     description =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      "-unsafe used with a preprocessor returning a syntax tree." };
+=======
       "-unsafe used with a preprocessor returning a syntax tree.";
     since = since 4 8 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      "-unsafe used with a preprocessor returning a syntax tree.";
+    since = since 4 8 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 65;
     names = ["redefining-unit"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Type declaration defining a new '()' constructor." };
+=======
     description = "Type declaration defining a new '()' constructor.";
     since = since 4 8 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Type declaration defining a new '()' constructor.";
+    since = since 4 8 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 66;
     names = ["unused-open-bang"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused open! statement." };
+=======
     description = "Unused open! statement.";
     since = since 4 8 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused open! statement.";
+    since = since 4 8 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 67;
     names = ["unused-functor-parameter"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused functor parameter." };
+=======
+    description = "Unused functor parameter.";
+    since = since 4 10 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Unused functor parameter.";
     since = since 4 10 };
   { number = 68;
     names = ["match-on-mutable-state-prevent-uncurry"];
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     description =
       "Pattern-matching depending on mutable state prevents the remaining \n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      \    arguments from being uncurried." };
+=======
       \    arguments from being uncurried.";
     since = since 4 12 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+      \    arguments from being uncurried.";
+    since = since 4 12 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 69;
     names = ["unused-field"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused record field." };
+=======
     description = "Unused record field.";
     since = since 4 13 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Unused record field.";
+    since = since 4 13 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 70;
     names = ["missing-mli"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Missing interface file." };
+=======
     description = "Missing interface file.";
     since = since 4 13 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+    description = "Missing interface file.";
+    since = since 4 13 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 71;
     names = ["unused-tmc-attribute"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Unused @tail_mod_cons attribute" };
+=======
+    description = "Unused @tail_mod_cons attribute.";
+    since = since 4 14 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Unused @tail_mod_cons attribute.";
     since = since 4 14 };
   { number = 72;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["tmc-breaks-tailcall"];
     description = "A tail call is turned into a non-tail call \
                    by the @tail_mod_cons transformation.";
@@ -536,15 +1054,40 @@ let descriptions = [
   { number = 73;
     names = ["generative-application-expects-unit"];
     description = "A generative functor is applied to an empty structure \
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                   by the @tail_mod_cons transformation." };
+=======
+                   by the @tail_mod_cons transformation.";
+    since = since 4 14 };
+  { number = 73;
+    names = ["generative-application-expects-unit"];
+    description = "A generative functor is applied to an empty structure \
                    (struct end) rather than to ().";
     since = since 5 1 };
+>>>>>>> ocaml-flambda/flambda-backend:main
+                   (struct end) rather than to ().";
+    since = since 5 1 };
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   { number = 190;
     names = ["probe-name-too-long"];
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    description = "Probe name must be at most 100 characters long." };
+=======
+    description = "Probe name must be at most 100 characters long.";
+    since = since 4 14 };
+>>>>>>> ocaml-flambda/flambda-backend:main
     description = "Probe name must be at most 100 characters long.";
     since = since 4 14 };
   { number = 199;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     names = ["unchecked-property-attribute"];
     description = "A property of a function that was \
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                   optimized away cannot be checked." };
+=======
+                   optimized away cannot be checked.";
+    since = since 4 14 };
+>>>>>>> ocaml-flambda/flambda-backend:main
                   optimized away cannot be checked.";
     since = since 4 14 };
 ]
@@ -602,8 +1145,16 @@ let current =
     {
       active = Array.make (last_warning_number + 1) true;
       error = Array.make (last_warning_number + 1) false;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       alerts = (Std.String.Set.empty, false);
       alert_errors = (Std.String.Set.empty, true); (* all soft *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      alerts = (Misc.Stdlib.String.Set.empty, false); (* all enabled *)
+      alert_errors = (Misc.Stdlib.String.Set.empty, true); (* all soft *)
+=======
+      alerts = (Misc.Stdlib.String.Set.empty, false);
+      alert_errors = (Misc.Stdlib.String.Set.empty, true); (* all soft *)
+>>>>>>> ocaml-flambda/flambda-backend:main
     }
 
 let disabled = ref false
@@ -714,6 +1265,10 @@ type modifier =
 type token =
   | Letter of char * modifier option
   | Num of int * int * modifier
+
+let ghost_loc_in_file name =
+  let pos = { Lexing.dummy_pos with pos_fname = name } in
+  { loc_start = pos; loc_end = pos; loc_ghost = true }
 
 let ghost_loc_in_file name =
   let pos = { Lexing.dummy_pos with pos_fname = name } in
@@ -877,6 +1432,41 @@ let parse_opt error active errflag s =
 
 let parse_options errflag s =
   let error = Array.copy (!current).error in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  alerts
+
+(* If you change these, don't forget to change them in man/ocamlc.m *)
+let defaults_w = "+a-4-7-9-27-29-30-32..42-44-45-48-50-60-66..70";;
+let defaults_warn_error = "-a+31";;
+
+let () = ignore @@ parse_options false defaults_w;;
+let () = ignore @@ parse_options true defaults_warn_error;;
+
+let ref_manual_explanation () =
+  (* manual references are checked a posteriori by the manual
+     cross-reference consistency check in manual/tests*)
+  let[@manual.ref "s:comp-warnings"] chapter, section = 11, 5 in
+  Printf.sprintf "(See manual section %d.%d)" chapter section
+
+let message = function
+  | Comment_start ->
+=======
+  alerts
+
+(* If you change these, don't forget to change them in man/ocamlc.m *)
+let defaults_w = "+a-4-7-9-27-29-30-32..42-44-45-48-50-60-66..70"
+let defaults_warn_error = "-a"
+let default_disabled_alerts = [ "unstable"; "unsynchronized_access" ]
+
+let () = ignore @@ parse_options false defaults_w
+let () = ignore @@ parse_options true defaults_warn_error
+let () =
+  List.iter (set_alert ~error:false ~enable:false) default_disabled_alerts
+
+let message = function
+  | Comment_start ->
+>>>>>>> ocaml-flambda/flambda-backend:main
   let active = Array.copy (!current).active in
   let alerts = parse_opt error active errflag s in
   current := {(!current) with error; active};
@@ -937,6 +1527,22 @@ let message = function
         ("the following instance variables are overridden by the class"
          :: cname  :: ":\n " :: slist)
   | Instance_variable_override [] -> assert false
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Illegal_backslash -> "illegal backslash escape in string."
+  | Implicit_public_methods l ->
+      "the following private methods were made public implicitly:\n "
+      ^ String.concat " " l ^ "."
+=======
+  | Illegal_backslash ->
+    "illegal backslash escape in string.\n\
+    Hint: Single backslashes \\ are reserved for escape sequences\n\
+    (\\n, \\r, ...). Did you check the list of OCaml escape sequences?\n\
+    To get a backslash character, escape it with a second backslash: \\\\."
+  | Implicit_public_methods l ->
+      "the following private methods were made public implicitly:\n "
+      ^ String.concat " " l ^ "."
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Illegal_backslash ->
     "illegal backslash escape in string.\n\
     Hint: Single backslashes \\ are reserved for escape sequences\n\
@@ -1057,8 +1663,15 @@ let message = function
   | Fragile_literal_pattern ->
       let[@manual.ref "ss:warn52"] ref_manual = [ 13; 5; 3 ] in
       Format.asprintf
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         "Code should not depend on the actual values of\n\
          this constructor's arguments. They are only for information\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+         and may change in future versions. %t" ref_manual_explanation
+=======
+         and may change in future versions. %a"
+        Misc.print_see_manual ref_manual
+>>>>>>> ocaml-flambda/flambda-backend:main
          and may change in future versions. %a"
         Misc.print_see_manual ref_manual
   | Unreachable_case ->
@@ -1089,8 +1702,16 @@ let message = function
       Format.asprintf
         "Ambiguous or-pattern variables under guard;\n\
          %s.\n\
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
          Only the first match will be used to evaluate the guard expression.\n\
          %a"
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+         %t"
+        vars_explanation ref_manual_explanation
+=======
+         %a"
+        vars_explanation Misc.print_see_manual ref_manual
+>>>>>>> ocaml-flambda/flambda-backend:main
         vars_explanation Misc.print_see_manual ref_manual
   | No_cmx_file name ->
       Printf.sprintf
@@ -1152,9 +1773,16 @@ let message = function
        so the call will not be transformed into a tail call.\n\
        Please either mark the called function with the [@tail_mod_cons]\n\
        attribute, or mark this call with the [@tailcall false] attribute\n\
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
        to make its non-tailness explicit."
   | Generative_application_expects_unit ->
       "A generative functor\n\
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+  | Generative_application_expects_unit ->
+      "A generative functor\n\
+       should be applied to '()'; using '(struct end)' is deprecated."
+>>>>>>> ocaml-flambda/flambda-backend:main
        should be applied to '()'; using '(struct end)' is deprecated."
   | Probe_name_too_long name ->
       Printf.sprintf
@@ -1242,14 +1870,27 @@ let check_fatal () =
   end
 
 let pp_since out release_info =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   Printf.fprintf out " (since %d.%0*d)"
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    (fun {number; description; names} ->
+=======
+    (fun {number; description; names; since} ->
+>>>>>>> ocaml-flambda/flambda-backend:main
     release_info.Sys.major
     (if release_info.Sys.major >= 5 then 0 else 2)
     release_info.Sys.minor
 
 let help_warnings () =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   List.iter
     (fun {number; description; names; since} ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+       Printf.printf "%3i%s %s\n" number name description)
+=======
+       Printf.printf "%3i%s %s%a\n"
+         number name description (fun out -> Option.iter (pp_since out)) since)
+>>>>>>> ocaml-flambda/flambda-backend:main
        let name =
          match names with
          | s :: _ -> " [" ^ s ^ "]"
@@ -1305,5 +1946,16 @@ let dump ?(verbose=false) () =
     "actives", `List (actives !current.active);
     "warn_error", `List (actives !current.error);
     "alerts", alerts !current.alerts;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     "alerts_error", alerts !current.alert_errors;
   ]
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          (String.concat ", " (List.map Int.to_string l))
+  done;
+  exit 0
+;;
+=======
+          (String.concat ", " (List.map Int.to_string l))
+  done;
+  exit 0
+>>>>>>> ocaml-flambda/flambda-backend:main

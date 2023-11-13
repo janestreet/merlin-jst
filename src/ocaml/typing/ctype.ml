@@ -148,6 +148,7 @@ let nongen_level = s_ref 0
 let global_level = s_ref 0
 let saved_level = s_ref []
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 (* merlin specific *)
 type levels =
@@ -167,6 +168,26 @@ let set_levels l =
   global_level := l.global_level;
   saved_level := l.saved_level
 (* end merlin specific *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+type levels =
+    { current_level: int;
+      nongen_level: int;
+      global_level: int; (* level assigned to a fresh 'a in user code *)
+      saved_level: (int * int) list;
+    }
+let save_levels () =
+  { current_level = !current_level;
+    nongen_level = !nongen_level;
+    global_level = !global_level;
+    saved_level = !saved_level }
+let set_levels l =
+  current_level := l.current_level;
+  nongen_level := l.nongen_level;
+  global_level := l.global_level;
+  saved_level := l.saved_level
+
+=======
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let get_current_level () = !current_level
 let init_def level = current_level := level; nongen_level := level
@@ -224,7 +245,49 @@ let with_raised_nongen_level f =
   raise_nongen_level ();
   wrap_end_def f
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+let wrap_end_def f = Misc.try_finally f ~always:end_def
+
+let with_local_level ?post f =
+  begin_def ();
+  let result = wrap_end_def f in
+  Option.iter (fun g -> g result) post;
+  result
+let with_local_level_if cond f ~post =
+  if cond then with_local_level f ~post else f ()
+let with_local_level_iter f ~post =
+  begin_def ();
+  let result, l = wrap_end_def f in
+  List.iter post l;
+  result
+let with_local_level_iter_if cond f ~post =
+  if cond then with_local_level_iter f ~post else fst (f ())
+let with_local_level_if_principal f ~post =
+  with_local_level_if !Clflags.principal f ~post
+let with_local_level_iter_if_principal f ~post =
+  with_local_level_iter_if !Clflags.principal f ~post
+let with_level ~level f =
+  begin_def (); init_def level;
+  let result = wrap_end_def f in
+  result
+let with_level_if cond ~level f =
+  if cond then with_level ~level f else f ()
+
+let with_local_level_for_class ?post f =
+  begin_class_def ();
+  let result = wrap_end_def f in
+  Option.iter (fun g -> g result) post;
+  result
+
+let with_raised_nongen_level f =
+  raise_nongen_level ();
+  wrap_end_def f
+
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 let reset_global_level () =
   global_level := !current_level
 let increase_global_level () =
@@ -339,6 +402,11 @@ let in_counterexample () =
   | Expression | Subst -> false
   | Pattern { allow_recursive_equations } -> allow_recursive_equations
 
+let in_counterexample () =
+  match !umode with
+  | Expression | Subst -> false
+  | Pattern { allow_recursive_equations } -> allow_recursive_equations
+
 let allow_recursive_equations () =
   !Clflags.recursive_types
   || match !umode with
@@ -408,11 +476,22 @@ let skip_jkind_checks_in f =
 
 let rec in_current_module = function
   | Path.Pident _ -> true
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Path.Pdot _ | Path.Papply _ -> false
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+  | Path.Pextra_ty (p, _) -> in_current_module p
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Path.Pextra_ty (p, _) -> in_current_module p
 
 let in_pervasives p =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   in_current_module p &&
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  try ignore (Env.find_type p (Lazy.force Env.initial_safe_string)); true
+=======
+  try ignore (Env.find_type p (Lazy.force Env.initial)); true
+>>>>>>> ocaml-flambda/flambda-backend:main
   try ignore (Env.find_type p (Lazy.force Env.initial)); true
   with Not_found -> false
 
@@ -528,6 +607,132 @@ let rec merge_rf r1 r2 pairs fi1 fi2 =
       merge_rf r1 (p2::r2) pairs fi1 fi2'
   | [], _ -> (List.rev r1, List.rev_append r2 fi2, pairs)
   | _, [] -> (List.rev_append r1 fi1, List.rev r2, pairs)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                    (*  Check genericity of type schemes  *)
+                    (**************************************)
+
+
+exception Non_closed of type_expr * bool
+
+let free_variables = ref []
+let really_closed = ref None
+
+(* [free_vars_rec] collects the variables of the input type
+   expression into the [free_variables] reference. It is used for
+   several different things in the type-checker, with the following
+   bells and whistles:
+   - If [really_closed] is Some typing environment, types in the environment
+     are expanded to check whether the apparently-free variable would vanish
+     during expansion.
+   - We collect both type variables and row variables, paired with a boolean
+     that is [false] if we have a row variable.
+   - We do not count "virtual" free variables -- free variables stored in
+     the abbreviation of an object type that has been expanded (we store
+     the abbreviations for use when displaying the type).
+
+   The functions [free_vars] and [free_variables] below receive
+   a typing environment as an optional [?env] parameter and
+   set [really_closed] accordingly.
+   [free_vars] returns a [(variable * bool) list], while
+   [free_variables] drops the type/row information
+   and only returns a [variable list].
+ *)
+let rec free_vars_rec real ty =
+  if try_mark_node ty then
+    match get_desc ty, !really_closed with
+      Tvar _, _ ->
+        free_variables := (ty, real) :: !free_variables
+    | Tconstr (path, tl, _), Some env ->
+        begin try
+          let (_, body, _) = Env.find_type_expansion path env in
+          if get_level body <> generic_level then
+            free_variables := (ty, real) :: !free_variables
+        with Not_found -> ()
+        end;
+        List.iter (free_vars_rec true) tl
+(* Do not count "virtual" free variables
+    | Tobject(ty, {contents = Some (_, p)}) ->
+        free_vars_rec false ty; List.iter (free_vars_rec true) p
+*)
+    | Tobject (ty, _), _ ->
+        free_vars_rec false ty
+    | Tfield (_, _, ty1, ty2), _ ->
+        free_vars_rec true ty1; free_vars_rec false ty2
+    | Tvariant row, _ ->
+        iter_row (free_vars_rec true) row;
+        if not (static_row row) then free_vars_rec false (row_more row)
+    | _    ->
+        iter_type_expr (free_vars_rec true) ty
+
+let free_vars ?env tyl =
+  free_variables := [];
+  really_closed := env;
+  List.iter (free_vars_rec true) tyl;
+  let res = !free_variables in
+  free_variables := [];
+  really_closed := None;
+  res
+
+let free_variables ?env ty =
+  let tl = List.map fst (free_vars ?env [ty]) in
+=======
+                    (*  Check genericity of type schemes  *)
+                    (**************************************)
+
+type variable_kind = Row_variable | Type_variable
+exception Non_closed of type_expr * variable_kind
+
+(* [free_vars] collects the variables of the input type expression. It
+   is used for several different things in the type-checker, with the
+   following bells and whistles:
+   - If [env] is Some typing environment, types in the environment
+     are expanded to check whether the apparently-free variable would vanish
+     during expansion.
+   - We collect both type variables and row variables, paired with
+     a [variable_kind] to distinguish them.
+   - We do not count "virtual" free variables -- free variables stored in
+     the abbreviation of an object type that has been expanded (we store
+     the abbreviations for use when displaying the type).
+
+   [free_vars] returns a [(variable * bool) list], while
+   [free_variables] below drops the type/row information
+   and only returns a [variable list].
+ *)
+let free_vars ?env tys =
+  let rec fv ~kind acc ty =
+    if not (try_mark_node ty) then acc
+    else match get_desc ty, env with
+      | Tvar _, _ ->
+          (ty, kind) :: acc
+      | Tconstr (path, tl, _), Some env ->
+          let acc =
+            match Env.find_type_expansion path env with
+            | exception Not_found -> acc
+            | (_, body, _) ->
+                if get_level body = generic_level then acc
+                else (ty, kind) :: acc
+          in
+          List.fold_left (fv ~kind:Type_variable) acc tl
+      | Tobject (ty, _), _ ->
+          (* ignoring the second parameter of [Tobject] amounts to not
+             counting "virtual free variables". *)
+          fv ~kind:Row_variable acc ty
+      | Tfield (_, _, ty1, ty2), _ ->
+          let acc = fv ~kind:Type_variable acc ty1 in
+          fv ~kind:Row_variable acc ty2
+      | Tvariant row, _ ->
+          let acc = fold_row (fv ~kind:Type_variable) acc row in
+          if static_row row then acc
+          else fv ~kind:Row_variable acc (row_more row)
+      | _    ->
+          fold_type_expr (fv ~kind) acc ty
+  in
+  List.fold_left (fv ~kind:Type_variable) [] tys
+
+let free_variables ?env ty =
+  let tl = List.map fst (free_vars ?env [ty]) in
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let merge_row_fields fi1 fi2 =
   match fi1, fi2 with
@@ -703,6 +908,19 @@ let closed_extension_constructor ext =
   with Non_closed (ty, _) ->
     unmark_extension_constructor ext;
     Some ty
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+exception CCFailure of (type_expr * bool * string * type_expr)
+=======
+
+type closed_class_failure = {
+  free_variable: type_expr * variable_kind;
+  meth: string;
+  meth_ty: type_expr;
+}
+exception CCFailure of closed_class_failure
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 type closed_class_failure = {
   free_variable: type_expr * variable_kind;
@@ -745,6 +963,35 @@ let duplicate_type ty =
   Subst.type_expr Subst.identity ty
 
 (* Same, for class types *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  if level <> generic_level then begin
+    if is_Tvar ty && level > !current_level then
+      set_level ty !current_level
+    else if
+      level > !current_level &&
+      match get_desc ty with
+        Tconstr (p, _, abbrev) ->
+          not (is_object_type p) && (abbrev := Mnil; true)
+      | _ -> true
+    then begin
+      set_level ty generic_level;
+      iter_type_expr generalize_structure ty
+    end
+=======
+  if level <> generic_level then begin
+    if is_Tvar ty && level > !current_level then
+      set_level ty !current_level
+    else if level > !current_level then begin
+      begin match get_desc ty with
+        Tconstr (_, _, abbrev) ->
+          abbrev := Mnil
+      | _ -> ()
+      end;
+      set_level ty generic_level;
+      iter_type_expr generalize_structure ty
+    end
+>>>>>>> ocaml-flambda/flambda-backend:main
 let duplicate_class_type ty =
   Subst.class_type Subst.identity ty
 
@@ -1180,8 +1427,16 @@ let rec find_repr p1 =
    a stub [Tsubst (newvar ())] using [For_copy.redirect_desc]. The
    scope of this mutation is determined by the [copy_scope] parameter,
    and the [For_copy.with_scope] helper is in charge of creating a new
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
    scope and performing the necessary book-keeping -- in particular
    reverting the in-place updates after the instantiation is done. *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let rec copy ?partial ?keep_names scope ty =
+  let copy = copy ?partial ?keep_names scope in
+=======
+let rec copy ?partial ?keep_names copy_scope ty =
+  let copy = copy ?partial ?keep_names copy_scope in
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let abbreviations = ref (ref Mnil)
   (* Abbreviation memorized. *)
@@ -1216,7 +1471,13 @@ let rec copy ?partial ?keep_names copy_scope ty =
     For_copy.redirect_desc copy_scope ty (Tsubst (t, None));
     let desc' =
       match desc with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       | Tconstr (p, tl, _) ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          let abbrevs = proper_abbrevs p tl !abbreviations in
+=======
+          let abbrevs = proper_abbrevs tl !abbreviations in
+>>>>>>> ocaml-flambda/flambda-backend:main
           let abbrevs = proper_abbrevs tl !abbreviations in
           begin match find_repr p !abbrevs with
             Some ty when not (eq_type ty t) ->
@@ -1313,6 +1574,57 @@ let instance ?partial sch =
   For_copy.with_scope (fun copy_scope ->
     copy ?partial copy_scope sch)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  ty
+
+let instance_list schl =
+  For_copy.with_scope (fun scope -> List.map (fun t -> copy scope t) schl)
+
+let reified_var_counter = ref Vars.empty
+let reset_reified_var_counter () =
+  reified_var_counter := Vars.empty
+
+(* names given to new type constructors.
+   Used for existential types and
+   local constraints *)
+let get_new_abstract_name s =
+  let index =
+    try Vars.find s !reified_var_counter + 1
+    with Not_found -> 0 in
+  reified_var_counter := Vars.add s index !reified_var_counter;
+  if index = 0 && s <> "" && s.[String.length s - 1] <> '$' then s else
+  Printf.sprintf "%s%d" s index
+
+let new_local_type ?(loc = Location.none) ?manifest_and_scope jkind =
+  let manifest, expansion_scope =
+=======
+  ty
+
+let instance_list schl =
+  For_copy.with_scope (fun copy_scope ->
+    List.map (fun t -> copy copy_scope t) schl)
+
+(* Create unique names to new type constructors.
+   Used for existential types and local constraints. *)
+let get_new_abstract_name env s =
+  (* unique names are needed only for error messages *)
+  if in_counterexample () then s else
+  let name index =
+    if index = 0 && s <> "" && s.[String.length s - 1] <> '$' then s else
+    Printf.sprintf "%s%d" s index
+  in
+  let check index =
+    match Env.find_type_by_name (Longident.Lident (name index)) env with
+    | _ -> false
+    | exception Not_found -> true
+  in
+  let index = Misc.find_first_mono check in
+  name index
+
+let new_local_type ?(loc = Location.none) ?manifest_and_scope jkind =
+  let manifest, expansion_scope =
+>>>>>>> ocaml-flambda/flambda-backend:main
 let generic_instance sch =
   let old = !current_level in
   current_level := generic_level;
@@ -1352,6 +1664,7 @@ let new_local_type ?(loc = Location.none) ?manifest_and_scope jkind =
     type_arity = 0;
     type_kind = Type_abstract Abstract_def;
     type_jkind = jkind;
+    type_jkind_annotation = None;
     type_private = Public;
     type_manifest = manifest;
     type_variance = [];
@@ -1366,6 +1679,117 @@ let new_local_type ?(loc = Location.none) ?manifest_and_scope jkind =
 
 let existential_name cstr ty =
   match get_desc ty with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tvar { name = Some name } -> "$" ^ cstr.cstr_name ^ "_'" ^ name
+  | _ -> "$" ^ cstr.cstr_name
+
+let instance_constructor ?in_pattern cstr =
+  For_copy.with_scope (fun scope ->
+    begin match in_pattern with
+    | None -> ()
+    | Some (env, fresh_constr_scope) ->
+        let process existential =
+          (* CR layouts v1.5: Add test case that hits this once we have syntax
+             for it *)
+          let jkind =
+            match get_desc existential with
+            | Tvar { jkind } -> jkind
+            | Tvariant _ -> Jkind.value ~why:Row_variable (* Existential row variable *)
+            | _ -> assert false
+          in
+          let decl = new_local_type jkind in
+          let name = existential_name cstr existential in
+          let (id, new_env) =
+            Env.enter_type (get_new_abstract_name name) decl !env
+              ~scope:fresh_constr_scope in
+          env := new_env;
+          let to_unify = newty (Tconstr (Path.Pident id,[],ref Mnil)) in
+          let tv = copy scope existential in
+          assert (is_Tvar tv);
+          link_type tv to_unify
+        in
+        List.iter process cstr.cstr_existentials
+    end;
+    let ty_res = copy scope cstr.cstr_res in
+    let ty_args = List.map (fun (ty, gf) -> copy scope ty, gf) cstr.cstr_args in
+    let ty_ex = List.map (copy scope) cstr.cstr_existentials in
+    (ty_args, ty_res, ty_ex)
+  )
+
+let instance_parameterized_type ?keep_names sch_args sch =
+  For_copy.with_scope (fun scope ->
+    let ty_args = List.map (fun t -> copy ?keep_names scope t) sch_args in
+    let ty = copy scope sch in
+    (ty_args, ty)
+  )
+
+let instance_parameterized_type_2 sch_args sch_lst sch =
+  For_copy.with_scope (fun scope ->
+    let ty_args = List.map (copy scope) sch_args in
+    let ty_lst = List.map (copy scope) sch_lst in
+    let ty = copy scope sch in
+    (ty_args, ty_lst, ty)
+  )
+
+(* [map_kind f kind] maps [f] over all the types in [kind]. [f] must preserve jkinds *)
+let map_kind f = function
+  | (Type_abstract _ | Type_open) as k -> k
+=======
+  | Tvar { name = Some name } -> "$" ^ cstr.cstr_name ^ "_'" ^ name
+  | _ -> "$" ^ cstr.cstr_name
+
+type existential_treatment =
+  | Keep_existentials_flexible
+  | Make_existentials_abstract of { env: Env.t ref; scope: int }
+
+let instance_constructor existential_treatment cstr =
+  For_copy.with_scope (fun copy_scope ->
+    let copy_existential =
+      match existential_treatment with
+      | Keep_existentials_flexible -> copy copy_scope
+      | Make_existentials_abstract {env; scope = fresh_constr_scope} ->
+          fun existential ->
+            (* CR layouts v1.5: Add test case that hits this once we have syntax
+               for it *)
+            let jkind =
+              match get_desc existential with
+              | Tvar { jkind } -> jkind
+              | Tvariant _ -> Jkind.value ~why:Row_variable
+                  (* Existential row variable *)
+              | _ -> assert false
+            in
+            let decl = new_local_type jkind in
+            let name = existential_name cstr existential in
+            let (id, new_env) =
+              Env.enter_type (get_new_abstract_name !env name) decl !env
+                ~scope:fresh_constr_scope in
+            env := new_env;
+            let to_unify = newty (Tconstr (Path.Pident id,[],ref Mnil)) in
+            let tv = copy copy_scope existential in
+            assert (is_Tvar tv);
+            link_type tv to_unify;
+            tv
+    in
+    let ty_ex = List.map copy_existential cstr.cstr_existentials in
+    let ty_res = copy copy_scope cstr.cstr_res in
+    let ty_args =
+      List.map (fun (ty, gf) -> copy copy_scope ty, gf) cstr.cstr_args
+    in
+    (ty_args, ty_res, ty_ex)
+  )
+
+let instance_parameterized_type ?keep_names sch_args sch =
+  For_copy.with_scope (fun copy_scope ->
+    let ty_args = List.map (fun t -> copy ?keep_names copy_scope t) sch_args in
+    let ty = copy copy_scope sch in
+    (ty_args, ty)
+  )
+
+(* [map_kind f kind] maps [f] over all the types in [kind]. [f] must preserve jkinds *)
+let map_kind f = function
+  | (Type_abstract _ | Type_open) as k -> k
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tvar { name = Some name } -> "$" ^ cstr.cstr_name ^ "_'" ^ name
   | _ -> "$" ^ cstr.cstr_name
 
@@ -1450,6 +1874,228 @@ let generic_instance_declaration decl =
 
 let instance_class params cty =
   let rec copy_class_type copy_scope = function
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  decl
+
+let instance_class params cty =
+  let rec copy_class_type scope = function
+    | Cty_constr (path, tyl, cty) ->
+        let tyl' = List.map (copy scope) tyl in
+        let cty' = copy_class_type scope cty in
+        Cty_constr (path, tyl', cty')
+    | Cty_signature sign ->
+        Cty_signature
+          {csig_self = copy scope sign.csig_self;
+           csig_self_row = copy scope sign.csig_self_row;
+           csig_vars =
+             Vars.map
+               (function (m, v, ty) -> (m, v, copy scope ty))
+               sign.csig_vars;
+           csig_meths =
+             Meths.map
+               (function (p, v, ty) -> (p, v, copy scope ty))
+               sign.csig_meths}
+    | Cty_arrow (l, ty, cty) ->
+        Cty_arrow (l, copy scope ty, copy_class_type scope cty)
+  in
+  For_copy.with_scope (fun scope ->
+    let params' = List.map (copy scope) params in
+    let cty' = copy_class_type scope cty in
+    (params', cty')
+  )
+
+(**** Instantiation for types with free universal variables ****)
+
+let rec diff_list l1 l2 =
+  if l1 == l2 then [] else
+  match l1 with [] -> invalid_arg "Ctype.diff_list"
+  | a :: l1 -> a :: diff_list l1 l2
+
+let conflicts free bound =
+  let bound = List.map get_id bound in
+  TypeSet.exists (fun t -> List.memq (get_id t) bound) free
+
+let delayed_copy = ref []
+    (* copying to do later *)
+
+(* Copy without sharing until there are no free univars left *)
+(* all free univars must be included in [visited]            *)
+let rec copy_sep ~cleanup_scope ~fixed ~free ~bound ~may_share
+    (visited : (int * (type_expr * type_expr list)) list) (ty : type_expr) =
+  let univars = free ty in
+  if is_Tvar ty || may_share && TypeSet.is_empty univars then
+    if get_level ty <> generic_level then ty else
+    (* jkind not consulted during copy_sep, so Any is safe *)
+    let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
+    delayed_copy :=
+      lazy (Transient_expr.set_stub_desc t (Tlink (copy cleanup_scope ty)))
+      :: !delayed_copy;
+    t
+  else try
+    let t, bound_t = List.assq (get_id ty) visited in
+    let dl = if is_Tunivar ty then [] else diff_list bound bound_t in
+    if dl <> [] && conflicts univars dl then raise Not_found;
+    t
+  with Not_found -> begin
+    let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
+    let desc = get_desc ty in
+    let visited =
+      match desc with
+        Tarrow _ | Ttuple _ | Tvariant _ | Tconstr _ | Tobject _ | Tpackage _ ->
+          (get_id ty, (t, bound)) :: visited
+      | Tvar _ | Tfield _ | Tnil | Tpoly _ | Tunivar _ ->
+          visited
+      | Tlink _ | Tsubst _ ->
+          assert false
+    in
+    let copy_rec = copy_sep ~cleanup_scope ~fixed ~free ~bound visited in
+    let desc' =
+      match desc with
+      | Tvariant row ->
+          let more = row_more row in
+          (* We shall really check the level on the row variable *)
+          let keep = is_Tvar more && get_level more <> generic_level in
+          let more' = copy_rec ~may_share:false more in
+          let fixed' = fixed && (is_Tvar more || is_Tunivar more) in
+          let row =
+            copy_row (copy_rec ~may_share:true) fixed' row keep more' in
+          Tvariant row
+      | Tpoly (t1, tl) ->
+          let tl' = List.map (fun t -> newty (get_desc t)) tl in
+          let bound = tl @ bound in
+          let visited =
+            List.map2 (fun ty t -> get_id ty, (t, bound)) tl tl' @ visited in
+          let body =
+            copy_sep ~cleanup_scope ~fixed ~free ~bound ~may_share:true
+              visited t1 in
+          Tpoly (body, tl')
+      | Tfield (p, k, ty1, ty2) ->
+          (* the kind is kept shared, see Btype.copy_type_desc *)
+          Tfield (p, field_kind_internal_repr k, copy_rec ~may_share:true ty1,
+                  copy_rec ~may_share:false ty2)
+      | _ -> copy_type_desc (copy_rec ~may_share:true) desc
+    in
+    Transient_expr.set_stub_desc t desc';
+    t
+  end
+
+let instance_poly' cleanup_scope ~keep_names fixed univars sch =
+  (* In order to compute univars below, [sch] should not contain [Tsubst] *)
+  let copy_var ty =
+    match get_desc ty with
+=======
+  decl
+
+let instance_class params cty =
+  let rec copy_class_type copy_scope = function
+    | Cty_constr (path, tyl, cty) ->
+        let tyl' = List.map (copy copy_scope) tyl in
+        let cty' = copy_class_type copy_scope cty in
+        Cty_constr (path, tyl', cty')
+    | Cty_signature sign ->
+        Cty_signature
+          {csig_self = copy copy_scope sign.csig_self;
+           csig_self_row = copy copy_scope sign.csig_self_row;
+           csig_vars =
+             Vars.map
+               (function (m, v, ty) -> (m, v, copy copy_scope ty))
+               sign.csig_vars;
+           csig_meths =
+             Meths.map
+               (function (p, v, ty) -> (p, v, copy copy_scope ty))
+               sign.csig_meths}
+    | Cty_arrow (l, ty, cty) ->
+        Cty_arrow (l, copy copy_scope ty, copy_class_type copy_scope cty)
+  in
+  For_copy.with_scope (fun copy_scope ->
+    let params' = List.map (copy copy_scope) params in
+    let cty' = copy_class_type copy_scope cty in
+    (params', cty')
+  )
+
+(**** Instantiation for types with free universal variables ****)
+
+(* [copy_sep] is used to instantiate first-class polymorphic types.
+   * It first makes a separate copy of the type as a graph, omitting nodes
+     that have no free univars.
+   * In this first pass, [visited] is used as a mapping for previously visited
+     nodes, and must already contain all the free univars in [ty].
+   * The remaining (univar-closed) parts of the type are then instantiated
+     with [copy] using a common [copy_scope].
+   The reason to work in two passes lies in recursive types such as:
+     [let h (x : < m : 'a. < n : 'a; p : 'b > > as 'b) = x#m]
+   The type of [x#m] should be:
+     [ < n : 'c; p : < m : 'a. < n : 'a; p : 'b > > as 'b > ]
+   I.e., the universal type variable ['a] is both instantiated as a fresh
+   type variable ['c] when outside of its binder, and kept as universal
+   when under its binder.
+   Assumption: in the first call to [copy_sep], all the free univars should
+   be bound by the same [Tpoly] node. This guarantees that they are only
+   bound when under this [Tpoly] node, which has no free univars, and as
+   such is not part of the separate copy. In turn, this allows the separate
+   copy to keep the sharing of the original type without breaking its
+   binding structure.
+ *)
+let copy_sep ~copy_scope ~fixed ~(visited : type_expr TypeHash.t) sch =
+  let free = compute_univars sch in
+  let delayed_copies = ref [] in
+  let add_delayed_copy t ty =
+    delayed_copies :=
+      lazy (Transient_expr.set_stub_desc t (Tlink (copy copy_scope ty))) ::
+      !delayed_copies
+  in
+  let rec copy_rec ~may_share (ty : type_expr) =
+    let univars = free ty in
+    if is_Tvar ty || may_share && TypeSet.is_empty univars then
+      if get_level ty <> generic_level then ty else
+      (* jkind not consulted during copy_sep, so Any is safe *)
+      let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
+      add_delayed_copy t ty;
+      t
+    else try
+      TypeHash.find visited ty
+    with Not_found -> begin
+      let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
+      TypeHash.add visited ty t;
+      let desc' =
+        match get_desc ty with
+        | Tvariant row ->
+            let more = row_more row in
+            (* We shall really check the level on the row variable *)
+            let keep = is_Tvar more && get_level more <> generic_level in
+            (* In that case we should keep the original, but we still
+               call copy to correct the levels *)
+            if keep then
+              (add_delayed_copy t ty;
+               Tvar { name = None;
+                      jkind = Jkind.value ~why:Polymorphic_variant })
+            else
+            let more' = copy_rec ~may_share:false more in
+            let fixed' = fixed && (is_Tvar more || is_Tunivar more) in
+            let row =
+              copy_row (copy_rec ~may_share:true) fixed' row keep more' in
+            Tvariant row
+        | Tfield (p, k, ty1, ty2) ->
+            (* the kind is kept shared, see Btype.copy_type_desc *)
+            Tfield (p, field_kind_internal_repr k,
+                    copy_rec ~may_share:true ty1,
+                    copy_rec ~may_share:false ty2)
+        | desc -> copy_type_desc (copy_rec ~may_share:true) desc
+      in
+      Transient_expr.set_stub_desc t desc';
+      t
+    end
+  in
+  let ty = copy_rec ~may_share:true sch in
+  List.iter Lazy.force !delayed_copies;
+  ty
+
+let instance_poly' copy_scope ~keep_names fixed univars sch =
+  (* In order to compute univars below, [sch] should not contain [Tsubst] *)
+  let copy_var ty =
+    match get_desc ty with
+>>>>>>> ocaml-flambda/flambda-backend:main
     | Cty_constr (path, tyl, cty) ->
         let tyl' = List.map (copy copy_scope) tyl in
         let cty' = copy_class_type copy_scope cty in
@@ -1563,21 +2209,53 @@ let instance_poly' copy_scope ~keep_names fixed univars sch =
   let visited = TypeHash.create 17 in
   List.iter2 (TypeHash.add visited) univars vars;
   let ty = copy_sep ~copy_scope ~fixed ~visited sch in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   vars, ty
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  For_copy.with_scope (fun cleanup_scope ->
+    instance_poly' cleanup_scope ~keep_names fixed univars sch
+=======
+  For_copy.with_scope (fun copy_scope ->
+    instance_poly' copy_scope ~keep_names fixed univars sch
+>>>>>>> ocaml-flambda/flambda-backend:main
 let instance_poly ?(keep_names=false) fixed univars sch =
   For_copy.with_scope (fun copy_scope ->
     instance_poly' copy_scope ~keep_names fixed univars sch
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   )
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  For_copy.with_scope (fun scope ->
+=======
+  For_copy.with_scope (fun copy_scope ->
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let instance_label fixed lbl =
   For_copy.with_scope (fun copy_scope ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     let vars, ty_arg =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          instance_poly' scope ~keep_names:false fixed tl ty
+=======
+          instance_poly' copy_scope ~keep_names:false fixed tl ty
+>>>>>>> ocaml-flambda/flambda-backend:main
       match get_desc lbl.lbl_arg with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         Tpoly (ty, tl) ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          [], copy scope lbl.lbl_arg
+=======
+          [], copy copy_scope lbl.lbl_arg
+>>>>>>> ocaml-flambda/flambda-backend:main
           instance_poly' copy_scope ~keep_names:false fixed tl ty
       | _ ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           [], copy copy_scope lbl.lbl_arg
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    let ty_res = copy scope lbl.lbl_res in
+=======
+    let ty_res = copy copy_scope lbl.lbl_res in
+>>>>>>> ocaml-flambda/flambda-backend:main
     in
     (* call [copy] after [instance_poly] to avoid introducing [Tsubst] *)
     let ty_res = copy copy_scope lbl.lbl_res in
@@ -1689,10 +2367,32 @@ let subst env level priv abbrev oty params args body =
    Default to generic level. Usually, only the shape of the type matters, not
    whether it is generic or not. [generic_level] might be somewhat slower, but
    it ensures invariants on types are enforced (decreasing levels), and we don't
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+   let _ = foo "hi"
+*)
+(*
+   Only the shape of the type matters, not whether it is generic or
+   not. [generic_level] might be somewhat slower, but it ensures
+   invariants on types are enforced (decreasing levels), and we don't
+=======
+   let _ = foo "hi"
+*)
+(*
+   Default to generic level. Usually, only the shape of the type matters, not
+   whether it is generic or not. [generic_level] might be somewhat slower, but
+   it ensures invariants on types are enforced (decreasing levels), and we don't
+>>>>>>> ocaml-flambda/flambda-backend:main
    care about efficiency here.
 *)
 let apply ?(use_current_level = false) env params body args =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let level = if use_current_level then !current_level else generic_level in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    subst env generic_level Public (ref Mnil) None params args body
+=======
+    subst env level Public (ref Mnil) None params args body
+>>>>>>> ocaml-flambda/flambda-backend:main
   try
     subst env level Public (ref Mnil) None params args body
   with
@@ -1922,8 +2622,11 @@ let expand_head_opt env ty =
 
 
 type unbox_result =
-  | Unboxed of type_expr
-  | Not_unboxed of type_expr
+  (* unboxing process made a step: either an unboxing or removal of a [Tpoly] *)
+  | Stepped of type_expr
+  (* no step to make; we're all done here *)
+  | Final_result of type_expr
+  (* definition not in environment: missing cmi *)
   | Missing of Path.t
 
 (* We use expand_head_opt version of expand_head to get access
@@ -1936,13 +2639,14 @@ let unbox_once env ty =
     | exception Not_found -> Missing p
     | decl ->
       begin match find_unboxed_type decl with
-      | None -> Not_unboxed ty
+      | None -> Final_result ty
       | Some ty2 ->
         let ty2 = match get_desc ty2 with Tpoly (t, _) -> t | _ -> ty2 in
-        Unboxed (apply env decl.type_params ty2 args)
+        Stepped (apply env decl.type_params ty2 args)
       end
     end
-  | _ -> Not_unboxed ty
+  | Tpoly (ty, _) -> Stepped ty
+  | _ -> Final_result ty
 
 (* We use ty_prev to track the last type for which we found a definition,
    allowing us to return a type for which a definition was found even if
@@ -1950,9 +2654,9 @@ let unbox_once env ty =
 let rec get_unboxed_type_representation env ty_prev ty fuel =
   if fuel < 0 then Error ty else
     match unbox_once env ty with
-    | Unboxed ty2 ->
+    | Stepped ty2 ->
       get_unboxed_type_representation env ty ty2 (fuel - 1)
-    | Not_unboxed ty2 -> Ok ty2
+    | Final_result ty2 -> Ok ty2
     | Missing _ -> Ok ty_prev
 
 let get_unboxed_type_representation env ty =
@@ -2068,8 +2772,8 @@ let rec constrain_type_jkind ~fixed env ty jkind fuel =
       | Error _ as err when fuel < 0 -> err
       | Error violation ->
         begin match unbox_once env ty with
-        | Not_unboxed ty -> constrain_unboxed ty
-        | Unboxed ty ->
+        | Final_result ty -> constrain_unboxed ty
+        | Stepped ty ->
             constrain_type_jkind ~fixed env ty jkind (fuel - 1)
         | Missing missing_cmi_for ->
           Error (Jkind.Violation.record_missing_cmi ~missing_cmi_for violation)
@@ -2160,7 +2864,14 @@ let is_immediate64 env ty =
     Btype.backtrack snap;
     result
   else
-    perform_check ()
+    (* CR layouts v2.8: Remove the backtracking once mode crossing is
+       implemented correctly; it's needed for now because checking whether
+       a jkind is immediate (rightly) sets the sort to be Value. It worked
+       previous to this patch because the subjkind check failed earlier. *)
+    let snap = Btype.snapshot () in
+    let result = perform_check () in
+    Btype.backtrack snap;
+    result
 
 (* We will require Int63 to be [global many unique] on 32-bit platforms, so
    this is fine *)
@@ -2181,10 +2892,24 @@ let full_expand ~may_forget_scope env ty =
       try expand_head_unif env ty with Unify_trace _ ->
         (* #10277: forget scopes when printing trace *)
         with_level ~level:(get_level ty) begin fun () ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           (* The same as [expand_head], except in the failing case we return the
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+             *original* type, not [correct_levels ty].*)
+=======
+           *original* type, not [correct_levels ty].*)
+>>>>>>> ocaml-flambda/flambda-backend:main
            *original* type, not [correct_levels ty].*)
           try try_expand_head try_expand_safe env (correct_levels ty) with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           | Cannot_expand -> ty
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        in
+        end_def ();
+        ty
+=======
+        end
+>>>>>>> ocaml-flambda/flambda-backend:main
         end
     else expand_head env ty
   in
@@ -2499,16 +3224,32 @@ let polyfy env ty vars =
   let subst_univar copy_scope ty =
     match get_desc ty with
     | Tvar { name; jkind } when get_level ty = generic_level ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         let t = newty (Tunivar { name; jkind }) in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        For_copy.redirect_desc scope ty (Tsubst (t, None));
+=======
+        For_copy.redirect_desc copy_scope ty (Tsubst (t, None));
+>>>>>>> ocaml-flambda/flambda-backend:main
         For_copy.redirect_desc copy_scope ty (Tsubst (t, None));
         Some t
     | _ -> None
   in
   (* need to expand twice? cf. Ctype.unify2 *)
   let vars = List.map (expand_head env) vars in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let vars = List.map (expand_head env) vars in
   For_copy.with_scope (fun copy_scope ->
     let vars' = List.filter_map (subst_univar copy_scope) vars in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  For_copy.with_scope (fun scope ->
+    let vars' = List.filter_map (subst_univar scope) vars in
+    let ty = copy scope ty in
+=======
+  For_copy.with_scope (fun copy_scope ->
+    let vars' = List.filter_map (subst_univar copy_scope) vars in
+    let ty = copy copy_scope ty in
+>>>>>>> ocaml-flambda/flambda-backend:main
     let ty = copy copy_scope ty in
     let ty = newty2 ~level:(get_level ty) (Tpoly(ty, vars')) in
     let complete = List.length vars = List.length vars' in
@@ -3230,6 +3971,62 @@ let rec unify (env:Env.t ref) t1 t2 =
     reset_trace_gadt_instances reset_tracing;
     raise_trace_for Unify (Diff {got = t1; expected = t2} :: trace)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        update_level_for Unify !env (get_level t1) t2;
+        update_scope_for Unify (get_scope t1) t2;
+        link_type t1 t2
+    | (Tconstr (p1, [], _), Tconstr (p2, [], _))
+      when Env.has_local_constraints !env
+      && is_newtype !env p1 && is_newtype !env p2 ->
+        (* Do not use local constraints more than necessary *)
+        begin try
+          if find_expansion_scope !env p1 > find_expansion_scope !env p2 then
+            unify env t1 (try_expand_safe !env t2)
+          else
+            unify env (try_expand_safe !env t1) t2
+        with Cannot_expand ->
+          unify2 env t1 t2
+        end
+    | _ ->
+        unify2 env t1 t2
+    end;
+=======
+        update_level_for Unify !env (get_level t1) t2;
+        update_scope_for Unify (get_scope t1) t2;
+        link_type t1 t2
+    | (Tconstr _, Tconstr _) when Env.has_local_constraints !env ->
+        unify2_rec env t1 t1 t2 t2
+    | _ ->
+        unify2 env t1 t2
+    end;
+>>>>>>> ocaml-flambda/flambda-backend:main
+and unify2 env t1 t2 = unify2_expand env t1 t1 t2 t2
+
+and unify2_rec env t10 t1 t20 t2 =
+  if unify_eq t1 t2 then () else
+  try match (get_desc t1, get_desc t2) with
+  | (Tconstr (p1, tl1, a1), Tconstr (p2, tl2, a2)) ->
+      if Path.same p1 p2 && tl1 = [] && tl2 = []
+      && not (has_cached_expansion p1 !a1 || has_cached_expansion p2 !a2)
+      then begin
+        update_level_for Unify !env (get_level t1) t2;
+        update_scope_for Unify (get_scope t1) t2;
+        link_type t1 t2
+      end else
+        if find_expansion_scope !env p1 > find_expansion_scope !env p2
+        then unify2_rec env t10 t1 t20 (try_expand_safe !env t2)
+        else unify2_rec env t10 (try_expand_safe !env t1) t20 t2
+  | _ ->
+      raise Cannot_expand
+  with Cannot_expand ->
+    unify2_expand env t10 t1 t20 t2
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+and unify2_expand env t1 t1' t2 t2' =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+and unify2 env t1 t2 =
+=======
 and unify2 env t1 t2 = unify2_expand env t1 t1 t2 t2
 
 and unify2_rec env t10 t1 t20 t2 =
@@ -3252,6 +4049,7 @@ and unify2_rec env t10 t1 t20 t2 =
     unify2_expand env t10 t1 t20 t2
 
 and unify2_expand env t1 t1' t2 t2' =
+>>>>>>> ocaml-flambda/flambda-backend:main
   (* Second step: expansion of abbreviations *)
   (* Expansion may change the representative of the types. *)
   ignore (expand_head_unif !env t1');
@@ -3799,6 +4597,11 @@ let unify env ty1 ty2 =
 let unify_delaying_jkind_checks env ty1 ty2 =
   delay_jkind_checks_in (fun () ->
     unify_pairs (ref env) ty1 ty2 [])
+
+(* Lower the level of a type to the current level *)
+let enforce_current_level env ty =
+  unify_var env (newvar (Jkind.any ~why:Dummy_jkind)) ty
+
 
 (* Lower the level of a type to the current level *)
 let enforce_current_level env ty =
@@ -5888,6 +6691,189 @@ let unalias ty =
       newty2 ~level desc
 
 (* Return the arity (as for curried functions) of the given type. *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | _ -> 0
+
+(* Check for non-generalizable type variables *)
+exception Nongen
+let visited = ref TypeSet.empty
+
+let rec nongen_schema_rec env ty =
+  if TypeSet.mem ty !visited then () else begin
+    visited := TypeSet.add ty !visited;
+    match get_desc ty with
+      Tvar _ when get_level ty <> generic_level ->
+        raise Nongen
+    | Tconstr _ ->
+        let old = !visited in
+        begin try iter_type_expr (nongen_schema_rec env) ty
+        with Nongen -> try
+          visited := old;
+          nongen_schema_rec env (try_expand_head try_expand_safe env ty)
+        with Cannot_expand ->
+          raise Nongen
+        end
+    | Tfield(_, kind, t1, t2) ->
+        if field_kind_repr kind = Fpublic then
+          nongen_schema_rec env t1;
+        nongen_schema_rec env t2
+    | Tvariant row ->
+        iter_row (nongen_schema_rec env) row;
+        if not (static_row row) then nongen_schema_rec env (row_more row)
+    | _ ->
+        iter_type_expr (nongen_schema_rec env) ty
+  end
+
+(* Return whether all variables of type [ty] are generic. *)
+let nongen_schema env ty =
+  remove_mode_and_jkind_variables ty;
+  visited := TypeSet.empty;
+  try
+    nongen_schema_rec env ty;
+    visited := TypeSet.empty;
+    false
+  with Nongen ->
+    visited := TypeSet.empty;
+    true
+
+(* Check that all type variables are generalizable *)
+(* Use Env.empty to prevent expansion of recursively defined object types;
+   cf. typing-poly/poly.ml *)
+let rec nongen_class_type = function
+  | Cty_constr (_, params, _) ->
+      List.exists (nongen_schema Env.empty) params
+  | Cty_signature sign ->
+      nongen_schema Env.empty sign.csig_self
+      || nongen_schema Env.empty sign.csig_self_row
+      || Meths.exists
+           (fun _ (_, _, ty) -> nongen_schema Env.empty ty)
+           sign.csig_meths
+      || Vars.exists
+           (fun _ (_, _, ty) -> nongen_schema Env.empty ty)
+           sign.csig_vars
+  | Cty_arrow (_, ty, cty) ->
+      nongen_schema Env.empty ty
+      || nongen_class_type cty
+
+let nongen_class_declaration cty =
+  List.exists (nongen_schema Env.empty) cty.cty_params
+  || nongen_class_type cty.cty_type
+
+
+(* Normalize a type before printing, saving... *)
+(* Cannot use mark_type because deep_occur uses it too *)
+=======
+  | _ -> 0
+
+(* Check for non-generalizable type variables *)
+let add_nongen_vars_in_schema =
+  let rec loop env ((visited, weak_set) as acc) ty =
+    if TypeSet.mem ty visited
+    then acc
+    else begin
+      let visited = TypeSet.add ty visited in
+      match get_desc ty with
+      | Tvar _ when get_level ty <> generic_level ->
+          visited, TypeSet.add ty weak_set
+      | Tconstr _ ->
+          let (_, unexpanded_candidate) as unexpanded_candidate' =
+            fold_type_expr
+              (loop env)
+              (visited, weak_set)
+              ty
+          in
+          (* Using `==` is okay because `loop` will return the original set
+             when it does not change it. Similarly, `TypeSet.add` will return
+             the original set if the element is already present. *)
+          if unexpanded_candidate == weak_set
+          then (visited, weak_set)
+          else begin
+            match
+              loop env (visited, weak_set)
+                (try_expand_head try_expand_safe env ty)
+            with
+            | exception Cannot_expand -> unexpanded_candidate'
+            | expanded_result -> expanded_result
+          end
+      | Tfield(_, kind, t1, t2) ->
+          let visited, weak_set =
+            match field_kind_repr kind with
+            | Fpublic -> loop env (visited, weak_set) t1
+            | _ -> visited, weak_set
+          in
+          loop env (visited, weak_set) t2
+      | Tvariant row ->
+          let visited, weak_set =
+            fold_row (loop env) (visited, weak_set) row
+          in
+          if not (static_row row)
+          then loop env (visited, weak_set) (row_more row)
+          else (visited, weak_set)
+      | _ ->
+          fold_type_expr (loop env) (visited, weak_set) ty
+    end
+  in
+  fun env acc ty ->
+    remove_mode_and_jkind_variables ty;
+    let _, result = loop env (TypeSet.empty, acc) ty in
+    result
+
+(* Return all non-generic variables of [ty]. *)
+let nongen_vars_in_schema env ty =
+  let result = add_nongen_vars_in_schema env TypeSet.empty ty in
+  if TypeSet.is_empty result
+  then None
+  else Some result
+
+(* Check that all type variables are generalizable *)
+(* Use Env.empty to prevent expansion of recursively defined object types;
+   cf. typing-poly/poly.ml *)
+let nongen_class_type =
+  let add_nongen_vars_in_schema' ty weak_set =
+    add_nongen_vars_in_schema Env.empty weak_set ty
+  in
+  let add_nongen_vars_in_schema_fold fold m weak_set =
+    let f _key (_,_,ty) weak_set =
+      add_nongen_vars_in_schema Env.empty weak_set ty
+    in
+    fold f m weak_set
+  in
+  let rec nongen_class_type cty weak_set =
+    match cty with
+    | Cty_constr (_, params, _) ->
+        List.fold_left
+          (add_nongen_vars_in_schema Env.empty)
+          weak_set
+          params
+    | Cty_signature sign ->
+        weak_set
+        |> add_nongen_vars_in_schema' sign.csig_self
+        |> add_nongen_vars_in_schema' sign.csig_self_row
+        |> add_nongen_vars_in_schema_fold Meths.fold sign.csig_meths
+        |> add_nongen_vars_in_schema_fold Vars.fold sign.csig_vars
+    | Cty_arrow (_, ty, cty) ->
+        add_nongen_vars_in_schema' ty weak_set
+        |> nongen_class_type cty
+  in
+  nongen_class_type
+
+let nongen_class_declaration cty =
+  List.fold_left
+    (add_nongen_vars_in_schema Env.empty)
+    TypeSet.empty
+    cty.cty_params
+  |> nongen_class_type cty.cty_type
+
+let nongen_vars_in_class_declaration cty =
+  let result = nongen_class_declaration cty in
+  if TypeSet.is_empty result
+  then None
+  else Some result
+
+(* Normalize a type before printing, saving... *)
+(* Cannot use mark_type because deep_occur uses it too *)
+>>>>>>> ocaml-flambda/flambda-backend:main
 let rec arity ty =
   match get_desc ty with
     Tarrow(_, _t1, t2, _) -> 1 + arity t2
@@ -6206,6 +7192,7 @@ let nondep_type_decl env mid is_covariant decl =
       type_arity = decl.type_arity;
       type_kind = tk;
       type_jkind = decl.type_jkind;
+      type_jkind_annotation = decl.type_jkind_annotation;
       type_manifest = tm;
       type_private = priv;
       type_variance = decl.type_variance;

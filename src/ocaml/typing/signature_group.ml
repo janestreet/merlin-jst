@@ -47,14 +47,32 @@ let next_group = function
         | Types.Sig_class _ ->
             (* a class declaration for [c] is followed by the ghost
                declarations of class type [c], and type [c] *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             begin match q with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            | ct::t::ht::q -> [ct;t;ht], q
+=======
+            | ct::t::q -> [ct;t], q
+>>>>>>> ocaml-flambda/flambda-backend:main
             | ct::t::q -> [ct;t], q
             | _ -> assert false
             end
         | Types.Sig_class_type _  ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
             (* a class type declaration for [ct] is followed by the ghost
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+               declarations of types [ct] and [#ct] *)
+=======
                declaration of type [ct] *)
+>>>>>>> ocaml-flambda/flambda-backend:main
+               declaration of type [ct] *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
            begin match q with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            | t::ht::q -> [t;ht], q
+=======
+            | t::q -> [t], q
+>>>>>>> ocaml-flambda/flambda-backend:main
             | t::q -> [t], q
             | _ -> assert false
            end

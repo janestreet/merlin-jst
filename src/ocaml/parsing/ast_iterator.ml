@@ -384,6 +384,21 @@ module M = struct
         iter_functor_param sub param;
         sub.module_expr sub body
     | Pmod_apply (m1, m2) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        sub.module_expr sub m1; sub.module_expr sub m2
+    | Pmod_constraint (m, mty) ->
+        sub.module_expr sub m; sub.module_type sub mty
+    | Pmod_unpack e -> sub.expr sub e
+=======
+        sub.module_expr sub m1;
+        sub.module_expr sub m2
+    | Pmod_apply_unit m1 ->
+        sub.module_expr sub m1
+    | Pmod_constraint (m, mty) ->
+        sub.module_expr sub m; sub.module_type sub mty
+    | Pmod_unpack e -> sub.expr sub e
+>>>>>>> ocaml-flambda/flambda-backend:main
         sub.module_expr sub m1;
         sub.module_expr sub m2
     | Pmod_apply_unit m1 ->
@@ -834,6 +849,24 @@ let default_iterator =
     value_binding =
       (fun this {pvb_pat; pvb_expr; pvb_attributes; pvb_loc; pvb_constraint} ->
          this.pat this pvb_pat;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+         this.location this pvb_loc;
+         this.attributes this pvb_attributes
+      );
+=======
+         Option.iter (function
+             | Parsetree.Pvc_constraint {locally_abstract_univars=vars; typ} ->
+                 List.iter (iter_loc this) vars;
+                 this.typ this typ
+             | Pvc_coercion { ground; coercion } ->
+                 Option.iter (this.typ this) ground;
+                 this.typ this coercion;
+           ) pvb_constraint;
+         this.location this pvb_loc;
+         this.attributes this pvb_attributes
+      );
+>>>>>>> ocaml-flambda/flambda-backend:main
          this.expr this pvb_expr;
          Option.iter (function
              | Parsetree.Pvc_constraint {locally_abstract_univars=vars; typ} ->

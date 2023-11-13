@@ -1,0 +1,10 @@
+--- printtyp.ml
++++ printtyp.ml
+@@ -3347,6 +3444,7 @@ let dummy =
+     type_arity = 0;
+     type_kind = Type_abstract Abstract_def;
+     type_jkind = Jkind.any ~why:Dummy_jkind;
++    type_jkind_annotation = None;
+     type_private = Public;
+     type_manifest = None;
+     type_variance = [];

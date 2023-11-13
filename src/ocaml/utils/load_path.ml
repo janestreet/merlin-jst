@@ -31,6 +31,32 @@ module Dir = struct
   let path t = t.path
   let files t = t.files
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  (* For backward compatibility reason, simulate the behavior of
+     [Misc.find_in_path]: silently ignore directories that don't exist
+     + treat [""] as the current directory. *)
+=======
+  let find t fn =
+    if List.mem fn t.files then
+      Some (Filename.concat t.path fn)
+    else
+      None
+
+  let find_uncap t fn =
+    let fn = String.uncapitalize_ascii fn in
+    let search base =
+      if String.uncapitalize_ascii base = fn then
+        Some (Filename.concat t.path base)
+      else
+        None
+    in
+    List.find_map search t.files
+
+  (* For backward compatibility reason, simulate the behavior of
+     [Misc.find_in_path]: silently ignore directories that don't exist
+     + treat [""] as the current directory. *)
+>>>>>>> ocaml-flambda/flambda-backend:main
   let find t fn =
     if List.mem fn t.files then
       Some (Filename.concat t.path fn)
@@ -54,16 +80,30 @@ module Dir = struct
 
 end
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 type auto_include_callback =
   (Dir.t -> string -> string option) -> string -> string
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+type auto_include_callback =
+  (Dir.t -> string -> string option) -> string -> string
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 let dirs = s_ref []
 let no_auto_include _ _ = raise Not_found
 let auto_include_callback = ref no_auto_include
 
 let reset () =
   assert (not Config.merlin || Local_store.is_bound ());
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   STbl.clear !files;
   STbl.clear !files_uncap;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  dirs := []
+=======
+  dirs := [];
+  auto_include_callback := no_auto_include
+>>>>>>> ocaml-flambda/flambda-backend:main
   dirs := [];
   auto_include_callback := no_auto_include
 
@@ -80,6 +120,21 @@ let prepend_add dir =
       STbl.replace !files base fn;
       STbl.replace !files_uncap (String.uncapitalize_ascii base) fn
     ) dir.Dir.files
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let init l =
+  reset ();
+  dirs := List.rev_map Dir.create l;
+  List.iter prepend_add !dirs
+=======
+
+let init ~auto_include l =
+  reset ();
+  dirs := List.rev_map Dir.create l;
+  List.iter prepend_add !dirs;
+  auto_include_callback := auto_include
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let init ~auto_include l =
   assert (not Config.merlin || Local_store.is_bound ());
@@ -106,6 +161,71 @@ let init ~auto_include l =
       end
   in
   match loop_unchanged [] l (List.rev !dirs) with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let is_basename fn = Filename.basename fn = fn
+
+let find fn =
+  assert (not Config.merlin || Local_store.is_bound ());
+  if is_basename fn && not !Sys.interactive then
+    STbl.find !files fn
+  else
+    Misc.find_in_path (get_paths ()) fn
+
+let find_uncap fn =
+  assert (not Config.merlin || Local_store.is_bound ());
+  if is_basename fn && not !Sys.interactive then
+    STbl.find !files_uncap (String.uncapitalize_ascii fn)
+  else
+    Misc.find_in_path_uncap (get_paths ()) fn
+=======
+
+let is_basename fn = Filename.basename fn = fn
+
+let auto_include_libs libs alert find_in_dir fn =
+  let scan (lib, lazy dir) =
+    let file = find_in_dir dir fn in
+    let alert_and_add_dir _ =
+      alert lib;
+      append_dir dir
+    in
+    Option.iter alert_and_add_dir file;
+    file
+  in
+  match List.find_map scan libs with
+  | Some base -> base
+  | None -> raise Not_found
+
+let auto_include_otherlibs =
+  (* Ensure directories are only ever scanned once *)
+  let expand = Misc.expand_directory Config.standard_library in
+  let otherlibs =
+    let read_lib lib = lazy (Dir.create (expand ("+" ^ lib))) in
+    List.map (fun lib -> (lib, read_lib lib)) ["dynlink"; "str"; "unix"] in
+  auto_include_libs otherlibs
+
+let find fn =
+  assert (not Config.merlin || Local_store.is_bound ());
+  try
+    if is_basename fn && not !Sys.interactive then
+      STbl.find !files fn
+    else
+      Misc.find_in_path (get_paths ()) fn
+  with Not_found ->
+    !auto_include_callback Dir.find fn
+
+let find_uncap fn =
+  assert (not Config.merlin || Local_store.is_bound ());
+  try
+    if is_basename fn && not !Sys.interactive then
+      STbl.find !files_uncap (String.uncapitalize_ascii fn)
+    else
+      Misc.find_in_path_uncap (get_paths ()) fn
+  with Not_found ->
+    let fn_uncap = String.uncapitalize_ascii fn in
+    !auto_include_callback Dir.find_uncap fn_uncap
+>>>>>>> ocaml-flambda/flambda-backend:main
   | None -> ()
   | Some new_dirs ->
     reset ();

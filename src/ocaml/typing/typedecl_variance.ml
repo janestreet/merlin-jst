@@ -37,8 +37,40 @@ type variance_error =
   | Variance_variable_error of {
        error : variance_variable_error;
        context : variance_variable_context;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
        variable : type_expr
      }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+type surface_variance = bool * bool * bool
+
+type variance_error =
+| Variance_not_satisfied of int
+| No_variable
+| Variance_not_reflected
+| Variance_not_deducible
+=======
+
+type surface_variance = bool * bool * bool
+
+type variance_variable_context =
+  | Type_declaration of Ident.t * type_declaration
+  | Gadt_constructor of constructor_declaration
+  | Extension_constructor of Ident.t * extension_constructor
+
+type variance_variable_error =
+  | No_variable
+  | Variance_not_reflected
+  | Variance_not_deducible
+
+type variance_error =
+  | Variance_not_satisfied of int
+  | Variance_variable_error of {
+       error : variance_variable_error;
+       context : variance_variable_context;
+       variable : type_expr
+     }
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 type error =
   | Bad_variance of variance_error * surface_variance * surface_variance
@@ -65,6 +97,43 @@ let compute_variance env visited vari ty =
         compute_variance_rec (Variance.conjugate vari) ty1;
         compute_same ty2
     | Ttuple tl ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        if tl = [] then () else begin
+          try
+            let decl = Env.find_type path env in
+            let cvari f = mem f vari in
+            List.iter2
+              (fun ty v ->
+                let cv f = mem f v in
+                let strict =
+                  cvari Inv && cv Inj || (cvari Pos || cvari Neg) && cv Inv
+                in
+                if strict then compute_variance_rec full ty else
+                let p1 = inter v vari
+                and n1 = inter v (conjugate vari) in
+                let v1 =
+                  union (inter covariant (union p1 (conjugate p1)))
+                    (inter (conjugate covariant) (union n1 (conjugate n1)))
+                and weak =
+                  cvari May_weak && (cv May_pos || cv May_neg) ||
+                  (cvari May_pos || cvari May_neg) && cv May_weak
+                in
+                let v2 = set May_weak weak v1 in
+                compute_variance_rec v2 ty)
+              tl decl.type_variance
+          with Not_found ->
+            List.iter (compute_variance_rec unknown) tl
+=======
+        if tl = [] then () else begin
+          try
+            let decl = Env.find_type path env in
+            List.iter2
+              (fun ty v -> compute_variance_rec (compose vari v) ty)
+              tl decl.type_variance
+          with Not_found ->
+            List.iter (compute_variance_rec unknown) tl
+>>>>>>> ocaml-flambda/flambda-backend:main
         List.iter compute_same tl
     | Tconstr (path, tl, _) ->
         let open Variance in
@@ -106,9 +175,21 @@ let compute_variance env visited vari ty =
   compute_variance_rec vari ty
 
 let make p n i =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let open Variance in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  set May_pos p (set May_neg n (set May_weak n (set Inj i null)))
+=======
   set_if p May_pos (set_if n May_neg (set_if i Inj null))
+>>>>>>> ocaml-flambda/flambda-backend:main
+  set_if p May_pos (set_if n May_neg (set_if i Inj null))
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let injective = Variance.(set Inj true null)
+=======
+let injective = Variance.(set Inj null)
+>>>>>>> ocaml-flambda/flambda-backend:main
 let injective = Variance.(set Inj null)
 
 let compute_variance_type env ~check (required, loc) decl tyl =
@@ -160,6 +241,20 @@ let compute_variance_type env ~check (required, loc) decl tyl =
   begin match check with
   | None -> ()
   | Some context ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        try check ty; compute_variance env tvl injective ty
+        with Exit -> ())
+      params;
+  if check then begin
+=======
+        try check ty; compute_variance env tvl injective ty
+        with Exit -> ())
+      params;
+  begin match check with
+  | None -> ()
+  | Some context ->
+>>>>>>> ocaml-flambda/flambda-backend:main
     (* Check variance of parameters *)
     let pos = ref 0 in
     List.iter2
@@ -216,6 +311,54 @@ let compute_variance_type env ~check (required, loc) decl tyl =
             let variance_error =
               Variance_variable_error { error; context; variable }
             in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+             if Ctype.is_equal env false [ty] [t] then union vt v else v)
+          !tvl2 null in
+      Btype.backtrack snap;
+      let (c1,n1) = get_upper v1 and (c2,n2,_,i2) = get_lower v2 in
+      if c1 && not c2 || n1 && not n2 then
+        if List.exists (eq_type ty) fvl then
+          let code = if not i2 then No_variable
+                     else if c2 || n2 then Variance_not_reflected
+                     else Variance_not_deducible in
+          raise (Error (loc, Bad_variance (code, (c1,n1,false), (c2,n2,false))))
+        else
+          Btype.iter_type_expr check ty
+    in
+    List.iter (fun (_,ty) -> check ty) tyl;
+  end;
+=======
+             if Ctype.is_equal env false [ty] [t] then union vt v else v)
+          !tvl2 null in
+      Btype.backtrack snap;
+      let (c1,n1) = get_upper v1 and (c2,n2,i2) = get_lower v2 in
+      if c1 && not c2 || n1 && not n2 then begin
+        match List.find_opt (eq_type ty) fvl with
+        | Some variable ->
+            let error =
+              if not i2 then
+                No_variable
+              else if c2 || n2 then
+                Variance_not_reflected
+              else
+                Variance_not_deducible
+            in
+            let variance_error =
+              Variance_variable_error { error; context; variable }
+            in
+            raise
+              (Error (loc
+                     , Bad_variance ( variance_error
+                                    , (c1,n1,false)
+                                    , (c2,n2,false))))
+        | None ->
+            Btype.iter_type_expr check ty
+      end
+    in
+    List.iter (fun (_,ty) -> check ty) tyl;
+  end;
+>>>>>>> ocaml-flambda/flambda-backend:main
             raise
               (Error (loc
                      , Bad_variance ( variance_error
@@ -242,6 +385,8 @@ let compute_variance_type env ~check (required, loc) decl tyl =
       union v
         (if p then if n then full else covariant else conjugate covariant))
     params required
+let add_false = List.map (fun ty -> false, ty)
+
 
 let add_false = List.map (fun ty -> false, ty)
 
@@ -291,10 +436,33 @@ let compute_variance_extension env decl ext rloc =
     Some (Extension_constructor (ext.Typedtree.ext_id, ext.Typedtree.ext_type))
   in
   let ext = ext.Typedtree.ext_type in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            (for_constr tl)
+      | _ -> assert false
+
+let compute_variance_extension env ~check decl ext rloc =
+=======
+            (for_constr tl)
+      | _ -> assert false
+
+let compute_variance_extension env decl ext rloc =
+  let check =
+    Some (Extension_constructor (ext.Typedtree.ext_id, ext.Typedtree.ext_type))
+  in
+  let ext = ext.Typedtree.ext_type in
+>>>>>>> ocaml-flambda/flambda-backend:main
   compute_variance_gadt env ~check rloc
     {decl with type_params = ext.ext_type_params}
     (ext.ext_args, ext.ext_ret_type)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let compute_variance_decl env ~check decl (required, _ as rloc) =
+  let abstract = Btype.type_kind_is_abstract decl in
+  if (abstract || decl.type_kind = Type_open)
+       && decl.type_manifest = None then
+=======
 let compute_variance_gadt_constructor env ~check rloc decl tl =
   let check =
     match check with
@@ -304,6 +472,114 @@ let compute_variance_gadt_constructor env ~check rloc decl tl =
   compute_variance_gadt env ~check rloc decl
     (tl.Types.cd_args, tl.Types.cd_res)
 
+let compute_variance_decl env ~check decl (required, _ as rloc) =
+  let check =
+    Option.map (fun id -> Type_declaration (id, decl)) check
+  in
+  let abstract = Btype.type_kind_is_abstract decl in
+  if (abstract || decl.type_kind = Type_open)
+       && decl.type_manifest = None then
+>>>>>>> ocaml-flambda/flambda-backend:main
+let compute_variance_gadt_constructor env ~check rloc decl tl =
+  let check =
+    match check with
+    | Some _ -> Some (Gadt_constructor tl)
+    | None -> None
+  in
+  compute_variance_gadt env ~check rloc decl
+    (tl.Types.cd_args, tl.Types.cd_res)
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      (fun (c, n, i) ->
+        make (not n) (not c) (not abstract || i))
+      required
+  else
+  let mn =
+    match decl.type_manifest with
+      None -> []
+    | Some ty -> [false, ty]
+  in
+  match decl.type_kind with
+    Type_abstract _ | Type_open ->
+      compute_variance_type env ~check rloc decl mn
+  | Type_variant (tll,_rep) ->
+      if List.for_all (fun c -> c.Types.cd_res = None) tll then
+        compute_variance_type env ~check rloc decl
+          (mn @ List.flatten (List.map (fun c -> for_constr c.Types.cd_args)
+                                tll))
+      else begin
+        let mn =
+          List.map (fun (_,ty) -> (Types.Cstr_tuple [ty, Unrestricted],None)) mn in
+        let tll =
+          mn @ List.map (fun c -> c.Types.cd_args, c.Types.cd_res) tll in
+        match List.map (compute_variance_gadt env ~check rloc decl) tll with
+        | vari :: rem ->
+            let varl = List.fold_left (List.map2 Variance.union) vari rem in
+            List.map
+              Variance.(fun v -> if mem Pos v && mem Neg v then full else v)
+              varl
+        | _ -> assert false
+      end
+  | Type_record (ftl, _) ->
+      compute_variance_type env ~check rloc decl
+        (mn @ List.map (fun {Types.ld_mutable; ld_type} ->
+             (ld_mutable = Mutable, ld_type)) ftl)
+
+let is_hash id =
+  let s = Ident.name id in
+=======
+      (fun (c, n, i) ->
+        make (not n) (not c) (not abstract || i))
+      required
+  else begin
+    let mn =
+      match decl.type_manifest with
+        None -> []
+      | Some ty -> [ false, ty ]
+    in
+    let vari =
+      match decl.type_kind with
+        Type_abstract _ | Type_open ->
+          compute_variance_type env ~check rloc decl mn
+      | Type_variant (tll,_rep) ->
+          if List.for_all (fun c -> c.Types.cd_res = None) tll then
+            compute_variance_type env ~check rloc decl
+              (mn @ List.flatten (List.map (fun c -> for_constr c.Types.cd_args)
+                                    tll))
+          else begin
+            let vari =
+              List.map
+                (fun ty ->
+                   compute_variance_type env ~check rloc
+                     {decl with type_private = Private}
+                     (add_false [ ty ])
+                )
+                (Option.to_list decl.type_manifest)
+            in
+            let constructor_variance =
+              List.map
+                (compute_variance_gadt_constructor env ~check rloc decl)
+                tll
+            in
+            match List.append vari constructor_variance with
+            | vari :: rem ->
+                List.fold_left (List.map2 Variance.union) vari rem
+            | _ -> assert false
+          end
+      | Type_record (ftl, _) ->
+          compute_variance_type env ~check rloc decl
+            (mn @ List.map (fun {Types.ld_mutable; ld_type} ->
+                 (ld_mutable = Mutable, ld_type)) ftl)
+    in
+    if mn = [] || not abstract then
+      List.map Variance.strengthen vari
+    else vari
+  end
+
+let is_hash id =
+  let s = Ident.name id in
+>>>>>>> ocaml-flambda/flambda-backend:main
 let compute_variance_decl env ~check decl (required, _ as rloc) =
   let check =
     Option.map (fun id -> Type_declaration (id, decl)) check
@@ -370,8 +646,16 @@ let check_variance_extension env decl ext rloc =
 
 let compute_decl env ~check decl req =
   compute_variance_decl env ~check decl (req, decl.type_loc)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let check_decl env id decl req =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let check_decl env decl req =
+  ignore (compute_variance_decl env ~check:true decl (req, decl.type_loc))
+=======
+let check_decl env id decl req =
+  ignore (compute_variance_decl env ~check:(Some id) decl (req, decl.type_loc))
+>>>>>>> ocaml-flambda/flambda-backend:main
   ignore (compute_variance_decl env ~check:(Some id) decl (req, decl.type_loc))
 
 type prop = Variance.t list
@@ -388,7 +672,13 @@ let property : (prop, req) Typedecl_properties.property =
     compute_decl env ~check:None decl req in
   let update_decl decl variance =
     { decl with type_variance = variance } in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let check env id decl req =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    if is_hash id then () else check_decl env decl req in
+=======
+    if is_hash id then () else check_decl env id decl req in
+>>>>>>> ocaml-flambda/flambda-backend:main
     if is_hash id then () else check_decl env id decl req in
   {
     eq;
@@ -430,10 +720,22 @@ let update_class_decls env cldecls =
     Typedecl_properties.compute_property property env decls required in
   List.map2
     (fun (_,decl) (_, _, clty, cltydef, _) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       let variance = decl.type_variance in
       (decl, {clty with cty_variance = variance},
        {cltydef with
         clty_variance = variance;
         clty_hash_type = {cltydef.clty_hash_type with type_variance = variance}
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      (decl, {cl_abbr with type_variance = variance},
+       {clty with cty_variance = variance},
+       {cltydef with clty_variance = variance}))
+=======
+      (decl, {clty with cty_variance = variance},
+       {cltydef with
+        clty_variance = variance;
+        clty_hash_type = {cltydef.clty_hash_type with type_variance = variance}
+       }))
+>>>>>>> ocaml-flambda/flambda-backend:main
        }))
     decls cldecls

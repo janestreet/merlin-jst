@@ -22,7 +22,6 @@
 *)
 
 open Asttypes
-open Jane_asttypes
 
 module Uid = Shape.Uid
 
@@ -134,7 +133,7 @@ and 'k pattern_desc =
             Invariant: n > 0
          *)
   | Tpat_array :
-      mutable_flag * value general_pattern list -> value pattern_desc
+      mutable_flag * Jkind.sort * value general_pattern list -> value pattern_desc
         (** [| P1; ...; Pn |]    (flag = Mutable)
             [: P1; ...; Pn :]    (flag = Immutable) *)
   | Tpat_lazy : value general_pattern -> value pattern_desc
@@ -186,7 +185,7 @@ and exp_extra =
          *)
   | Texp_poly of core_type option
         (** Used for method bodies. *)
-  | Texp_newtype of string * const_jkind option
+  | Texp_newtype of string * Jkind.annotation option
         (** fun (type t : immediate) ->  *)
   | Texp_newtype' of Ident.t * label loc * const_jkind option
   (** merlin-specific: keep enough information to correctly implement
@@ -744,15 +743,15 @@ and core_type =
    }
 
 and core_type_desc =
-  | Ttyp_var of string option * const_jkind option
+  | Ttyp_var of string option * Jkind.annotation option
   | Ttyp_arrow of arg_label * core_type * core_type
   | Ttyp_tuple of core_type list
   | Ttyp_constr of Path.t * Longident.t loc * core_type list
   | Ttyp_object of object_field list * closed_flag
   | Ttyp_class of Path.t * Longident.t loc * core_type list
-  | Ttyp_alias of core_type * string option * const_jkind option
+  | Ttyp_alias of core_type * string option * Jkind.annotation option
   | Ttyp_variant of row_field list * closed_flag * label list option
-  | Ttyp_poly of (string * const_jkind option) list * core_type
+  | Ttyp_poly of (string * Jkind.annotation option) list * core_type
   | Ttyp_package of package_type
 
 and package_type = {
@@ -804,6 +803,7 @@ and type_declaration =
     typ_manifest: core_type option;
     typ_loc: Location.t;
     typ_attributes: attributes;
+    typ_jkind_annotation: Jane_asttypes.jkind_annotation option;
    }
 
 and type_kind =
@@ -827,7 +827,7 @@ and constructor_declaration =
     {
      cd_id: Ident.t;
      cd_name: string loc;
-     cd_vars: (string * const_jkind option) list;
+     cd_vars: (string * Jkind.annotation option) list;
      cd_args: constructor_arguments;
      cd_res: core_type option;
      cd_loc: Location.t;
@@ -867,7 +867,7 @@ and extension_constructor =
   }
 
 and extension_constructor_kind =
-    Text_decl of (string * const_jkind option) list *
+    Text_decl of (string * Jkind.annotation option) list *
                  constructor_arguments *
                  core_type option
   | Text_rebind of Path.t * Longident.t loc
@@ -1003,6 +1003,20 @@ val split_pattern:
 val exp_is_nominal : expression -> bool
 
 (* Merlin specific *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 val unpack_functor_me : module_expr -> functor_parameter * module_expr
 val unpack_functor_mty : module_type -> functor_parameter * module_type
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(** Splits an or pattern into its value (left) and exception (right) parts. *)
+val split_pattern:
+  computation general_pattern -> pattern option * pattern option
+=======
+(** Splits an or pattern into its value (left) and exception (right) parts. *)
+val split_pattern:
+  computation general_pattern -> pattern option * pattern option
+
+(** Whether an expression looks nice as the subject of a sentence in a error
+    message. *)
+val exp_is_nominal : expression -> bool
+>>>>>>> ocaml-flambda/flambda-backend:main

@@ -52,7 +52,14 @@ let phrases = ref ([] : Location.t list)
 let record ti =
   if !Clflags.annotations && not (get_location ti).Location.loc_ghost then
     annotations := ti :: !annotations
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  if !Clflags.annotations then phrases := loc :: !phrases;
+;;
+=======
+  if !Clflags.annotations then phrases := loc :: !phrases
+>>>>>>> ocaml-flambda/flambda-backend:main
 let record_phrase loc =
   if !Clflags.annotations then phrases := loc :: !phrases
 

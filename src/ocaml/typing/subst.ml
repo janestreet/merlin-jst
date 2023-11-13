@@ -194,6 +194,25 @@ let modtype_path s path =
          | Papply _ | Pextra_ty _ ->
             fatal_error "Subst.modtype_path"
          | Pident _ -> path
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let type_path s path =
+  match Path.Map.find path s.types with
+  | Path p -> p
+  | Type_function _ -> assert false
+=======
+(* For values, extension constructors, classes and class types *)
+let value_path s path =
+  match path with
+  | Pident _ -> path
+  | Pdot(p, n) -> Pdot(module_path s p, n)
+  | Papply _ | Pextra_ty _ -> fatal_error "Subst.value_path"
+
+let rec type_path s path =
+  match Path.Map.find path s.types with
+  | Path p -> p
+  | Type_function _ -> assert false
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 (* For values, extension constructors, classes and class types *)
 let value_path s path =
@@ -486,6 +505,8 @@ let type_declaration' copy_scope s decl =
             prepare_jkind decl.type_loc decl.type_jkind
         | Duplicate_variables | No_action -> decl.type_jkind
       end;
+    (* CR layouts v10: Apply the substitution here, too *)
+    type_jkind_annotation = decl.type_jkind_annotation;
     type_private = decl.type_private;
     type_variance = decl.type_variance;
     type_separability = decl.type_separability;

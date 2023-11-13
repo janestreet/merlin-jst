@@ -666,7 +666,13 @@ let rec get_prefixes = function
   | Pdot (p, _) | Papply (p, _) | Pextra_ty (p, _)
     -> Path.Set.add p (get_prefixes p)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let rec get_arg_paths = function
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Pdot (p, _) -> get_arg_paths p
+=======
+  | Pdot (p, _) | Pextra_ty (p, _) -> get_arg_paths p
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Pident _ -> Path.Set.empty
   | Pdot (p, _) | Pextra_ty (p, _) -> get_arg_paths p
   | Papply (p1, p2) ->
@@ -682,6 +688,20 @@ let rec rollback_path subst p =
     | Pdot (p1, s) ->
         let p1' = rollback_path subst p1 in
         if Path.same p1 p1' then p else rollback_path subst (Pdot (p1', s))
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let rec collect_ids subst bindings p =
+    begin match rollback_path subst p with
+=======
+    | Pextra_ty (p1, extra) ->
+        let p1' = rollback_path subst p1 in
+        if Path.same p1 p1' then p
+        else rollback_path subst (Pextra_ty (p1', extra))
+
+let rec collect_ids subst bindings p =
+    begin match rollback_path subst p with
+>>>>>>> ocaml-flambda/flambda-backend:main
     | Pextra_ty (p1, extra) ->
         let p1' = rollback_path subst p1 in
         if Path.same p1 p1' then p

@@ -91,6 +91,25 @@ type error =
   | Parameter_mismatch of Errortrace.unification_error
   | Bad_parameters of Ident.t * type_expr list * type_expr list
   | Bad_class_type_parameters of Ident.t * type_expr list * type_expr list
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Unbound_type_var of
+      (formatter -> unit) * (type_expr * bool * string * type_expr)
+  | Non_generalizable_class of Ident.t * Types.class_declaration
+  | Cannot_coerce_self of type_expr
+  | Non_collapsable_conjunction of
+      Ident.t * Types.class_declaration * Errortrace.unification_error
+=======
+  | Unbound_type_var of (formatter -> unit) * Ctype.closed_class_failure
+  | Non_generalizable_class of
+      { id : Ident.t
+      ; clty : Types.class_declaration
+      ; nongen_vars : type_expr list
+      }
+  | Cannot_coerce_self of type_expr
+  | Non_collapsable_conjunction of
+      Ident.t * Types.class_declaration * Errortrace.unification_error
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Class_match_failure of Ctype.class_match_failure list
   | Unbound_val of string
   | Unbound_type_var of (formatter -> unit) * Ctype.closed_class_failure
@@ -109,6 +128,7 @@ type error =
   | Closing_self_type of class_signature
   | Polymorphic_class_parameter
   | Non_value_binding of string * Jkind.Violation.t
+  | Non_value_let_binding of string * Jkind.sort
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -670,14 +690,26 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
            let cty =
              Ctype.with_local_level_if_principal
                (fun () -> Typetexp.transl_simple_type val_env
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
                             ~closed:false Alloc.Const.legacy styp)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                 val_env ty (Jkind.value ~why:Class_field)
+=======
+                 val_env cty.ctyp_type (Jkind.value ~why:Class_field)
+>>>>>>> ocaml-flambda/flambda-backend:main
                ~post:(fun cty -> Ctype.generalize_structure cty.ctyp_type)
            in
            begin
              match
                Ctype.constrain_type_jkind
                  val_env cty.ctyp_type (Jkind.value ~why:Class_field)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
              with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+             label.txt mut Virtual ty sign;
+=======
+             label.txt mut Virtual cty.ctyp_type sign;
+>>>>>>> ocaml-flambda/flambda-backend:main
              | Ok _ -> ()
              | Error err -> raise (Error(label.loc, val_env,
                                          Non_value_binding(label.txt, err)))
@@ -1394,12 +1426,9 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                (fun (loc, mode, sort) ->
                   Typecore.escape ~loc ~env:val_env ~reason:Other mode;
                   if not (Jkind.Sort.(equate sort value))
-                  then let viol = Jkind.Violation.of_ (Not_a_subjkind(
-                    Jkind.of_sort_for_error ~why:Let_binding sort,
-                    Jkind.value ~why:Class_let_binding))
-                    in
+                  then
                     raise (Error(loc, met_env,
-                                 Non_value_binding (Ident.name id, viol)))
+                                 Non_value_let_binding (Ident.name id, sort)))
                )
                modes_and_sorts;
              let path = Pident id in
@@ -1412,14 +1441,28 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                  (fun () -> Ctype.instance vd.val_type)
              in
              let expr =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
                {exp_desc =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+                exp_type = Ctype.instance vd.val_type;
+=======
+                exp_type = ty;
+>>>>>>> ocaml-flambda/flambda-backend:main
                 Texp_ident(path, mknoloc(Longident.Lident (Ident.name id)),vd,
                            Id_value, shared_many_use);
                 exp_loc = Location.none; exp_extra = [];
                 exp_type = ty;
                 exp_attributes = [];
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
                 exp_env = val_env;
                }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+               {val_type = expr.exp_type; val_kind = Val_ivar (Immutable,
+                                                               cl_num);
+=======
+               {val_type = expr.exp_type;
+                val_kind = Val_ivar (Immutable, cl_num);
+>>>>>>> ocaml-flambda/flambda-backend:main
              in
              let desc =
                {val_type = expr.exp_type;
@@ -1443,6 +1486,61 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
       rc {cl_desc = Tcl_let (rec_flag, defs, vals, cl);
           cl_loc = scl.pcl_loc;
           cl_type = cl.cl_type;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          cl_attributes = scl.pcl_attributes;
+         }
+  | Pcl_constraint (scl', scty) ->
+      Ctype.begin_class_def ();
+      let cl = Typetexp.TyVarEnv.with_local_scope (fun () ->
+        let cl = class_expr cl_num val_env met_env virt self_scope scl' in
+        complete_class_type cl.cl_loc val_env virt Class_type cl.cl_type;
+        cl) in
+      let clty = Typetexp.TyVarEnv.with_local_scope (fun () ->
+        let clty = class_type val_env virt self_scope scty in
+        complete_class_type clty.cltyp_loc val_env virt Class clty.cltyp_type;
+        clty) in
+      Ctype.end_def ();
+
+      Ctype.limited_generalize_class_type
+        (Btype.self_type_row cl.cl_type) cl.cl_type;
+      Ctype.limited_generalize_class_type
+        (Btype.self_type_row clty.cltyp_type) clty.cltyp_type;
+
+      begin match
+        Includeclass.class_types val_env cl.cl_type clty.cltyp_type
+      with
+=======
+          cl_attributes = scl.pcl_attributes;
+         }
+  | Pcl_constraint (scl', scty) ->
+      let cl, clty =
+        Ctype.with_local_level_for_class begin fun () ->
+          let cl =
+            Typetexp.TyVarEnv.with_local_scope begin fun () ->
+              let cl = class_expr cl_num val_env met_env virt self_scope scl' in
+              complete_class_type cl.cl_loc val_env virt Class_type cl.cl_type;
+              cl
+            end
+          and clty =
+            Typetexp.TyVarEnv.with_local_scope begin fun () ->
+              let clty = class_type val_env virt self_scope scty in
+              complete_class_type
+                clty.cltyp_loc val_env virt Class clty.cltyp_type;
+              clty
+            end
+          in
+          cl, clty
+        end
+        ~post: begin fun ({cl_type=cl}, {cltyp_type=clty}) ->
+          Ctype.limited_generalize_class_type (Btype.self_type_row cl) cl;
+          Ctype.limited_generalize_class_type (Btype.self_type_row clty) clty;
+        end
+      in
+      begin match
+        Includeclass.class_types val_env cl.cl_type clty.cltyp_type
+      with
+>>>>>>> ocaml-flambda/flambda-backend:main
           cl_env = val_env;
           cl_attributes = scl.pcl_attributes;
          }
@@ -1551,11 +1649,19 @@ let temp_abbrev loc arity uid =
   for _i = 1 to arity do
     params := Ctype.newvar (Jkind.value ~why:Type_argument) :: !params
   done;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let ty = Ctype.newobj (Ctype.newvar (Jkind.value ~why:Object)) in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let env =
+    Env.add_type ~check:true id
+=======
+  let ty_td =
+>>>>>>> ocaml-flambda/flambda-backend:main
   let ty_td =
       {type_params = !params;
        type_arity = arity;
        type_kind = Type_abstract Abstract_def;
+       type_jkind_annotation = None;
        type_jkind = Jkind.value ~why:Object;
        type_private = Public;
        type_manifest = Some ty;
@@ -1571,18 +1677,47 @@ let temp_abbrev loc arity uid =
   in
   (!params, ty, ty_td)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let initial_env define_class approx
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    (res, env) (cl, id, ty_id, obj_id, cl_id, uid) =
+=======
+    (res, env) (cl, id, ty_id, obj_id, uid) =
+>>>>>>> ocaml-flambda/flambda-backend:main
     (res, env) (cl, id, ty_id, obj_id, uid) =
   (* Temporary abbreviations *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let arity = List.length cl.pci_params in
   let (obj_params, obj_ty, obj_td) = temp_abbrev cl.pci_loc arity uid in
   let env = Env.add_type ~check:true obj_id obj_td env in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let (obj_params, obj_ty, env) = temp_abbrev cl.pci_loc env obj_id arity uid in
+  let (cl_params, cl_ty, env) = temp_abbrev cl.pci_loc env cl_id arity uid in
+=======
+  let (obj_params, obj_ty, obj_td) = temp_abbrev cl.pci_loc arity uid in
+  let env = Env.add_type ~check:true obj_id obj_td env in
+  let (cl_params, cl_ty, cl_td) = temp_abbrev cl.pci_loc arity uid in
+>>>>>>> ocaml-flambda/flambda-backend:main
   let (cl_params, cl_ty, cl_td) = temp_abbrev cl.pci_loc arity uid in
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   (* Temporary type for the class constructor *)
   let constr_type =
     Ctype.with_local_level_if_principal (fun () -> approx cl.pci_expr)
       ~post:Ctype.generalize_structure
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  if !Clflags.principal then Ctype.begin_def ();
+  let constr_type = approx cl.pci_expr in
+  if !Clflags.principal then begin
+    Ctype.end_def ();
+    Ctype.generalize_structure constr_type;
+  end;
+=======
+  let constr_type =
+    Ctype.with_local_level_if_principal (fun () -> approx cl.pci_expr)
+      ~post:Ctype.generalize_structure
+  in
+>>>>>>> ocaml-flambda/flambda-backend:main
   in
   let dummy_cty = Cty_signature (Ctype.new_class_signature ()) in
   let dummy_class =
@@ -1611,6 +1746,133 @@ let initial_env define_class approx
        clty_attributes = [];
        clty_uid = uid;
       }
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  in
+  ((cl, id, ty_id,
+    obj_id, obj_params, obj_ty,
+    cl_id, cl_params, cl_ty,
+    constr_type, dummy_class)::res,
+   env)
+
+let class_infos define_class kind
+    (cl, id, ty_id,
+     obj_id, obj_params, obj_ty,
+     cl_id, cl_params, cl_ty,
+     constr_type, dummy_class)
+    (res, env) =
+
+  TyVarEnv.reset ();
+  Ctype.begin_class_def ();
+
+  (* Introduce class parameters *)
+  let ci_params =
+    let make_param (sty, v) =
+      try
+        let param = transl_type_param env (Pident ty_id) sty in
+        (* CR layouts: we require class type parameters to be values, but
+           we should lift this restriction. Doing so causes bad error messages
+           today, so we wait for tomorrow. *)
+        Ctype.unify env param.ctyp_type
+          (Ctype.newvar (Jkind.value ~why:Class_argument));
+        (param, v)
+      with Already_bound ->
+        raise(Error(sty.ptyp_loc, env, Repeated_parameter))
+    in
+      List.map make_param cl.pci_params
+  in
+  let params = List.map (fun (cty, _) -> cty.ctyp_type) ci_params in
+
+  (* Allow self coercions (only for class declarations) *)
+  let coercion_locs = ref [] in
+
+  (* Type the class expression *)
+  let (expr, typ) =
+    try
+      Typecore.self_coercion :=
+        (Path.Pident obj_id, coercion_locs) :: !Typecore.self_coercion;
+      let res = kind env cl.pci_virt cl.pci_expr in
+      Typecore.self_coercion := List.tl !Typecore.self_coercion;
+      res
+    with exn ->
+      Typecore.self_coercion := []; raise exn
+  in
+  let sign = Btype.signature_of_class_type typ in
+
+  Ctype.end_def ();
+
+  (* Generalize the row variable *)
+  List.iter (Ctype.limited_generalize sign.csig_self_row) params;
+  Ctype.limited_generalize_class_type sign.csig_self_row typ;
+
+  (* Check the abbreviation for the object type *)
+  let (obj_params', obj_type) = Ctype.instance_class params typ in
+  let constr = Ctype.newconstr (Path.Pident obj_id) obj_params in
+=======
+  in
+  ((cl, id, ty_id,
+    obj_id, obj_params, obj_ty,
+    cl_params, cl_ty, cl_td,
+    constr_type,
+    dummy_class)::res,
+   env)
+
+let class_infos define_class kind
+    (cl, id, ty_id,
+     obj_id, obj_params, obj_ty,
+     cl_params, cl_ty, cl_td,
+     constr_type,
+     dummy_class)
+    (res, env) =
+
+  let ci_params, params, coercion_locs, expr, typ, sign =
+    Ctype.with_local_level_for_class begin fun () ->
+      TyVarEnv.reset ();
+      (* Introduce class parameters *)
+      let ci_params =
+        let make_param (sty, v) =
+          try
+            let param = transl_type_param env (Pident ty_id) sty in
+            (* CR layouts: we require class type parameters to be values, but
+               we should lift this restriction. Doing so causes bad error messages
+               today, so we wait for tomorrow. *)
+            Ctype.unify env param.ctyp_type
+              (Ctype.newvar (Jkind.value ~why:Class_argument));
+            (param, v)
+          with Already_bound ->
+            raise(Error(sty.ptyp_loc, env, Repeated_parameter))
+        in
+        List.map make_param cl.pci_params
+      in
+      let params = List.map (fun (cty, _) -> cty.ctyp_type) ci_params in
+
+      (* Allow self coercions (only for class declarations) *)
+      let coercion_locs = ref [] in
+
+      (* Type the class expression *)
+      let (expr, typ) =
+        try
+          Typecore.self_coercion :=
+            (Path.Pident obj_id, coercion_locs) :: !Typecore.self_coercion;
+          let res = kind env cl.pci_virt cl.pci_expr in
+          Typecore.self_coercion := List.tl !Typecore.self_coercion;
+          res
+        with exn ->
+          Typecore.self_coercion := []; raise exn
+      in
+      let sign = Btype.signature_of_class_type typ in
+      (ci_params, params, coercion_locs, expr, typ, sign)
+    end
+    ~post: begin fun (_, params, _, _, typ, sign) ->
+      (* Generalize the row variable *)
+      List.iter (Ctype.limited_generalize sign.csig_self_row) params;
+      Ctype.limited_generalize_class_type sign.csig_self_row typ;
+    end
+  in
+  (* Check the abbreviation for the object type *)
+  let (obj_params', obj_type) = Ctype.instance_class params typ in
+  let constr = Ctype.newconstr (Path.Pident obj_id) obj_params in
+>>>>>>> ocaml-flambda/flambda-backend:main
       (
         if define_class then
           Env.add_class id dummy_class env
@@ -1712,8 +1974,16 @@ let class_infos define_class kind
     end;
     begin try
       Ctype.unify env ty cl_ty
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     with Ctype.Unify _ ->
       let ty_expanded = Ctype.object_fields ty in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let constr = Ctype.newconstr (Path.Pident cl_id) params in
+      raise(Error(cl.pci_loc, env, Abbrev_type_clash (constr, ty, cl_ty)))
+=======
+      let ty_expanded = Ctype.object_fields ty in
+      raise(Error(cl.pci_loc, env, Abbrev_type_clash (ty, ty_expanded, cl_ty)))
+>>>>>>> ocaml-flambda/flambda-backend:main
       raise(Error(cl.pci_loc, env, Abbrev_type_clash (ty, ty_expanded, cl_ty)))
     end
   end;
@@ -1806,7 +2076,75 @@ let class_infos define_class kind
   let cl_abbr =
     { cl_td with
      type_params = cl_params;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      type_manifest = Some cl_ty
+    }
+  in
+  let cltydef =
+    {clty_params = params'; clty_type = Btype.class_body typ';
+     clty_variance = cty_variance;
+     clty_path = Path.Pident obj_id;
+     clty_hash_type = cl_abbr;
+     clty_loc = cl.pci_loc;
+     clty_attributes = cl.pci_attributes;
+     clty_uid = dummy_class.cty_uid;
+    }
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+  (* Final definitions *)
+  let (params', typ') = Ctype.instance_class params typ in
+  let cltydef =
+    {clty_params = params'; clty_type = Btype.class_body typ';
+     clty_variance = cty_variance;
+     clty_path = Path.Pident obj_id;
+     clty_loc = cl.pci_loc;
+     clty_attributes = cl.pci_attributes;
+     clty_uid = dummy_class.cty_uid;
+    }
+  and clty =
+    {cty_params = params'; cty_type = typ';
+     cty_variance = cty_variance;
+     cty_path = Path.Pident obj_id;
+=======
+
+  (* Final definitions *)
+  let (params', typ') = Ctype.instance_class params typ in
+  let clty =
+    {cty_params = params'; cty_type = typ';
+     cty_variance = cty_variance;
+     cty_path = Path.Pident obj_id;
+>>>>>>> ocaml-flambda/flambda-backend:main
+  in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+  ((cl, id, clty, ty_id, cltydef, obj_id, obj_abbr, ci_params,
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  Ctype.set_object_name obj_id cl_params cl_ty;
+  let cl_abbr =
+    let arity = List.length cl_params in
+    {
+     type_params = cl_params;
+     type_arity = arity;
+     type_kind = Type_abstract Abstract_def;
+     type_jkind = Jkind.value ~why:Object;
+     type_private = Public;
+     type_manifest = Some cl_ty;
+     type_variance = Variance.unknown_signature ~injective:false ~arity;
+     type_separability = Types.Separability.default_signature ~arity;
+     type_is_newtype = false;
+     type_expansion_scope = Btype.lowest_level;
+     type_loc = cl.pci_loc;
+     type_attributes = []; (* or keep attrs from cl? *)
+     type_unboxed_default = false;
+     type_uid = dummy_class.cty_uid;
+    }
+  in
+  ((cl, id, clty, ty_id, cltydef, obj_id, obj_abbr, cl_id, cl_abbr, ci_params,
+=======
+  Ctype.set_object_name obj_id cl_params cl_ty;
+  let cl_abbr =
+    { cl_td with
+     type_params = cl_params;
+     type_manifest = Some cl_ty;
     }
   in
   let cltydef =
@@ -1820,12 +2158,18 @@ let class_infos define_class kind
     }
   in
   ((cl, id, clty, ty_id, cltydef, obj_id, obj_abbr, ci_params,
+>>>>>>> ocaml-flambda/flambda-backend:main
     arity, pub_meths, List.rev !coercion_locs, expr) :: res,
    env)
 
 let final_decl env define_class
     (cl, id, clty, ty_id, cltydef, obj_id, obj_abbr, ci_params,
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      arity, pub_meths, coe, expr) =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+  let cl_abbr = cltydef.clty_hash_type in
+>>>>>>> ocaml-flambda/flambda-backend:main
   let cl_abbr = cltydef.clty_hash_type in
 
   begin try Ctype.collapse_conj_params env clty.cty_params
@@ -1841,6 +2185,24 @@ let final_decl env define_class
   List.iter Ctype.generalize cl_abbr.type_params;
   Option.iter  Ctype.generalize cl_abbr.type_manifest;
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  if Ctype.nongen_class_declaration clty then
+    raise(Error(cl.pci_loc, env, Non_generalizable_class (id, clty)));
+
+  begin match
+    Ctype.closed_class clty.cty_params
+=======
+  Ctype.nongen_vars_in_class_declaration clty
+  |> Option.iter (fun vars ->
+      let nongen_vars = Btype.TypeSet.elements vars in
+      raise(Error(cl.pci_loc, env
+                 , Non_generalizable_class { id; clty; nongen_vars }));
+    );
+
+  begin match
+    Ctype.closed_class clty.cty_params
+>>>>>>> ocaml-flambda/flambda-backend:main
   Ctype.nongen_vars_in_class_declaration clty
   |> Option.iter (fun vars ->
       let nongen_vars = Btype.TypeSet.elements vars in
@@ -1889,31 +2251,76 @@ let class_infos define_class kind
     (res, env) =
   Builtin_attributes.warning_scope cl.pci_attributes
     (fun () ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
        class_infos define_class kind
          (cl, id, ty_id,
           obj_id, obj_params, obj_ty,
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          cl_id, cl_params, cl_ty,
+          constr_type, dummy_class)
+=======
           cl_params, cl_ty, cl_td,
           constr_type,
           dummy_class)
+>>>>>>> ocaml-flambda/flambda-backend:main
+          cl_params, cl_ty, cl_td,
+          constr_type,
+          dummy_class)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
          (res, env)
     )
-
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let extract_type_decls { clty; cltydef; obj_id; obj_abbr; cl_abbr; req} decls =
+  (obj_id, obj_abbr, cl_abbr, clty, cltydef, req) :: decls
+=======
 let extract_type_decls { clty; cltydef; obj_id; obj_abbr; req} decls =
   (obj_id, obj_abbr, clty, cltydef, req) :: decls
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+let extract_type_decls { clty; cltydef; obj_id; obj_abbr; req} decls =
+  (obj_id, obj_abbr, clty, cltydef, req) :: decls
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let merge_type_decls decl (obj_abbr, cl_abbr, clty, cltydef) =
+  {decl with obj_abbr; cl_abbr; clty; cltydef}
+=======
 let merge_type_decls decl (obj_abbr, clty, cltydef) =
+  {decl with obj_abbr; clty; cltydef}
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+let merge_type_decls decl (obj_abbr, clty, cltydef) =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let final_env define_class env { id; clty; ty_id; cltydef; obj_id; obj_abbr;
+    cl_id; cl_abbr } =
+=======
+let final_env define_class env { id; clty; ty_id; cltydef; obj_id; obj_abbr; } =
+>>>>>>> ocaml-flambda/flambda-backend:main
   {decl with obj_abbr; clty; cltydef}
 
 let final_env define_class env { id; clty; ty_id; cltydef; obj_id; obj_abbr; } =
   (* Add definitions after cleaning them *)
   Env.add_type ~check:true obj_id
     (Subst.type_declaration Subst.identity obj_abbr) (
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   Env.add_cltype ty_id (Subst.cltype_declaration Subst.identity cltydef) (
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  else env)))
+=======
+  else env))
+>>>>>>> ocaml-flambda/flambda-backend:main
   if define_class then
     Env.add_class id (Subst.class_declaration Subst.identity clty) env
   else env))
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 (* Check that #c is coercible to c if there is a self-coercion *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    cl_id; cl_abbr; arity; pub_meths; coe; req } =
+=======
+    arity; pub_meths; coe; req } =
+  let cl_abbr = cltydef.clty_hash_type in
+>>>>>>> ocaml-flambda/flambda-backend:main
 let check_coercions env { id; id_loc; clty; ty_id; cltydef; obj_id; obj_abbr;
     arity; pub_meths; coe; req } =
   let cl_abbr = cltydef.clty_hash_type in
@@ -1965,7 +2372,36 @@ let type_classes define_class approx kind env cls =
          ))
       cls
   in
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   let res, newenv =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  Ctype.begin_class_def ();
+  let (res, env) =
+    List.fold_left (initial_env define_class approx) ([], env) cls
+  in
+  let (res, env) =
+    List.fold_right (class_infos define_class kind) res ([], env)
+  in
+  Ctype.end_def ();
+  let res = List.rev_map (final_decl env define_class) res in
+  let decls = List.fold_right extract_type_decls res [] in
+  let decls =
+=======
+  let res, env =
+    Ctype.with_local_level_for_class begin fun () ->
+      let (res, env) =
+        List.fold_left (initial_env define_class approx) ([], env) cls
+      in
+      let (res, env) =
+        List.fold_right (class_infos define_class kind) res ([], env)
+      in
+      res, env
+    end
+  in
+  let res = List.rev_map (final_decl env define_class) res in
+  let decls = List.fold_right extract_type_decls res [] in
+  let decls =
+>>>>>>> ocaml-flambda/flambda-backend:main
     Ctype.with_local_level_for_class begin fun () ->
       let (res, env) =
         List.fold_left (initial_env define_class approx) ([], env) cls
@@ -2050,6 +2486,32 @@ let () =
   Typecore.type_object := type_object
 
 (*******************************)
+
+(* Check that there is no references through recursive modules (GPR#6491) *)
+let rec check_recmod_class_type env cty =
+  match cty.pcty_desc with
+  | Pcty_constr(lid, _) ->
+      ignore (Env.lookup_cltype ~use:false ~loc:lid.loc lid.txt env)
+  | Pcty_extension _ -> ()
+  | Pcty_arrow(_, _, cty) ->
+      check_recmod_class_type env cty
+  | Pcty_open(od, cty) ->
+      let _, env = !type_open_descr env od in
+      check_recmod_class_type env cty
+  | Pcty_signature csig ->
+      check_recmod_class_sig env csig
+
+and check_recmod_class_sig env csig =
+  List.iter
+    (fun ctf ->
+       match ctf.pctf_desc with
+       | Pctf_inherit cty -> check_recmod_class_type env cty
+       | Pctf_val _ | Pctf_method _
+       | Pctf_constraint _ | Pctf_attribute _ | Pctf_extension _ -> ())
+    csig.pcsig_fields
+
+let check_recmod_decl env sdecl =
+  check_recmod_class_type env sdecl.pci_expr
 
 (* Check that there is no references through recursive modules (GPR#6491) *)
 let rec check_recmod_class_type env cty =
@@ -2195,6 +2657,42 @@ let report_error env ppf = function
            which are incompatible with constraint(s)@ %a@]"
         Printtyp.ident id
         !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) params)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+        !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) cstrs)
+  | Bad_class_type_parameters (id, params, cstrs) ->
+      Printtyp.prepare_for_printing (params @ cstrs);
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        (function ppf ->
+           fprintf ppf "does not meet its constraint: it should be")
+  | Bad_parameters (id, params, cstrs) ->
+      Printtyp.prepare_for_printing [params; cstrs];
+=======
+        (function ppf ->
+           fprintf ppf "does not meet its constraint: it should be")
+  | Bad_parameters (id, params, cstrs) ->
+      Printtyp.prepare_for_printing (params @ cstrs);
+>>>>>>> ocaml-flambda/flambda-backend:main
+      fprintf ppf
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+        "@[The class type #%a@ is used with parameter(s)@ %a,@ \
+           whereas the class type definition@ constrains@ \
+           those parameters to be@ %a@]"
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        "@[The abbreviation %a@ is used with parameters@ %a@ \
+           which are incompatible with constraints@ %a@]"
+=======
+        "@[The abbreviation %a@ is used with parameter(s)@ %a@ \
+           which are incompatible with constraint(s)@ %a@]"
+>>>>>>> ocaml-flambda/flambda-backend:main
+        Printtyp.ident id
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+        !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) params)
+        !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) cstrs)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        !Oprint.out_type (Printtyp.tree_of_typexp Type params)
+        !Oprint.out_type (Printtyp.tree_of_typexp Type cstrs)
+=======
+        !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) params)
         !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) cstrs)
   | Bad_class_type_parameters (id, params, cstrs) ->
       Printtyp.prepare_for_printing (params @ cstrs);
@@ -2205,39 +2703,81 @@ let report_error env ppf = function
         Printtyp.ident id
         !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) params)
         !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) cstrs)
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Class_match_failure error ->
       Includeclass.report_error Type ppf error
   | Unbound_val lab ->
       fprintf ppf "Unbound instance variable %s" lab
   | Unbound_type_var (printer, reason) ->
       let print_reason ppf { Ctype.free_variable; meth; meth_ty; } =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         let (ty0, kind) = free_variable in
         let ty1 =
           match kind with
           | Type_variable -> ty0
           | Row_variable -> Btype.newgenty(Tobject(ty0, ref None))
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          if real then ty0 else Btype.newgenty(Tobject(ty0, ref None)) in
+        Printtyp.add_type_to_preparation ty;
+=======
+          match kind with
+          | Type_variable -> ty0
+          | Row_variable -> Btype.newgenty(Tobject(ty0, ref None))
+        in
+        Printtyp.add_type_to_preparation meth_ty;
+>>>>>>> ocaml-flambda/flambda-backend:main
         in
         Printtyp.add_type_to_preparation meth_ty;
         Printtyp.add_type_to_preparation ty1;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         fprintf ppf
           "The method %s@ has type@;<1 2>%a@ where@ %a@ is unbound"
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          lab
+          !Oprint.out_type (Printtyp.tree_of_typexp Type ty)
+=======
+          meth
+          !Oprint.out_type (Printtyp.tree_of_typexp Type meth_ty)
+>>>>>>> ocaml-flambda/flambda-backend:main
           meth
           !Oprint.out_type (Printtyp.tree_of_typexp Type meth_ty)
           !Oprint.out_type (Printtyp.tree_of_typexp Type ty0)
       in
       fprintf ppf
         "@[<v>@[Some type variables are unbound in this type:@;<1 2>%t@]@ \
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
               @[%a@]@]"
        printer print_reason reason
   | Non_generalizable_class {id;  clty; nongen_vars } ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Non_generalizable_class (id, clty) ->
+=======
+  | Non_generalizable_class {id;  clty; nongen_vars } ->
       let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2] in
       Printtyp.prepare_for_printing nongen_vars;
+>>>>>>> ocaml-flambda/flambda-backend:main
+      let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2] in
+      Printtyp.prepare_for_printing nongen_vars;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       fprintf ppf
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+           contains type variables that cannot be generalized@]"
+=======
+         contains the non-generalizable type variable(s): %a.@ %a@]"
+>>>>>>> ocaml-flambda/flambda-backend:main
         "@[The type of this class,@ %a,@ \
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
          contains the non-generalizable type variable(s): %a.@ %a@]"
         (Printtyp.class_declaration id) clty
         (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
            Printtyp.prepared_type_scheme) nongen_vars
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+        (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
+           Printtyp.prepared_type_scheme) nongen_vars
+        Misc.print_see_manual manual_ref
+
+>>>>>>> ocaml-flambda/flambda-backend:main
         Misc.print_see_manual manual_ref
 
   | Cannot_coerce_self ty ->
@@ -2289,6 +2829,11 @@ let report_error env ppf = function
     fprintf ppf
       "@[Variables bound in a class must have layout value.@ %a@]"
       (Jkind.Violation.report_with_name ~name:nm) err
+  | Non_value_let_binding (nm, sort) ->
+    fprintf ppf
+      "@[The types of variables bound by a 'let' in a class function@ \
+       must have layout value. Instead, %s's type has layout %a.@]"
+      nm Jkind.Sort.format sort
 
 let report_error env ppf err =
   Printtyp.wrap_printing_env ~error:true

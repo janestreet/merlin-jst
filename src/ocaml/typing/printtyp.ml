@@ -25,9 +25,20 @@ open Longident
 open Path
 open Asttypes
 open Types
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 open Mode
 open Btype
 open Outcometree
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+module String = Misc.Stdlib.String
+module Int = Misc.Stdlib.Int
+=======
+
+module String = Misc.Stdlib.String
+module Int = Misc.Stdlib.Int
+module Sig_component_kind = Shape.Sig_component_kind
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 (* Note [When to print jkind annotations]
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -133,6 +144,40 @@ let printing_env = ref Env.empty
 (* When printing, it is important to only observe the
    current printing environment, without reading any new
    cmi present on the file system *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+   cmi present on the file system *)
+let in_printing_env f = Env.without_cmis f !printing_env
+
+let human_unique n id = Printf.sprintf "%s/%d" (Ident.name id) n
+
+type namespace =
+  | Type
+  | Module
+  | Module_type
+  | Class
+  | Class_type
+  | Other (** Other bypasses the unique name identifier mechanism *)
+
+module Namespace = struct
+
+=======
+   cmi present on the file system *)
+let in_printing_env f = Env.without_cmis f !printing_env
+
+ type namespace = Sig_component_kind.t =
+    | Value
+    | Type
+    | Module
+    | Module_type
+    | Extension_constructor
+    | Class
+    | Class_type
+
+
+module Namespace = struct
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 let in_printing_env f = Env.without_cmis f !printing_env
 
  type namespace = Shape.Sig_component_kind.t =
@@ -154,11 +199,24 @@ module Namespace = struct
     | Class -> 3
     | Class_type -> 4
     | Extension_constructor | Value -> 5
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
      (* we do not handle those component *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let size = 1 + id Other
+=======
+  let size = 1 + id Value
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   let size = 1 + id Value
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let pp ppf x = Format.pp_print_string ppf (show x)
+=======
+  let pp ppf x =
+    Format.pp_print_string ppf (Shape.Sig_component_kind.to_string x)
+>>>>>>> ocaml-flambda/flambda-backend:main
   let pp ppf x =
     Format.pp_print_string ppf (Shape.Sig_component_kind.to_string x)
 
@@ -171,6 +229,28 @@ module Namespace = struct
     | Some Class -> to_lookup Env.find_class_by_name
     | Some Class_type -> to_lookup Env.find_cltype_by_name
     | None | Some(Value|Extension_constructor) -> fun _ -> raise Not_found
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let lookup =
+    let to_lookup f lid = fst @@ in_printing_env (f (Lident lid)) in
+    function
+    | Type -> to_lookup Env.find_type_by_name
+    | Module -> to_lookup Env.find_module_by_name
+    | Module_type -> to_lookup Env.find_modtype_by_name
+    | Class -> to_lookup Env.find_class_by_name
+    | Class_type -> to_lookup Env.find_cltype_by_name
+    | Other -> fun _ -> raise Not_found
+=======
+  let lookup =
+    let to_lookup f lid = fst @@ in_printing_env (f (Lident lid)) in
+    function
+    | Some Type -> to_lookup Env.find_type_by_name
+    | Some Module -> to_lookup Env.find_module_by_name
+    | Some Module_type -> to_lookup Env.find_modtype_by_name
+    | Some Class -> to_lookup Env.find_class_by_name
+    | Some Class_type -> to_lookup Env.find_cltype_by_name
+    | None | Some(Value|Extension_constructor) -> fun _ -> raise Not_found
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   let location namespace id =
     let path = Path.Pident id in
@@ -179,12 +259,29 @@ module Namespace = struct
         | Some Type -> (in_printing_env @@ Env.find_type path).type_loc
         | Some Module -> (in_printing_env @@ Env.find_module path).md_loc
         | Some Module_type -> (in_printing_env @@ Env.find_modtype path).mtd_loc
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         | Some Class -> (in_printing_env @@ Env.find_class path).cty_loc
         | Some Class_type -> (in_printing_env @@ Env.find_cltype path).clty_loc
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | Papply _ | Pdot _ -> Module
+=======
+    | Papply _ | Pdot _ -> Some Module
+    | Pextra_ty _ -> assert false (* Only in type path *)
+>>>>>>> ocaml-flambda/flambda-backend:main
         | Some (Extension_constructor|Value) | None -> Location.none
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       ) with Not_found -> None
 
   let best_class_namespace = function
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        match location Class c with
+        | Some _ -> Class
+        | None -> Class_type
+=======
+        match location (Some Class) c with
+        | Some _ -> Some Class
+        | None -> Some Class_type
+>>>>>>> ocaml-flambda/flambda-backend:main
     | Papply _ | Pdot _ -> Some Module
     | Pextra_ty _ -> assert false (* Only in type path *)
     | Pident c ->
@@ -226,15 +323,66 @@ module Conflicts = struct
           (* lookup the identifier in scope with name [root_name] and
              add it too
            *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           match Namespace.lookup (Some namespace) root_name with
           | Pident root_id -> add namespace root_name root_id
           | exception Not_found | _ -> ()
       end
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  type explanation =
+    { kind: namespace; name:string; root_name:string; location:Location.t}
+  let explanations = ref M.empty
+  let collect_explanation namespace n id =
+    let name = human_unique n id in
+    let root_name = Ident.name id in
+    if not (M.mem name !explanations) then
+      match Namespace.location namespace id with
+      | None -> ()
+      | Some location ->
+          let explanation = { kind = namespace; location; name; root_name } in
+          explanations := M.add name explanation !explanations
+=======
+  type explanation =
+    { kind: namespace; name:string; root_name:string; location:Location.t}
+  let explanations = ref M.empty
+
+  let add namespace name id =
+    match Namespace.location (Some namespace) id with
+    | None -> ()
+    | Some location ->
+        let explanation =
+          { kind = namespace; location; name; root_name=Ident.name id}
+        in
+        explanations := M.add name explanation !explanations
+
+  let collect_explanation namespace id ~name =
+    let root_name = Ident.name id in
+    (* if [name] is of the form "root_name/%d", we register both
+      [id] and the identifier in scope for [root_name].
+     *)
+    if root_name <> name && not (M.mem name !explanations) then
+      begin
+        add namespace name id;
+        if not (M.mem root_name !explanations) then
+          (* lookup the identifier in scope with name [root_name] and
+             add it too
+           *)
+          match Namespace.lookup (Some namespace) root_name with
+          | Pident root_id -> add namespace root_name root_id
+          | exception Not_found | _ -> ()
+      end
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   let pp_explanation ppf r=
     Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %s@]"
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       Location.print_loc r.location
         (Shape.Sig_component_kind.to_string r.kind) r.name
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      Location.print_loc r.location (Namespace.show r.kind) r.name
+=======
+      Location.print_loc r.location (Sig_component_kind.to_string r.kind) r.name
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   let print_located_explanations ppf l =
     Format.fprintf ppf "@[<v>%a@]" (Format.pp_print_list pp_explanation) l
@@ -293,6 +441,83 @@ module Conflicts = struct
        display at least one generic hint by namespace *)
     print_toplevel_hint ppf ltop
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let enabled = ref true
+let enable b = enabled := b
+
+(** Name mapping *)
+type mapping =
+  | Need_unique_name of int Ident.Map.t
+  (** The same name has already been attributed to multiple types.
+      The [map] argument contains the specific binding time attributed to each
+      types.
+  *)
+  | Uniquely_associated_to of Ident.t * out_name
+    (** For now, the name [Ident.name id] has been attributed to [id],
+        [out_name] is used to expand this name if a conflict arises
+        at a later point
+    *)
+  | Associated_to_pervasives of out_name
+  (** [Associated_to_pervasives out_name] is used when the item
+      [Stdlib.$name] has been associated to the name [$name].
+      Upon a conflict, this name will be expanded to ["Stdlib." ^ name ] *)
+
+let hid_start = 0
+
+let add_hid_id id map =
+  let new_id = 1 + Ident.Map.fold (fun _ -> Int.max) map hid_start in
+  new_id, Ident.Map.add id new_id  map
+
+let find_hid id map =
+  try Ident.Map.find id map, map with
+  Not_found -> add_hid_id id map
+
+let pervasives name = "Stdlib." ^ name
+
+let map = Array.make Namespace.size M.empty
+let get namespace = map.(Namespace.id namespace)
+let set namespace x = map.(Namespace.id namespace) <- x
+
+(* Names used in recursive definitions are not considered when determining
+   if a name is already attributed in the current environment.
+   This is a complementary version of hidden_rec_items used by short-path. *)
+let protected = ref S.empty
+
+(* When dealing with functor arguments, identity becomes fuzzy because the same
+   syntactic argument may be represented by different identifiers during the
+=======
+let enabled = ref true
+let enable b = enabled := b
+
+(* Names bound in recursive definitions should be considered as bound
+   in the environment when printing identifiers but not when trying
+   to find shortest path.
+   For instance, if we define
+   [{
+   module Avoid__me = struct
+     type t = A
+   end
+   type t = X
+   type u = [` A of t * t ]
+   module M = struct
+     type t = A of [ u | `B ]
+     type r = Avoid__me.t
+   end
+  }]
+  It is is important that in the definition of [t] that the outer type [t] is
+  printed as [t/2] reserving the name [t] to the type being defined in the
+  current recursive definition.
+     Contrarily, in the definition of [r], one should not shorten the
+  path [Avoid__me.t] to [r] until the end of the definition of [r].
+  The [bound_in_recursion] bridges the gap between those two slightly different
+  notions of printing environment.
+*)
+let bound_in_recursion = ref M.empty
+
+(* When dealing with functor arguments, identity becomes fuzzy because the same
+   syntactic argument may be represented by different identifiers during the
+>>>>>>> ocaml-flambda/flambda-backend:main
   let exists () = M.cardinal !explanations >0
 end
 
@@ -341,6 +566,194 @@ let with_hidden ids f =
   protect_refs [ R(bound_in_recursion, updated )] f
 
 let human_id id index =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let fuzzy_id namespace id = namespace = Module && S.mem (Ident.name id) !fuzzy
+
+let with_hidden ids f =
+  let update m id = S.add (Ident.name id.ident) m in
+  protect_refs [ R(protected, List.fold_left update !protected ids)] f
+
+let pervasives_name namespace name =
+  if not !enabled then Out_name.create name else
+  match M.find name (get namespace) with
+  | Associated_to_pervasives r -> r
+  | Need_unique_name _ -> Out_name.create (pervasives name)
+  | Uniquely_associated_to (id',r) ->
+      let hid, map = add_hid_id id' Ident.Map.empty in
+      Out_name.set r (human_unique hid id');
+      Conflicts.collect_explanation namespace hid id';
+      set namespace @@ M.add name (Need_unique_name map) (get namespace);
+      Out_name.create (pervasives name)
+  | exception Not_found ->
+      let r = Out_name.create name in
+      set namespace @@ M.add name (Associated_to_pervasives r) (get namespace);
+      r
+
+(** Lookup for preexisting named item within the current {!printing_env} *)
+let env_ident namespace name =
+  if S.mem name !protected then None else
+  match Namespace.lookup namespace name with
+  | Pident id -> Some id
+  | _ -> None
+  | exception Not_found -> None
+
+(** Associate a name to the identifier [id] within [namespace] *)
+let ident_name_simple namespace id =
+  if not !enabled || fuzzy_id namespace id then
+    Out_name.create (Ident.name id)
+  else
+  let name = Ident.name id in
+  match M.find name (get namespace) with
+  | Uniquely_associated_to (id',r) when Ident.same id id' ->
+      r
+  | Need_unique_name map ->
+      let hid, m = find_hid id map in
+      Conflicts.collect_explanation namespace hid id;
+      set namespace @@ M.add name (Need_unique_name m) (get namespace);
+      Out_name.create (human_unique hid id)
+  | Uniquely_associated_to (id',r) ->
+      let hid', m = find_hid id' Ident.Map.empty in
+      let hid, m = find_hid id m in
+      Out_name.set r (human_unique hid' id');
+      List.iter (fun (id,hid) -> Conflicts.collect_explanation namespace hid id)
+        [id, hid; id', hid' ];
+      set namespace @@ M.add name (Need_unique_name m) (get namespace);
+      Out_name.create (human_unique hid id)
+  | Associated_to_pervasives r ->
+      Out_name.set r ("Stdlib." ^ Out_name.print r);
+      let hid, m = find_hid id Ident.Map.empty in
+      set namespace @@ M.add name (Need_unique_name m) (get namespace);
+      Out_name.create (human_unique hid id)
+  | exception Not_found ->
+      let r = Out_name.create name in
+      set namespace
+      @@ M.add name (Uniquely_associated_to (id,r) ) (get namespace);
+      r
+
+(** Same as {!ident_name_simple} but lookup to existing named identifiers
+    in the current {!printing_env} *)
+let ident_name namespace id =
+  begin match env_ident namespace (Ident.name id) with
+  | Some id' -> ignore (ident_name_simple namespace id')
+  | None -> ()
+  end;
+  ident_name_simple namespace id
+
+let reset () =
+  Array.iteri ( fun i _ -> map.(i) <- M.empty ) map
+
+let with_ctx f =
+  let old = Array.copy map in
+  try_finally f
+    ~always:(fun () -> Array.blit old 0 map 0 (Array.length map))
+
+end
+let ident_name = Naming_context.ident_name
+let reset_naming_context = Naming_context.reset
+
+let ident ppf id = pp_print_string ppf
+    (Out_name.print (Naming_context.ident_name_simple Other id))
+
+(* Print a path *)
+
+let ident_stdlib = Ident.create_persistent "Stdlib"
+
+let non_shadowed_pervasive = function
+  | Pdot(Pident id, s) as path ->
+      Ident.same id ident_stdlib &&
+      (match in_printing_env (Env.find_type_by_name (Lident s)) with
+       | (path', _) -> Path.same path path'
+       | exception Not_found -> true)
+  | _ -> false
+
+=======
+let fuzzy_id namespace id = namespace = Module && S.mem (Ident.name id) !fuzzy
+
+let with_hidden ids f =
+  let update m id = M.add (Ident.name id.ident) id.ident m in
+  let updated = List.fold_left update !bound_in_recursion ids in
+  protect_refs [ R(bound_in_recursion, updated )] f
+
+let human_id id index =
+  (* The identifier with index [k] is the (k+1)-th most recent identifier in
+     the printing environment. We print them as [name/(k+1)] except for [k=0]
+     which is printed as [name] rather than [name/1].
+  *)
+  if index = 0 then
+    Ident.name id
+  else
+    let ordinal = index + 1 in
+    String.concat "/" [Ident.name id; string_of_int ordinal]
+
+let indexed_name namespace id =
+  let find namespace id env = match namespace with
+    | Type -> Env.find_type_index id env
+    | Module -> Env.find_module_index id env
+    | Module_type -> Env.find_modtype_index id env
+    | Class -> Env.find_class_index id env
+    | Class_type-> Env.find_cltype_index id env
+    | Value | Extension_constructor -> None
+  in
+  let index =
+    match M.find_opt (Ident.name id) !bound_in_recursion with
+    | Some rec_bound_id ->
+        (* the identifier name appears in the current group of recursive
+           definition *)
+        if Ident.same rec_bound_id id then
+          Some 0
+        else
+          (* the current recursive definition shadows one more time the
+            previously existing identifier with the same name *)
+          Option.map succ (in_printing_env (find namespace id))
+    | None ->
+        in_printing_env (find namespace id)
+  in
+  let index =
+    (* If [index] is [None] at this point, it might indicate that
+       the identifier id is not defined in the environment, while there
+       are other identifiers in scope that share the same name.
+       Currently, this kind of partially incoherent environment happens
+       within functor error messages where the left and right hand side
+       have a different views of the environment at the source level.
+       Printing the source-level by using a default index of `0`
+       seems like a reasonable compromise in this situation however.*)
+    Option.value index ~default:0
+  in
+  human_id id index
+
+let ident_name namespace id =
+  match namespace, !enabled with
+  | None, _ | _, false -> Out_name.create (Ident.name id)
+  | Some namespace, true ->
+      if fuzzy_id namespace id then Out_name.create (Ident.name id)
+      else
+        let name = indexed_name namespace id in
+        Conflicts.collect_explanation namespace id ~name;
+        Out_name.create name
+end
+let ident_name = Naming_context.ident_name
+
+let ident ppf id = pp_print_string ppf
+    (Out_name.print (Naming_context.ident_name None id))
+
+let namespaced_ident namespace  id =
+  Out_name.print (Naming_context.ident_name (Some namespace) id)
+
+
+(* Print a path *)
+
+let ident_stdlib = Ident.create_persistent "Stdlib"
+
+let non_shadowed_stdlib namespace = function
+  | Pdot(Pident id, s) as path ->
+      Ident.same id ident_stdlib &&
+      (match Namespace.lookup namespace s with
+       | path' -> Path.same path path'
+       | exception Not_found -> true)
+  | _ -> false
+
+>>>>>>> ocaml-flambda/flambda-backend:main
   (* The identifier with index [k] is the (k+1)-th most recent identifier in
      the printing environment. We print them as [name/(k+1)] except for [k=0]
      which is printed as [name] rather than [name/1].
@@ -514,16 +927,68 @@ let rec tree_of_path ?(disambiguation=true) namespace p =
   | Pextra_ty (p, extra) -> begin
       (* inline record types are syntactically prevented from escaping their
          binding scope, and are never shown to users. *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       match extra with
         Pcstr_ty s ->
           Oide_dot (tree_of_path (Some Type) p, s)
       | Pext_ty ->
           tree_of_path None p
     end
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          else
+          l
+
+let rec tree_of_path namespace = function
+  | Pident id ->
+      Oide_ident (ident_name namespace id)
+  | Pdot(_, s) as path when non_shadowed_pervasive path ->
+      Oide_ident (Naming_context.pervasives_name namespace s)
+  | Pdot(Pident t, s)
+    when namespace=Type && not (Path.is_uident (Ident.name t)) ->
+      (* [t.A]: inline record of the constructor [A] from type [t] *)
+      Oide_dot (Oide_ident (ident_name Type t), s)
+  | Pdot(p, s) ->
+      Oide_dot (tree_of_path Module p, s)
+  | Papply(p1, p2) ->
+      Oide_apply (tree_of_path Module p1, tree_of_path Module p2)
+=======
+          else
+          l
+
+let rec tree_of_path ?(disambiguation=true) namespace p =
+  let tree_of_path namespace p = tree_of_path ~disambiguation namespace p in
+  let namespace = if disambiguation then namespace else None in
+  match p with
+  | Pident id ->
+      Oide_ident (ident_name namespace id)
+  | Pdot(_, s) as path when non_shadowed_stdlib namespace path ->
+      Oide_ident (Out_name.create s)
+  | Pdot(p, s) ->
+      Oide_dot (tree_of_path (Some Module) p, s)
+  | Papply(p1, p2) ->
+      let t1 = tree_of_path (Some Module) p1 in
+      let t2 = tree_of_path (Some Module) p2 in
+      Oide_apply (t1, t2)
+  | Pextra_ty (p, extra) -> begin
+      (* inline record types are syntactically prevented from escaping their
+         binding scope, and are never shown to users. *)
+      match extra with
+        Pcstr_ty s ->
+          Oide_dot (tree_of_path (Some Type) p, s)
+      | Pext_ty ->
+          tree_of_path None p
+    end
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let tree_of_path ?disambiguation namespace p =
   tree_of_path ?disambiguation namespace
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     (rewrite_double_underscore_paths !printing_env p)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  !Oprint.out_ident ppf (tree_of_path Other p)
+=======
+  !Oprint.out_ident ppf (tree_of_path None p)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let path ppf p =
   !Oprint.out_ident ppf (tree_of_path None p)
@@ -766,7 +1231,28 @@ type type_or_scheme = Type | Type_scheme
 let is_non_gen mode ty =
   match mode with
   | Type_scheme -> is_Tvar ty && get_level ty <> generic_level
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Type        -> false
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let rec path_size = function
+    Pident id ->
+      penalty (Ident.name id), -Ident.scope id
+  | Pdot (p, _) ->
+      let (l, b) = path_size p in (1+l, b)
+  | Papply (p1, p2) ->
+      let (l, b) = path_size p1 in
+      (l + fst (path_size p2), b)
+=======
+let rec path_size = function
+    Pident id ->
+      penalty (Ident.name id), -Ident.scope id
+  | Pdot (p, _) | Pextra_ty (p, Pcstr_ty _) ->
+      let (l, b) = path_size p in (1+l, b)
+  | Papply (p1, p2) ->
+      let (l, b) = path_size p1 in
+      (l + fst (path_size p2), b)
+  | Pextra_ty (p, _) -> path_size p
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let nameable_row row =
   row_name row <> None &&
@@ -830,9 +1316,38 @@ module Names : sig
   val name_of_type : (unit -> string) -> transient_expr -> string
   val check_name_of_type : non_gen:bool -> transient_expr -> unit
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   val remove_names : transient_expr list -> unit
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let wrap_printing_env env f =
+  set_printing_env env; reset_naming_context ();
+  try_finally f ~always:(fun () -> set_printing_env Env.empty)
+=======
+let wrap_printing_env env f =
+  set_printing_env env;
+  try_finally f ~always:(fun () -> set_printing_env Env.empty)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   val with_local_names : (unit -> 'a) -> 'a
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let rec lid_of_path = function
+    Path.Pident id ->
+      Longident.Lident (Ident.name id)
+  | Path.Pdot (p1, s) ->
+      Longident.Ldot (lid_of_path p1, s)
+  | Path.Papply (p1, p2) ->
+      Longident.Lapply (lid_of_path p1, lid_of_path p2)
+=======
+let rec lid_of_path = function
+    Path.Pident id ->
+      Longident.Lident (Ident.name id)
+  | Path.Pdot (p1, s) | Path.Pextra_ty (p1, Pcstr_ty s)  ->
+      Longident.Ldot (lid_of_path p1, s)
+  | Path.Papply (p1, p2) ->
+      Longident.Lapply (lid_of_path p1, lid_of_path p2)
+  | Path.Pextra_ty (p, Pext_ty) -> lid_of_path p
+>>>>>>> ocaml-flambda/flambda-backend:main
 
   (* Refresh the weak variable map in the toplevel; for [print_items], which is
      itself for the toplevel *)
@@ -996,7 +1511,20 @@ let printed_aliases = ref ([] : transient_expr list)
 let add_delayed t =
   if not (List.memq t !delayed) then delayed := t :: !delayed
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let is_aliased_proxy px = List.memq px !aliased
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(* Print a type expression *)
+=======
+(* When building a tree for a best type path, we should not disambiguate
+   identifiers whenever the short-path algorithm detected a better path than
+   the original one.*)
+let tree_of_best_type_path p p' =
+  if Path.same p p' then tree_of_path (Some Type) p'
+  else tree_of_path ~disambiguation:false None p'
+
+(* Print a type expression *)
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let add_alias_proxy px =
   if not (is_aliased_proxy px) then
@@ -2302,7 +2830,23 @@ and functor_param ~sep ~custom_printer id q =
       Naming_context.with_arg id
         (fun () -> functor_parameters ~sep custom_printer q)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  val new_name : unit -> string
+  val new_weak_name : type_expr -> unit -> string
+=======
+  val new_name : unit -> string
+  val new_var_name : non_gen:bool -> type_expr -> unit -> string
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  val name_of_type : (unit -> string) -> transient_expr -> string
+  val check_name_of_type : transient_expr -> unit
+=======
+  val name_of_type : (unit -> string) -> transient_expr -> string
+  val check_name_of_type : non_gen:bool -> transient_expr -> unit
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let modtype ppf mty = !Oprint.out_module_type ppf (tree_of_modtype mty)
 let modtype_declaration id ppf decl =
@@ -2310,22 +2854,155 @@ let modtype_declaration id ppf decl =
 
 (* For the toplevel: merge with tree_of_signature? *)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let print_items showval env x =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let name_of_type name_generator t =
+    (* We've already been through repr at this stage, so t is our representative
+       of the union-find class. *)
+=======
+  let new_var_name ~non_gen ty () =
+    if non_gen then new_weak_name ty ()
+    else new_name ()
+
+  let name_of_type name_generator t =
+    (* We've already been through repr at this stage, so t is our representative
+       of the union-find class. *)
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            (* Some part of the type we've already printed has assigned another
+             * unification variable to that name. We want to keep the name, so
+             * try adding a number until we find a name that's not taken. *)
+            let current_name = ref name in
+            let i = ref 0 in
+            while List.exists
+                    (fun (_, name') -> !current_name = name')
+                    !names
+            do
+              current_name := name ^ (Int.to_string !i);
+              i := !i + 1;
+            done;
+            !current_name
+        | _ ->
+            (* No name available, create a new one *)
+            name_generator ()
+=======
+            (* Some part of the type we've already printed has assigned another
+             * unification variable to that name. We want to keep the name, so
+             * try adding a number until we find a name that's not taken. *)
+            let available name =
+              List.for_all
+                (fun (_, name') -> name <> name')
+                !names
+            in
+            if available name then name
+            else
+              let suffixed i = name ^ Int.to_string i in
+              let i = Misc.find_first_mono (fun i -> available (suffixed i)) in
+              suffixed i
+        | _ ->
+            (* No name available, create a new one *)
+            name_generator ()
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   Names.refresh_weak();
   Conflicts.reset ();
   let extend_val env (sigitem,outcome) = outcome, showval env sigitem in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      if name <> "_" then names := (t, name) :: !names;
+      name
+
+  let check_name_of_type t = ignore(name_of_type new_name t)
+
+  let remove_names tyl =
+    let tyl = List.map substitute tyl in
+=======
+      if name <> "_" then names := (t, name) :: !names;
+      name
+
+  let check_name_of_type ~non_gen px =
+    let name_gen = new_var_name ~non_gen (Transient_expr.type_expr px) in
+    ignore(name_of_type name_gen px)
+
+  let remove_names tyl =
+    let tyl = List.map substitute tyl in
+>>>>>>> ocaml-flambda/flambda-backend:main
   let post_process (env,l) = List.map (extend_val env) l in
   List.concat_map post_process @@ tree_of_signature_rec env x
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (* Print a signature body (used by -i when compiling a .ml) *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let add_printed_alias_proxy px =
+  Names.check_name_of_type px;
+  printed_aliases := px :: !printed_aliases
+=======
+let add_printed_alias_proxy ~non_gen px =
+  Names.check_name_of_type ~non_gen px;
+  printed_aliases := px :: !printed_aliases
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let print_signature ppf tree =
   fprintf ppf "@[<v>%a@]" !Oprint.out_signature tree
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        printer_iter_type_expr (mark_loops_rec visited) ty
 
+let mark_loops ty =
+  mark_loops_rec [] ty;;
+
+let prepare_type ty =
+  reserve_names ty;
+  mark_loops ty;;
+=======
+        printer_iter_type_expr (mark_loops_rec visited) ty
+
+let mark_loops ty =
+  mark_loops_rec [] ty
+
+let prepare_type ty =
+  reserve_names ty;
+  mark_loops ty
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let signature ppf sg =
   fprintf ppf "%a" print_signature (tree_of_signature sg)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  Names.reset_names (); reset_loop_marks ()
 
+let reset () =
+  reset_naming_context (); Conflicts.reset ();
+  reset_except_context ()
+=======
+  Names.reset_names (); reset_loop_marks ()
+
+let reset () =
+  Conflicts.reset ();
+  reset_except_context ()
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (* Print a signature body (used by -i when compiling a .ml) *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let out_jkind_option_of_jkind jkind =
+  match Jkind.get jkind with
+  | Const Value -> None
+  | Const clay -> Some (Olay_const clay)
+  | Var v -> (* This handles (X1). *)
+    if !Clflags.verbose_types
+    then Some (Olay_var (Jkind.Sort.var_name v))
+=======
+let out_jkind_option_of_jkind jkind =
+  match Jkind.get jkind with
+  | Const Value -> None
+  | Const jkind -> Some (Olay_const jkind)
+  | Var v -> (* This handles (X1). *)
+    if !Clflags.verbose_types
+    then Some (Olay_var (Jkind.Sort.var_name v))
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let printed_signature sourcefile ppf sg =
   (* we are tracking any collision event for warning 63 *)
   Conflicts.reset ();
@@ -2336,8 +3013,84 @@ let printed_signature sourcefile ppf sg =
     let conflicts = Format.asprintf "%t" Conflicts.print_explanations in
     Location.prerr_warning (Location.in_file sourcefile)
       (Warnings.Erroneous_printed_signature conflicts);
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  in
+  {oam_locality; oam_uniqueness; oam_linearity}
+
+let rec tree_of_typexp mode ty =
+  let px = proxy ty in
+  if List.memq px !printed_aliases && not (List.memq px !delayed) then
+   let mark = is_non_gen mode ty in
+   let name = Names.name_of_type
+                (if mark then Names.new_weak_name ty else Names.new_name)
+                px
+   in
+   Otyp_var (mark, name) else
+
+  let pr_typ () =
+    let tty = Transient_expr.repr ty in
+    match tty.desc with
+    | Tvar _ ->
+        let non_gen = is_non_gen mode ty in
+        let name_gen = if non_gen then Names.new_weak_name ty else Names.new_name in
+        Otyp_var (non_gen, Names.name_of_type name_gen tty)
+    | Tarrow ((l, marg, mret), ty1, ty2, _) ->
+        let lab =
+=======
+  in
+  {oam_locality; oam_uniqueness; oam_linearity}
+
+let alias_nongen_row mode px ty =
+    match get_desc ty with
+    | Tvariant _ | Tobject _ ->
+        if is_non_gen mode (Transient_expr.type_expr px) then
+          add_alias_proxy px
+    | _ -> ()
+
+let rec tree_of_typexp mode ty =
+  let px = proxy ty in
+  if List.memq px !printed_aliases && not (List.memq px !delayed) then
+   let non_gen = is_non_gen mode (Transient_expr.type_expr px) in
+   let name = Names.name_of_type (Names.new_var_name ~non_gen ty) px in
+   Otyp_var (non_gen, name) else
+
+  let pr_typ () =
+    let tty = Transient_expr.repr ty in
+    match tty.desc with
+    | Tvar _ ->
+        let non_gen = is_non_gen mode ty in
+        let name_gen = Names.new_var_name ~non_gen ty in
+        Otyp_var (non_gen, Names.name_of_type name_gen tty)
+    | Tarrow ((l, marg, mret), ty1, ty2, _) ->
+        let lab =
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     Warnings.check_fatal ()
   end;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        let tyl' = apply_subst s tyl in
+        if is_nth s && not (tyl'=[])
+        then tree_of_typexp mode (List.hd tyl')
+        else Otyp_constr (tree_of_path Type p', tree_of_typlist mode tyl')
+    | Tvariant row ->
+        let Row {fields; name; closed} = row_repr row in
+        let fields =
+          if closed then
+            List.filter (fun (_, f) -> row_field_repr f <> Rabsent)
+=======
+        let tyl' = apply_subst s tyl in
+        if is_nth s && not (tyl'=[])
+        then tree_of_typexp mode (List.hd tyl')
+        else
+          let tpath = tree_of_best_type_path p p' in
+          Otyp_constr (tpath, tree_of_typlist mode tyl')
+    | Tvariant row ->
+        let Row {fields; name; closed; _} = row_repr row in
+        let fields =
+          if closed then
+            List.filter (fun (_, f) -> row_field_repr f <> Rabsent)
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   fprintf ppf "%a" print_signature t
 
 (* Trace-specific printing *)
@@ -2346,39 +3099,284 @@ let printed_signature sourcefile ppf sg =
    exposed, but we instead expose three separate
    [report_{unification,equality,moregen}_error] functions.  This also lets us
    give the unification case an extra optional argument without adding it to the
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        begin match name with
+        | Some(p, tyl) when nameable_row row ->
+            let (p', s) = best_type_path p in
+            let id = tree_of_path Type p' in
+            let args = tree_of_typlist mode (apply_subst s tyl) in
+            let out_variant =
+              if is_nth s then List.hd args else Otyp_constr (id, args) in
+            if closed && all_present then
+              out_variant
+            else
+              let non_gen = is_non_gen mode (Transient_expr.type_expr px) in
+              let tags =
+                if all_present then None else Some (List.map fst present) in
+              Otyp_variant (non_gen, Ovar_typ out_variant, closed, tags)
+        | _ ->
+            let non_gen =
+              not (closed && all_present) &&
+              is_non_gen mode (Transient_expr.type_expr px) in
+            let fields = List.map (tree_of_row_field mode) fields in
+            let tags =
+              if all_present then None else Some (List.map fst present) in
+            Otyp_variant (non_gen, Ovar_fields fields, closed, tags)
+        end
+    | Tobject (fi, nm) ->
+        tree_of_typobject mode fi !nm
+=======
+        begin match name with
+        | Some(p, tyl) when nameable_row row ->
+            let (p', s) = best_type_path p in
+            let id = tree_of_best_type_path p p' in
+            let args = tree_of_typlist mode (apply_subst s tyl) in
+            let out_variant =
+              if is_nth s then List.hd args else Otyp_constr (id, args) in
+            if closed && all_present then
+              out_variant
+            else
+              let tags =
+                if all_present then None else Some (List.map fst present) in
+              Otyp_variant (Ovar_typ out_variant, closed, tags)
+        | _ ->
+            let fields = List.map (tree_of_row_field mode) fields in
+            let tags =
+              if all_present then None else Some (List.map fst present) in
+            Otyp_variant (Ovar_fields fields, closed, tags)
+        end
+    | Tobject (fi, nm) ->
+        tree_of_typobject mode fi !nm
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
    equality and moregen cases. *)
 type 'variety trace_format =
   | Unification : Errortrace.unification trace_format
   | Equality    : Errortrace.comparison  trace_format
   | Moregen     : Errortrace.comparison  trace_format
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+              String.concat "." (Longident.flatten li),
+              tree_of_typexp mode ty
+            )) fl in
+        Otyp_module (tree_of_path Module_type p, fl)
+  in
+  if List.memq px !delayed then delayed := List.filter ((!=) px) !delayed;
+  if is_aliased_proxy px && aliasable ty then begin
+    add_printed_alias_proxy px;
+    Otyp_alias (pr_typ (), Names.name_of_type Names.new_name px) end
+  else pr_typ ()
+=======
+              String.concat "." (Longident.flatten li),
+              tree_of_typexp mode ty
+            )) fl in
+        Otyp_module (tree_of_path (Some Module_type) p, fl)
+  in
+  if List.memq px !delayed then delayed := List.filter ((!=) px) !delayed;
+  alias_nongen_row mode px ty;
+  if is_aliased_proxy px && aliasable ty then begin
+    let non_gen = is_non_gen mode (Transient_expr.type_expr px) in
+    add_printed_alias_proxy ~non_gen px;
+    (* add_printed_alias chose a name, thus the name generator
+       doesn't matter.*)
+    let alias = Names.name_of_type (Names.new_var_name ~non_gen ty) px in
+    Otyp_alias {non_gen;  aliased = pr_typ (); alias } end
+  else pr_typ ()
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let incompatibility_phrase (type variety) : variety trace_format -> string =
   function
   | Unification -> "is not compatible with type"
   | Equality    -> "is not equal to type"
   | Moregen     -> "is not compatible with type"
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          List.sort
+            (fun (n, _) (n', _) -> String.compare n n') present_fields in
+        tree_of_typfields mode rest sorted_fields in
+      let (fields, rest) = pr_fields fi in
+      Otyp_object (fields, rest)
+  | Some (p, ty :: tyl) ->
+      let non_gen = is_non_gen mode ty in
+      let args = tree_of_typlist mode tyl in
+      let (p', s) = best_type_path p in
+      assert (s = Id);
+      Otyp_class (non_gen, tree_of_path Type p', args)
+  | _ ->
+      fatal_error "Printtyp.tree_of_typobject"
+  end
+=======
+          List.sort
+            (fun (n, _) (n', _) -> String.compare n n') present_fields in
+        tree_of_typfields mode rest sorted_fields in
+      let (fields, open_row) = pr_fields fi in
+      Otyp_object {fields; open_row}
+  | Some (p, _ty :: tyl) ->
+      let args = tree_of_typlist mode tyl in
+      let (p', s) = best_type_path p in
+      assert (s = Id);
+      Otyp_class (tree_of_best_type_path p p', args)
+  | _ ->
+      fatal_error "Printtyp.tree_of_typobject"
+  end
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (* Print a unification error *)
 
 let same_path t t' =
   eq_type t t' ||
   match get_desc t, get_desc t' with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+and tree_of_typfields mode rest = function
+  | [] ->
+      let rest =
+        match get_desc rest with
+        | Tvar _ | Tunivar _ -> Some (is_non_gen mode rest)
+        | Tconstr _ -> Some false
+        | Tnil -> None
+        | _ -> fatal_error "typfields (1)"
+      in
+      ([], rest)
+  | (s, t) :: l ->
+      let field = (s, tree_of_typexp mode t) in
+      let (fields, rest) = tree_of_typfields mode rest l in
+=======
+and tree_of_typfields mode rest = function
+  | [] ->
+      let open_row =
+        match get_desc rest with
+        | Tvar _ | Tunivar _ | Tconstr _-> true
+        | Tnil -> false
+        | _ -> fatal_error "typfields (1)"
+      in
+      ([], open_row)
+  | (s, t) :: l ->
+      let field = (s, tree_of_typexp mode t) in
+      let (fields, rest) = tree_of_typfields mode rest l in
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tconstr(p,tl,_), Tconstr(p',tl',_) -> begin
       match best_type_path p, best_type_path p' with
       | Nth n, Nth n' when n = n' -> true
       | Path(nso, p), Path(nso', p') when Path.same p p' ->
           let tl = apply_subst_opt nso tl in
           let tl' = apply_subst_opt nso' tl' in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  prepare_type ty;
+  typexp Type_scheme ppf ty
+
+let type_scheme ppf ty =
+  prepare_for_printing [ty];
+  typexp Type_scheme ppf ty
+
+let type_path ppf p =
+  let (p', s) = best_type_path p in
+  let p = if (s = Id) then p' else p in
+  let t = tree_of_path Type p in
+  !Oprint.out_ident ppf t
+
+let tree_of_type_scheme ty =
+=======
+  prepare_type ty;
+  typexp Type_scheme ppf ty
+
+let prepared_type_scheme ppf ty = typexp Type_scheme ppf ty
+
+let type_scheme ppf ty =
+  prepare_for_printing [ty];
+  prepared_type_scheme ppf ty
+
+let type_path ppf p =
+  let (p', s) = best_type_path p in
+  let p'' = if (s = Id) then p' else p in
+  let t = tree_of_best_type_path p p'' in
+  !Oprint.out_ident ppf t
+
+let tree_of_type_scheme ty =
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
           List.length tl = List.length tl' &&
           List.for_all2 eq_type tl tl'
       | _ -> false
       end
   | _ ->
       false
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+     out_jkind_option_of_jkind jkind
+  | _ -> None (* this is (C2.2) from Note [When to print jkind annotations] *)
 
+let rec tree_of_type_decl id decl =
+
+  reset_except_context();
+=======
+     out_jkind_option_of_jkind jkind
+  | _ -> None (* this is (C2.2) from Note [When to print jkind annotations] *)
+
+let tree_of_label l =
+  let gom =
+    match l.ld_mutable, l.ld_global with
+    | Mutable, _ -> Ogom_mutable
+    | Immutable, Global -> Ogom_global
+    | Immutable, Unrestricted -> Ogom_immutable
+  in
+  (Ident.name l.ld_id, gom, tree_of_typexp Type l.ld_type)
+
+let tree_of_constructor_arguments = function
+  | Cstr_tuple l -> List.map tree_of_typ_gf l
+  | Cstr_record l -> [ Otyp_record (List.map tree_of_label l), Ogf_unrestricted ]
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 type 'a diff = Same of 'a | Diff of 'a * 'a
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  let params = filter_params decl.type_params in
+=======
+let tree_of_constructor_args_and_ret_type args ret_type =
+  match ret_type with
+  | None -> (tree_of_constructor_arguments args, None)
+  | Some res ->
+      let out_ret = tree_of_typexp Type res in
+      let out_args = tree_of_constructor_arguments args in
+      let qtvs = extract_qtvs (res :: tys_of_constr_args args) in
+      (out_args, Some (qtvs, out_ret))
 
+let tree_of_single_constructor cd =
+  let name = Ident.name cd.cd_id in
+  let args, ret = tree_of_constructor_args_and_ret_type cd.cd_args cd.cd_res in
+  {
+      ocstr_name = name;
+      ocstr_args = args;
+      ocstr_return_type = ret;
+  }
+
+(* When printing GADT constructor, we need to forget the naming decision we took
+  for the type parameters and constraints. Indeed, in
+  {[
+  type 'a t = X: 'a -> 'b t
+   ]}
+  It is fine to print both the type parameter ['a] and the existentially
+  quantified ['a] in the definition of the constructor X as ['a]
+ *)
+let tree_of_constructor_in_decl cd =
+  match cd.cd_res with
+  | None -> tree_of_single_constructor cd
+  | Some _ -> Names.with_local_names (fun () -> tree_of_single_constructor cd)
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let trees_of_type_expansion'
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  begin match decl.type_manifest with
+  | Some ty ->
+      let vars = free_variables ty in
+=======
+let prepare_decl id decl =
+  let params = filter_params decl.type_params in
+  begin match decl.type_manifest with
+  | Some ty ->
+      let vars = free_variables ty in
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       ~var_jkinds mode Errortrace.{ty = t; expanded = t'} =
   let tree_of_typexp' ty =
     let out = tree_of_typexp mode ty in
@@ -2395,6 +3393,29 @@ let trees_of_type_expansion'
     else
       out
   in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        params
+  | None -> ()
+  end;
+
+  List.iter add_alias params;
+  List.iter prepare_type params;
+  List.iter add_printed_alias params;
+  let ty_manifest =
+    match decl.type_manifest with
+    | None -> None
+=======
+        params
+  | None -> ()
+  end;
+  List.iter add_alias params;
+  List.iter prepare_type params;
+  List.iter (add_printed_alias ~non_gen:false) params;
+  let ty_manifest =
+    match decl.type_manifest with
+    | None -> None
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   reset_loop_marks ();
   mark_loops t;
   if same_path t t'
@@ -2409,6 +3430,27 @@ let trees_of_type_expansion'
     if first = second then Same first
     else Diff(first,second)
   end
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      List.iter (fun l -> prepare_type l.ld_type) l
+  | Type_open -> ()
+  end;
+
+  let type_param =
+    function
+    | Otyp_var (_, id) -> id
+=======
+      List.iter (fun l -> prepare_type l.ld_type) l
+  | Type_open -> ()
+  end;
+  ty_manifest, params
+
+let tree_of_type_decl id decl =
+  let ty_manifest, params = prepare_decl id decl in
+  let type_param =
+    function
+    | Otyp_var (_, id) -> id
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let trees_of_type_expansion =
   trees_of_type_expansion' ~var_jkinds:false
@@ -2421,9 +3463,173 @@ let type_expansion ppf = function
 let trees_of_trace mode =
   List.map (Errortrace.map_diff (trees_of_type_expansion mode))
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          | Variant_unboxed -> true
+          | Variant_boxed _ | Variant_extensible -> false
+        in
+        tree_of_manifest (Otyp_sum (List.map tree_of_constructor cstrs)),
+        decl.type_private,
+        unboxed
+    | Type_record(lbls, rep) ->
+=======
+          | Variant_unboxed -> true
+          | Variant_boxed _ | Variant_extensible -> false
+        in
+        tree_of_manifest (Otyp_sum (List.map tree_of_constructor_in_decl cstrs)),
+        decl.type_private,
+        unboxed
+    | Type_record(lbls, rep) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  in
+  (* The algorithm for setting [lay] here is described as Case (C1) in
+     Note [When to print jkind annotations] *)
+  let lay = match ty, unboxed with
+    | (Otyp_abstract, _) | (_, true) ->
+        (* (C1.1) from the Note corresponds to Otyp_abstract. Anything
+           but the default must be user-written, so we just look in the
+           attributes. Similarly, look in the attributes for (C1.2), the
+           unboxed case. Because this is just printing, we liberally
+           allow [@@immediate]. *)
+       begin match
+         Builtin_attributes.jkind ~legacy_immediate:true decl.type_attributes
+       with
+       | Ok annot -> annot
+       | Error annot -> Some annot  (* don't care here about extensions *)
+       end
+    | _ -> None (* other cases have no jkind annotation *)
+  in
+    { otype_name = name;
+      otype_params = args;
+      otype_type = ty;
+      otype_private = priv;
+      otype_jkind = Option.map (fun { txt } -> Olay_const txt) lay;
+      otype_unboxed = unboxed;
+      otype_cstrs = constraints }
+
+and tree_of_constructor_arguments = function
+  | Cstr_tuple l -> List.map tree_of_typ_gf l
+  | Cstr_record l -> [ Otyp_record (List.map tree_of_label l), Ogf_unrestricted ]
+
+and tree_of_constructor_args_and_ret_type args ret_type =
+  match ret_type with
+  | None -> (tree_of_constructor_arguments args, None)
+  | Some res ->
+      Names.with_local_names (fun () ->
+        let out_ret = tree_of_typexp Type res in
+        let out_args = tree_of_constructor_arguments args in
+        let qtvs = extract_qtvs (res :: tys_of_constr_args args) in
+        (out_args, Some (qtvs, out_ret)))
+
+and tree_of_constructor cd =
+  let name = Ident.name cd.cd_id in
+  let args, ret = tree_of_constructor_args_and_ret_type cd.cd_args cd.cd_res in
+  { ocstr_name = name;
+    ocstr_args = args;
+    ocstr_return_type = ret
+  }
+
+and tree_of_label l =
+  let gom =
+    match l.ld_mutable, l.ld_global with
+    | Mutable, _ -> Ogom_mutable
+    | Immutable, Global -> Ogom_global
+    | Immutable, Unrestricted -> Ogom_immutable
+  in
+  (Ident.name l.ld_id, gom, tree_of_typexp Type l.ld_type)
+
+let constructor ppf c =
+  reset_except_context ();
+  prepare_type_constructor_arguments c.cd_args;
+  Option.iter prepare_type c.cd_res;
+  !Oprint.out_constr ppf (tree_of_constructor c)
+
+let label ppf l =
+  reset_except_context ();
+=======
+  in
+  (* The algorithm for setting [lay] here is described as Case (C1) in
+     Note [When to print jkind annotations] *)
+  let jkind_annotation = match ty, unboxed with
+    | (Otyp_abstract, _) | (_, true) ->
+        (* The two cases of (C1) from the Note correspond to Otyp_abstract.
+           Anything but the default must be user-written, so we print the
+           user-written annotation. *)
+        decl.type_jkind_annotation
+    | _ -> None (* other cases have no jkind annotation *)
+  in
+    { otype_name = name;
+      otype_params = args;
+      otype_type = ty;
+      otype_private = priv;
+      otype_jkind =
+        Option.map
+          (fun (const, _) -> Olay_const const)
+          jkind_annotation;
+      otype_unboxed = unboxed;
+      otype_cstrs = constraints }
+
+let add_type_decl_to_preparation id decl =
+   ignore @@ prepare_decl id decl
+
+let tree_of_prepared_type_decl id decl =
+  tree_of_type_decl id decl
+
+let tree_of_type_decl id decl =
+  reset_except_context();
+  tree_of_type_decl id decl
+
+let add_constructor_to_preparation c =
+  prepare_type_constructor_arguments c.cd_args;
+  Option.iter prepare_type c.cd_res
+
+let prepared_constructor ppf c =
+  !Oprint.out_constr ppf (tree_of_single_constructor c)
+
+let constructor ppf c =
+  reset_except_context ();
+  add_constructor_to_preparation c;
+  prepared_constructor ppf c
+
+let label ppf l =
+  reset_except_context ();
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let trees_of_type_path_expansion (tp,tp') =
   if Path.same tp tp' then Same(tree_of_path (Some Type) tp) else
     Diff(tree_of_path (Some Type) tp, tree_of_path (Some Type) tp')
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let tree_of_type_declaration id decl rs =
+  Osig_type (tree_of_type_decl id decl, tree_of_rec rs)
+
+let type_declaration id ppf decl =
+  !Oprint.out_sig_item ppf (tree_of_type_declaration id decl Trec_first)
+
+let constructor_arguments ppf a =
+  let tys = tree_of_constructor_arguments a in
+  !Oprint.out_constr_args ppf tys
+=======
+let tree_of_type_declaration id decl rs =
+  Osig_type (tree_of_type_decl id decl, tree_of_rec rs)
+
+let tree_of_prepared_type_declaration id decl rs =
+  Osig_type (tree_of_prepared_type_decl id decl, tree_of_rec rs)
+
+let type_declaration id ppf decl =
+  !Oprint.out_sig_item ppf (tree_of_type_declaration id decl Trec_first)
+
+let add_type_declaration_to_preparation id decl =
+  add_type_decl_to_preparation id decl
+
+let prepared_type_declaration id ppf decl =
+  !Oprint.out_sig_item ppf
+    (tree_of_prepared_type_declaration id decl Trec_first)
+
+let constructor_arguments ppf a =
+  let tys = tree_of_constructor_arguments a in
+  !Oprint.out_constr_args ppf tys
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let type_path_expansion ppf = function
   | Same p -> !Oprint.out_ident ppf p
@@ -2432,14 +3638,112 @@ let type_path_expansion ppf = function
         !Oprint.out_ident p
         !Oprint.out_ident p'
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let rec trace fst txt ppf = function
   | {Errortrace.got; expected} :: rem ->
       if not fst then fprintf ppf "@,";
       fprintf ppf "@[Type@;<1 2>%a@ %s@;<1 2>%a@]%a"
        type_expansion got txt type_expansion expected
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let tree_of_extension_constructor id ext es =
+  reset_except_context ();
+  let ty_name = Path.name ext.ext_type_path in
+  let ty_params = filter_params ext.ext_type_params in
+  List.iter add_alias ty_params;
+  List.iter prepare_type ty_params;
+  List.iter add_printed_alias ty_params;
+  prepare_type_constructor_arguments ext.ext_args;
+  Option.iter prepare_type ext.ext_ret_type;
+  let type_param =
+    function
+    | Otyp_var (_, id) -> id
+    | _ -> "?"
+  in
+  let ty_params =
+    List.map (fun ty -> type_param (tree_of_typexp Type ty)) ty_params
+  in
+  let name = Ident.name id in
+  let args, ret =
+=======
+(* When printing extension constructor, it is important to ensure that
+after printing the constructor, we are still in the scope of the constructor.
+For GADT constructor, this can be done by printing the type parameters inside
+their own isolated scope. This ensures that in
+{[
+   type 'b t += A: 'b -> 'b any t
+]}
+the type parameter `'b` is not bound when printing the type variable `'b` from
+the constructor definition from the type parameter.
+
+Contrarily, for non-gadt constructor, we must keep the same scope for
+the type parameters and the constructor because a type constraint may
+have changed the name of the type parameter:
+{[
+type -'a t = .. constraint <x:'a. 'a t -> 'a> = 'a
+(* the universal 'a is here to steal the name 'a from the type parameter *)
+type 'a t = X of 'a
+]} *)
+
+
+let add_extension_constructor_to_preparation ext =
+  let ty_params = filter_params ext.ext_type_params in
+  List.iter add_alias ty_params;
+  List.iter prepare_type ty_params;
+  prepare_type_constructor_arguments ext.ext_args;
+  Option.iter prepare_type ext.ext_ret_type
+
+let prepared_tree_of_extension_constructor
+   id ext es
+  =
+  let ty_name = Path.name ext.ext_type_path in
+  let ty_params = filter_params ext.ext_type_params in
+  let type_param =
+    function
+    | Otyp_var (_, id) -> id
+    | _ -> "?"
+  in
+  let param_scope f =
+    match ext.ext_ret_type with
+    | None ->
+        (* normal constructor: same scope for parameters and the constructor *)
+        f ()
+    | Some _ ->
+        (* gadt constructor: isolated scope for the type parameters *)
+        Names.with_local_names f
+  in
+  let ty_params =
+    param_scope
+      (fun () ->
+         List.iter (add_printed_alias ~non_gen:false) ty_params;
+         List.map (fun ty -> type_param (tree_of_typexp Type ty)) ty_params
+      )
+  in
+  let name = Ident.name id in
+  let args, ret =
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
        (trace false txt) rem
   | _ -> ()
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  in
+    Osig_typext (ext, es)
 
+let extension_constructor id ppf ext =
+  !Oprint.out_sig_item ppf (tree_of_extension_constructor id ext Text_first)
+=======
+  in
+    Osig_typext (ext, es)
+
+let tree_of_extension_constructor id ext es =
+  reset_except_context ();
+  add_extension_constructor_to_preparation ext;
+  prepared_tree_of_extension_constructor id ext es
+
+let extension_constructor id ppf ext =
+  !Oprint.out_sig_item ppf (tree_of_extension_constructor id ext Text_first)
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 type printing_status =
   | Discard
   | Keep
@@ -2449,9 +3753,23 @@ type printing_status =
       Since the whole type should have been printed earlier in the trace,
       we only print those elements if they are the last printed element
       of a trace, and there is no explicit explanation for the
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let extension_only_constructor id ppf ext =
+  reset_except_context ();
+  prepare_type_constructor_arguments ext.ext_args;
+=======
+let prepared_extension_constructor id ppf ext =
+  !Oprint.out_sig_item ppf
+    (prepared_tree_of_extension_constructor id ext Text_first)
+
+let extension_only_constructor id ppf ext =
+  reset_except_context ();
+  prepare_type_constructor_arguments ext.ext_args;
+>>>>>>> ocaml-flambda/flambda-backend:main
       type error.
   *)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let diff_printing_status Errortrace.{ got      = {ty = t1; expanded = t1'};
                                       expected = {ty = t2; expanded = t2'} } =
   if  is_constr_row ~allow_ident:true t1'
@@ -2459,15 +3777,31 @@ let diff_printing_status Errortrace.{ got      = {ty = t1; expanded = t1'};
   then Discard
   else if same_path t1 t1' && same_path t2 t2' then Optional_refinement
   else Keep
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  List.iter add_printed_alias params;
+  if is_aliased_proxy px then add_printed_alias_proxy px;
+=======
+  List.iter (add_printed_alias ~non_gen:false) params;
+  if is_aliased_proxy px then add_printed_alias_proxy ~non_gen:false px;
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let printing_status = function
   | Errortrace.Diff d -> diff_printing_status d
   | Errortrace.Escape {kind = Constraint} -> Keep
   | _ -> Keep
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (** Flatten the trace and remove elements that are always discarded
     during printing *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  List.iter add_printed_alias params;
+  if is_aliased_proxy px then add_printed_alias_proxy px;
+=======
+  List.iter (add_printed_alias ~non_gen:false) params;
+  if is_aliased_proxy px then (add_printed_alias_proxy ~non_gen:false) px;
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 (* Takes [printing_status] to change behavior for [Subtype] *)
 let prepare_any_trace printing_status tr =
   let clean_trace x l = match printing_status x with
@@ -2475,6 +3809,24 @@ let prepare_any_trace printing_status tr =
     | Optional_refinement when l = [] -> [x]
     | Optional_refinement | Discard -> l
   in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let rec tree_of_modtype ?abbrev = function
+  | Mty_ident p ->
+      Omty_ident (tree_of_path Module_type p)
+  | Mty_signature sg ->
+      Omty_signature (tree_of_signature ?abbrev sg)
+  | Mty_functor(param, ty_res) ->
+=======
+
+let rec tree_of_modtype ?abbrev = function
+  | Mty_ident p ->
+      Omty_ident (tree_of_path (Some Module_type) p)
+  | Mty_signature sg ->
+      Omty_signature (tree_of_signature ?abbrev sg)
+  | Mty_functor(param, ty_res) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   match tr with
   | [] -> []
   | elt :: rem -> elt :: List.fold_right clean_trace rem []
@@ -2484,6 +3836,24 @@ let prepare_trace f tr =
 
 (** Keep elements that are [Diff _ ] and take the decision
     for the last element, require a prepared trace *)
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      let res = wrap_env env (tree_of_modtype ?abbrev) ty_res in
+      Omty_functor (param, res)
+  | Mty_alias p ->
+      Omty_alias (tree_of_path Module p)
+  | Mty_strengthen _ as mty ->
+      begin match !expand_module_type !printing_env mty with
+      | Mty_strengthen (mty,p,a) ->
+=======
+      let res = wrap_env env (tree_of_modtype ?abbrev) ty_res in
+      Omty_functor (param, res)
+  | Mty_alias p ->
+      Omty_alias (tree_of_path (Some Module) p)
+  | Mty_strengthen _ as mty ->
+      begin match !expand_module_type !printing_env mty with
+      | Mty_strengthen (mty,p,a) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let rec filter_trace keep_last = function
   | [] -> []
   | [Errortrace.Diff d as elt]
@@ -2491,7 +3861,23 @@ let rec filter_trace keep_last = function
     if keep_last then [d] else []
   | Errortrace.Diff d :: rem -> d :: filter_trace keep_last rem
   | _ :: rem -> filter_trace keep_last rem
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+            && not (Env.is_functor_arg p !printing_env)
+          in
+          Omty_strengthen
+            (tree_of_modtype ?abbrev mty, tree_of_path Module p, unaliasable)
+      | mty -> tree_of_modtype ?abbrev mty
+      end
+=======
+            && not (Env.is_functor_arg p !printing_env)
+          in
+          Omty_strengthen
+            (tree_of_modtype ?abbrev mty, tree_of_path (Some Module) p, unaliasable)
+      | mty -> tree_of_modtype ?abbrev mty
+      end
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let type_path_list =
   Format.pp_print_list ~pp_sep:(fun ppf () -> Format.pp_print_break ppf 2 0)
     type_path_expansion
@@ -2501,6 +3887,25 @@ let hide_variant_name t =
   match get_desc t with
   | Tvariant row ->
       let Row {fields; more; name; fixed; closed} = row_repr row in
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    | Some _ | None ->
+        let env = !printing_env in
+        let env', group_trees =
+          Naming_context.with_ctx
+            (fun () -> trees_of_recursive_sigitem_group ?abbrev env group)
+        in
+        set_printing_env env';
+        let max_items, group_trees = match max_items with
+=======
+    | Some _ | None ->
+        let env = !printing_env in
+        let env', group_trees =
+            trees_of_recursive_sigitem_group ?abbrev env group
+        in
+        set_printing_env env';
+        let max_items, group_trees = match max_items with
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       if name = None then t else
       newty2 ~level:(get_level t)
         (Tvariant
@@ -2508,28 +3913,90 @@ let hide_variant_name t =
               ~more:(newvar2 (get_level more)
                        (Jkind.value ~why:Row_variable))))
   | _ -> t
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let print_items showval env x =
+  Names.refresh_weak();
+  reset_naming_context ();
+  Conflicts.reset ();
+  let extend_val env (sigitem,outcome) = outcome, showval env sigitem in
+  let post_process (env,l) = List.map (extend_val env) l in
+=======
+
+let print_items showval env x =
+  Names.refresh_weak();
+  Conflicts.reset ();
+  let extend_val env (sigitem,outcome) = outcome, showval env sigitem in
+  let post_process (env,l) = List.map (extend_val env) l in
+>>>>>>> ocaml-flambda/flambda-backend:main
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let prepare_expansion Errortrace.{ty; expanded} =
   let expanded = hide_variant_name expanded in
   reserve_names ty;
   if not (same_path ty expanded) then reserve_names expanded;
   Errortrace.{ty; expanded}
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let printed_signature sourcefile ppf sg =
+  (* we are tracking any collision event for warning 63 *)
+  Conflicts.reset ();
+  reset_naming_context ();
+  let t = tree_of_signature sg in
+  if Warnings.(is_active @@ Erroneous_printed_signature "")
+  && Conflicts.exists ()
+=======
+let printed_signature sourcefile ppf sg =
+  (* we are tracking any collision event for warning 63 *)
+  Conflicts.reset ();
+  let t = tree_of_signature sg in
+  if Warnings.(is_active @@ Erroneous_printed_signature "")
+  && Conflicts.exists ()
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let may_prepare_expansion compact (Errortrace.{ty; expanded} as ty_exp) =
   match get_desc expanded with
     Tvariant _ | Tobject _ when compact ->
       reserve_names ty; Errortrace.{ty; expanded = ty}
   | _ -> prepare_expansion ty_exp
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let trees_of_type_path_expansion (tp,tp') =
+  if Path.same tp tp' then Same(tree_of_path Type tp) else
+    Diff(tree_of_path Type tp, tree_of_path Type tp')
+=======
+let trees_of_type_path_expansion (tp,tp') =
+  if Path.same tp tp' then Same(tree_of_path (Some Type) tp) else
+    Diff(tree_of_path (Some Type) tp, tree_of_path (Some Type) tp')
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let print_path p =
   Format.dprintf "%a" !Oprint.out_ident (tree_of_path (Some Type) p)
 
 let print_tag ppf = fprintf ppf "`%s"
 
 let print_tags =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let rec trace fst txt ppf = function
+  | {Errortrace.got; expected} :: rem ->
+      if not fst then fprintf ppf "@,";
+      fprintf ppf "@[Type@;<1 2>%a@ %s@;<1 2>%a@] %a"
+       type_expansion got txt type_expansion expected
+       (trace false txt) rem
+  | _ -> ()
+=======
+let rec trace fst txt ppf = function
+  | {Errortrace.got; expected} :: rem ->
+      if not fst then fprintf ppf "@,";
+      fprintf ppf "@[Type@;<1 2>%a@ %s@;<1 2>%a@]%a"
+       type_expansion got txt type_expansion expected
+       (trace false txt) rem
+  | _ -> ()
+>>>>>>> ocaml-flambda/flambda-backend:main
   let comma ppf () = Format.fprintf ppf ",@ " in
   Format.pp_print_list ~pp_sep:comma print_tag
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let is_unit_arg env ty =
   let ty, vars = tpoly_get_poly ty in
   if vars <> [] then false
@@ -2538,11 +4005,54 @@ let is_unit_arg env ty =
     | Tconstr (p, _, _) -> Path.same p Predef.path_unit
     | _ -> false
   end
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+(** Keep elements that are not [Diff _ ] and take the decision
+    for the last element, require a prepared trace *)
+let rec filter_trace
+          (trace_format : 'variety trace_format)
+          keep_last
+  : ('a, 'variety) Errortrace.t -> _ = function
+  | [] -> []
+  | [Errortrace.Diff d as elt]
+    when printing_status elt = Optional_refinement ->
+    if keep_last then [d] else []
+  | Errortrace.Diff d :: rem -> d :: filter_trace trace_format keep_last rem
+  | _ :: rem -> filter_trace trace_format keep_last rem
+=======
+(** Keep elements that are [Diff _ ] and take the decision
+    for the last element, require a prepared trace *)
+let rec filter_trace keep_last = function
+  | [] -> []
+  | [Errortrace.Diff d as elt]
+    when printing_status elt = Optional_refinement ->
+    if keep_last then [d] else []
+  | Errortrace.Diff d :: rem -> d :: filter_trace keep_last rem
+  | _ :: rem -> filter_trace keep_last rem
+>>>>>>> ocaml-flambda/flambda-backend:main
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let unifiable env ty1 ty2 =
   let snap = Btype.snapshot () in
   let res =
     try Ctype.unify env ty1 ty2; true
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      reserve_names ty; Errortrace.{ty; expanded = ty}
+  | _ -> prepare_expansion ty_exp
+
+let print_path p = Format.dprintf "%a" !Oprint.out_ident (tree_of_path Type p)
+
+let print_tag ppf = fprintf ppf "`%s"
+
+=======
+      reserve_names ty; Errortrace.{ty; expanded = ty}
+  | _ -> prepare_expansion ty_exp
+
+let print_path p =
+  Format.dprintf "%a" !Oprint.out_ident (tree_of_path (Some Type) p)
+
+let print_tag ppf = fprintf ppf "`%s"
+
+>>>>>>> ocaml-flambda/flambda-backend:main
     with Unify _ -> false
   in
   Btype.backtrack snap;
@@ -2558,7 +4068,13 @@ let explanation_diff env t3 t4 : (Format.formatter -> unit) option =
   | _, Tarrow (_, ty1, ty2, _)
     when is_unit_arg env ty1 && unifiable env t3 ty2 ->
       Some (fun ppf ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
         fprintf ppf
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+          "@,@[Hint: Did you forget to wrap the expression using \
+=======
+          "@,@[@{<hint>Hint@}: Did you forget to wrap the expression using \
+>>>>>>> ocaml-flambda/flambda-backend:main
           "@,@[@{<hint>Hint@}: Did you forget to wrap the expression using \
            `fun () ->'?@]")
   | _ ->

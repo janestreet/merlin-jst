@@ -16,7 +16,6 @@
 (* Abstract syntax tree after typing *)
 
 open Asttypes
-open Jane_asttypes
 open Types
 
 module Uid = Shape.Uid
@@ -79,7 +78,7 @@ and 'k pattern_desc =
         closed_flag ->
       value pattern_desc
   | Tpat_array :
-      mutable_flag * value general_pattern list -> value pattern_desc
+      mutable_flag * Jkind.sort * value general_pattern list -> value pattern_desc
   | Tpat_lazy : value general_pattern -> value pattern_desc
   (* computation patterns *)
   | Tpat_value : tpat_value_argument -> computation pattern_desc
@@ -104,8 +103,14 @@ and exp_extra =
   | Texp_constraint of core_type
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Texp_newtype of string * const_jkind option
   | Texp_newtype' of Ident.t * label loc * const_jkind option
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Texp_newtype of string * const_jkind option
+=======
+  | Texp_newtype of string * Jkind.annotation option
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 
 and fun_curry_state =
@@ -543,15 +548,15 @@ and core_type =
    }
 
 and core_type_desc =
-  | Ttyp_var of string option * const_jkind option
+  | Ttyp_var of string option * Jkind.annotation option
   | Ttyp_arrow of arg_label * core_type * core_type
   | Ttyp_tuple of core_type list
   | Ttyp_constr of Path.t * Longident.t loc * core_type list
   | Ttyp_object of object_field list * closed_flag
   | Ttyp_class of Path.t * Longident.t loc * core_type list
-  | Ttyp_alias of core_type * string option * const_jkind option
+  | Ttyp_alias of core_type * string option * Jkind.annotation option
   | Ttyp_variant of row_field list * closed_flag * label list option
-  | Ttyp_poly of (string * const_jkind option) list * core_type
+  | Ttyp_poly of (string * Jkind.annotation option) list * core_type
   | Ttyp_package of package_type
 
 and package_type = {
@@ -602,6 +607,7 @@ and type_declaration =
     typ_manifest: core_type option;
     typ_loc: Location.t;
     typ_attributes: attribute list;
+    typ_jkind_annotation: Jane_asttypes.jkind_annotation option;
    }
 
 and type_kind =
@@ -625,7 +631,7 @@ and constructor_declaration =
     {
      cd_id: Ident.t;
      cd_name: string loc;
-     cd_vars: (string * const_jkind option) list;
+     cd_vars: (string * Jkind.annotation option) list;
      cd_args: constructor_arguments;
      cd_res: core_type option;
      cd_loc: Location.t;
@@ -665,7 +671,7 @@ and extension_constructor =
   }
 
 and extension_constructor_kind =
-    Text_decl of (string * const_jkind option) list *
+    Text_decl of (string * Jkind.annotation option) list *
                  constructor_arguments *
                  core_type option
   | Text_rebind of Path.t * Longident.t loc
@@ -785,7 +791,7 @@ let shallow_iter_pattern_desc
   | Tpat_variant(_, pat, _) -> Option.iter f.f pat
   | Tpat_record (lbl_pat_list, _) ->
       List.iter (fun (_, _, pat) -> f.f pat) lbl_pat_list
-  | Tpat_array (_, patl) -> List.iter f.f patl
+  | Tpat_array (_, _, patl) -> List.iter f.f patl
   | Tpat_lazy p -> f.f p
   | Tpat_any
   | Tpat_var _
@@ -807,8 +813,8 @@ let shallow_map_pattern_desc
       Tpat_record (List.map (fun (lid, l,p) -> lid, l, f.f p) lpats, closed)
   | Tpat_construct (lid, c, pats, ty) ->
       Tpat_construct (lid, c, List.map f.f pats, ty)
-  | Tpat_array (am, pats) ->
-      Tpat_array (am, List.map f.f pats)
+  | Tpat_array (am, arg_sort, pats) ->
+      Tpat_array (am, arg_sort, List.map f.f pats)
   | Tpat_lazy p1 -> Tpat_lazy (f.f p1)
   | Tpat_variant (x1, Some p1, x2) ->
       Tpat_variant (x1, Some (f.f p1), x2)
@@ -917,7 +923,7 @@ let iter_pattern_full ~both_sides_of_or f sort pat =
       | Tpat_tuple patl -> List.iter (loop f Jkind.Sort.value) patl
         (* CR layouts v5: tuple case to change when we allow non-values in
            tuples *)
-      | Tpat_array (_, patl) -> List.iter (loop f Jkind.Sort.value) patl
+      | Tpat_array (_, arg_sort, patl) -> List.iter (loop f arg_sort) patl
       | Tpat_lazy p | Tpat_exception p -> loop f Jkind.Sort.value p
       (* Cases without variables: *)
       | Tpat_any | Tpat_constant _ -> ()
@@ -1051,6 +1057,33 @@ let unpack_functor_me me =
   | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
 
 let unpack_functor_mty mty =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   match mty.mty_desc with
   | Tmty_functor (fp, mty) -> fp, mty
   | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+        combine_opts (into cpat) exns1 exns2
+  in
+  split_pattern pat
+=======
+        combine_opts (into cpat) exns1 exns2
+  in
+  split_pattern pat
+
+(* Expressions are considered nominal if they can be used as the subject of a
+   sentence or action. In practice, we consider that an expression is nominal
+   if they satisfy one of:
+   - Similar to an identifier: words separated by '.' or '#'.
+   - Do not contain spaces when printed.
+  *)
+let rec exp_is_nominal exp =
+  match exp.exp_desc with
+  | _ when exp.exp_attributes <> [] -> false
+  | Texp_ident _ | Texp_instvar _ | Texp_constant _
+  | Texp_variant (_, None)
+  | Texp_construct (_, _, [], _) ->
+      true
+  | Texp_field (parent, _, _, _, _) | Texp_send (parent, _, _) ->
+      exp_is_nominal parent
+  | _ -> false
+>>>>>>> ocaml-flambda/flambda-backend:main

@@ -20,8 +20,26 @@
 
 *)
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 open Parsetree
 open Format
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+open Parsetree;;
+open Format;;
+
+val interface : formatter -> signature_item list -> unit;;
+val implementation : formatter -> structure_item list -> unit;;
+val top_phrase : formatter -> toplevel_phrase -> unit;;
+val constant: formatter -> constant -> unit;;
+=======
+open Parsetree
+open Format
+
+val interface : formatter -> signature_item list -> unit
+val implementation : formatter -> structure_item list -> unit
+val top_phrase : formatter -> toplevel_phrase -> unit
+val constant: formatter -> constant -> unit
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 val interface : formatter -> signature_item list -> unit
 val implementation : formatter -> structure_item list -> unit

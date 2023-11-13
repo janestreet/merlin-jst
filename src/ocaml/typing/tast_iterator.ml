@@ -14,7 +14,6 @@
 (**************************************************************************)
 
 open Asttypes
-open Jane_asttypes
 open Typedtree
 
 type iterator =
@@ -35,8 +34,15 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     jkind_annotation: iterator -> const_jkind -> unit;
     location: iterator -> Location.t -> unit;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+    jkind_annotation: iterator -> const_jkind -> unit;
+=======
+    jkind_annotation: iterator -> Jkind.annotation -> unit;
+    location: iterator -> Location.t -> unit;
+>>>>>>> ocaml-flambda/flambda-backend:main
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
     module_declaration: iterator -> module_declaration -> unit;
@@ -80,8 +86,28 @@ let attribute sub x =
   iterator.payload iterator x.Parsetree.attr_payload;
   sub.location sub x.Parsetree.attr_loc
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let attributes sub l = List.iter (attribute sub) l
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+let iter_snd f (_, y) = f y
+let iter_loc sub {loc; _} = sub.location sub loc
+
+let location _sub _l = ()
+
+let attribute sub x =
+  let iterator = {
+    Ast_iterator.default_iterator
+    with location = fun _this x -> sub.location sub x
+  } in
+  iter_loc sub x.Parsetree.attr_name;
+  iterator.payload iterator x.Parsetree.attr_payload;
+  sub.location sub x.Parsetree.attr_loc
+
+let attributes sub l = List.iter (attribute sub) l
+
+>>>>>>> ocaml-flambda/flambda-backend:main
 let structure sub {str_items; str_final_env; _} =
   List.iter (sub.structure_item sub) str_items;
   sub.env sub str_final_env
@@ -90,6 +116,39 @@ let class_infos sub f x =
   sub.location sub x.ci_loc;
   sub.attributes sub x.ci_attributes;
   iter_loc sub x.ci_id_name;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let module_type_declaration sub {mtd_type; _} =
+  Option.iter (sub.module_type sub) mtd_type
+
+let module_declaration sub {md_type; _} =
+  sub.module_type sub md_type
+let module_substitution _ _ = ()
+
+let include_kind sub = function
+  | Tincl_structure -> ()
+=======
+let module_type_declaration sub x =
+  sub.location sub x.mtd_loc;
+  sub.attributes sub x.mtd_attributes;
+  iter_loc sub x.mtd_name;
+  Option.iter (sub.module_type sub) x.mtd_type
+
+let module_declaration sub {md_loc; md_name; md_type; md_attributes; _} =
+  sub.location sub md_loc;
+  sub.attributes sub md_attributes;
+  iter_loc sub md_name;
+  sub.module_type sub md_type
+
+let module_substitution sub {ms_loc; ms_name; ms_txt; ms_attributes; _} =
+  sub.location sub ms_loc;
+  sub.attributes sub ms_attributes;
+  iter_loc sub ms_name;
+  iter_loc sub ms_txt
+
+let include_kind sub = function
+  | Tincl_structure -> ()
+>>>>>>> ocaml-flambda/flambda-backend:main
   List.iter (fun (ct, _) -> sub.typ sub ct) x.ci_params;
   f x.ci_expr
 
@@ -112,8 +171,16 @@ let include_kind sub = function
   | Tincl_gen_functor ccs ->
       List.iter (fun (_, cc) -> sub.module_coercion sub cc) ccs
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 let str_include_infos sub {incl_mod; incl_kind; incl_loc} =
   sub.location sub incl_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let str_include_infos sub {incl_mod; incl_kind} =
+=======
+let str_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _} =
+  sub.location sub incl_loc;
+  sub.attributes sub incl_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.module_expr sub incl_mod;
   include_kind sub incl_kind
 
@@ -131,7 +198,13 @@ let class_declaration sub x =
 
 let structure_item sub {str_loc; str_desc; str_env; _} =
   sub.location sub str_loc;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   sub.env sub str_env;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tstr_eval   (exp, _, _) -> sub.expr sub exp
+=======
+  | Tstr_eval   (exp, _, attrs) -> sub.expr sub exp; sub.attributes sub attrs
+>>>>>>> ocaml-flambda/flambda-backend:main
   match str_desc with
   | Tstr_eval   (exp, _, attrs) -> sub.expr sub exp; sub.attributes sub attrs
   | Tstr_value  (rec_flag, list) -> sub.value_bindings sub (rec_flag, list)
@@ -147,7 +220,33 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_class_type list ->
       List.iter (fun (_, s, cltd) ->
         iter_loc sub s; sub.class_type_declaration sub cltd) list
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tstr_include incl -> str_include_infos sub incl
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tstr_attribute _ -> ()
+
+let value_description sub x = sub.typ sub x.val_desc
+
+let label_decl sub {ld_type; _} = sub.typ sub ld_type
+
+let field_decl sub (ty, _) = sub.typ sub ty
+=======
+  | Tstr_attribute attr -> sub.attribute sub attr
+
+let value_description sub x =
+  sub.location sub x.val_loc;
+  sub.attributes sub x.val_attributes;
+  iter_loc sub x.val_name;
+  sub.typ sub x.val_desc
+
+let label_decl sub {ld_loc; ld_name; ld_type; ld_attributes; _} =
+  sub.location sub ld_loc;
+  sub.attributes sub ld_attributes;
+  iter_loc sub ld_name;
+  sub.typ sub ld_type
+
+let field_decl sub (ty, _) = sub.typ sub ty
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tstr_open od -> sub.open_declaration sub od
   | Tstr_attribute attr -> sub.attribute sub attr
 
@@ -168,6 +267,21 @@ let field_decl sub (ty, _) = sub.typ sub ty
 let constructor_args sub = function
   | Cstr_tuple l -> List.iter (field_decl sub) l
   | Cstr_record l -> List.iter (label_decl sub) l
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+
+let constructor_decl sub {cd_args; cd_res; _} =
+  constructor_args sub cd_args;
+  Option.iter (sub.typ sub) cd_res
+=======
+
+let constructor_decl sub x =
+  sub.location sub x.cd_loc;
+  sub.attributes sub x.cd_attributes;
+  iter_loc sub x.cd_name;
+  constructor_args sub x.cd_args;
+  Option.iter (sub.typ sub) x.cd_res
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let constructor_decl sub x =
   sub.location sub x.cd_loc;
@@ -191,60 +305,171 @@ let type_declaration sub x =
       sub.typ sub c1;
       sub.typ sub c2;
       sub.location sub loc)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
     x.typ_cstrs;
   sub.type_kind sub x.typ_kind;
   Option.iter (sub.typ sub) x.typ_manifest;
   List.iter (fun (c, _) -> sub.typ sub c) x.typ_params
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Ttype_record list -> List.iter (label_decl sub) list
+  | Ttype_open -> ()
+
+let type_declaration sub {typ_cstrs; typ_kind; typ_manifest; typ_params; _} =
+  List.iter
+    (fun (c1, c2, _) ->
+      sub.typ sub c1;
+      sub.typ sub c2)
+    typ_cstrs;
+  sub.type_kind sub typ_kind;
+  Option.iter (sub.typ sub) typ_manifest;
+  List.iter (fun (c, _) -> sub.typ sub c) typ_params
+=======
+  | Ttype_record list -> List.iter (label_decl sub) list
+  | Ttype_open -> ()
+
+let type_declaration sub x =
+  sub.location sub x.typ_loc;
+  sub.attributes sub x.typ_attributes;
+  iter_loc sub x.typ_name;
+  List.iter
+    (fun (c1, c2, loc) ->
+      sub.typ sub c1;
+      sub.typ sub c2;
+      sub.location sub loc)
+    x.typ_cstrs;
+  sub.type_kind sub x.typ_kind;
+  Option.iter (sub.typ sub) x.typ_manifest;
+  List.iter (fun (c, _) -> sub.typ sub c) x.typ_params
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let type_declarations sub (_, list) = List.iter (sub.type_declaration sub) list
 
 let type_extension sub x =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   sub.location sub x.tyext_loc;
   sub.attributes sub x.tyext_attributes;
   iter_loc sub x.tyext_txt;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let type_exception sub {tyexn_constructor; _} =
+=======
+let type_exception sub {tyexn_loc; tyexn_constructor; tyexn_attributes; _} =
+  sub.location sub tyexn_loc;
+  sub.attributes sub tyexn_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
   List.iter (fun (c, _) -> sub.typ sub c) x.tyext_params;
   List.iter (sub.extension_constructor sub) x.tyext_constructors
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let type_exception sub {tyexn_loc; tyexn_constructor; tyexn_attributes; _} =
   sub.location sub tyexn_loc;
   sub.attributes sub tyexn_attributes;
-  sub.extension_constructor sub tyexn_constructor
-
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let extension_constructor sub {ext_kind; _} =
+=======
 let extension_constructor sub {ext_loc; ext_name; ext_kind; ext_attributes; _} =
   sub.location sub ext_loc;
   sub.attributes sub ext_attributes;
   iter_loc sub ext_name;
+>>>>>>> ocaml-flambda/flambda-backend:main
+  sub.extension_constructor sub tyexn_constructor
+
+let extension_constructor sub {ext_loc; ext_name; ext_kind; ext_attributes; _} =
+  sub.location sub ext_loc;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+  sub.attributes sub ext_attributes;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Text_rebind _ -> ()
+=======
+  | Text_rebind (_, lid) -> iter_loc sub lid
+>>>>>>> ocaml-flambda/flambda-backend:main
+  iter_loc sub ext_name;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   match ext_kind with
   | Text_decl (_, ctl, cto) ->
       constructor_args sub ctl;
       Option.iter (sub.typ sub) cto
   | Text_rebind (_, lid) -> iter_loc sub lid
-
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let pat_extra sub (e, _loc, _attrs) = match e with
+  | Tpat_type _ -> ()
+=======
 let pat_extra sub (e, loc, attrs) =
   sub.location sub loc;
   sub.attributes sub attrs;
   match e with
   | Tpat_type (_, lid) -> iter_loc sub lid
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+let pat_extra sub (e, loc, attrs) =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tpat_open (_, _, env) -> sub.env sub env
+=======
+  | Tpat_open (_, lid, env) -> iter_loc sub lid; sub.env sub env
+>>>>>>> ocaml-flambda/flambda-backend:main
+  sub.location sub loc;
+  sub.attributes sub attrs;
+  match e with
+  | Tpat_type (_, lid) -> iter_loc sub lid
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tpat_unpack -> ()
   | Tpat_open (_, lid, env) -> iter_loc sub lid; sub.env sub env
   | Tpat_constraint ct -> sub.typ sub ct
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  = fun sub {pat_extra = extra; pat_desc; pat_env; _} ->
+=======
+  = fun sub {pat_loc; pat_extra=extra; pat_desc; pat_env; pat_attributes; _} ->
+  sub.location sub pat_loc;
+  sub.attributes sub pat_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let pat
   : type k . iterator -> k general_pattern -> unit
   = fun sub {pat_loc; pat_extra=extra; pat_desc; pat_env; pat_attributes; _} ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   sub.location sub pat_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tpat_var _ -> ()
+=======
+  | Tpat_var (_, s, _, _) -> iter_loc sub s
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.attributes sub pat_attributes;
   sub.env sub pat_env;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   List.iter (pat_extra sub) extra;
   match pat_desc with
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tpat_construct (_, _, l, vto) ->
+=======
+  | Tpat_construct (lid, _, l, vto) ->
+      iter_loc sub lid;
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tpat_any  -> ()
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tpat_var (_, s, _, _) -> iter_loc sub s
   | Tpat_constant _ -> ()
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      Option.iter (fun (_ids, ct) -> sub.typ sub ct) vto
+=======
+      Option.iter (fun (ids, ct) ->
+        List.iter (iter_loc sub) ids; sub.typ sub ct) vto
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tpat_tuple l -> List.iter (sub.pat sub) l
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tpat_construct (lid, _, l, vto) ->
       iter_loc sub lid;
       List.iter (sub.pat sub) l;
       Option.iter (fun (ids, ct) ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tpat_record (l, _) -> List.iter (fun (_, _, i) -> sub.pat sub i) l
+  | Tpat_array (_, l) -> List.iter (sub.pat sub) l
+  | Tpat_alias (p, _, _, _, _) -> sub.pat sub p
+=======
+  | Tpat_record (l, _) ->
+      List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
+  | Tpat_array (_, _, l) -> List.iter (sub.pat sub) l
+  | Tpat_alias (p, _, s, _, _) -> sub.pat sub p; iter_loc sub s
+>>>>>>> ocaml-flambda/flambda-backend:main
         List.iter (iter_loc sub) ids; sub.typ sub ct) vto
   | Tpat_variant (_, po, _) -> Option.iter (sub.pat sub) po
   | Tpat_record (l, _) ->
@@ -270,7 +495,13 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   in
   sub.location sub exp_loc;
   sub.attributes sub exp_attributes;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   List.iter (fun (e, loc, _) -> extra e; sub.location sub loc) exp_extra;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Texp_ident _  -> ()
+=======
+  | Texp_ident (_, lid, _, _, _)  -> iter_loc sub lid
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.env sub exp_env;
   match exp_desc with
   | Texp_ident (_, lid, _, _, _)  -> iter_loc sub lid
@@ -293,20 +524,42 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
       sub.expr sub exp;
       List.iter (sub.case sub) cases
   | Texp_tuple (list, _) -> List.iter (sub.expr sub) list
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Texp_construct (lid, _, args, _) ->
       iter_loc sub lid;
       List.iter (sub.expr sub) args
   | Texp_variant (_, expo) -> Option.iter (fun (expr, _) -> sub.expr sub expr) expo
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Texp_construct (_, _, args, _) -> List.iter (sub.expr sub) args
+  | Texp_variant (_, expo) -> Option.iter (fun (expr, _) -> sub.expr sub expr) expo
+=======
+  | Texp_construct (lid, _, args, _) ->
+      iter_loc sub lid;
+      List.iter (sub.expr sub) args
+  | Texp_variant (_, expo) ->
+      Option.iter (fun (expr, _) -> sub.expr sub expr) expo
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Texp_record { fields; extended_expression; _} ->
       Array.iter (function
         | _, Kept _ -> ()
         | _, Overridden (lid, exp) -> iter_loc sub lid; sub.expr sub exp)
         fields;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       Option.iter (sub.expr sub) extended_expression;
   | Texp_field (exp, lid, _, _, _) ->
       iter_loc sub lid;
       sub.expr sub exp
   | Texp_setfield (exp1, _, lid, _, exp2) ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Texp_field (exp, _, _, _, _) -> sub.expr sub exp
+  | Texp_setfield (exp1, _,  _, _, exp2) ->
+=======
+  | Texp_field (exp, lid, _, _, _) ->
+      iter_loc sub lid;
+      sub.expr sub exp
+  | Texp_setfield (exp1, _, lid, _, exp2) ->
+      iter_loc sub lid;
+>>>>>>> ocaml-flambda/flambda-backend:main
       iter_loc sub lid;
       sub.expr sub exp1;
       sub.expr sub exp2
@@ -318,7 +571,8 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
         (function
           | Texp_comp_for bindings ->
               List.iter
-                (fun { comp_cb_iterator; comp_cb_attributes = _ } ->
+                (fun { comp_cb_iterator; comp_cb_attributes } ->
+                   sub.attributes sub comp_cb_attributes;
                    match comp_cb_iterator with
                    | Texp_comp_range { ident = _; start; stop; direction = _ } ->
                        sub.expr sub start;
@@ -347,15 +601,30 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_send (exp, _, _) ->
       sub.expr sub exp
   | Texp_new (_, lid, _, _) -> iter_loc sub lid
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Texp_instvar (_, _, s) -> iter_loc sub s
   | Texp_setinstvar (_, _, s, exp) ->
       iter_loc sub s;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      List.iter (fun (_, _, e) -> sub.expr sub e) list
+  | Texp_letmodule (_, _, _, mexpr, exp) ->
+=======
+      List.iter (fun (_, s, e) -> iter_loc sub s; sub.expr sub e) list
+  | Texp_letmodule (_, s, _, mexpr, exp) ->
+      iter_loc sub s;
+>>>>>>> ocaml-flambda/flambda-backend:main
       sub.expr sub exp
   | Texp_override (_, list) ->
       List.iter (fun (_, s, e) -> iter_loc sub s; sub.expr sub e) list
   | Texp_letmodule (_, s, _, mexpr, exp) ->
       iter_loc sub s;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       sub.module_expr sub mexpr;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Texp_assert exp -> sub.expr sub exp
+=======
+  | Texp_assert (exp, _) -> sub.expr sub exp
+>>>>>>> ocaml-flambda/flambda-backend:main
       sub.expr sub exp
   | Texp_letexception (cd, exp) ->
       sub.extension_constructor sub cd;
@@ -380,21 +649,39 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
 
 
 let package_type sub {pack_fields; pack_txt; _} =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   List.iter (fun (lid, p) -> iter_loc sub lid; sub.typ sub p) pack_fields;
   iter_loc sub pack_txt
 
 let binding_op sub {bop_loc; bop_op_name; bop_exp; _} =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let binding_op sub {bop_exp; _} = sub.expr sub bop_exp
+=======
+let binding_op sub {bop_loc; bop_op_name; bop_exp; _} =
+  sub.location sub bop_loc;
+  iter_loc sub bop_op_name;
+  sub.expr sub bop_exp
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.location sub bop_loc;
   iter_loc sub bop_op_name;
   sub.expr sub bop_exp
 
 let signature sub {sig_items; sig_final_env; _} =
-  sub.env sub sig_final_env;
+let sig_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _} =
+  sub.location sub incl_loc;
+  sub.attributes sub incl_attributes;
   List.iter (sub.signature_item sub) sig_items
 
 let sig_include_infos sub {incl_mod; incl_kind} =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   sub.module_type sub incl_mod;
   include_kind sub incl_kind
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let signature_item sub {sig_desc; sig_env; _} =
+=======
+let signature_item sub {sig_loc; sig_desc; sig_env; _} =
+  sub.location sub sig_loc;
+>>>>>>> ocaml-flambda/flambda-backend:main
 
 let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   sub.location sub sig_loc;
@@ -422,42 +709,95 @@ let class_description sub x =
 let functor_parameter sub = function
   | Unit -> ()
   | Named (_, s, mtype) -> iter_loc sub s; sub.module_type sub mtype
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let module_type sub {mty_loc; mty_desc; mty_env; mty_attributes; _} =
   sub.location sub mty_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let module_type sub {mty_desc; mty_env; _} =
+=======
+let module_type sub {mty_loc; mty_desc; mty_env; mty_attributes; _} =
+  sub.location sub mty_loc;
+  sub.attributes sub mty_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.attributes sub mty_attributes;
   sub.env sub mty_env;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   match mty_desc with
   | Tmty_ident (_, lid) -> iter_loc sub lid
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tmty_ident _      -> ()
+  | Tmty_alias _      -> ()
+=======
+  | Tmty_ident (_, lid) -> iter_loc sub lid
+  | Tmty_alias (_, lid) -> iter_loc sub lid
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tmty_alias (_, lid) -> iter_loc sub lid
   | Tmty_signature sg -> sub.signature sub sg
   | Tmty_functor (arg, mtype2) ->
       functor_parameter sub arg;
       sub.module_type sub mtype2
   | Tmty_with (mtype, list) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       sub.module_type sub mtype;
       List.iter (fun (_, lid, e) ->
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      List.iter (fun (_, _, e) -> sub.with_constraint sub e) list
+=======
+      List.iter (fun (_, lid, e) ->
+        iter_loc sub lid; sub.with_constraint sub e) list
+>>>>>>> ocaml-flambda/flambda-backend:main
         iter_loc sub lid; sub.with_constraint sub e) list
   | Tmty_typeof mexpr -> sub.module_expr sub mexpr
   | Tmty_strengthen (mtype, _, _) -> sub.module_type sub mtype
 
 let with_constraint sub = function
   | Twith_type      decl -> sub.type_declaration sub decl
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Twith_typesubst decl -> sub.type_declaration sub decl
   | Twith_module    (_, lid) -> iter_loc sub lid
   | Twith_modsubst  (_, lid) -> iter_loc sub lid
   | Twith_modtype      mty -> sub.module_type sub mty
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Twith_module    _    -> ()
+  | Twith_modsubst  _    -> ()
+  | Twith_modtype   _    -> ()
+  | Twith_modtypesubst _ -> ()
+=======
+  | Twith_module    (_, lid) -> iter_loc sub lid
+  | Twith_modsubst  (_, lid) -> iter_loc sub lid
+  | Twith_modtype      mty -> sub.module_type sub mty
+  | Twith_modtypesubst mty -> sub.module_type sub mty
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Twith_modtypesubst mty -> sub.module_type sub mty
 
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let open_description sub {open_loc; open_expr; open_env; open_attributes; _} =
   sub.location sub open_loc;
   sub.attributes sub open_attributes;
   iter_snd (iter_loc sub) open_expr;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let open_description sub {open_env; _} = sub.env sub open_env
+=======
+let open_description sub {open_loc; open_expr; open_env; open_attributes; _} =
+  sub.location sub open_loc;
+  sub.attributes sub open_attributes;
+  iter_snd (iter_loc sub) open_expr;
   sub.env sub open_env
+>>>>>>> ocaml-flambda/flambda-backend:main
+  sub.env sub open_env
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let open_declaration sub {open_loc; open_expr; open_env; open_attributes; _} =
   sub.location sub open_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let open_declaration sub {open_expr; open_env; _} =
+=======
+let open_declaration sub {open_loc; open_expr; open_env; open_attributes; _} =
+  sub.location sub open_loc;
+  sub.attributes sub open_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.attributes sub open_attributes;
   sub.module_expr sub open_expr;
   sub.env sub open_env
@@ -474,13 +814,27 @@ let module_coercion sub = function
       List.iter (fun (_, c) -> sub.module_coercion sub c) l1;
       List.iter (fun (_, _ ,c) -> sub.module_coercion sub c) l2
   | Tcoerce_primitive {pc_loc; pc_env; _} ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       sub.location sub pc_loc;
       sub.env sub pc_env
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let module_expr sub {mod_desc; mod_env; _} =
+=======
 let module_expr sub {mod_loc; mod_desc; mod_env; mod_attributes; _} =
   sub.location sub mod_loc;
   sub.attributes sub mod_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
+let module_expr sub {mod_loc; mod_desc; mod_env; mod_attributes; _} =
+  sub.location sub mod_loc;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+  sub.attributes sub mod_attributes;
   sub.env sub mod_env;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tmod_ident _      -> ()
+=======
+  | Tmod_ident (_, lid) -> iter_loc sub lid
+>>>>>>> ocaml-flambda/flambda-backend:main
   match mod_desc with
   | Tmod_hole  -> ()
   | Tmod_ident (_, lid) -> iter_loc sub lid
@@ -502,7 +856,33 @@ let module_expr sub {mod_loc; mod_desc; mod_env; mod_attributes; _} =
       sub.module_type sub mtype;
       sub.module_coercion sub c
   | Tmod_unpack (exp, _) -> sub.expr sub exp
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
 
+let module_binding sub {mb_expr; _} = sub.module_expr sub mb_expr
+=======
+
+let module_binding sub {mb_loc; mb_name; mb_expr; mb_attributes; _} =
+  sub.location sub mb_loc;
+  sub.attributes sub mb_attributes;
+  iter_loc sub mb_name;
+  sub.module_expr sub mb_expr
+>>>>>>> ocaml-flambda/flambda-backend:main
+
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let class_expr sub {cl_desc; cl_env; _} =
+  sub.env sub cl_env;
+  match cl_desc with
+  | Tcl_constraint (cl, clty, _, _, _) ->
+=======
+let class_expr sub {cl_loc; cl_desc; cl_env; cl_attributes; _} =
+  sub.location sub cl_loc;
+  sub.attributes sub cl_attributes;
+  sub.env sub cl_env;
+  match cl_desc with
+  | Tcl_constraint (cl, clty, _, _, _) ->
+>>>>>>> ocaml-flambda/flambda-backend:main
 let module_binding sub {mb_loc; mb_name; mb_expr; mb_attributes; _} =
   sub.location sub mb_loc;
   sub.attributes sub mb_attributes;
@@ -536,15 +916,31 @@ let class_expr sub {cl_loc; cl_desc; cl_env; cl_attributes; _} =
       iter_loc sub lid;
       List.iter (sub.typ sub) tyl
   | Tcl_open (od, e) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       sub.open_description sub od;
       sub.class_expr sub e
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let class_type sub {cltyp_desc; cltyp_env; _} =
+=======
 let class_type sub {cltyp_loc; cltyp_desc; cltyp_env; cltyp_attributes; _} =
   sub.location sub cltyp_loc;
   sub.attributes sub cltyp_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
+let class_type sub {cltyp_loc; cltyp_desc; cltyp_env; cltyp_attributes; _} =
+  sub.location sub cltyp_loc;
+  sub.attributes sub cltyp_attributes;
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   sub.env sub cltyp_env;
   match cltyp_desc with
   | Tcty_signature csg -> sub.class_signature sub csg
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tcty_constr (_, _, list) -> List.iter (sub.typ sub) list
+=======
+  | Tcty_constr (_, lid, list) ->
+      iter_loc sub lid;
+      List.iter (sub.typ sub) list
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tcty_constr (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
@@ -570,9 +966,17 @@ let class_type_field sub {ctf_loc; ctf_desc; ctf_attributes; _} =
       sub.typ sub ct1;
       sub.typ sub ct2
   | Tctf_attribute attr -> sub.attribute sub attr
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
   sub.location sub ctyp_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let typ sub {ctyp_desc; ctyp_env; _} =
+=======
+let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
+  sub.location sub ctyp_loc;
+  sub.attributes sub ctyp_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.attributes sub ctyp_attributes;
   sub.env sub ctyp_env;
   match ctyp_desc with
@@ -583,12 +987,20 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       sub.typ sub ct2
   | Ttyp_tuple list -> List.iter (sub.typ sub) list
   | Ttyp_constr (_, lid, list) ->
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       iter_loc sub lid;
       List.iter (sub.typ sub) list
   | Ttyp_object (list, _) -> List.iter (sub.object_field sub) list
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Ttyp_class (_, _, list) -> List.iter (sub.typ sub) list
+=======
   | Ttyp_class (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
+>>>>>>> ocaml-flambda/flambda-backend:main
+  | Ttyp_class (_, lid, list) ->
+      sub.typ sub ct;
+      Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_alias (ct, _, jkind) ->
     sub.typ sub ct;
     Option.iter (sub.jkind_annotation sub) jkind
@@ -603,32 +1015,75 @@ let class_structure sub {cstr_self; cstr_fields; _} =
   List.iter (sub.class_field sub) cstr_fields
 
 let row_field sub {rf_loc; rf_desc; rf_attributes; _} =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   sub.location sub rf_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Ttag (_, _, list) -> List.iter (sub.typ sub) list
+=======
+  | Ttag (s, _, list) -> iter_loc sub s; List.iter (sub.typ sub) list
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.attributes sub rf_attributes;
   match rf_desc with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Ttag (s, _, list) -> iter_loc sub s; List.iter (sub.typ sub) list
   | Tinherit ct -> sub.typ sub ct
 
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let object_field sub {of_desc; _} =
+=======
 let object_field sub {of_loc; of_desc; of_attributes; _} =
   sub.location sub of_loc;
+  sub.attributes sub of_attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
+let object_field sub {of_loc; of_desc; of_attributes; _} =
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+  sub.location sub of_loc;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | OTtag (_, ct) -> sub.typ sub ct
+=======
+  | OTtag (s, ct) -> iter_loc sub s; sub.typ sub ct
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.attributes sub of_attributes;
   match of_desc with
   | OTtag (s, ct) -> iter_loc sub s; sub.typ sub ct
   | OTinherit ct -> sub.typ sub ct
 
 let class_field_kind sub = function
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tcfk_virtual ct -> sub.typ sub ct
   | Tcfk_concrete (_, e) -> sub.expr sub e
 
 let class_field sub {cf_loc; cf_desc; cf_attributes; _} =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+let class_field sub {cf_desc; _} = match cf_desc with
+=======
+let class_field sub {cf_loc; cf_desc; cf_attributes; _} =
+  sub.location sub cf_loc;
+  sub.attributes sub cf_attributes;
+  match cf_desc with
+>>>>>>> ocaml-flambda/flambda-backend:main
   sub.location sub cf_loc;
   sub.attributes sub cf_attributes;
   match cf_desc with
   | Tcf_inherit (_, cl, _, _, _) -> sub.class_expr sub cl
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
   | Tcf_constraint (cty1, cty2) ->
       sub.typ sub cty1;
-      sub.typ sub cty2
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tcf_val (_, _, _, k, _) -> class_field_kind sub k
+  | Tcf_method (_, _, k) -> class_field_kind sub k
+=======
   | Tcf_val (s, _, _, k, _) -> iter_loc sub s; class_field_kind sub k
+  | Tcf_method (s, _, k) -> iter_loc sub s;class_field_kind sub k
+>>>>>>> ocaml-flambda/flambda-backend:main
+      sub.typ sub cty2
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+  | Tcf_val (s, _, _, k, _) -> iter_loc sub s; class_field_kind sub k
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Tcf_attribute _ -> ()
+=======
+  | Tcf_attribute attr -> sub.attribute sub attr
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Tcf_method (s, _, k) -> iter_loc sub s;class_field_kind sub k
   | Tcf_initializer exp -> sub.expr sub exp
   | Tcf_attribute attr -> sub.attribute sub attr
@@ -645,12 +1100,18 @@ let value_binding sub {vb_loc; vb_pat; vb_expr; vb_attributes; _} =
   sub.attributes sub vb_attributes;
   sub.pat sub vb_pat;
   sub.expr sub vb_expr
-
+let jkind_annotation sub (_, l) = iter_loc sub l
 let env _sub _ = ()
 
 let jkind_annotation _sub _ = ()
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 
 let default_iterator =
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+    attribute;
+    attributes;
+>>>>>>> ocaml-flambda/flambda-backend:main
   {
     attribute;
     attributes;

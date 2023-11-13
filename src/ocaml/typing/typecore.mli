@@ -115,6 +115,11 @@ type module_patterns_restriction =
   | Modules_rejected
   | Modules_ignored
 
+type module_patterns_restriction =
+  | Modules_allowed of { scope: int }
+  | Modules_rejected
+  | Modules_ignored
+
 val type_binding:
         Env.t -> rec_flag ->
           ?force_toplevel:bool ->
@@ -156,9 +161,14 @@ val option_none:
   Env.t -> type_expr -> Location.t -> Typedtree.expression
 val extract_option_type: Env.t -> type_expr -> type_expr
 val generalizable: int -> type_expr -> bool
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
 val generalize_structure_exp: Typedtree.expression -> unit
 type delayed_check
 val delayed_checks: delayed_check list ref
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+=======
+val generalize_structure_exp: Typedtree.expression -> unit
+>>>>>>> ocaml-flambda/flambda-backend:main
 val reset_delayed_checks: unit -> unit
 val force_delayed_checks: unit -> unit
 
@@ -193,6 +203,7 @@ type error =
   | Multiply_bound_variable of string
   | Orpat_vars of Ident.t * Ident.t list
   | Expr_type_clash of
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
       Errortrace.unification_error * type_forcing_context option
       * Parsetree.expression_desc option
   | Apply_non_function of {
@@ -201,6 +212,19 @@ type error =
       res_ty : type_expr;
       previous_arg_loc : Location.t;
       extra_arg_loc : Location.t;
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+      * Typedtree.expression_desc option
+  | Apply_non_function of type_expr
+=======
+      * Parsetree.expression_desc option
+  | Apply_non_function of {
+      funct : Typedtree.expression;
+      func_ty : type_expr;
+      res_ty : type_expr;
+      previous_arg_loc : Location.t;
+      extra_arg_loc : Location.t;
+    }
+>>>>>>> ocaml-flambda/flambda-backend:main
     }
   | Apply_wrong_label of arg_label * type_expr * bool
   | Label_multiply_defined of string

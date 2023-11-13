@@ -23,6 +23,31 @@ type annotation =
   | Ti_pat : 'k pattern_category * 'k general_pattern -> annotation
   | Ti_expr  of expression
   | Ti_class of class_expr
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-501
+||||||| ocaml-flambda/flambda-backend:0c8a400e403b8f888315d92b4a01883a3f971435
+  | Ti_mod   of module_expr
+  | An_call of Location.t * Annot.call
+  | An_ident of Location.t * string * Annot.ident
+;;
+
+val record : annotation -> unit;;
+val record_phrase : Location.t -> unit;;
+val dump : string option -> unit;;
+
+val get_location : annotation -> Location.t;;
+val get_info : unit -> annotation list;;
+=======
+  | Ti_mod   of module_expr
+  | An_call of Location.t * Annot.call
+  | An_ident of Location.t * string * Annot.ident
+
+val record : annotation -> unit
+val record_phrase : Location.t -> unit
+val dump : string option -> unit
+
+val get_location : annotation -> Location.t
+val get_info : unit -> annotation list
+>>>>>>> ocaml-flambda/flambda-backend:main
   | Ti_mod   of module_expr
   | An_call of Location.t * Annot.call
   | An_ident of Location.t * string * Annot.ident
