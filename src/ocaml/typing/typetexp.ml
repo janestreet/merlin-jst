@@ -85,7 +85,6 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-(** Map indexed by type variable names. *)
 module TyVarEnv : sig
   val reset : unit -> unit
   (* see mli file *)
@@ -719,23 +718,12 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
     let ty = newty (Ttuple (List.map (fun ctyp -> ctyp.ctyp_type) ctys)) in
     ctyp (Ttyp_tuple ctys) ty
   | Ptyp_constr(lid, stl) ->
-      let (path, decl) =
-        match Env.lookup_cltype ~loc:lid.loc lid.txt env with
-        | (path, decl) -> (path, decl.clty_hash_type)
-        (* Raise a different error if it matches the name of an unboxed type *)
-        | exception
-            (Env.Error (Lookup_error (_, _, Unbound_cltype _)) as exn)
-          ->
-            let unboxed_lid : Longident.t =
-              match lid.txt with
-              | Lident s -> Lident (s ^ "#")
-              | Ldot (l, s) -> Ldot (l, s ^ "#")
-              | Lapply _ -> fatal_error "Typetexp.transl_type"
-            in
-            match Env.find_type_by_name unboxed_lid env with
-            | exception Not_found -> raise exn
-            | (_ : _ * _) ->
-                raise (Error (styp.ptyp_loc, env, Did_you_mean_unboxed lid.txt))
+      let (path, decl) = Env.lookup_type ~loc:lid.loc lid.txt env in
+      let stl =
+        match stl with
+        | [ {ptyp_desc=Ptyp_any} as t ] when decl.type_arity > 1 ->
+            List.map (fun _ -> t) decl.type_params
+        | _ -> stl
       in
       if List.length stl <> decl.type_arity then
         raise(Error(styp.ptyp_loc, env,
@@ -766,8 +754,22 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       ctyp (Ttyp_object (fields, o)) (newobj ty)
   | Ptyp_class(lid, stl) ->
       let (path, decl) =
-        let path, decl = Env.lookup_cltype ~loc:lid.loc lid.txt env in
-        (path, decl.clty_hash_type)
+        match Env.lookup_cltype ~loc:lid.loc lid.txt env with
+        | (path, decl) -> (path, decl.clty_hash_type)
+        (* Raise a different error if it matches the name of an unboxed type *)
+        | exception
+            (Env.Error (Lookup_error (_, _, Unbound_cltype _)) as exn)
+          ->
+            let unboxed_lid : Longident.t =
+              match lid.txt with
+              | Lident s -> Lident (s ^ "#")
+              | Ldot (l, s) -> Ldot (l, s ^ "#")
+              | Lapply _ -> fatal_error "Typetexp.transl_type"
+            in
+            match Env.find_type_by_name unboxed_lid env with
+            | exception Not_found -> raise exn
+            | (_ : _ * _) ->
+                raise (Error (styp.ptyp_loc, env, Did_you_mean_unboxed lid.txt))
       in
       if List.length stl <> decl.type_arity then
         raise(Error(styp.ptyp_loc, env,
@@ -1201,9 +1203,6 @@ and transl_fields env ~policy ~row_context o fields =
       newty (Tfield (s, field_public, ty', ty))) ty_init fields in
   ty, object_fields
 
-let transl_type env policy styp =
-  transl_type env ~policy ~row_context:[] styp
-
 (* Make the rows "fixed" in this type, to make universal check easier *)
 let rec make_fixed_univars ty =
   if Btype.try_mark_node ty then
@@ -1227,6 +1226,9 @@ let rec make_fixed_univars ty =
     | _ ->
         Btype.iter_type_expr make_fixed_univars ty
     end
+
+let transl_type env policy mode styp =
+  transl_type env ~policy ~row_context:[] mode styp
 
 let make_fixed_univars ty =
   make_fixed_univars ty;
@@ -1471,7 +1473,7 @@ let report_error env ppf = function
       (Jkind.Violation.report_with_offender
          ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) violation
   | Did_you_mean_unboxed lid ->
-    fprintf ppf "@[%a is neither a polymorphic variant nor a class type.@ \
+    fprintf ppf "@[%a isn't a class type.@ \
                  Did you mean the unboxed type %a#?@]" longident lid longident lid
 
 let () =

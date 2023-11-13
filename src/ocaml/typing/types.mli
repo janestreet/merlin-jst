@@ -745,6 +745,8 @@ end
 
 include Wrapped with type 'a wrapped = 'a
 
+val item_visibility : signature_item -> visibility
+
 (* Constructor and record label descriptions inserted held in typing
    environments *)
 
