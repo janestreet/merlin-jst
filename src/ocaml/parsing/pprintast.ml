@@ -1540,28 +1540,6 @@ and bindings ctxt f (rf,l) =
         (binding "let" rf) x
         (list ~sep:"@," (binding "and" Nonrecursive)) xs
 
-let binding kwd rf f x =
-  let attrs, is_local = check_local_attr x.pvb_attributes in
-  let x =
-    match is_local, x.pvb_expr.pexp_desc with
-    | true, Pexp_apply
-        ({ pexp_desc = Pexp_extension({txt = "extension.local"}, PStr []) },
-         [Nolabel, sbody]) ->
-        {x with pvb_expr = sbody}
-    | _ -> x
-  in
-  pp f "@[<2>%s %a%s%a@]%a" kwd rec_flag rf
-    (if is_local then "local_ " else "")
-    (binding ctxt) x (item_attributes ctxt) attrs
-in
-match l with
-| [] -> ()
-| [x] -> binding "let" rf f x
-| x::xs ->
-    pp f "@[<v>%a@,%a@]"
-      (binding "let" rf) x
-      (list ~sep:"@," (binding "and" Nonrecursive)) xs
-
 and binding_op ctxt f x =
   match x.pbop_pat, x.pbop_exp with
   | {ppat_desc = Ppat_var { txt=pvar; _ }; ppat_attributes = []; _},
