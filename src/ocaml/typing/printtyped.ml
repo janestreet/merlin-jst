@@ -163,10 +163,21 @@ let typevar_layout' ppf (v, l) =
   let pptv = fmt_ident in
   match l with
   | None -> fprintf ppf " %a" pptv v
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
   | Some lay -> fprintf ppf " (%a : %a)"
                     pptv v
                     Jane_syntax.Layouts.Pprint.const_jkind lay
 
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+  | Some lay -> fprintf ppf " (%a : %a)"
+                    pptv v
+                    Jane_syntax.Layouts.Pprint.const_jkind lay
+=======
+  | Some (_, lay) ->
+      fprintf ppf " (%a : %a)"
+        pptv v
+        Jane_syntax.Layouts.Pprint.const_jkind lay.txt
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
 
 let typevars ppf vs =
   List.iter (typevar_jkind ~print_quote:true ppf) vs
@@ -210,7 +221,7 @@ let attributes i ppf l =
     Printast.payload (i + 1) ppf a.Parsetree.attr_payload
   ) l
 
-let jkind_annotation i ppf jkind =
+let jkind_annotation i ppf (jkind, _) =
   line i ppf "%s" (Jkind.string_of_const jkind)
 
 let rec core_type i ppf x =
@@ -306,8 +317,9 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
   | Tpat_record (l, _c) ->
       line i ppf "Tpat_record\n";
       list i longident_x_pattern ppf l;
-  | Tpat_array (am, l) ->
+  | Tpat_array (am, arg_sort, l) ->
       line i ppf "Tpat_array %a\n" fmt_mutable_flag am;
+      line i ppf "%a\n" Jkind.Sort.format arg_sort;
       list i pattern ppf l;
   | Tpat_lazy p ->
       line i ppf "Tpat_lazy\n";

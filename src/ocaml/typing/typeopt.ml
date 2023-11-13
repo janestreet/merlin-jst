@@ -550,22 +550,46 @@ let layout env loc sort ty =
   | Value -> Lambda.Pvalue (value_kind env loc ty)
   | Float64 when Language_extension.(is_at_least Layouts Stable) ->
     Lambda.Punboxed_float
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
   | Float64 ->
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+    raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Beta, Some ty)))
+=======
+    raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Stable, Some ty)))
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
     raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Stable, Some ty)))
   | Void -> raise (Error (loc, Non_value_sort (Jkind.Sort.void,ty)))
 
 let layout_of_sort loc sort =
   match Jkind.Sort.get_default_value sort with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
   | Value -> Lambda.Pvalue Pgenval
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+  | Float64 when Language_extension.(is_at_least Layouts Beta) ->
+=======
+  | Float64 when Language_extension.(is_at_least Layouts Stable) ->
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
   | Float64 when Language_extension.(is_at_least Layouts Stable) ->
     Lambda.Punboxed_float
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
   | Float64 ->
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+    raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Beta, None)))
+=======
+    raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Stable, None)))
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
     raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Stable, None)))
   | Void -> raise (Error (loc, Non_value_sort_unknown_ty Jkind.Sort.void))
 
 let layout_of_const_sort (s : Jkind.Sort.const) =
   match s with
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
   | Value -> Lambda.Pvalue Pgenval
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+  | Float64 when Language_extension.(is_at_least Layouts Beta) ->
+=======
+  | Float64 when Language_extension.(is_at_least Layouts Stable) ->
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
   | Float64 when Language_extension.(is_at_least Layouts Stable) ->
     Lambda.Punboxed_float
   | Float64 -> Misc.fatal_error "layout_of_const_sort: float64 encountered"

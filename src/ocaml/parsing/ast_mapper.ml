@@ -1200,8 +1200,16 @@ module PpxContext = struct
       | "load_path" ->
           (* Duplicates Compmisc.auto_include, since we can't reference Compmisc
              from this module. *)
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
           (* let auto_include find_in_dir fn =
             if !Clflags.no_std_include then
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+          let auto_include find_in_dir fn =
+            if !Clflags.no_std_include then
+=======
+          let auto_include find_in_dir fn =
+            if !Clflags.no_auto_include_otherlibs || !Clflags.no_std_include then
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
               raise Not_found
             else
               let alert = Location.auto_include_alert in

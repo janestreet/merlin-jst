@@ -483,6 +483,12 @@ type type_declaration =
        be computed from the decl kind. This happens in
        Ctype.add_jkind_equation. *)
 
+    type_jkind_annotation: Jkind.annotation option;
+    (* This is the jkind annotation written by the user. If the user did
+    not write this declaration (because it's a synthesized declaration
+    for an e.g. local abstract type or an inlined record), then this field
+    can safely be [None]. It's used only for printing and in untypeast. *)
+
     type_private: private_flag;
     type_manifest: type_expr option;
     type_variance: Variance.t list;
@@ -867,7 +873,18 @@ val is_valid: snapshot -> bool
 val on_backtrack: (unit -> unit) -> unit
 
 (** Number of unification variables that have been linked so far.
+<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
    Used to estimate the "cost" of unification. *)
 val linked_variables: unit -> int
 
 val unpack_functor : module_type -> functor_parameter * module_type
+||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
+val link_kind: inside:field_kind -> field_kind -> unit
+val link_commu: inside:commutable -> commutable -> unit
+val set_commu_ok: commutable -> unit
+
+=======
+val link_kind: inside:field_kind -> field_kind -> unit
+val link_commu: inside:commutable -> commutable -> unit
+val set_commu_ok: commutable -> unit
+>>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
