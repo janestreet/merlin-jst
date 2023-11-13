@@ -108,7 +108,7 @@ let constructor_descrs ~current_unit ty_path decl cstrs rep =
          let all_void = all_void jkinds in
          if all_void then incr num_consts else incr num_nonconsts;
          all_void)
-      cstr_arg_jkindsNick Roberts
+      cstr_arg_jkinds
   in
   let describe_constructor (src_index, const_tag, nonconst_tag, acc)
         {cd_id; cd_args; cd_res; cd_loc; cd_attributes; cd_uid} =
