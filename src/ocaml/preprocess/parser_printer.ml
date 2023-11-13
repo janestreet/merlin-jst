@@ -304,8 +304,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_method_) -> "method_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_meth_list) -> "meth_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_match_case) -> "match_case"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_bindings) -> "lwt_bindings"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_binding) -> "lwt_binding"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_listx_SEMI_record_pat_field_UNDERSCORE_) -> "listx_SEMI_record_pat_field_UNDERSCORE_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_list_use_file_element_) -> "list_use_file_element_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_list_text_str_structure_item__) -> "list_text_str_structure_item__"
@@ -685,8 +683,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_method_ -> (fun _ -> "method_")
   | MenhirInterpreter.N MenhirInterpreter.N_meth_list -> (fun _ -> "meth_list")
   | MenhirInterpreter.N MenhirInterpreter.N_match_case -> (fun _ -> "match_case")
-  | MenhirInterpreter.N MenhirInterpreter.N_lwt_bindings -> (fun _ -> "lwt_bindings")
-  | MenhirInterpreter.N MenhirInterpreter.N_lwt_binding -> (fun _ -> "lwt_binding")
   | MenhirInterpreter.N MenhirInterpreter.N_listx_SEMI_record_pat_field_UNDERSCORE_ -> (fun _ -> "listx_SEMI_record_pat_field_UNDERSCORE_")
   | MenhirInterpreter.N MenhirInterpreter.N_list_use_file_element_ -> (fun _ -> "list_use_file_element_")
   | MenhirInterpreter.N MenhirInterpreter.N_list_text_str_structure_item__ -> (fun _ -> "list_text_str_structure_item__")

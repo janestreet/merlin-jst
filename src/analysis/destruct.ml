@@ -500,14 +500,14 @@ module Conv = struct
       match pat.pat_desc with
         Tpat_or (pa,pb,_) ->
           mkpat (Ppat_or (loop pa, loop pb))
-      | Tpat_var (_, ({txt="*extension*"; _} as nm)) -> (* PR#7330 *)
+      | Tpat_var (_, ({txt="*extension*"; _} as nm), _, _) -> (* PR#7330 *)
           mkpat (Ppat_var nm)
       | Tpat_any
       | Tpat_var _ ->
           mkpat Ppat_any
       | Tpat_constant c ->
           mkpat (Ppat_constant (Untypeast.constant c))
-      | Tpat_alias (p,_,_) -> loop p
+      | Tpat_alias (p,_,_,_,_) -> loop p
       | Tpat_tuple lst ->
           mkpat (Ppat_tuple (List.map ~f:loop lst))
       | Tpat_construct (cstr_lid, cstr, lst, _) ->
@@ -534,8 +534,14 @@ module Conv = struct
               subpatterns
           in
           mkpat (Ppat_record (fields, Open))
-      | Tpat_array lst ->
-          mkpat (Ppat_array (List.map ~f:loop lst))
+      | Tpat_array (mut, lst) ->
+          let lst = List.map ~f:loop lst in
+          begin match mut with
+          | Mutable -> mkpat (Ppat_array lst)
+          | Immutable ->
+              Jane_syntax.Immutable_arrays.pat_of ~loc:pat.pat_loc
+                (Iapat_immutable_array lst)
+          end
       | Tpat_lazy p ->
           mkpat (Ppat_lazy (loop p))
     in

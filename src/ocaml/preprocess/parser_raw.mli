@@ -488,8 +488,6 @@ module MenhirInterpreter : sig
   Parsetree.attributes) nonterminal
     | N_meth_list : (Parsetree.object_field list * Asttypes.closed_flag) nonterminal
     | N_match_case : (Parsetree.case) nonterminal
-    | N_lwt_bindings : (Ast_helper.let_bindings) nonterminal
-    | N_lwt_binding : (Ast_helper.let_bindings) nonterminal
     | N_listx_SEMI_record_pat_field_UNDERSCORE_ : ((Longident.t Location.loc * Parsetree.pattern) list * unit option) nonterminal
     | N_list_use_file_element_ : (Parsetree.toplevel_phrase list list) nonterminal
     | N_list_text_str_structure_item__ : (Parsetree.structure_item list list) nonterminal
@@ -512,9 +510,10 @@ module MenhirInterpreter : sig
     | N_let_bindings_no_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression *
-  Parsetree.value_constraint option) nonterminal
-    | N_let_binding_body : (Parsetree.pattern * Parsetree.expression *
-  Parsetree.value_constraint option * bool) nonterminal
+  Parsetree.value_constraint option * Parsetree.attribute list) nonterminal
+    | N_let_binding_body : ((Parsetree.pattern * Parsetree.expression *
+   Parsetree.value_constraint option * bool) *
+  Parsetree.attribute list) nonterminal
     | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal

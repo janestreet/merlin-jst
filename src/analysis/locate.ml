@@ -997,98 +997,13 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
    fragments of the typedtree that might be used to get the docstrings without
    relying on this iteration *)
 let find_doc_attributes_in_typedtree ~config ~comp_unit uid =
-  let exception Found_attributes of Typedtree.attributes in
-  let test elt_uid attributes =
-    if Shape.Uid.equal uid elt_uid then raise (Found_attributes attributes)
-  in
-  let iterator =
-    let first_item = ref true in
-    let uid_is_comp_unit = match uid with
-      | Shape.Uid.Compilation_unit _ -> true
-      | _ -> false
-    in
-    fun env -> { Tast_iterator.default_iterator with
-
-      (* Needed to return top-level module doc (when the uid is a compunit).
-         The module docstring must be the first signature or structure item *)
-      signature_item = (fun sub ({ sig_desc; _} as si) ->
-        begin match sig_desc, !first_item, uid_is_comp_unit with
-        | Tsig_attribute attr, true, true -> raise (Found_attributes [attr])
-        | _, false, true -> raise Not_found
-        | _, _, _ -> first_item := false end;
-        Tast_iterator.default_iterator.signature_item sub si);
-
-      structure_item = (fun sub ({ str_desc; _} as sti) ->
-        begin match str_desc, !first_item, uid_is_comp_unit with
-        | Tstr_attribute attr, true, true -> raise (Found_attributes [attr])
-        | _, false, true -> raise Not_found
-        | _, _, _ -> first_item := false end;
-        Tast_iterator.default_iterator.structure_item sub sti);
-
-      value_description = (fun sub ({ val_val; val_attributes; _ } as vd) ->
-        test val_val.val_uid val_attributes;
-        Tast_iterator.default_iterator.value_description sub vd);
-
-      type_declaration = (fun sub ({ typ_type; typ_attributes; _ } as td) ->
-        test typ_type.type_uid typ_attributes;
-        Tast_iterator.default_iterator.type_declaration sub td);
-
-      value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
-        let pat_var_iter ~f pat =
-          let rec aux pat =
-            let open Typedtree in
-            match pat.pat_desc with
-            | Tpat_var (id, _) -> f id
-            | Tpat_alias (pat, _, _)
-            | Tpat_variant (_, Some pat, _)
-            | Tpat_lazy pat
-            | Tpat_or (pat, _, _) ->
-                aux pat
-            | Tpat_tuple pats
-            | Tpat_construct (_, _, pats, _)
-            | Tpat_array pats ->
-                List.iter ~f:aux pats
-            | Tpat_record (pats, _) ->
-                List.iter ~f:(fun (_, _, pat) -> aux pat) pats
-            | _ -> ()
-          in
-          aux pat
-        in
-        pat_var_iter vb_pat ~f:(fun id ->
-          try
-            let vd = Env.find_value (Pident id) env in
-            test vd.val_uid vb_attributes
-          with Not_found -> ());
-        Tast_iterator.default_iterator.value_binding sub vb)
-    }
-  in
-  let typedtree =
-    log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
-    match load_cmt ~config comp_unit `MLI with
-    | Ok (_, cmt_infos) ->
-      log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
-      begin match cmt_infos.cmt_annots with
-      | Interface s -> Some (`Interface { s with
-          sig_final_env = Envaux.env_of_only_summary s.sig_final_env})
-      | Implementation str -> Some (`Implementation { str with
-          str_final_env = Envaux.env_of_only_summary str.str_final_env})
-      | _ -> None
-      end
-    | Error _ -> None
-  in
-  try begin match typedtree with
-    | Some (`Interface s) ->
-        let iterator = iterator s.sig_final_env in
-        iterator.signature iterator s;
-        log ~title:"doc_from_uid" "uid not found in the signature"
-    | Some (`Implementation str) ->
-        let iterator = iterator str.str_final_env in
-        iterator.structure iterator str;
-        log ~title:"doc_from_uid" "uid not found in the implementation"
-    | _ -> () end;
-    `No_documentation
-  with
-    | Found_attributes attrs ->
+  log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
+  match load_cmt ~config comp_unit `MLI with
+  | Ok (_, artifact) ->
+    log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
+    begin
+      match Artifact.uid_to_attributes uid artifact with
+      | Some attrs ->
         log ~title:"doc_from_uid" "Found attributes for this uid";
         let parse_attributes attrs =
           let open Parsetree in
@@ -1100,7 +1015,7 @@ let find_doc_attributes_in_typedtree ~config ~comp_unit uid =
           with Not_found -> None
         in
         begin match parse_attributes attrs with
-        | Some (doc, _) -> `Found (doc |> String.trim)
+        | Some (doc, _) -> `Found_attributes (doc |> String.trim)
         | None -> `No_documentation end
       | None -> `No_documentation
     end
@@ -1115,7 +1030,7 @@ let doc_from_uid ~config ~loc uid =
           compilation unit (%s)"
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
         (match find_doc_attributes_in_typedtree ~config ~comp_unit uid with
-        | `Found doc -> `Found_doc doc
+        | `Found_attributes doc -> `Found_doc doc
         | `No_documentation ->
             (* We fallback on the legacy heuristic to handle some unproper
                doc placement. See test [unattached-comment.t] *)
@@ -1168,17 +1083,24 @@ let doc_from_comment_list ~local_defs ~buffer_comments loc =
 let doc_from_uid ~config ~loc uid =
   begin match uid with
   | Some (Shape.Uid.Item { comp_unit; _ } as uid)
-  | Some (Shape.Uid.Compilation_unit comp_unit as uid)
-      when Env.get_unit_name () <> comp_unit ->
-        log ~title:"get_doc" "the doc (%a) you're looking for is in another
-          compilation unit (%s)"
-          Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
-        (match find_doc_attributes_in_typedtree ~config ~comp_unit uid with
-        | `Found doc -> `Found_doc doc
-        | `No_documentation ->
-            (* We fallback on the legacy heuristic to handle some unproper
-               doc placement. See test [unattached-comment.t] *)
-            `Found_loc loc)
+  | Some (Shape.Uid.Compilation_unit comp_unit as uid) ->
+    let unit_name_matches =
+      match Env.get_unit_name () with
+      | Some u -> Compilation_unit.name_as_string u = comp_unit
+      | None -> false
+    in
+    if unit_name_matches then `Found_loc loc
+    else begin
+      log ~title:"get_doc" "the doc (%a) you're looking for is in another
+        compilation unit (%s)"
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
+      (match find_doc_attributes_in_typedtree ~config ~comp_unit uid with
+      | `Found_attributes doc -> `Found_doc doc
+      | `No_documentation ->
+          (* We fallback on the legacy heuristic to handle some unproper
+             doc placement. See test [unattached-comment.t] *)
+          `Found_loc loc)
+    end
   | _ ->
     (* Uid based search doesn't works in the current CU since Merlin's parser
        does not attach doc comments to the typedtree *)
