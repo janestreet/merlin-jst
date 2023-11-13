@@ -477,7 +477,8 @@ let raise ~loc err = raise (User_error (loc, err))
 let get_required_layouts_level (context : annotation_context) (jkind : const) :
     Language_extension.maturity =
   match context, jkind with
-  | _, (Value | Immediate | Immediate64 | Any | Float64) -> Stable
+  | _, Value -> Stable
+  | _, (Immediate | Immediate64 | Any | Float64) -> Beta
   | _, Void -> Alpha
 
 (******************************)
@@ -633,7 +634,7 @@ end = struct
           | "Location" | "Longident" -> "ocamlcommon"
           | mn ->
             mn |> String.lowercase_ascii |> delete_trailing_double_underscore)
-      | Pident _ | Papply _ -> None
+      | Pident _ | Papply _ | Pextra_ty _ -> None
     in
     Option.iter
       (fprintf ppf "@,Hint: Adding \"%s\" to your dependencies might help.")
