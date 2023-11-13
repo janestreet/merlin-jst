@@ -34,7 +34,7 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
-    jkind_annotation: iterator -> Jkind.const -> unit;
+    jkind_annotation: iterator -> Jkind.annotation -> unit;
     location: iterator -> Location.t -> unit;
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
@@ -104,6 +104,12 @@ let module_declaration sub {md_loc; md_name; md_type; md_attributes; _} =
   iter_loc sub md_name;
   sub.module_type sub md_type
 
+let module_substitution sub {ms_loc; ms_name; ms_txt; ms_attributes; _} =
+  sub.location sub ms_loc;
+  sub.attributes sub ms_attributes;
+  iter_loc sub ms_name;
+  iter_loc sub ms_txt
+
 let include_kind sub = function
   | Tincl_structure -> ()
   | Tincl_functor ccs ->
@@ -111,16 +117,11 @@ let include_kind sub = function
   | Tincl_gen_functor ccs ->
       List.iter (fun (_, cc) -> sub.module_coercion sub cc) ccs
 
-let str_include_infos sub {incl_mod; incl_kind; incl_loc} =
+let str_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
   sub.location sub incl_loc;
+  sub.attributes sub incl_attributes;
   sub.module_expr sub incl_mod;
   include_kind sub incl_kind
-
-let module_substitution sub {ms_loc; ms_name; ms_txt; ms_attributes; _} =
-  sub.location sub ms_loc;
-  sub.attributes sub ms_attributes;
-  iter_loc sub ms_name;
-  iter_loc sub ms_txt
 
 let class_type_declaration sub x =
   class_infos sub (sub.class_type sub) x
@@ -317,7 +318,8 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
         (function
           | Texp_comp_for bindings ->
               List.iter
-                (fun { comp_cb_iterator; comp_cb_attributes = _ } ->
+                (fun { comp_cb_iterator; comp_cb_attributes } ->
+                   sub.attributes sub comp_cb_attributes;
                    match comp_cb_iterator with
                    | Texp_comp_range { ident = _; start; stop; direction = _ } ->
                        sub.expr sub start;
@@ -391,7 +393,9 @@ let signature sub {sig_items; sig_final_env; _} =
   sub.env sub sig_final_env;
   List.iter (sub.signature_item sub) sig_items
 
-let sig_include_infos sub {incl_mod; incl_kind} =
+let sig_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
+  sub.location sub incl_loc;
+  sub.attributes sub incl_attributes;
   sub.module_type sub incl_mod;
   include_kind sub incl_kind
 
@@ -576,7 +580,7 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
   sub.env sub ctyp_env;
   match ctyp_desc with
   | Ttyp_var (_, jkind) ->
-      Option.iter (fun (jkind, _) -> sub.jkind_annotation sub jkind) jkind
+      Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_arrow (_, ct1, ct2) ->
       sub.typ sub ct1;
       sub.typ sub ct2
@@ -590,10 +594,10 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       List.iter (sub.typ sub) list
   | Ttyp_alias (ct, _, jkind) ->
       sub.typ sub ct;
-      Option.iter (fun (jkind, _) -> sub.jkind_annotation sub jkind) jkind
+      Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_variant (list, _, _) -> List.iter (sub.row_field sub) list
   | Ttyp_poly (vars, ct) ->
-      List.iter (fun (_, l) -> Option.iter (fun (j, _) -> sub.jkind_annotation sub j) l) vars;
+      List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
       sub.typ sub ct
   | Ttyp_package pack -> sub.package_type sub pack
 
@@ -647,7 +651,7 @@ let value_binding sub {vb_loc; vb_pat; vb_expr; vb_attributes; _} =
 
 let env _sub _ = ()
 
-let jkind_annotation _sub _ = ()
+let jkind_annotation sub (_, l) = iter_loc sub l
 
 let default_iterator =
   {
