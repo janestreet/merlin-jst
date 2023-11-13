@@ -7741,7 +7741,7 @@ and type_cases
                             (newvar (Jkind.any ~why:Dummy_jkind)))
 
 and type_newtype ~loc ~env ~expected_mode ~rue ~attributes
-      name jkind_annot_opt sbody =
+      name label_loc jkind_annot_opt sbody =
   let jkind, jkind_annot =
     Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
       ~default:(Jkind.value ~why:Univar) jkind_annot_opt

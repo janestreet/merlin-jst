@@ -436,9 +436,9 @@ let exp_extra sub (extra, loc, attrs) sexp =
         |> add_jane_syntax_attributes
     | Texp_newtype' (_id, label_loc, None) ->
         Pexp_newtype (label_loc, sexp)
-    | Texp_newtype' (_id, label_loc, Some layout) ->
+    | Texp_newtype' (_id, label_loc, Some (_, jkind)) ->
         Jane_syntax.Layouts.expr_of ~loc
-          (Lexp_newtype(label_loc, add_loc layout, sexp))
+          (Lexp_newtype(label_loc, jkind, sexp))
         |> add_jane_syntax_attributes
   in
   Exp.mk ~loc ~attrs:!attrs desc
