@@ -1511,6 +1511,7 @@ let copy_sep ~copy_scope ~fixed ~(visited : type_expr TypeHash.t) sch =
     let univars = free ty in
     if is_Tvar ty || may_share && TypeSet.is_empty univars then
       if get_level ty <> generic_level then ty else
+      (* jkind not consulted during copy_sep, so Any is safe *)
       let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
       add_delayed_copy t ty;
       t
@@ -2165,7 +2166,14 @@ let is_immediate64 env ty =
     Btype.backtrack snap;
     result
   else
-    perform_check ()
+    (* CR layouts v2.8: Remove the backtracking once mode crossing is
+       implemented correctly; it's needed for now because checking whether
+       a jkind is immediate (rightly) sets the sort to be Value. It worked
+       previous to this patch because the subjkind check failed earlier. *)
+    let snap = Btype.snapshot () in
+    let result = perform_check () in
+    Btype.backtrack snap;
+    result
 
 (* We will require Int63 to be [global many unique] on 32-bit platforms, so
    this is fine *)
