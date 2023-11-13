@@ -153,9 +153,9 @@ let typevar_jkind ~print_quote ppf (v, l) =
   in
   match l with
   | None -> fprintf ppf " %a" pptv v
-  | Some lay -> fprintf ppf " (%a : %a)"
+  | Some (_, lay) -> fprintf ppf " (%a : %a)"
                     pptv v
-                    Jane_syntax.Layouts.Pprint.const_jkind lay
+                    Jane_syntax.Layouts.Pprint.const_jkind lay.txt
 
 (* merlin-jst: a copy of the above for [Texp_newtype'], which has an id rather than a
    string. *)
@@ -163,21 +163,10 @@ let typevar_layout' ppf (v, l) =
   let pptv = fmt_ident in
   match l with
   | None -> fprintf ppf " %a" pptv v
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-  | Some lay -> fprintf ppf " (%a : %a)"
-                    pptv v
-                    Jane_syntax.Layouts.Pprint.const_jkind lay
-
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-  | Some lay -> fprintf ppf " (%a : %a)"
-                    pptv v
-                    Jane_syntax.Layouts.Pprint.const_jkind lay
-=======
   | Some (_, lay) ->
       fprintf ppf " (%a : %a)"
         pptv v
         Jane_syntax.Layouts.Pprint.const_jkind lay.txt
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
 
 let typevars ppf vs =
   List.iter (typevar_jkind ~print_quote:true ppf) vs

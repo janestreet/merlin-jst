@@ -589,16 +589,8 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       iter_loc sub lid;
       List.iter (sub.typ sub) list
   | Ttyp_alias (ct, _, jkind) ->
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-    sub.typ sub ct;
-    Option.iter (sub.jkind_annotation sub) jkind
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-      sub.typ sub ct;
-      Option.iter (sub.jkind_annotation sub) jkind
-=======
       sub.typ sub ct;
       Option.iter (fun (jkind, _) -> sub.jkind_annotation sub jkind) jkind
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
   | Ttyp_variant (list, _, _) -> List.iter (sub.row_field sub) list
   | Ttyp_poly (vars, ct) ->
       List.iter (fun (_, l) -> Option.iter (fun (j, _) -> sub.jkind_annotation sub j) l) vars;

@@ -7741,16 +7741,8 @@ and type_cases
                             (newvar (Jkind.any ~why:Dummy_jkind)))
 
 and type_newtype ~loc ~env ~expected_mode ~rue ~attributes
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-      name label_loc jkind_annot_opt sbody =
-  let jkind =
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-      name jkind_annot_opt sbody =
-  let jkind =
-=======
       name jkind_annot_opt sbody =
   let jkind, jkind_annot =
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
     Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
       ~default:(Jkind.value ~why:Univar) jkind_annot_opt
   in
@@ -7789,14 +7781,7 @@ and type_newtype ~loc ~env ~expected_mode ~rue ~attributes
      any new extra node in the typed AST. *)
   rue { body with exp_loc = loc; exp_type = ety;
         exp_extra =
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-        (Texp_newtype' (id, label_loc,
-                        Option.map Location.get_txt jkind_annot_opt),
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-        (Texp_newtype (name, Option.map Location.get_txt jkind_annot_opt),
-=======
-        (Texp_newtype (name, jkind_annot),
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
+        (Texp_newtype' (id, label_loc, jkind_annot),
          loc, attributes) :: body.exp_extra }
 
 (* Typing of let bindings *)

@@ -50,14 +50,9 @@ module TyVarEnv : sig
      Env.t -> Location.t -> poly_univars -> type_expr list
     (** Same as [check_poly_univars], but instantiates the resulting
        type scheme (i.e. variables become Tvar rather than Tunivar) *)
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-
-=======
 
   val ttyp_poly_arg : poly_univars -> (string * Jkind.annotation option) list
     (** A suitable arg to the corresponding [Ttyp_poly] type. *)
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
 end
 
 val valid_tyvar_name : string -> bool

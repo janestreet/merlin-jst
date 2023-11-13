@@ -446,7 +446,7 @@ module MenhirInterpreter : sig
     | N_option_preceded_COLON_core_type__ : (Parsetree.core_type option) nonterminal
     | N_option_preceded_COLON_atomic_type__ : (Parsetree.core_type option) nonterminal
     | N_option_preceded_AS_mkrhs_LIDENT___ : (string Location.loc option) nonterminal
-    | N_option_jkind_attr_ : (Parsetree.attribute option) nonterminal
+    | N_option_jkind_constraint_ : (Jane_asttypes.jkind_annotation option) nonterminal
     | N_option_SEMI_ : (unit option) nonterminal
     | N_option_BAR_ : (unit option) nonterminal
     | N_opt_ampersand : (bool) nonterminal
@@ -521,8 +521,7 @@ module MenhirInterpreter : sig
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal
     | N_label_declaration_semi : (Parsetree.label_declaration) nonterminal
     | N_label_declaration : (Parsetree.label_declaration) nonterminal
-    | N_jkind_string : (string Location.loc) nonterminal
-    | N_jkind_attr : (Parsetree.attribute) nonterminal
+    | N_jkind_constraint : (Jane_asttypes.jkind_annotation) nonterminal
     | N_jkind_annotation : (Jane_asttypes.jkind_annotation) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal

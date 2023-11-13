@@ -999,30 +999,6 @@ and transl_type_var env ~policy ~row_context loc name jkind_annot_opt =
   let of_annot = Jkind.of_annotation ~context:(Type_variable print_name) in
   let ty, jkind_annot = try
       let ty = TyVarEnv.lookup_local ~row_context name in
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-      begin
-        match jkind_annot_opt with
-        | None -> ()
-        | Some jkind_annot ->
-          let jkind = of_annot jkind_annot in
-          match constrain_type_jkind env ty jkind with
-          | Ok () -> ()
-          | Error err ->
-              raise (Error(jkind_annot.loc, env, Bad_jkind_annot (ty, err)))
-      end;
-      ty
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-      begin match jkind_annot_opt with
-      | None -> ()
-      | Some jkind_annot ->
-         let jkind = of_annot jkind_annot in
-         match constrain_type_jkind env ty jkind with
-         | Ok () -> ()
-         | Error err ->
-            raise (Error(jkind_annot.loc, env, Bad_jkind_annot (ty, err)))
-      end;
-      ty
-=======
       let jkind_annot =
         match jkind_annot_opt with
         | None -> None
@@ -1034,7 +1010,6 @@ and transl_type_var env ~policy ~row_context loc name jkind_annot_opt =
               raise (Error(jkind_annot.loc, env, Bad_jkind_annot (ty, err)))
       in
       ty, jkind_annot
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
     with Not_found ->
       let jkind, jkind_annot = match jkind_annot_opt with
         | None -> Jkind.any ~why:Unification_var, None

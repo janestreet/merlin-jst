@@ -103,15 +103,8 @@ and exp_extra =
   | Texp_constraint of core_type
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-  | Texp_newtype of string * const_jkind option
-  | Texp_newtype' of Ident.t * label loc * const_jkind option
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-  | Texp_newtype of string * const_jkind option
-=======
   | Texp_newtype of string * Jkind.annotation option
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
-
+  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option
 
 and fun_curry_state =
   | More_args of { partial_mode : Mode.Alloc.t }

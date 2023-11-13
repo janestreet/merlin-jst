@@ -928,30 +928,6 @@ let mk_directive ~loc name arg =
       pdir_loc = make_loc loc;
     }
 
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-let check_jkind ~loc id : const_jkind =
-  match id with
-  | "any" -> Any
-  | "value" -> Value
-  | "void" -> Void
-  | "immediate64" -> Immediate64
-  | "immediate" -> Immediate
-  | "float64" -> Float64
-  | _ -> (expecting_loc loc "layout"; Value)
-
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-let check_jkind ~loc id : const_jkind =
-  match id with
-  | "any" -> Any
-  | "value" -> Value
-  | "void" -> Void
-  | "immediate64" -> Immediate64
-  | "immediate" -> Immediate
-  | "float64" -> Float64
-  | _ -> expecting_loc loc "layout"
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
 (* Unboxed literals *)
 
 (* CR layouts v2.5: The [unboxed_*] functions will both be improved and lose

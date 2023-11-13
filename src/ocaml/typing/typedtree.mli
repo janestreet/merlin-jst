@@ -187,7 +187,7 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of string * Jkind.annotation option
         (** fun (type t : immediate) ->  *)
-  | Texp_newtype' of Ident.t * label loc * const_jkind option
+  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option
   (** merlin-specific: keep enough information to correctly implement
       occurrences for local-types.
       Merlin typechecker uses [Texp_newtype'] constructor, while upstream

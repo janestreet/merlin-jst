@@ -474,41 +474,7 @@ let jkind attrs =
   | None -> None
   | Some (a, l) ->
      mark_used a.attr_name;
-<<<<<<< janestreet/merlin-jst:merge-flambda-backend-post-501
-     let l_loc = Location.mkloc l a.attr_loc in
-     let check b =
-       if b
-       then Ok (Some l_loc)
-       else Error l_loc
-     in
-     match l with
-     | Value -> check true
-     | Immediate | Immediate64 ->
-        check  (legacy_immediate
-             || Language_extension.(is_at_least Layouts Stable))
-     | Any | Float64 ->
-        check Language_extension.(is_at_least Layouts Stable)
-     | Void ->
-        check Language_extension.(is_at_least Layouts Alpha)
-||||||| ocaml-flambda/flambda-backend:52354fd370f4c53a0b56e1de76a6c29c598b90e0
-     let l_loc = Location.mkloc l a.attr_loc in
-     let check b =
-       if b
-       then Ok (Some l_loc)
-       else Error l_loc
-     in
-     match l with
-     | Value -> check true
-     | Immediate | Immediate64 ->
-        check  (legacy_immediate
-             || Language_extension.(is_at_least Layouts Beta))
-     | Any | Float64 ->
-        check Language_extension.(is_at_least Layouts Beta)
-     | Void ->
-        check Language_extension.(is_at_least Layouts Alpha)
-=======
      Some (Location.mkloc l a.attr_loc)
->>>>>>> ocaml-flambda/flambda-backend:dc0a8ebeaf92ca88ebed8313233bd17328593f61
 
 (* The "ocaml.boxed (default)" and "ocaml.unboxed (default)"
    attributes cannot be input by the user, they are added by the
