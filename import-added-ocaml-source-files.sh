@@ -42,6 +42,7 @@ function sorted_files_at_committish() {
   git ls-tree -r --name-only "$1" | sort
 }
 
+git fetch "$repository" "$(cat upstream/ocaml_flambda/base-rev.txt)"
 git fetch "$repository" "$commitish"
 rev=$(git rev-parse FETCH_HEAD)
 
@@ -52,7 +53,10 @@ function files_new_at_fetch_head() {
 }
 
 function directories_from_previous_import() {
-  cd upstream/ocaml_flambda; ls -d */ | xargs -n 1 printf "^$subdirectory/%s\n"
+  comm -12 \
+    <(cd src/ocaml; ls -d */) \
+    <(cd upstream/ocaml_flambda; ls -d */) \
+  | xargs -n 1 printf "^$subdirectory/%s\n"
 }
 
 files=$(files_new_at_fetch_head | grep -f <(directories_from_previous_import))
