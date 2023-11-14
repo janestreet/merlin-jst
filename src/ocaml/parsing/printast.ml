@@ -1,4 +1,4 @@
-(**************************************************************************)
+(*************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
@@ -61,7 +61,7 @@ let fmt_char_option f = function
 
 let fmt_constant f x =
   match x with
-  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m;
+  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m
   | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c)
   | Pconst_string (s, strloc, None) ->
       fprintf f "PConst_string(%S,%a,None)" s fmt_location strloc
@@ -991,6 +991,6 @@ let interface ppf x = list 0 signature_item ppf x
 
 let implementation ppf x = list 0 structure_item ppf x
 
-let top_phrase ppf x = toplevel_phrase 0 ppf x;;
+let top_phrase ppf x = toplevel_phrase 0 ppf x
 
-let constant = fmt_constant;;
+let constant = fmt_constant
