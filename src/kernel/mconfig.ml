@@ -21,6 +21,7 @@ type ocaml = {
   ppx                  : string with_workdir list;
   pp                   : string with_workdir option;
   warnings             : Warnings.state;
+  cmi_file             : string option;
 }
 
 let dump_warnings st =
@@ -45,6 +46,7 @@ let dump_ocaml x = `Assoc [
     "ppx"                  , Json.list (dump_with_workdir Json.string) x.ppx;
     "pp"                   , Json.option (dump_with_workdir Json.string) x.pp;
     "warnings"             , dump_warnings x.warnings;
+    "cmi_file"             , Json.option Json.string x.cmi_file;
   ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -407,6 +409,7 @@ let ocaml_ignored_flags = [
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
   "-verbose"; "-where";
+  "-no-absname"; "-no-g"; "-safe-matching"; "-no-auto-include-otherlibs";
 
   (* flambda-backend specific *)
   "-basic-block-sections";
@@ -474,6 +477,9 @@ let ocaml_ignored_flags = [
   "-fno-sse42";
   "-fsimd-regalloc";
   "-fno-simd-regalloc";
+  "-fclmul";
+  "-fno-clmul";
+  "-no-auto-include-otherlibs";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -665,6 +671,11 @@ let ocaml_flags = [
       \        @<alertname>  enable <alertname> and treat it as fatal error\n\
       \    <alertname> can be 'all' to refer to all alert names"
   );
+  ( "cmi-file",
+    Marg.param "file" (fun cmi_file ocaml ->
+        {ocaml with cmi_file = Some cmi_file}),
+    "<file>  Use the <file> interface to type-check"
+  );
 ]
 
 (** {1 Main configuration} *)
@@ -687,6 +698,7 @@ let initial = {
     ppx                  = [];
     pp                   = None;
     warnings             = Warnings.backup ();
+    cmi_file             = None;
   };
   merlin = {
     build_path  = [];
