@@ -671,7 +671,7 @@ let ocaml_flags = [
       \        @<alertname>  enable <alertname> and treat it as fatal error\n\
       \    <alertname> can be 'all' to refer to all alert names"
   );
-  ( "cmi-file",
+  ( "-cmi-file",
     Marg.param "file" (fun cmi_file ocaml ->
         {ocaml with cmi_file = Some cmi_file}),
     "<file>  Use the <file> interface to type-check"
