@@ -1055,7 +1055,7 @@ let message = function
       Printf.sprintf "expected %s"
         (if b then "tailcall" else "non-tailcall")
   | Fragile_literal_pattern ->
-      let[@manual.ref "ss:warn52"] ref_manual = [ 13; 5; 3 ] in
+      let ref_manual = [ 13; 5; 3 ] in
       Format.asprintf
         "Code should not depend on the actual values of\n\
          this constructor's arguments. They are only for information\n\
@@ -1073,7 +1073,7 @@ let message = function
   | Inlining_impossible reason ->
       Printf.sprintf "Cannot inline: %s" reason
   | Ambiguous_var_in_pattern_guard vars ->
-      let[@manual.ref "ss:warn57"] ref_manual = [ 13; 5; 4 ] in
+      let ref_manual = [ 13; 5; 4 ] in
       let vars = List.sort String.compare vars in
       let vars_explanation =
         let in_different_places =

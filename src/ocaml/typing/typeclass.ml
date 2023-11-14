@@ -2230,7 +2230,7 @@ let report_error env ppf = function
               @[%a@]@]"
        printer print_reason reason
   | Non_generalizable_class {id;  clty; nongen_vars } ->
-      let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2] in
+      let manual_ref = [ 6; 1; 2] in
       Printtyp.prepare_for_printing nongen_vars;
       fprintf ppf
         "@[The type of this class,@ %a,@ \

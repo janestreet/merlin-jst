@@ -19,6 +19,7 @@ type ocaml = {
   ppx                  : string with_workdir list;
   pp                   : string with_workdir option;
   warnings             : Warnings.state;
+  cmi_file             : string option;
 }
 
 val dump_ocaml : ocaml -> json
@@ -55,7 +56,7 @@ val dump_merlin : merlin -> json
 
 (** {1 Some flags affecting queries} *)
 
-module Verbosity : sig 
+module Verbosity : sig
   type t = Smart | Lvl of int
 
   (** the default value for verbosity, i.e., [Lvl 0] *)

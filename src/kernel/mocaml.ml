@@ -43,6 +43,7 @@ let setup_reader_config config = (
   nopervasives         := ocaml.nopervasives ;
   strict_formats       := ocaml.strict_formats ;
   open_modules         := ocaml.open_modules ;
+  cmi_file             := ocaml.cmi_file ;
 )
 
 let setup_typer_config config = (
