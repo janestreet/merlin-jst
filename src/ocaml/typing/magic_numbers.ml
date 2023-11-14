@@ -35,7 +35,11 @@ module Cmi = struct
     | "Caml1999I512" -> Some "4.14.1-19"
     | "Caml1999I513" -> Some "4.14.1-22"
     | "Caml1999I514" -> Some "4.14.1-24"
+    | "Caml1999I032" -> Some "5.0"
+    | "Caml1999I033" -> Some "5.1"
     | _ -> None
+
+  let () = assert (to_version_opt Config.cmi_magic_number <> None)
 
   open Format
 

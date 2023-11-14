@@ -1,4 +1,4 @@
-FROM ocaml/opam:ubuntu-20.04-ocaml-4.14
+FROM ocaml/opam:debian-11-ocaml-5.0
 
 WORKDIR /app
 

@@ -1,5 +1,5 @@
 (** {0 OCaml compiler compatible command-line parameters} *)
-
+let cmi_file = ref None
 let include_dirs        = ref []
 let fast                = ref false
 let classic             = ref false
@@ -9,18 +9,8 @@ let recursive_types     = ref false
 let strict_sequence     = ref false
 let applicative_functors = ref true
 
-let unsafe_string =
-  ref (
-    match Merlin_config.ocamlversion with
-    | `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3
-    | `OCaml_4_03_0
-    | `OCaml_4_04_0
-    | `OCaml_4_05_0 -> true
-    | _ -> false (* -safe-string became the new default in 4.06 *)
-  )
-
 let nopervasives        = ref false
-let strict_formats      = ref false
+let strict_formats      = ref true
 let open_modules        = ref []
 
 let annotations         = ref false

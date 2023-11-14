@@ -58,8 +58,6 @@ and cms_magic_number = "Caml1999S512"
 let interface_suffix = ref ".mli"
 
 let max_tag = 245
-
-let safe_string = true
 let flat_float_array = false
 
 let merlin = true
