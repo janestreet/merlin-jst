@@ -265,7 +265,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_core_type__) -> "option_preceded_COLON_core_type__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_atomic_type__) -> "option_preceded_COLON_atomic_type__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_AS_mkrhs_LIDENT___) -> "option_preceded_AS_mkrhs_LIDENT___"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_jkind_constraint_) -> "option_jkind_constraint_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_jkind_attr_) -> "option_jkind_attr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_SEMI_) -> "option_SEMI_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_BAR_) -> "option_BAR_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand) -> "opt_ampersand"
@@ -334,7 +334,8 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_declarations) -> "label_declarations"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_declaration_semi) -> "label_declaration_semi"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_declaration) -> "label_declaration"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_constraint) -> "jkind_constraint"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_string) -> "jkind_string"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_attr) -> "jkind_attr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_annotation) -> "jkind_annotation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
@@ -643,7 +644,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_core_type__ -> (fun _ -> "option_preceded_COLON_core_type__")
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_COLON_atomic_type__ -> (fun _ -> "option_preceded_COLON_atomic_type__")
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_AS_mkrhs_LIDENT___ -> (fun _ -> "option_preceded_AS_mkrhs_LIDENT___")
-  | MenhirInterpreter.N MenhirInterpreter.N_option_jkind_constraint_ -> (fun _ -> "option_jkind_constraint_")
+  | MenhirInterpreter.N MenhirInterpreter.N_option_jkind_attr_ -> (fun _ -> "option_jkind_attr_")
   | MenhirInterpreter.N MenhirInterpreter.N_option_SEMI_ -> (fun _ -> "option_SEMI_")
   | MenhirInterpreter.N MenhirInterpreter.N_option_BAR_ -> (fun _ -> "option_BAR_")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand -> (fun _ -> "opt_ampersand")
@@ -712,7 +713,8 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_label_declarations -> (fun _ -> "label_declarations")
   | MenhirInterpreter.N MenhirInterpreter.N_label_declaration_semi -> (fun _ -> "label_declaration_semi")
   | MenhirInterpreter.N MenhirInterpreter.N_label_declaration -> (fun _ -> "label_declaration")
-  | MenhirInterpreter.N MenhirInterpreter.N_jkind_constraint -> (fun _ -> "jkind_constraint")
+  | MenhirInterpreter.N MenhirInterpreter.N_jkind_string -> (fun _ -> "jkind_string")
+  | MenhirInterpreter.N MenhirInterpreter.N_jkind_attr -> (fun _ -> "jkind_attr")
   | MenhirInterpreter.N MenhirInterpreter.N_jkind_annotation -> (fun _ -> "jkind_annotation")
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")

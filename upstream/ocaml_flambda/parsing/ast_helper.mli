@@ -218,6 +218,7 @@ module Type:
   sig
     val mk: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?text:text ->
       ?params:(core_type * (variance * injectivity)) list ->
+      ?jkind:attribute ->
       ?cstrs:(core_type * core_type * loc) list ->
       ?kind:type_kind -> ?priv:private_flag -> ?manifest:core_type -> str ->
       type_declaration
@@ -282,7 +283,6 @@ module Mod:
       functor_parameter -> module_expr -> module_expr
     val apply: ?loc:loc -> ?attrs:attrs -> module_expr -> module_expr ->
       module_expr
-    val apply_unit: ?loc:loc -> ?attrs:attrs -> module_expr -> module_expr
     val constraint_: ?loc:loc -> ?attrs:attrs -> module_expr -> module_type ->
       module_expr
     val unpack: ?loc:loc -> ?attrs:attrs -> expression -> module_expr
@@ -381,8 +381,7 @@ module Incl:
 module Vb:
   sig
     val mk: ?loc: loc -> ?attrs:attrs -> ?docs:docs -> ?text:text ->
-      ?value_constraint:value_constraint -> pattern -> expression ->
-      value_binding
+      pattern -> expression -> value_binding
   end
 
 

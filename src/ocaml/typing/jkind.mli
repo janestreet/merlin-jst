@@ -319,16 +319,13 @@ end
 
 (** Constant jkinds are used both for user-written annotations and within
     the type checker when we know a jkind has no variables *)
-type const =
+type const = Jane_asttypes.const_jkind =
   | Any
   | Value
   | Void
   | Immediate64
   | Immediate
   | Float64
-
-val const_of_user_written_annotation :
-  context:annotation_context -> Jane_asttypes.jkind_annotation -> const
 
 val string_of_const : const -> string
 
@@ -367,46 +364,39 @@ val of_new_sort : why:concrete_jkind_reason -> t
 
 val of_const : why:creation_reason -> const -> t
 
-(** The typed jkind together with its user-written annotation. *)
-type annotation = const * Jane_asttypes.jkind_annotation
-
+(* CR layouts v1.5: remove legacy_immediate when the old attributes mechanism
+   is rerouted away from the new annotations mechanism *)
 val of_annotation :
-  context:annotation_context -> Jane_asttypes.jkind_annotation -> t * annotation
+  ?legacy_immediate:bool ->
+  context:annotation_context ->
+  Jane_asttypes.jkind_annotation ->
+  t
 
 val of_annotation_option_default :
+  ?legacy_immediate:bool ->
   default:t ->
   context:annotation_context ->
   Jane_asttypes.jkind_annotation option ->
-  t * annotation option
+  t
 
-(** Find a jkind from a type declaration. Type declarations are special because
-    the jkind may have been provided via [: jkind] syntax (which goes through
-    Jane Syntax) or via the old-style [[@@immediate]] or [[@@immediate64]]
-    attributes, and [of_type_decl] needs to look in two different places on the
-    [type_declaration] to account for these two alternatives.
-
-    Returns the jkind, the user-written annotation, and the remaining unconsumed
-    attributes. (The attributes include old-style [[@@immediate]] or
-    [[@@immediate64]] attributes if those are present, but excludes any
-    attribute used by Jane Syntax to encode a [: jkind]-style jkind.)
-
-    Raises if a disallowed or unknown jkind is present.
-*)
-val of_type_decl :
+(** Find a jkind in attributes.  Returns error if a disallowed jkind is
+    present, but always allows immediate attributes if ~legacy_immediate is
+    true.  See comment on [Builtin_attributes.jkind].  *)
+val of_attributes :
+  legacy_immediate:bool ->
   context:annotation_context ->
-  Parsetree.type_declaration ->
-  (t * annotation * Parsetree.attributes) option
+  Parsetree.attributes ->
+  (t option, Jane_asttypes.jkind_annotation) result
 
-(** Find a jkind from a type declaration in the same way as [of_type_decl],
-    defaulting to ~default.
-
-    Raises if a disallowed or unknown jkind is present.
-*)
-val of_type_decl_default :
+(** Find a jkind in attributes, defaulting to ~default.  Returns error if a
+    disallowed jkind is present, but always allows immediate if
+    ~legacy_immediate is true.  See comment on [Builtin_attributes.jkind]. *)
+val of_attributes_default :
+  legacy_immediate:bool ->
   context:annotation_context ->
   default:t ->
-  Parsetree.type_declaration ->
-  t * annotation option * Parsetree.attributes
+  Parsetree.attributes ->
+  (t, Jane_asttypes.jkind_annotation) result
 
 (** Choose an appropriate jkind for a boxed record type, given whether
     all of its fields are [void]. *)

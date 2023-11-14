@@ -59,10 +59,11 @@ type address =
 type t
 
 val empty: t
-(* This environment is lazy so that it may depend on the enabled extensions,
-   typically adjusted via command line flags.  If extensions are changed after
-   theis environment is forced, they may be inaccurate.  This could happen, for
-   example, if extensions are adjusted via the compiler-libs. *)
+(* This environment is lazy so that it may depend on the enabled
+   extensions, typically adjusted via command line flags.  If extensions are
+   changed after this environment is forced, it may be inaccurate.  This
+   could happen, for example, if extensions are adjusted via the
+   compiler-libs. *)
 val initial: t Lazy.t
 val diff: t -> t -> Ident.t list
 

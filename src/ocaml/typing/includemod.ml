@@ -757,7 +757,7 @@ and signatures ~in_eq ~loc env ~mark subst sig1 sig2 mod_shape =
           Ok (simplify_structure_coercion cc id_pos_list, shape)
         else
           Ok (Tcoerce_structure (cc, id_pos_list), shape)
-    | missings, incompatibles, _runtime_coercions, _leftovers ->
+    | missings, incompatibles, _, _leftovers ->
         Error {
           Error.env=new_env;
           missings = List.map force_signature_item missings;

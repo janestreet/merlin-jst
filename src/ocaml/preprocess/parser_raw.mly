@@ -928,6 +928,16 @@ let mk_directive ~loc name arg =
       pdir_loc = make_loc loc;
     }
 
+let check_jkind ~loc id : const_jkind =
+  match id with
+  | "any" -> Any
+  | "value" -> Value
+  | "void" -> Void
+  | "immediate64" -> Immediate64
+  | "immediate" -> Immediate
+  | "float64" -> Float64
+  | _ -> (expecting_loc loc "layout"; Value)
+
 (* Unboxed literals *)
 
 (* CR layouts v2.5: The [unboxed_*] functions will both be improved and lose
@@ -3794,7 +3804,7 @@ generic_type_declaration(flag, kind):
   flag = flag
   params = type_parameters
   id = mkrhs(LIDENT)
-  jkind = jkind_constraint?
+  jkind = jkind_attr?
   kind_priv_manifest = kind
   cstrs = constraints
   attrs2 = post_item_attributes
@@ -3804,8 +3814,7 @@ generic_type_declaration(flag, kind):
       let attrs = attrs1 @ attrs2 in
       let loc = make_loc $sloc in
       (flag, ext),
-      Jane_syntax.Layouts.type_declaration_of
-        id ~params ~cstrs ~kind ~priv ~manifest ~attrs ~loc ~docs ~text:None ~jkind
+      Type.mk id ~params ?jkind ~cstrs ~kind ~priv ?manifest ~attrs ~loc ~docs
     }
 ;
 %inline generic_and_type_declaration(kind):
@@ -3813,7 +3822,7 @@ generic_type_declaration(flag, kind):
   attrs1 = attributes
   params = type_parameters
   id = mkrhs(LIDENT)
-  jkind = jkind_constraint?
+  jkind = jkind_attr?
   kind_priv_manifest = kind
   cstrs = constraints
   attrs2 = post_item_attributes
@@ -3823,8 +3832,7 @@ generic_type_declaration(flag, kind):
       let attrs = attrs1 @ attrs2 in
       let loc = make_loc $sloc in
       let text = symbol_text $symbolstartpos in
-      Jane_syntax.Layouts.type_declaration_of
-        id ~params ~jkind ~cstrs ~kind ~priv ~manifest ~attrs ~loc ~docs ~text:(Some text)
+      Type.mk id ~params ?jkind ~cstrs ~kind ~priv ?manifest ~attrs ~loc ~docs ~text
     }
 ;
 %inline constraints:
@@ -3878,11 +3886,21 @@ type_parameters:
 ;
 
 jkind_annotation: (* : jkind_annotation *)
-  ident { mkloc (Jane_asttypes.jkind_of_string $1) (make_loc $sloc) }
+  ident { let loc = make_loc $sloc in
+          mkloc (check_jkind ~loc $1) loc }
 ;
 
-jkind_constraint:
-  COLON jkind_annotation { $2 }
+jkind_string: (* : string with_loc *)
+  (* the [check_jkind] just ensures this is the name of a jkind *)
+  ident { let loc = make_loc $sloc in
+          ignore (check_jkind ~loc $1 : const_jkind);
+          mkloc $1 loc }
+;
+
+jkind_attr:
+  COLON
+  jkind=jkind_string
+    { Attr.mk ~loc:jkind.loc jkind (PStr []) }
 ;
 
 %inline type_param_with_jkind:

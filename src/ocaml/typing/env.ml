@@ -2870,8 +2870,8 @@ let add_language_extension_types env =
    turned on.  We can't do this at startup because command line flags haven't
    been parsed yet. So, we make the initial environment lazy.
 
-   If language extensions are adjusted after [initial] is forced, these
-   environments may be inaccurate.
+   If language extensions are adjusted after [initial_safe_string] and
+   [initial_unsafe_string] are forced, these environments may be inaccurate.
 *)
 let initial = add_language_extension_types initial
 

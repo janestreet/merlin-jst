@@ -50,9 +50,6 @@ module TyVarEnv : sig
      Env.t -> Location.t -> poly_univars -> type_expr list
     (** Same as [check_poly_univars], but instantiates the resulting
        type scheme (i.e. variables become Tvar rather than Tunivar) *)
-
-  val ttyp_poly_arg : poly_univars -> (string * Jkind.annotation option) list
-    (** A suitable arg to the corresponding [Ttyp_poly] type. *)
 end
 
 val valid_tyvar_name : string -> bool
@@ -132,3 +129,7 @@ val transl_modtype_longident:  (* from Typemod *)
     (Location.t -> Env.t -> Longident.t -> Path.t) ref
 val transl_modtype: (* from Typemod *)
     (Env.t -> Parsetree.module_type -> Typedtree.module_type) ref
+val create_package_mty:
+    Location.t -> Env.t -> Parsetree.package_type ->
+    (Longident.t Asttypes.loc * Parsetree.core_type) list *
+      Parsetree.module_type

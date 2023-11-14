@@ -552,7 +552,6 @@ let layout env loc sort ty =
     Lambda.Punboxed_float
   | Float64 ->
     raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Stable, Some ty)))
-    raise (Error (loc, Sort_without_extension (Jkind.Sort.float64, Stable, Some ty)))
   | Void -> raise (Error (loc, Non_value_sort (Jkind.Sort.void,ty)))
 
 let layout_of_sort loc sort =

@@ -1352,7 +1352,6 @@ let new_local_type ?(loc = Location.none) ?manifest_and_scope jkind =
     type_arity = 0;
     type_kind = Type_abstract Abstract_def;
     type_jkind = jkind;
-    type_jkind_annotation = None;
     type_private = Public;
     type_manifest = manifest;
     type_variance = [];
@@ -1511,7 +1510,6 @@ let copy_sep ~copy_scope ~fixed ~(visited : type_expr TypeHash.t) sch =
     let univars = free ty in
     if is_Tvar ty || may_share && TypeSet.is_empty univars then
       if get_level ty <> generic_level then ty else
-      (* jkind not consulted during copy_sep, so Any is safe *)
       let t = newstub ~scope:(get_scope ty) (Jkind.any ~why:Dummy_jkind) in
       add_delayed_copy t ty;
       t
@@ -1924,11 +1922,8 @@ let expand_head_opt env ty =
 
 
 type unbox_result =
-  (* unboxing process made a step: either an unboxing or removal of a [Tpoly] *)
-  | Stepped of type_expr
-  (* no step to make; we're all done here *)
-  | Final_result of type_expr
-  (* definition not in environment: missing cmi *)
+  | Unboxed of type_expr
+  | Not_unboxed of type_expr
   | Missing of Path.t
 
 (* We use expand_head_opt version of expand_head to get access
@@ -1941,14 +1936,13 @@ let unbox_once env ty =
     | exception Not_found -> Missing p
     | decl ->
       begin match find_unboxed_type decl with
-      | None -> Final_result ty
+      | None -> Not_unboxed ty
       | Some ty2 ->
         let ty2 = match get_desc ty2 with Tpoly (t, _) -> t | _ -> ty2 in
-        Stepped (apply env decl.type_params ty2 args)
+        Unboxed (apply env decl.type_params ty2 args)
       end
     end
-  | Tpoly (ty, _) -> Stepped ty
-  | _ -> Final_result ty
+  | _ -> Not_unboxed ty
 
 (* We use ty_prev to track the last type for which we found a definition,
    allowing us to return a type for which a definition was found even if
@@ -1956,9 +1950,9 @@ let unbox_once env ty =
 let rec get_unboxed_type_representation env ty_prev ty fuel =
   if fuel < 0 then Error ty else
     match unbox_once env ty with
-    | Stepped ty2 ->
+    | Unboxed ty2 ->
       get_unboxed_type_representation env ty ty2 (fuel - 1)
-    | Final_result ty2 -> Ok ty2
+    | Not_unboxed ty2 -> Ok ty2
     | Missing _ -> Ok ty_prev
 
 let get_unboxed_type_representation env ty =
@@ -2074,8 +2068,8 @@ let rec constrain_type_jkind ~fixed env ty jkind fuel =
       | Error _ as err when fuel < 0 -> err
       | Error violation ->
         begin match unbox_once env ty with
-        | Final_result ty -> constrain_unboxed ty
-        | Stepped ty ->
+        | Not_unboxed ty -> constrain_unboxed ty
+        | Unboxed ty ->
             constrain_type_jkind ~fixed env ty jkind (fuel - 1)
         | Missing missing_cmi_for ->
           Error (Jkind.Violation.record_missing_cmi ~missing_cmi_for violation)
@@ -2166,14 +2160,7 @@ let is_immediate64 env ty =
     Btype.backtrack snap;
     result
   else
-    (* CR layouts v2.8: Remove the backtracking once mode crossing is
-       implemented correctly; it's needed for now because checking whether
-       a jkind is immediate (rightly) sets the sort to be Value. It worked
-       previous to this patch because the subjkind check failed earlier. *)
-    let snap = Btype.snapshot () in
-    let result = perform_check () in
-    Btype.backtrack snap;
-    result
+    perform_check ()
 
 (* We will require Int63 to be [global many unique] on 32-bit platforms, so
    this is fine *)
@@ -6219,7 +6206,6 @@ let nondep_type_decl env mid is_covariant decl =
       type_arity = decl.type_arity;
       type_kind = tk;
       type_jkind = decl.type_jkind;
-      type_jkind_annotation = decl.type_jkind_annotation;
       type_manifest = tm;
       type_private = priv;
       type_variance = decl.type_variance;

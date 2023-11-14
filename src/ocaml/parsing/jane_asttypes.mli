@@ -25,17 +25,20 @@
 
 *)
 
+open Asttypes
+
 type global_flag =
   | Global
   | Nothing
 
-(** [const_jkind] is private to limit confusion with type variables, which
-    are also strings in the parser.
-*)
-type const_jkind
+(* constant jkinds are parsed as jkind annotations, and also used
+   in the type checker as already-inferred (i.e. non-variable) jkinds *)
+type const_jkind =
+  | Any
+  | Value
+  | Void
+  | Immediate64
+  | Immediate
+  | Float64
 
-val jkind_of_string : string -> const_jkind
-
-val jkind_to_string : const_jkind -> string
-
-type jkind_annotation = const_jkind Location.loc
+type jkind_annotation = const_jkind loc

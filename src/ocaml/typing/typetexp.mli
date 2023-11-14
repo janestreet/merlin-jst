@@ -50,9 +50,6 @@ module TyVarEnv : sig
      Env.t -> Location.t -> poly_univars -> type_expr list
     (** Same as [check_poly_univars], but instantiates the resulting
        type scheme (i.e. variables become Tvar rather than Tunivar) *)
-
-  val ttyp_poly_arg : poly_univars -> (string * Jkind.annotation option) list
-    (** A suitable arg to the corresponding [Ttyp_poly] type. *)
 end
 
 val valid_tyvar_name : string -> bool
