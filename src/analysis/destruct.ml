@@ -348,8 +348,8 @@ let rec subst_patt initial ~by patt =
       List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
     in
     { patt with pat_desc = Tpat_record (sub', flg) }
-  | Tpat_array (m, lst) ->
-    { patt with pat_desc = Tpat_array (m, List.map lst ~f) }
+  | Tpat_array (m, sort, lst) ->
+    { patt with pat_desc = Tpat_array (m, sort, List.map lst ~f) }
   | Tpat_or (p1, p2, row) ->
     { patt with pat_desc = Tpat_or (f p1, f p2, row) }
   | Tpat_lazy p ->
@@ -375,8 +375,8 @@ let rec rm_sub patt sub =
       List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
     in
     { patt with pat_desc = Tpat_record (sub', flg) }
-  | Tpat_array (m,lst) ->
-    { patt with pat_desc = Tpat_array (m,List.map lst ~f) }
+  | Tpat_array (m, sort, lst) ->
+    { patt with pat_desc = Tpat_array (m, sort, List.map lst ~f) }
   | Tpat_or (p1, p2, row) ->
     if p1 == sub then p2 else if p2 == sub then p1 else
       { patt with pat_desc = Tpat_or (f p1, f p2, row) }
@@ -441,7 +441,7 @@ let rec qualify_constructors ~unmangling_tables f pat  =
       in
       Tpat_construct
         (lid, cstr_desc, List.map ps ~f:(qualify_constructors f), lco)
-    | Tpat_array (m, ps) -> Tpat_array (m, List.map ps ~f:(qualify_constructors f))
+    | Tpat_array (m, sort, ps) -> Tpat_array (m, sort, List.map ps ~f:(qualify_constructors f))
     | Tpat_or (p1, p2, row_desc) ->
       Tpat_or (qualify_constructors f p1, qualify_constructors f p2, row_desc)
     | Tpat_lazy p -> Tpat_lazy (qualify_constructors f p)
@@ -464,7 +464,7 @@ let find_branch patterns sub =
         is_sub_patt p ~sub
       | Tpat_tuple lst
       | Tpat_construct (_, _, lst, _)
-      | Tpat_array (_,lst) ->
+      | Tpat_array (_, _, lst) ->
         List.exists lst ~f:(is_sub_patt ~sub)
       | Tpat_record (subs, _) ->
         List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p ~sub)
@@ -534,7 +534,7 @@ module Conv = struct
               subpatterns
           in
           mkpat (Ppat_record (fields, Open))
-      | Tpat_array (mut, lst) ->
+      | Tpat_array (mut, _, lst) ->
           let lst = List.map ~f:loop lst in
           begin match mut with
           | Mutable -> mkpat (Ppat_array lst)

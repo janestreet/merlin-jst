@@ -2,10 +2,9 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*           Damien Doligez, projet Moscova, INRIA Rocquencourt           *)
+(*                   Nick Roberts, Jane Street, New York                  *)
 (*                                                                        *)
-(*   Copyright 2003 Institut National de Recherche en Informatique et     *)
-(*     en Automatique.                                                    *)
+(*   Copyright 2023 Jane Street Group LLC                                 *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
 (*   the GNU Lesser General Public License version 2.1, with the          *)
@@ -13,23 +12,14 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Recording and dumping (partial) type information *)
+type global_flag =
+  | Global
+  | Nothing
 
-(* Clflags.save_types must be true *)
+type const_jkind = string
 
-open Typedtree
+let jkind_of_string x = x
 
-type annotation =
-  | Ti_pat : 'k pattern_category * 'k general_pattern -> annotation
-  | Ti_expr  of expression
-  | Ti_class of class_expr
-  | Ti_mod   of module_expr
-  | An_call of Location.t * Annot.call
-  | An_ident of Location.t * string * Annot.ident
+let jkind_to_string x = x
 
-val record : annotation -> unit
-val record_phrase : Location.t -> unit
-val dump : string option -> unit
-
-val get_location : annotation -> Location.t
-val get_info : unit -> annotation list
+type jkind_annotation = const_jkind Location.loc
