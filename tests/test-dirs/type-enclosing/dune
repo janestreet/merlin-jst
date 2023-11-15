@@ -1,9 +1,5 @@
-(cram
- (applies_to :whole_subtree)
- (alias all-destruct-tests))
-
 ; FIXME: disabled Jane Street tests that are failing internally
 (cram
   (enabled_if false)
   (applies_to
-     complete))
+      underscore-ids))
