@@ -37,7 +37,7 @@ The hole is filled with merlin.hole.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting expr"
+        "message": "Syntax error, expecting fun_expr"
       }
     ],
     "notifications": []
@@ -118,7 +118,7 @@ penalty should prevent it.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting expr"
+        "message": "Syntax error, expecting fun_expr"
       }
     ],
     "notifications": []

@@ -8,7 +8,15 @@ if [ ! -f dune-project ]; then
   touch .merlin
 fi
 
-ocamlmerlin "$@" \
+if [ -z "$MERLIN_TEST_OCAML_PATH" ]; then
+  echo >&2 "You must set the MERLIN_TEST_OCAML_PATH environment variable in your shell to run merlin tests."
+  echo >&2 "It should be set to the directory where your flambda-backend build artifacts are installed."
+  exit 1
+fi
+
+MERLIN_TEST_OCAMLLIB_PATH="$MERLIN_TEST_OCAML_PATH/lib/ocaml"
+
+ocamlmerlin "$@" -ocamllib-path "$MERLIN_TEST_OCAMLLIB_PATH" \
     | jq 'del(.timing)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\
