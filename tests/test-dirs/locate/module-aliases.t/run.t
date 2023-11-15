@@ -2,8 +2,8 @@
 When building without Dune
 **************************
 
-  $ ocamlc -c -bin-annot anothermod.mli 
-  $ ocamlc -c -bin-annot anothermod.ml 
+  $ $OCAMLC -c -bin-annot anothermod.mli 
+  $ $OCAMLC -c -bin-annot anothermod.ml 
 
 
   $ cat >.merlin << EOF

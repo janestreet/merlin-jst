@@ -67,7 +67,7 @@
     structure_item (test.ml[1,0+0]..test.ml[1,0+14])
       Tstr_type Rec
       [
-        type_declaration t/275 (test.ml[1,0+0]..test.ml[1,0+14])
+        type_declaration t/271 (test.ml[1,0+0]..test.ml[1,0+14])
           ptype_params =
             []
           ptype_cstrs =
@@ -76,11 +76,11 @@
             Ttype_variant
               [
                 (test.ml[1,0+9]..test.ml[1,0+10])
-                  A/276
+                  A/272
                   []
                   None
                 (test.ml[1,0+11]..test.ml[1,0+14])
-                  B/277
+                  B/273
                   []
                   None
               ]
@@ -93,9 +93,12 @@
       [
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
-            Tpat_var \"f/278\"
+            Tpat_var \"f/274\"
+            value_mode Global, uniqueness:?, Many
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
+            region true
+            alloc_mode Global, uniqueness:?, Many
             Nolabel
             [
               <case>
@@ -103,15 +106,15 @@
                   extra
                     Tpat_extra_constraint
                     core_type (test.ml[2,15+11]..test.ml[2,15+12])
-                      Ttyp_constr \"t/275\"
+                      Ttyp_constr \"t/271\"
                       []
-                  Tpat_alias \"x/280\"
-                  pattern (test.ml[2,15+7]..test.ml[2,15+8])
-                    Tpat_any
+                  Tpat_var \"x/276\"
+                  value_mode Global, Unique, Many
                 expression (test.ml[3,31+2]..test.ml[6,69+12])
                   Texp_match
                   expression (test.ml[3,31+8]..test.ml[3,31+9])
-                    Texp_ident \"x/280\"
+                    Texp_ident \"x/276\"
+                  value
                   [
                     <case>
                       pattern (test.ml[4,46+4]..test.ml[4,46+5])
@@ -144,7 +147,7 @@
                           ]
                         attribute \"merlin.loc\"
                           []
-                        Texp_ident \"*type-error*/281\"
+                        Texp_ident \"*type-error*/277\"
                     <case>
                       pattern (test.ml[6,69+4]..test.ml[6,69+5])
                         Tpat_value
@@ -164,7 +167,7 @@
                           ]
                         attribute \"merlin.loc\"
                           []
-                        Texp_ident \"*type-error*/282\"
+                        Texp_ident \"*type-error*/278\"
                   ]
             ]
       ]
@@ -224,7 +227,7 @@
     structure_item (test2.ml[1,0+0]..test2.ml[1,0+14])
       Tstr_type Rec
       [
-        type_declaration t/275 (test2.ml[1,0+0]..test2.ml[1,0+14])
+        type_declaration t/271 (test2.ml[1,0+0]..test2.ml[1,0+14])
           ptype_params =
             []
           ptype_cstrs =
@@ -233,11 +236,11 @@
             Ttype_variant
               [
                 (test2.ml[1,0+9]..test2.ml[1,0+10])
-                  A/276
+                  A/272
                   []
                   None
                 (test2.ml[1,0+11]..test2.ml[1,0+14])
-                  B/277
+                  B/273
                   []
                   None
               ]
@@ -250,9 +253,12 @@
       [
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
-            Tpat_var \"f/278\"
+            Tpat_var \"f/274\"
+            value_mode Global, uniqueness:?, Many
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
+            region true
+            alloc_mode Global, uniqueness:?, Many
             Nolabel
             [
               <case>
@@ -262,7 +268,7 @@
                   extra
                     Tpat_extra_constraint
                     core_type (test2.ml[2,15+11]..test2.ml[2,15+12])
-                      Ttyp_constr \"t/275\"
+                      Ttyp_constr \"t/271\"
                       []
                   Tpat_any
                 expression (test2.ml[2,15+22]..test2.ml[2,15+24])
@@ -280,7 +286,7 @@
                     core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
                       Ttyp_constr \"int/1!\"
                       []
-                  Texp_ident \"*type-error*/280\"
+                  Texp_ident \"*type-error*/276\"
             ]
       ]
   ]
@@ -330,14 +336,14 @@ First a simple case:
     "value": "[
     signature_item (test.mli[1,0+0]..test.mli[1,0+14])
       Tsig_value
-      value_description foo1/275 (test.mli[1,0+0]..test.mli[1,0+14])
+      value_description foo1/271 (test.mli[1,0+0]..test.mli[1,0+14])
         core_type (test.mli[1,0+11]..test.mli[1,0+14])
           Ttyp_constr \"int/1!\"
           []
         []
     signature_item (test.mli[3,16+0]..test.mli[3,16+21])
       Tsig_value
-      value_description foo2/276 (test.mli[3,16+0]..test.mli[3,16+21])
+      value_description foo2/272 (test.mli[3,16+0]..test.mli[3,16+21])
         core_type (test.mli[3,16+11]..test.mli[3,16+21])
           Ttyp_tuple
           [
@@ -345,12 +351,13 @@ First a simple case:
               Ttyp_constr \"int/1!\"
               []
             core_type (test.mli[3,16+17]..test.mli[3,16+21])
-              Ttyp_any
+              Ttyp_var _
+              None
           ]
         []
     signature_item (test.mli[5,39+0]..test.mli[5,39+21])
       Tsig_value
-      value_description foo3/277 (test.mli[5,39+0]..test.mli[5,39+21])
+      value_description foo3/273 (test.mli[5,39+0]..test.mli[5,39+21])
         core_type (test.mli[5,39+11]..test.mli[5,39+21])
           Ttyp_tuple
           [
@@ -414,38 +421,38 @@ And now, with an error deep in a submodule:
     "value": "[
     signature_item (test2.mli[1,0+0]..test2.mli[1,0+14])
       Tsig_value
-      value_description foo1/275 (test2.mli[1,0+0]..test2.mli[1,0+14])
+      value_description foo1/271 (test2.mli[1,0+0]..test2.mli[1,0+14])
         core_type (test2.mli[1,0+11]..test2.mli[1,0+14])
           Ttyp_constr \"int/1!\"
           []
         []
     signature_item (test2.mli[3,16+0]..test2.mli[10,149+3])
-      Tsig_module \"M/281\"
+      Tsig_module \"M/277\"
       module_type (test2.mli[3,16+11]..test2.mli[10,149+3])
         Tmty_signature
         [
           signature_item (test2.mli[4,31+2]..test2.mli[4,31+17])
             Tsig_value
-            value_description foo21/276 (test2.mli[4,31+2]..test2.mli[4,31+17])
+            value_description foo21/272 (test2.mli[4,31+2]..test2.mli[4,31+17])
               core_type (test2.mli[4,31+14]..test2.mli[4,31+17])
                 Ttyp_constr \"int/1!\"
                 []
               []
           signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
-            Tsig_module \"N/280\"
+            Tsig_module \"N/276\"
             module_type (test2.mli[5,49+13]..test2.mli[9,143+5])
               Tmty_signature
               [
                 signature_item (test2.mli[6,66+4]..test2.mli[6,66+20])
                   Tsig_value
-                  value_description foo211/277 (test2.mli[6,66+4]..test2.mli[6,66+20])
+                  value_description foo211/273 (test2.mli[6,66+4]..test2.mli[6,66+20])
                     core_type (test2.mli[6,66+17]..test2.mli[6,66+20])
                       Ttyp_constr \"int/1!\"
                       []
                     []
                 signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
                   Tsig_value
-                  value_description foo212/278 (test2.mli[7,87+4]..test2.mli[7,87+27])
+                  value_description foo212/274 (test2.mli[7,87+4]..test2.mli[7,87+27])
                     core_type (test2.mli[7,87+17]..test2.mli[7,87+27])
                       Ttyp_tuple
                       [
@@ -453,12 +460,13 @@ And now, with an error deep in a submodule:
                           Ttyp_constr \"int/1!\"
                           []
                         core_type (test2.mli[7,87+23]..test2.mli[7,87+27])
-                          Ttyp_any
+                          Ttyp_var _
+                          None
                       ]
                     []
                 signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
                   Tsig_value
-                  value_description foo213/279 (test2.mli[8,115+4]..test2.mli[8,115+27])
+                  value_description foo213/275 (test2.mli[8,115+4]..test2.mli[8,115+27])
                     core_type (test2.mli[8,115+17]..test2.mli[8,115+27])
                       Ttyp_tuple
                       [
@@ -474,7 +482,7 @@ And now, with an error deep in a submodule:
         ]
     signature_item (test2.mli[12,154+0]..test2.mli[12,154+21])
       Tsig_value
-      value_description foo3/282 (test2.mli[12,154+0]..test2.mli[12,154+21])
+      value_description foo3/278 (test2.mli[12,154+0]..test2.mli[12,154+21])
         core_type (test2.mli[12,154+11]..test2.mli[12,154+21])
           Ttyp_tuple
           [
@@ -542,9 +550,8 @@ make sure we also handle that correctly in structures:
               core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
                 Ttyp_constr \"int/1!\"
                 []
-            Tpat_alias \"foo1/275\"
-            pattern (test_ct.ml[1,0+4]..test_ct.ml[1,0+8])
-              Tpat_any
+            Tpat_var \"foo1/271\"
+            value_mode Global, Unique, Many
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
@@ -567,11 +574,11 @@ make sure we also handle that correctly in structures:
                     Ttyp_constr \"int/1!\"
                     []
                   core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
-                    Ttyp_any
+                    Ttyp_var _
+                    None
                 ]
-            Tpat_alias \"foo2/276\"
-            pattern (test_ct.ml[3,20+4]..test_ct.ml[3,20+8])
-              Tpat_any
+            Tpat_var \"foo2/272\"
+            value_mode Global, uniqueness:?, Many
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -582,9 +589,11 @@ make sure we also handle that correctly in structures:
                     Ttyp_constr \"int/1!\"
                     []
                   core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
-                    Ttyp_any
+                    Ttyp_var _
+                    None
                 ]
             Texp_tuple
+            alloc_mode Global, uniqueness:?, Many
             [
               expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+25])
                 Texp_constant Const_int 3
@@ -609,9 +618,8 @@ make sure we also handle that correctly in structures:
                     Ttyp_constr \"int/1!\"
                     []
                 ]
-            Tpat_alias \"foo3/277\"
-            pattern (test_ct.ml[5,50+4]..test_ct.ml[5,50+8])
-              Tpat_any
+            Tpat_var \"foo3/273\"
+            value_mode Global, uniqueness:?, Many
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
@@ -626,6 +634,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Texp_tuple
+            alloc_mode Global, uniqueness:?, Many
             [
               expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+24])
                 Texp_constant Const_int 3

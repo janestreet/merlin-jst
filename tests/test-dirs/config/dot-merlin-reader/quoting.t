@@ -50,7 +50,7 @@
         "intf": ".rei"
       }
     ],
-    "stdlib": null,
+    "stdlib": "lib/ocaml",
     "reader": [],
     "protocol": "json",
     "log_file": null,
