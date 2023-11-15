@@ -1,7 +1,6 @@
 name: Run Tests
 on:
   push:
-  pull_request:
 
 # Overall approach to running the tests:
 #  - Install OCaml 5.1, as this is the version of dependencies our merlin expects.
