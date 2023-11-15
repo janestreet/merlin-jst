@@ -1,6 +1,6 @@
   $ cat >test.ml <<EOF
   > module Make = struct
-  >   module A = struct end
+  >   mdule A = struct end
   >   module B = C.C1
   >   module D = struct end
   > end

@@ -87,4 +87,4 @@ jobs:
       working-directory: merlin-jst
       run: |
         export MERLIN_TEST_OCAML_PATH=$GITHUB_WORKSPACE/flambda-backend/_install
-        opam install . --with-test --yes
+        opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,merlin
