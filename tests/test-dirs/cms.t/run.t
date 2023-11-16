@@ -8,9 +8,8 @@ cmt files.
 
   $ $MERLIN single document -position 1:26 -verbosity 0 -filename ./main.ml < ./main.ml
   {
-    "class": "error",
-    "value": "$TESTCASE_ROOT/record.cms
-  is not a compiled interface",
+    "class": "return",
+    "value": "field a",
     "notifications": []
   }
 
