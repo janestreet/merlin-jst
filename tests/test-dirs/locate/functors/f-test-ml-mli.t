@@ -25,7 +25,9 @@
   > (executable (name s))
   > EOF
 
-  $ dune build @check
+# Jane Street: we can't run dune in tests yet, so we use ocamlc instead.
+# $ dune build @check
+  $ $OCAMLC -c -bin-annot mySet.mli mySet.ml s.ml
 
 Should jump to mySet.ml:
   $ $MERLIN single locate -look-for ml -position 4:13 \

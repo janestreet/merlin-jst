@@ -1,11 +1,3 @@
 (cram
  (applies_to src-documentation module-doc)
  (enabled_if (<> %{architecture} i386)))
-
-; Jane Street disabled tests -- they use dune.
-; Revisit when dune can run the flambda-backend compiler.
-(cram
-  (enabled_if false)
-  (applies_to
-    module-doc
-    src-documentation))

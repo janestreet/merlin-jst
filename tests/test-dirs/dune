@@ -21,9 +21,7 @@
 (cram
   (enabled_if false)
   (applies_to
-    inconsistent-assumptions
-    issue1518
-    module-doc))
+    issue1518))
 
 ; FIXME: disabled Jane Street tests that are failing internally
 (cram

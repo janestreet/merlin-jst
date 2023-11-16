@@ -8,5 +8,4 @@
 (cram
   (enabled_if false)
   (applies_to
-    dot-pp-dot-ml-dune
-    dot-pp-dot-ml))
+    dot-pp-dot-ml-dune))

@@ -37,7 +37,9 @@
   > (executable (name main))
   > EOF
 
-  $ dune build ./main.exe
+# Jane Street: we can't run dune in tests yet, so we use ocamlc instead.
+# $ dune build ./main.exe
+  $ $OCAMLC -bin-annot -o main.exe lib.mli lib.ml libimpl.ml main.ml
 
 The licence is correctly ignored when looking for the doc of Lib
   $ $MERLIN single document -position 1:11 \
