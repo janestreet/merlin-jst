@@ -20,7 +20,7 @@ Test 1
       }
     },
     [
-      "(fun the_type the_type_1 -> _)"
+      "(fun _ -> fun _ -> _)"
     ]
   ]
 
@@ -46,7 +46,7 @@ Test 2
       }
     },
     [
-      "(fun int int_1 -> _)"
+      "(fun _ -> fun _ -> _)"
     ]
   ]
 

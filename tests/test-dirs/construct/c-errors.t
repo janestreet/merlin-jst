@@ -34,7 +34,7 @@
   > EOF
   {
     "class": "error",
-    "value": "Module not found: N",
+    "value": "Could not find a module type to construct from. Check that you used a correct constraint.",
     "notifications": []
   }
 
