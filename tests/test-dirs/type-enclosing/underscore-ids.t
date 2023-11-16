@@ -294,30 +294,6 @@ We try several places in the identifier to check the result stability
     "value": [
       {
         "start": {
-          "line": 5,
-          "col": 9
-        },
-        "end": {
-          "line": 5,
-          "col": 12
-        },
-        "type": "int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 5,
-          "col": 4
-        },
-        "end": {
-          "line": 5,
-          "col": 12
-        },
-        "type": "int option",
-        "tail": "no"
-      },
-      {
-        "start": {
           "line": 2,
           "col": 18
         },
@@ -325,19 +301,7 @@ We try several places in the identifier to check the result stability
           "line": 5,
           "col": 17
         },
-        "type": "int option -> int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 2,
-          "col": 10
-        },
-        "end": {
-          "line": 5,
-          "col": 17
-        },
-        "type": "'a",
+        "type": "int",
         "tail": "no"
       },
       {
@@ -349,7 +313,7 @@ We try several places in the identifier to check the result stability
           "line": 5,
           "col": 17
         },
-        "type": "'a -> 'b",
+        "type": "'a -> int",
         "tail": "no"
       }
     ],
