@@ -258,7 +258,7 @@ Test 3.1
       }
     },
     [
-      "(fun _ -> _)"
+      "(fun string -> _)"
     ]
   ]
 
@@ -283,7 +283,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v -> fun _ -> fun _ -> fun _ -> _)"
+      "(fun ~v float mytype mytype_1 -> _)"
     ]
   ]
 
@@ -301,7 +301,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v -> fun _ -> fun _ -> fun _ -> 0)"
+      "(fun ~v float mytype mytype_1 -> 0)"
     ]
   ]
 

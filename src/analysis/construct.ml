@@ -330,9 +330,12 @@ module Gen = struct
             (* Pun for labelled arguments *)
             Ast_helper.Pat.var ( Location.mknoloc s), s
         | Nolabel -> begin match get_desc ty with
-          | Tconstr (path, _, _) ->
-            let name = uniq_name env (Path.last path) in
-            Ast_helper.Pat.var (Location.mknoloc name), name
+          | Tpoly (poly, []) ->
+              begin match get_desc poly with
+                | Tconstr (path, _, _) ->
+                    let name = uniq_name env (Path.last path) in
+                    Ast_helper.Pat.var (Location.mknoloc name), name
+                | _ -> Ast_helper.Pat.any (), "_" end
           | _ -> Ast_helper.Pat.any (), "_" end
     in
 
@@ -492,11 +495,19 @@ module Gen = struct
           let env = Env.add_value (Ident.create_local name) value_description env in
           let exps = arrow_rhs env tyright in
           List.map exps ~f:(fun expr ->
-              Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
-                ([ { pparam_desc = Pparam_val (label, None, argument);
-                     pparam_loc = Location.none;
-                   }],
-                 None, Pfunction_body expr))
+              let param =
+                { Jane_syntax.N_ary_functions.pparam_desc =
+                    Pparam_val (label, None, argument);
+                  pparam_loc = Location.none;
+                }
+              in
+              match Jane_syntax.Expression.of_ast expr with
+              | Some (Jexp_n_ary_function (params, constraint_, body), []) ->
+                  Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
+                    (param :: params, constraint_, body)
+              | _ ->
+                  Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
+                    ([ param ], None, Pfunction_body expr))
         | Ttuple types ->
           let choices = List.map types ~f:(exp_or_hole env)
             |> Util.combinations
