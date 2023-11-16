@@ -29,5 +29,5 @@
 (cram
   (enabled_if false)
   (applies_to
-     issue1558
-     polarity-search))
+     ; Enable this test when the Stdlib.Effect module is added.
+     issue1558))
