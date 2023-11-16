@@ -6532,7 +6532,7 @@ and type_function
           let ret_kind, ret_sort =
             Jkind.of_new_sort_var ~why:Function_result
           in
-          { ty_arg = newvar2 level arg_kind
+          { ty_arg = newty (Tpoly (newvar2 level arg_kind, []))
           ; arg_mode = Mode.Alloc.newvar ()
           ; arg_sort
           ; ty_ret = newvar2 level ret_kind
