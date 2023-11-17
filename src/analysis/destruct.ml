@@ -223,7 +223,8 @@ let rec get_match = function
       let typ = m.exp_type in
         (* Function must have arrow type. This arrow type
            might be hidden behind type constructors *)
-        m, (match Types.get_desc typ with
+      let param_typ =
+        match Types.get_desc typ with
         | Tarrow (_, te, _, _) -> te
         | Tconstr _ ->
           (match
@@ -232,7 +233,14 @@ let rec get_match = function
           with
           | Tarrow (_, te, _, _) -> te
           | _ -> assert false)
-        | _ -> assert false)
+        | _ -> assert false
+      in
+      let param_typ =
+        match Types.get_desc param_typ with
+        | Tpoly (param_typ, []) -> param_typ
+        | _ -> param_typ
+      in
+      m, param_typ
     | _ ->
       (* We were not in a match *)
       let s = Mbrowse.print_node () parent in

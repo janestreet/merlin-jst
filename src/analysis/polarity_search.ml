@@ -54,6 +54,11 @@ let match_query env query t =
 
     | Types.Tarrow (_, t1, t2, _) ->
       decr pos_fun;
+      let t1 =
+        match Types.get_desc t1 with
+        | Tpoly (t1, []) -> t1
+        | _ -> t1
+      in
       traverse neg neg_fun pos pos_fun t2;
       traverse pos pos_fun neg neg_fun t1
 

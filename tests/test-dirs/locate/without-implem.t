@@ -16,7 +16,9 @@
   >  (modules_without_implementation noimpl))
   > EOF
 
-  $ dune build ./main.exe 2> /dev/null
+# Jane Street: we can't run dune in tests yet, so we use ocamlc instead.
+# $ dune build ./main.exe 2> /dev/null
+  $ $OCAMLC -bin-annot -o main.exe noimpl.mli main.ml
 
   $ $MERLIN single locate -look-for ml -position 1:16 \
   > -filename main.ml <main.ml

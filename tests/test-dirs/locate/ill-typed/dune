@@ -1,5 +1,0 @@
-; FIXME: disabled Jane Street tests that are failing internally
-(cram
-  (enabled_if false)
-  (applies_to
-     not-a-function))

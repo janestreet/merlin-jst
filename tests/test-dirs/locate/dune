@@ -22,9 +22,4 @@
   (enabled_if false)
   (applies_to
     in-implicit-trans-dep
-    issue1424
-    without-sig
-    without-implem
-    module-aliases
-    in-generated-file
-    issue802))
+    in-generated-file))
