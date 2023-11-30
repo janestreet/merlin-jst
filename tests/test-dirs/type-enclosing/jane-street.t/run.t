@@ -32,27 +32,27 @@ to print everything on one line.
   type t0 = int
       ^
   With verbosity 0: "type t0 = int"
-  With verbosity 1: "type t0 = int"
+  With verbosity 1: "type t0 : immediate = int"
   
   type t1 : immediate = int
       ^
   With verbosity 0: "type t1 = int"
-  With verbosity 1: "type t1 = int"
+  With verbosity 1: "type t1 : immediate = int"
   
   type t2 : immediate = A | B | C
       ^
   With verbosity 0: "type t2 = A | B | C"
-  With verbosity 1: "type t2 = A | B | C"
+  With verbosity 1: "type t2 : immediate = A | B | C"
   
   type t3 : value = D | E of int
       ^
   With verbosity 0: "type t3 = D | E of int"
-  With verbosity 1: "type t3 = D | E of int"
+  With verbosity 1: "type t3 : value = D | E of int"
   
   type t4 : immediate64 = A
       ^
   With verbosity 0: "type t4 = A"
-  With verbosity 1: "type t4 = A"
+  With verbosity 1: "type t4 : immediate = A"
   
 
 (II) Functions
@@ -108,17 +108,17 @@ to print everything on one line.
   let f2 (x : t2) = x
           ^
   With verbosity 0: "t2"
-  With verbosity 1: "type t2 = A | B | C"
+  With verbosity 1: "type t2 : immediate = A | B | C"
   
   let f3 (x : t3) = x
           ^
   With verbosity 0: "t3"
-  With verbosity 1: "type t3 = D | E of int"
+  With verbosity 1: "type t3 : value = D | E of int"
   
   let f4 (x : t4) = x
           ^
   With verbosity 0: "t4"
-  With verbosity 1: "type t4 = A"
+  With verbosity 1: "type t4 : immediate = A"
   
 
 (III) Polymorphic functions
@@ -234,17 +234,17 @@ to print everything on one line.
   type _                p0 = A
                        ^
   With verbosity 0: "type _ p0 = A"
-  With verbosity 1: "type _ p0 = A"
+  With verbosity 1: "type _ p0 : immediate = A"
   
   type 'a               p1 = A of 'a
                        ^
   With verbosity 0: "type 'a p1 = A of 'a"
-  With verbosity 1: "type 'a p1 = A of 'a"
+  With verbosity 1: "type 'a p1 : value = A of 'a"
   
   type ('a : immediate) p2 = A of 'a [@@unboxed]
                        ^
   With verbosity 0: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
-  With verbosity 1: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "type ('a : immediate) p2 : immediate = A of 'a [@@unboxed]"
   
 
 - parameter
@@ -295,15 +295,15 @@ to print everything on one line.
   let param_client1 (x : 'a p0) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p0"
-  With verbosity 1: "'a p0  type _ p0 = A"
+  With verbosity 1: "'a p0  type _ p0 : immediate = A"
   
   let param_client2 (x : 'a p1) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p1"
-  With verbosity 1: "'a p1  type 'a p1 = A of 'a"
+  With verbosity 1: "'a p1  type 'a p1 : value = A of 'a"
   
   let param_client2 (x : 'a p2) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p2"
-  With verbosity 1: "'a p2  type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "'a p2  type ('a : immediate) p2 : immediate = A of 'a [@@unboxed]"
   

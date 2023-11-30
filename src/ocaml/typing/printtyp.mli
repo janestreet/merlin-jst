@@ -147,7 +147,9 @@ val tree_of_type_declaration:
 val add_type_declaration_to_preparation :
   Ident.t -> type_declaration -> unit
 val prepared_type_declaration: Ident.t -> formatter -> type_declaration -> unit
-val type_declaration: Ident.t -> formatter -> type_declaration -> unit
+val type_declaration:
+  force_print_inferred_jkind:bool ->
+  Ident.t -> formatter -> type_declaration -> unit
 val tree_of_extension_constructor:
     Ident.t -> extension_constructor -> ext_status -> out_sig_item
 val add_extension_constructor_to_preparation :
