@@ -111,7 +111,8 @@ module Printtyp = struct
     Mtype.scrape_alias env mty
 
   let verbose_type_scheme env ppf t =
-    Printtyp.type_scheme ppf (expand_type env t)
+    Printtyp.type_scheme_for_merlin ppf (expand_type env t)
+      ~print_non_value_jkind_on_type_variables:true
 
   let verbose_type_declaration ~print_non_value_inferred_jkind env id ppf t =
     Printtyp.type_declaration_for_merlin id ppf (expand_type_decl env t)
@@ -128,7 +129,7 @@ module Printtyp = struct
 
   let type_scheme env ppf ty =
     (select_by_verbosity
-      ~default:type_scheme
+      ~default:(type_scheme_for_merlin ~print_non_value_jkind_on_type_variables:false)
       ~verbose:(verbose_type_scheme env)) ppf ty
 
   let type_declaration env id ppf =

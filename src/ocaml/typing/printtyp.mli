@@ -149,6 +149,21 @@ val type_declaration_for_merlin:
   print_non_value_inferred_jkind:bool ->
   Ident.t -> formatter -> type_declaration -> unit
 
+val type_scheme_for_merlin:
+    (* Like [type_scheme].
+
+       [print_non_value_jkind_on_type_variables] is a setting controlled
+       by merlin verbosity levels. When it's true, merlin will print
+       layout annotations on type variables when the layout isn't merely
+       value.
+
+       E.g. When this flag is [true],
+       ['a -> 'b] is printed as [('a : float64) -> 'b]
+       if ['a] has layout [float64] and ['b] has layout [value].
+    *)
+    print_non_value_jkind_on_type_variables:bool ->
+    formatter -> type_expr -> unit
+
 val tree_of_value_description: Ident.t -> value_description -> out_sig_item
 val value_description: Ident.t -> formatter -> value_description -> unit
 val label : formatter -> label_declaration -> unit
@@ -160,8 +175,7 @@ val tree_of_type_declaration:
 val add_type_declaration_to_preparation :
   Ident.t -> type_declaration -> unit
 val prepared_type_declaration: Ident.t -> formatter -> type_declaration -> unit
-val type_declaration:
-  Ident.t -> formatter -> type_declaration -> unit
+val type_declaration: Ident.t -> formatter -> type_declaration -> unit
 val tree_of_extension_constructor:
     Ident.t -> extension_constructor -> ext_status -> out_sig_item
 val add_extension_constructor_to_preparation :

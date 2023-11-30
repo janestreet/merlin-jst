@@ -193,12 +193,12 @@ to print everything on one line.
   let poly3 (type a : float64) (x : a) = x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "'a -> 'a"
+  With verbosity 1: "('a : float64) -> ('a : float64)"
   
   let poly4 (type (a : immediate) (b : value)) (f : a -> b -> _) = f
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
+  With verbosity 1: "(('a : immediate) -> ('b -> 'c)) -> ('a : immediate) -> ('b -> 'c)"
   
 
 -parameter
@@ -265,12 +265,12 @@ to print everything on one line.
   let poly_client3 x = poly3 x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "'a -> 'a"
+  With verbosity 1: "('a : float64) -> ('a : float64)"
   
   let poly_client4 x = poly4 x
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
+  With verbosity 1: "(('a : immediate) -> ('b -> 'c)) -> ('a : immediate) -> ('b -> 'c)"
   
 
 -parameter
@@ -291,12 +291,12 @@ to print everything on one line.
   let poly_client3 x = poly3 x
                    ^
   With verbosity 0: "'a"
-  With verbosity 1: "'a"
+  With verbosity 1: "('a : float64)"
   
   let poly_client4 x = poly4 x
                    ^
   With verbosity 0: "'a -> ('b -> 'c)"
-  With verbosity 1: "'a -> ('b -> 'c)"
+  With verbosity 1: "('a : immediate) -> ('b -> 'c)"
   
 (V) Parameterized type
 - definition
@@ -336,7 +336,7 @@ to print everything on one line.
   type ('a : immediate) p2 = A of 'a [@@unboxed]
        ^
   With verbosity 0: "'a"
-  With verbosity 1: "'a"
+  With verbosity 1: "('a : immediate)"
   
 
 (V) Parameterized type client
@@ -357,7 +357,7 @@ to print everything on one line.
   let param_client2 (x : 'a p2) (a : 'a) = x, a
       ^
   With verbosity 0: "'a p2 -> 'a -> 'a p2 * 'a"
-  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a"
+  With verbosity 1: "('a : immediate) p2 -> ('a : immediate) -> ('a : immediate) p2 * ('a : immediate)"
   
 
 - parameter
@@ -377,5 +377,5 @@ to print everything on one line.
   let param_client2 (x : 'a p2) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p2"
-  With verbosity 1: "'a p2  type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "('a : immediate) p2  type ('a : immediate) p2 = A of 'a [@@unboxed]"
   
