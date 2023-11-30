@@ -1834,16 +1834,22 @@ let extension_only_constructor id ppf ext =
 
 (* Print a value declaration *)
 
+let quantified_tree_of_type_scheme ty_orig =
+  let ty = tree_of_type_scheme ty_orig in
+  (* Important: process the fvs *after* the type; tree_of_type_scheme
+     resets the naming context *)
+  let qtvs = extract_qtvs [ty_orig] in
+  Otyp_poly (qtvs, ty)
+
+let quantified_type_scheme ppf ty =
+  !Oprint.out_type ppf (quantified_tree_of_type_scheme ty)
+
 let tree_of_value_description id decl =
   (* Format.eprintf "@[%a@]@." raw_type_expr decl.val_type; *)
   let id = Ident.name id in
-  let ty = tree_of_type_scheme decl.val_type in
-  (* Important: process the fvs *after* the type; tree_of_type_scheme
-     resets the naming context *)
-  let qtvs = extract_qtvs [decl.val_type] in
   let vd =
     { oval_name = id;
-      oval_type = Otyp_poly(qtvs, ty);
+      oval_type = quantified_tree_of_type_scheme decl.val_type;
       oval_prims = [];
       oval_attributes = [] }
   in

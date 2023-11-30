@@ -111,7 +111,7 @@ module Printtyp = struct
     Mtype.scrape_alias env mty
 
   let verbose_type_scheme env ppf t =
-    Printtyp.type_scheme ppf (expand_type env t)
+    Printtyp.quantified_type_scheme ppf (expand_type env t)
 
   let verbose_type_declaration env id ppf t =
     Printtyp.type_declaration id ppf (expand_type_decl env t)
