@@ -20,7 +20,7 @@ On `let |y = x.kind`
 Verbosity 1 shows the actual type definition of Kind.t
   $ $MERLIN single type-enclosing -position 8:4 -verbosity 1 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
-  "type t = A | B"
+  "type t : immediate = A | B"
 
 On `let y = x.k|ind`
   $ $MERLIN single type-enclosing -position 8:11 -verbosity 0 \
@@ -40,7 +40,7 @@ On `let z = { kind = B }.k|ind`
 On `let z = { kind = B }.k|ind`
   $ $MERLIN single type-enclosing -position 9:22 -verbosity 1 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
-  "type t = A | B"
+  "type t : immediate = A | B"
 
 On `let x = { k|ind = A }`
   $ $MERLIN single type-enclosing -position 7:12 -verbosity 0 \

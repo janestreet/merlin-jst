@@ -27,7 +27,7 @@
         "line": 2,
         "col": 24
       },
-      "type": "int list  type 'a list = [] | (::) of 'a * 'a list",
+      "type": "int list  type 'a list : value = [] | (::) of 'a * 'a list",
       "tail": "no"
     },
     {
@@ -85,7 +85,7 @@
         "line": 14,
         "col": 5
       },
-      "type": "type unit = ()",
+      "type": "type unit : immediate = ()",
       "tail": "no"
     }
   ]
@@ -143,7 +143,7 @@
         "line": 14,
         "col": 16
       },
-      "type": "type unit = ()",
+      "type": "type unit : immediate = ()",
       "tail": "no"
     }
   ]
