@@ -98,12 +98,12 @@ to print everything on one line.
   let f0 (x : t0) = x
           ^
   With verbosity 0: "t0"
-  With verbosity 1: "int"
+  With verbosity 1: "type t0 : immediate = int"
   
   let f1 (x : t1) = x
           ^
   With verbosity 0: "t1"
-  With verbosity 1: "int"
+  With verbosity 1: "type t1 : immediate = int"
   
   let f2 (x : t2) = x
           ^
@@ -156,17 +156,17 @@ to print everything on one line.
   let poly1 (type a)           (x : a) = x
                                ^
   With verbosity 0: "a"
-  With verbosity 1: "a"
+  With verbosity 1: "type a : value"
   
   let poly2 (type a : value)   (x : a) = x
                                ^
   With verbosity 0: "a"
-  With verbosity 1: "a"
+  With verbosity 1: "type a : value"
   
   let poly3 (type a : float64) (x : a) = x
                                ^
   With verbosity 0: "a"
-  With verbosity 1: "a"
+  With verbosity 1: "type a : float64"
   
   let poly4 (type (a : immediate) (b : value)) (f : a -> b -> _) = f
                                                ^

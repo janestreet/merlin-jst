@@ -114,7 +114,7 @@
         "line": 8,
         "col": 9
       },
-      "type": "type t = { mutable b : float; }",
+      "type": "type t : value = { mutable b : float; }",
       "tail": "no"
     },
     {
@@ -126,7 +126,7 @@
         "line": 8,
         "col": 17
       },
-      "type": "type unit = ()",
+      "type": "type unit : immediate = ()",
       "tail": "no"
     }
   ]
@@ -185,7 +185,7 @@ FIXME: The following results are not entirely satisfying (`foo.Bar -> foo` could
         "line": 12,
         "col": 26
       },
-      "type": "type foo = Bar of { baz : unit; }",
+      "type": "type foo : value = Bar of { baz : unit; }",
       "tail": "no"
     }
   ]
@@ -243,7 +243,7 @@ FIXME: The following results are not entirely satisfying (`foo.Bar -> foo` could
         "line": 12,
         "col": 26
       },
-      "type": "type Bar = { baz : unit; }",
+      "type": "type Bar : value = { baz : unit; }",
       "tail": "no"
     }
   ]
