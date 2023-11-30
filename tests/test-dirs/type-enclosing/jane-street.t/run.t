@@ -2,23 +2,26 @@
 json that merlin produces can't be parsed by jq, so we use [paste -sd ' ']
 to print everything on one line.
 
-  $ function run () {
+  $ run_with_verbosity () {
   >   file=$1
   >   position=$2
-  >   line=$(cut -d ':' -f 1 <<< "$position")
-  >   col=$(cut -d ':' -f 2 <<< "$position")
-  >   sed -n ${line}p $file
-  >   printf "%*s^\n" $((col-1)) ''
-  >   function with_verbosity () {
-  >     verbosity=$1
-  >     echo -n "With verbosity $verbosity: "
-  >     $MERLIN single type-enclosing -position $position -verbosity $verbosity \
-  >       -filename $file < $file |
-  >       paste -sd ' ' |
-  >       jq '.value[0].type'
-  >   }
-  >   with_verbosity 0
-  >   with_verbosity 1
+  >   verbosity=$3
+  >   echo -n "With verbosity $verbosity: "
+  >   $MERLIN single type-enclosing -position "$position" -verbosity "$verbosity" \
+  >     -filename "$file" < "$file" |
+  >     paste -sd ' ' |
+  >     jq '.value[0].type'
+  > }
+
+  $ run () {
+  >   file=$1
+  >   position=$2
+  >   line=$(echo "$position" | cut -d ':' -f 1)
+  >   col=$(echo "$position" | cut -d ':' -f 2)
+  >   sed -n "${line}p" "$file"
+  >   printf "%*s^\n" "$(expr $col - 1)" ''
+  >   run_with_verbosity "$file" "$position" 0
+  >   run_with_verbosity "$file" "$position" 1
   >   echo
   > }
 
