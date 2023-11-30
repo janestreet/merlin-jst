@@ -115,6 +115,7 @@ module Printtyp = struct
 
   let verbose_type_declaration env id ppf t =
     Printtyp.type_declaration id ppf (expand_type_decl env t)
+      ~force_print_inferred_jkind:true
 
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
@@ -132,7 +133,7 @@ module Printtyp = struct
 
   let type_declaration env id ppf =
     (select_by_verbosity
-      ~default:type_declaration
+      ~default:(type_declaration ~force_print_inferred_jkind:false)
       ~verbose:(verbose_type_declaration env)) id ppf
 
   let modtype env ppf mty =
@@ -245,12 +246,14 @@ let print_exn ppf exn =
     Format.pp_print_string ppf (Printexc.to_string exn)
   | Some (`Ok report) -> Location.print_main ppf report
 
-let print_type ppf env lid  =
+let print_type ppf verbosity env lid =
   let p, t = Env.find_type_by_name lid.Asttypes.txt env in
+  Printtyp.wrap_printing_env env ~verbosity begin fun () ->
   Printtyp.type_declaration env
     (Ident.create_persistent (* Incorrect, but doesn't matter. *)
        (Path.last p))
     ppf t
+  end
 
 let print_modtype ppf verbosity env lid =
   let _p, mtd = Env.find_modtype_by_name lid.Asttypes.txt env in
@@ -315,7 +318,7 @@ let type_in_env ?(verbosity=Verbosity.default) ?keywords ~context env ppf expr =
               can fail *)
               Printtyp.type_expr ppf lbl_des.lbl_arg;
             | Type ->
-              print_type ppf env longident
+              print_type ppf verbosity env longident
             (* TODO: special processing for module aliases ? *)
             | Module_type ->
               print_modtype ppf verbosity env longident
