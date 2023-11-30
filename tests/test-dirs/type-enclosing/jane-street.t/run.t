@@ -1,3 +1,7 @@
+[run <file> <pos>] queries <file> at position <pos>. The multiline
+json that merlin produces can't be parsed by jq, so we use [paste -sd ' ']
+to print everything on one line.
+
   $ function run () {
   >   file=$1
   >   position=$2
@@ -10,6 +14,7 @@
   >     echo -n "With verbosity $verbosity: "
   >     $MERLIN single type-enclosing -position $position -verbosity $verbosity \
   >       -filename $file < $file |
+  >       paste -sd ' ' |
   >       jq '.value[0].type'
   >   }
   >   with_verbosity 0
@@ -169,7 +174,7 @@
   With verbosity 1: "a -> b -> 'a"
   
 
-(V) Polymorphic function client
+(IV) Polymorphic function client
 - definition
   $ run layouts.ml 18:5
   > run layouts.ml 19:5
@@ -220,4 +225,85 @@
                    ^
   With verbosity 0: "'a -> ('b -> 'c)"
   With verbosity 1: "'a -> ('b -> 'c)"
+  
+(V) Parameterized type
+- definition
+  $ run layouts.ml 23:22
+  > run layouts.ml 24:22
+  > run layouts.ml 25:22
+  type _                p0 = A
+                       ^
+  With verbosity 0: "type _ p0 = A"
+  With verbosity 1: "type _ p0 = A"
+  
+  type 'a               p1 = A of 'a
+                       ^
+  With verbosity 0: "type 'a p1 = A of 'a"
+  With verbosity 1: "type 'a p1 = A of 'a"
+  
+  type ('a : immediate) p2 = A of 'a [@@unboxed]
+                       ^
+  With verbosity 0: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  
+
+- parameter
+  $ run layouts.ml 23:6
+  > run layouts.ml 24:6
+  > run layouts.ml 25:6
+  type _                p0 = A
+       ^
+  With verbosity 0: "'_"
+  With verbosity 1: "'_"
+  
+  type 'a               p1 = A of 'a
+       ^
+  With verbosity 0: "'a"
+  With verbosity 1: "'a"
+  
+  type ('a : immediate) p2 = A of 'a [@@unboxed]
+       ^
+  With verbosity 0: "'a"
+  With verbosity 1: "'a"
+  
+
+(V) Parameterized type client
+- definition
+  $ run layouts.ml 27:5
+  > run layouts.ml 28:5
+  > run layouts.ml 29:5
+  let param_client1 (x : 'a p0) (a : 'a) = x, a
+      ^
+  With verbosity 0: "'a p0 -> 'a -> 'a p0 * 'a"
+  With verbosity 1: "'a p0 -> 'a -> 'a p0 * 'a"
+  
+  let param_client2 (x : 'a p1) (a : 'a) = x, a
+      ^
+  With verbosity 0: "'a p1 -> 'a -> 'a p1 * 'a"
+  With verbosity 1: "'a p1 -> 'a -> 'a p1 * 'a"
+  
+  let param_client2 (x : 'a p2) (a : 'a) = x, a
+      ^
+  With verbosity 0: "'a p2 -> 'a -> 'a p2 * 'a"
+  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a"
+  
+
+- parameter
+  $ run layouts.ml 27:19
+  > run layouts.ml 28:19
+  > run layouts.ml 29:19
+  let param_client1 (x : 'a p0) (a : 'a) = x, a
+                    ^
+  With verbosity 0: "'a p0"
+  With verbosity 1: "'a p0  type _ p0 = A"
+  
+  let param_client2 (x : 'a p1) (a : 'a) = x, a
+                    ^
+  With verbosity 0: "'a p1"
+  With verbosity 1: "'a p1  type 'a p1 = A of 'a"
+  
+  let param_client2 (x : 'a p2) (a : 'a) = x, a
+                    ^
+  With verbosity 0: "'a p2"
+  With verbosity 1: "'a p2  type ('a : immediate) p2 = A of 'a [@@unboxed]"
   
