@@ -1571,7 +1571,7 @@ let prepare_decl id decl =
   end;
   ty_manifest, params
 
-let tree_of_type_decl ?(force_print_inferred_jkind = false) id decl =
+let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
   let ty_manifest, params = prepare_decl id decl in
   let type_param =
     function
@@ -1652,14 +1652,23 @@ let tree_of_type_decl ?(force_print_inferred_jkind = false) id decl =
         decl.type_private,
         false
   in
+  (* Merlin only: we print the inferred jkind (not the jkind annotation) if
+     the user asked for it hard enough. *)
+  let inferred_jkind_to_print =
+    if print_non_value_inferred_jkind
+    then
+      match Jkind.get_default_value decl.type_jkind with
+      | Value -> None
+      | x -> Some x
+    else None
+  in
   (* The algorithm for setting [lay] here is described as Case (C1) in
      Note [When to print jkind annotations] *)
   let jkind_annotation =
-    (* Merlin only: we print the inferred jkind (not the jkind annotation) if
-       the user asked for it hard enough. *)
-    if force_print_inferred_jkind
-    then Some (Jkind.get_default_value decl.type_jkind)
-    else match ty, unboxed with
+    match inferred_jkind_to_print with
+    | Some _ as x -> x
+    | None ->
+    match ty, unboxed with
     | (Otyp_abstract, _) | (_, true) ->
         (* The two cases of (C1) from the Note correspond to Otyp_abstract.
            Anything but the default must be user-written, so we print the
@@ -1685,9 +1694,9 @@ let add_type_decl_to_preparation id decl =
 let tree_of_prepared_type_decl id decl =
   tree_of_type_decl id decl
 
-let tree_of_type_decl ?force_print_inferred_jkind id decl =
+let tree_of_type_decl ?print_non_value_inferred_jkind id decl =
   reset_except_context();
-  tree_of_type_decl ?force_print_inferred_jkind id decl
+  tree_of_type_decl ?print_non_value_inferred_jkind id decl
 
 let add_constructor_to_preparation c =
   prepare_type_constructor_arguments c.cd_args;
@@ -1706,14 +1715,14 @@ let label ppf l =
   prepare_type l.ld_type;
   !Oprint.out_label ppf (tree_of_label l)
 
-let tree_of_type_declaration ?force_print_inferred_jkind id decl rs =
-  Osig_type (tree_of_type_decl ?force_print_inferred_jkind id decl, tree_of_rec rs)
+let tree_of_type_declaration ?print_non_value_inferred_jkind id decl rs =
+  Osig_type (tree_of_type_decl ?print_non_value_inferred_jkind id decl, tree_of_rec rs)
 
 let tree_of_prepared_type_declaration id decl rs =
   Osig_type (tree_of_prepared_type_decl id decl, tree_of_rec rs)
 
-let type_declaration ~force_print_inferred_jkind id ppf decl =
-  !Oprint.out_sig_item ppf (tree_of_type_declaration ~force_print_inferred_jkind id decl Trec_first)
+let type_declaration ~print_non_value_inferred_jkind id ppf decl =
+  !Oprint.out_sig_item ppf (tree_of_type_declaration ~print_non_value_inferred_jkind id decl Trec_first)
 
 let add_type_declaration_to_preparation id decl =
   add_type_decl_to_preparation id decl
@@ -3000,6 +3009,13 @@ let shorten_module_path env p =
 let shorten_class_type_path env p =
   wrap_printing_env env
     (fun () -> best_class_type_path_simple p)
+
+(* Export merlin-only versions of functions *)
+let type_declaration_for_merlin = type_declaration
+
+(* Drop merlin-only arguments from exported interface *)
+let type_declaration x y z : unit =
+  type_declaration x y z ~print_non_value_inferred_jkind:false
 
 let () =
   Env.shorten_module_path := shorten_module_path

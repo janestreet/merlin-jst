@@ -113,9 +113,9 @@ module Printtyp = struct
   let verbose_type_scheme env ppf t =
     Printtyp.type_scheme ppf (expand_type env t)
 
-  let verbose_type_declaration env id ppf t =
-    Printtyp.type_declaration id ppf (expand_type_decl env t)
-      ~force_print_inferred_jkind:true
+  let verbose_type_declaration ~print_non_value_inferred_jkind env id ppf t =
+    Printtyp.type_declaration_for_merlin id ppf (expand_type_decl env t)
+      ~print_non_value_inferred_jkind
 
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
@@ -133,8 +133,8 @@ module Printtyp = struct
 
   let type_declaration env id ppf =
     (select_by_verbosity
-      ~default:(type_declaration ~force_print_inferred_jkind:false)
-      ~verbose:(verbose_type_declaration env)) id ppf
+      ~default:(type_declaration_for_merlin ~print_non_value_inferred_jkind:false)
+      ~verbose:(verbose_type_declaration ~print_non_value_inferred_jkind:true env)) id ppf
 
   let modtype env ppf mty =
     let smart ppf = function
@@ -235,7 +235,8 @@ let print_type_with_decl ~verbosity env ppf typ =
             | Path.Pdot _ | Path.Pextra_ty _ ->
                 Ident.create_persistent (Path.last path)
           in
-          Printtyp.type_declaration env ident ppf decl
+          Printtyp.verbose_type_declaration env ident ppf decl
+            ~print_non_value_inferred_jkind:false
         end
     | _ -> Printtyp.type_scheme env ppf typ
   end
