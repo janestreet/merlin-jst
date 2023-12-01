@@ -124,6 +124,38 @@ to print everything on one line.
   With verbosity 1: "type t4 = A"
   
 
+- type annotation
+  $ run layouts.ml 7:13
+  > run layouts.ml 8:13
+  > run layouts.ml 9:13
+  > run layouts.ml 10:13
+  > run layouts.ml 11:13
+  let f0 (x : t0) = x
+              ^
+  With verbosity 0: "type t0 = int"
+  With verbosity 1: "type t0 = int"
+  
+  let f1 (x : t1) = x
+              ^
+  With verbosity 0: "type t1 = int"
+  With verbosity 1: "type t1 = int"
+  
+  let f2 (x : t2) = x
+              ^
+  With verbosity 0: "type t2 = A | B | C"
+  With verbosity 1: "type t2 = A | B | C"
+  
+  let f3 (x : t3) = x
+              ^
+  With verbosity 0: "type t3 = D | E of int"
+  With verbosity 1: "type t3 = D | E of int"
+  
+  let f4 (x : t4) = x
+              ^
+  With verbosity 0: "type t4 = A"
+  With verbosity 1: "type t4 = A"
+  
+
 (III) Polymorphic functions
 - definition
   $ run layouts.ml 13:5
