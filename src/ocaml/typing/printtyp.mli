@@ -136,31 +136,35 @@ val shared_type_scheme: formatter -> type_expr -> unit
     generators; most use cases, such as error messages, have narrower contexts
     for which [type_scheme] is better suited. *)
 
+(** Like [type_declaration].
+
+    [print_non_value_inferred_jkind] is a setting controlled by merlin
+    verbosity levels. When it's true, merlin will always print
+    layout annotations (even [value]!) on type declarations.
+
+    E.g. When this flag is [true],
+    [type t = A] is printed as [type t : immediate = A].
+*)
 val type_declaration_for_merlin:
-  (* Like [type_declaration].
-
-     [print_non_value_inferred_jkind] is a setting controlled by merlin
-     verbosity levels. When it's true, merlin will always print
-     layout annotations (even [value]!) on type declarations.
-
-     E.g. When this flag is [true],
-     [type t = A] is printed as [type t : immediate = A].
-  *)
   print_non_value_inferred_jkind:bool ->
   Ident.t -> formatter -> type_declaration -> unit
 
+(** Like [type_scheme].
+
+    [print_non_value_jkind_on_type_variables] is a setting controlled
+    by merlin verbosity levels. When it's true, merlin will print
+    layout annotations on type variables when the layout isn't merely
+    value.
+
+    E.g. When this flag is [true],
+    ['a -> 'b] is printed as:
+    {[
+      'a -> 'b
+      constraint ('a : float64)
+    ]}
+    if ['a] has layout [float64] and ['b] has layout [value].
+*)
 val type_scheme_for_merlin:
-    (* Like [type_scheme].
-
-       [print_non_value_jkind_on_type_variables] is a setting controlled
-       by merlin verbosity levels. When it's true, merlin will print
-       layout annotations on type variables when the layout isn't merely
-       value.
-
-       E.g. When this flag is [true],
-       ['a -> 'b] is printed as [('a : float64) -> 'b]
-       if ['a] has layout [float64] and ['b] has layout [value].
-    *)
     print_non_value_jkind_on_type_variables:bool ->
     formatter -> type_expr -> unit
 

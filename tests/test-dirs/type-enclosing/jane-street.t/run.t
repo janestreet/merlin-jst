@@ -1,6 +1,8 @@
 [run <file> <pos>] queries <file> at position <pos>. The multiline
-json that merlin produces can't be parsed by jq, so we use [paste -sd ' ']
-to print everything on one line.
+json that merlin produces can't be parsed by jq, as they include
+escape characters in string literals, so we do a tremendous hack to
+rewrite \n in string literals to \\n. Really we should teach merlin
+how to produce valid json.
 
   $ run_with_verbosity () {
   >   file=$1
@@ -9,8 +11,11 @@ to print everything on one line.
   >   echo -n "With verbosity $verbosity: "
   >   $MERLIN single type-enclosing -position "$position" -verbosity "$verbosity" \
   >     -filename "$file" < "$file" |
-  >     paste -sd ' ' |
-  >     jq '.value[0].type'
+  >     tr '\n' '\a'  |
+  >     sed ':a;s/\(^[^\"]*\"\([^\"]*\"[^\"]*\"\)*[^\"]*\)\a/\1\\n/;ta' |
+  >     sed 's/\a/\n/g' |
+  >     jq '.value[0].type' |
+  >     sed 's/\\n/\n/g'
   > }
 
   $ run () {
@@ -193,12 +198,14 @@ to print everything on one line.
   let poly3 (type a : float64) (x : a) = x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "('a : float64) -> ('a : float64)"
+  With verbosity 1: "'a -> 'a
+  constraint ('a : float64)"
   
   let poly4 (type (a : immediate) (b : value)) (f : a -> b -> _) = f
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "(('a : immediate) -> ('b -> 'c)) -> ('a : immediate) -> ('b -> 'c)"
+  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)
+  constraint ('a : immediate)"
   
 
 -parameter
@@ -265,12 +272,14 @@ to print everything on one line.
   let poly_client3 x = poly3 x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "('a : float64) -> ('a : float64)"
+  With verbosity 1: "'a -> 'a
+  constraint ('a : float64)"
   
   let poly_client4 x = poly4 x
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "(('a : immediate) -> ('b -> 'c)) -> ('a : immediate) -> ('b -> 'c)"
+  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)
+  constraint ('a : immediate)"
   
 
 -parameter
@@ -291,12 +300,14 @@ to print everything on one line.
   let poly_client3 x = poly3 x
                    ^
   With verbosity 0: "'a"
-  With verbosity 1: "('a : float64)"
+  With verbosity 1: "'a
+  constraint ('a : float64)"
   
   let poly_client4 x = poly4 x
                    ^
   With verbosity 0: "'a -> ('b -> 'c)"
-  With verbosity 1: "('a : immediate) -> ('b -> 'c)"
+  With verbosity 1: "'a -> ('b -> 'c)
+  constraint ('a : immediate)"
   
 (V) Parameterized type
 - definition
@@ -336,7 +347,8 @@ to print everything on one line.
   type ('a : immediate) p2 = A of 'a [@@unboxed]
        ^
   With verbosity 0: "'a"
-  With verbosity 1: "('a : immediate)"
+  With verbosity 1: "'a
+  constraint ('a : immediate)"
   
 
 (V) Parameterized type client
@@ -357,7 +369,8 @@ to print everything on one line.
   let param_client2 (x : 'a p2) (a : 'a) = x, a
       ^
   With verbosity 0: "'a p2 -> 'a -> 'a p2 * 'a"
-  With verbosity 1: "('a : immediate) p2 -> ('a : immediate) -> ('a : immediate) p2 * ('a : immediate)"
+  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a
+  constraint ('a : immediate)"
   
 
 - parameter
@@ -367,15 +380,22 @@ to print everything on one line.
   let param_client1 (x : 'a p0) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p0"
-  With verbosity 1: "'a p0  type _ p0 = A"
+  With verbosity 1: "'a p0
+  
+  type _ p0 = A"
   
   let param_client2 (x : 'a p1) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p1"
-  With verbosity 1: "'a p1  type 'a p1 = A of 'a"
+  With verbosity 1: "'a p1
+  
+  type 'a p1 = A of 'a"
   
   let param_client2 (x : 'a p2) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p2"
-  With verbosity 1: "('a : immediate) p2  type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "'a p2
+  constraint ('a : immediate)
+  
+  type ('a : immediate) p2 = A of 'a [@@unboxed]"
   

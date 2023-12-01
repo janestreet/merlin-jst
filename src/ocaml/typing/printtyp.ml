@@ -1188,12 +1188,23 @@ let alias_nongen_row mode px ty =
           add_alias_proxy px
     | _ -> ()
 
+module Int_set = Stdlib.Set.Make (Int)
+
 (* Merlin-only: This configuration exists only in merlin, so
    we'd like to avoid threading it through the recursive knot
    and opening ourselves to merge conflicts. See the mli
    for documentation on [print_non_value_jkind_on_type_variables].
+
+   The results are stored in the order in which the type variables
+   are printed in the original type.
 *)
-let print_non_value_jkind_on_type_variables_ref = ref false
+type non_value_jkinds_on_type_variables =
+  | Not_tracked
+  | Tracked of
+      { mutable ids_seen : Int_set.t;
+        types_seen : out_type Queue.t
+      }
+let non_value_jkinds_on_type_variables = ref Not_tracked
 
 let rec tree_of_typexp mode ty =
   let px = proxy ty in
@@ -1209,13 +1220,20 @@ let rec tree_of_typexp mode ty =
         let non_gen = is_non_gen mode ty in
         let name_gen = Names.new_var_name ~non_gen ty in
         let tvar = Otyp_var (non_gen, Names.name_of_type name_gen tty) in
-        if !print_non_value_jkind_on_type_variables_ref
-        then
-          begin match Jkind.get_default_value jkind with
-            | Value -> tvar
-            | jkind  -> Otyp_jkind_annot (tvar, Olay_const jkind)
-          end
-        else tvar
+        begin match !non_value_jkinds_on_type_variables with
+        | Not_tracked -> ()
+        | Tracked tracked ->
+            if Int_set.mem tty.id tracked.ids_seen then ()
+            else begin
+              tracked.ids_seen <- Int_set.add tty.id tracked.ids_seen;
+              match Jkind.get_default_value jkind with
+              | Value -> ()
+              | jkind ->
+                  Queue.add (Otyp_jkind_annot (tvar, Olay_const jkind))
+                    tracked.types_seen
+            end
+        end;
+        tvar
     | Tarrow ((l, marg, mret), ty1, ty2, _) ->
         let lab =
           if !print_labels || is_optional l then string_of_label l else ""
@@ -1403,18 +1421,11 @@ and tree_of_typfields mode rest = function
       let (fields, rest) = tree_of_typfields mode rest l in
       (field :: fields, rest)
 
-let typexp ?(print_non_value_jkind_on_type_variables = false) mode ppf ty =
-  Misc.protect_refs
-    [ R ( print_non_value_jkind_on_type_variables_ref
-        , print_non_value_jkind_on_type_variables
-        )
-    ] begin fun () ->
+let typexp mode ppf ty =
   !Oprint.out_type ppf (tree_of_typexp mode ty)
-  end
 
 let prepared_type_expr ppf ty = typexp Type ppf ty
-let prepared_type_scheme ?print_non_value_jkind_on_type_variables ppf ty =
-  typexp ?print_non_value_jkind_on_type_variables Type_scheme ppf ty
+let prepared_type_scheme ppf ty = typexp Type_scheme ppf ty
 
 let type_expr ppf ty =
   (* [type_expr] is used directly by error message printers,
@@ -1435,9 +1446,9 @@ let shared_type_scheme ppf ty =
   prepare_type ty;
   typexp Type_scheme ppf ty
 
-let type_scheme ?print_non_value_jkind_on_type_variables ppf ty =
+let type_scheme ppf ty =
   prepare_for_printing [ty];
-  prepared_type_scheme ?print_non_value_jkind_on_type_variables ppf ty
+  prepared_type_scheme ppf ty
 
 let type_path ppf p =
   let p = best_class_type_path_simple p in
@@ -3034,7 +3045,25 @@ let shorten_class_type_path env p =
 (* Export merlin-only versions of functions *)
 
 let type_scheme_for_merlin ~print_non_value_jkind_on_type_variables ppf ty =
-  type_scheme ~print_non_value_jkind_on_type_variables ppf ty
+  match print_non_value_jkind_on_type_variables with
+  | false -> type_scheme ppf ty
+  | true ->
+      let types_seen = Queue.create () in
+      let tracked = Tracked { types_seen; ids_seen = Int_set.empty } in
+      let print_type_and_gather_constraints ppf =
+        Misc.protect_refs
+          [ R (non_value_jkinds_on_type_variables, tracked) ]
+          (fun () -> type_scheme ppf ty)
+      in
+      let print_constraints ppf =
+        Queue.iter
+          (fun out ->
+            fprintf ppf "\n@[constraint %a@]" !Oprint.out_type out)
+          types_seen
+      in
+      fprintf ppf "@[%t%t@]"
+        print_type_and_gather_constraints
+        print_constraints
 
 let type_declaration_for_merlin = type_declaration
 
