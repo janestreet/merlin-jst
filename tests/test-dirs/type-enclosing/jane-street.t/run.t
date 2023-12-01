@@ -66,6 +66,12 @@ to print everything on one line.
   > run layouts.ml 9:5
   > run layouts.ml 10:5
   > run layouts.ml 11:5
+  > run layouts.ml 12:5
+  let f_int (x : int) = x
+      ^
+  With verbosity 0: "int -> int"
+  With verbosity 1: "int -> int"
+  
   let f0 (x : t0) = x
       ^
   With verbosity 0: "t0 -> t0"
@@ -93,11 +99,17 @@ to print everything on one line.
   
 
 - parameter
-  $ run layouts.ml 7:9
+  $ run layouts.ml 7:12
   > run layouts.ml 8:9
   > run layouts.ml 9:9
   > run layouts.ml 10:9
   > run layouts.ml 11:9
+  > run layouts.ml 12:9
+  let f_int (x : int) = x
+             ^
+  With verbosity 0: "int"
+  With verbosity 1: "int"
+  
   let f0 (x : t0) = x
           ^
   With verbosity 0: "t0"
@@ -125,11 +137,17 @@ to print everything on one line.
   
 
 - type annotation
-  $ run layouts.ml 7:13
+  $ run layouts.ml 7:16
   > run layouts.ml 8:13
   > run layouts.ml 9:13
   > run layouts.ml 10:13
   > run layouts.ml 11:13
+  > run layouts.ml 12:13
+  let f_int (x : int) = x
+                 ^
+  With verbosity 0: "type int : immediate"
+  With verbosity 1: "type int : immediate"
+  
   let f0 (x : t0) = x
               ^
   With verbosity 0: "type t0 = int"
@@ -158,10 +176,10 @@ to print everything on one line.
 
 (III) Polymorphic functions
 - definition
-  $ run layouts.ml 13:5
-  > run layouts.ml 14:5
+  $ run layouts.ml 14:5
   > run layouts.ml 15:5
   > run layouts.ml 16:5
+  > run layouts.ml 17:5
   let poly1 (type a)           (x : a) = x
       ^
   With verbosity 0: "'a -> 'a"
@@ -184,10 +202,10 @@ to print everything on one line.
   
 
 -parameter
-  $ run layouts.ml 13:30
-  > run layouts.ml 14:30
+  $ run layouts.ml 14:30
   > run layouts.ml 15:30
-  > run layouts.ml 16:46
+  > run layouts.ml 16:30
+  > run layouts.ml 17:46
   let poly1 (type a)           (x : a) = x
                                ^
   With verbosity 0: "a"
@@ -208,13 +226,32 @@ to print everything on one line.
   With verbosity 0: "a -> b -> 'a"
   With verbosity 1: "a -> b -> 'a"
   
+-type annotation
+  $ run layouts.ml 14:35
+  > run layouts.ml 15:35
+  > run layouts.ml 16:35
+  let poly1 (type a)           (x : a) = x
+                                    ^
+  With verbosity 0: "type a"
+  With verbosity 1: "type a"
+  
+  let poly2 (type a : value)   (x : a) = x
+                                    ^
+  With verbosity 0: "type a"
+  With verbosity 1: "type a"
+  
+  let poly3 (type a : float64) (x : a) = x
+                                    ^
+  With verbosity 0: "type a"
+  With verbosity 1: "type a"
+  
 
 (IV) Polymorphic function client
 - definition
-  $ run layouts.ml 18:5
-  > run layouts.ml 19:5
+  $ run layouts.ml 19:5
   > run layouts.ml 20:5
   > run layouts.ml 21:5
+  > run layouts.ml 22:5
   let poly_client1 x = poly1 x
       ^
   With verbosity 0: "'a -> 'a"
@@ -237,10 +274,10 @@ to print everything on one line.
   
 
 -parameter
-  $ run layouts.ml 18:18
-  > run layouts.ml 19:18
+  $ run layouts.ml 19:18
   > run layouts.ml 20:18
   > run layouts.ml 21:18
+  > run layouts.ml 22:18
   let poly_client1 x = poly1 x
                    ^
   With verbosity 0: "'a"
@@ -263,9 +300,9 @@ to print everything on one line.
   
 (V) Parameterized type
 - definition
-  $ run layouts.ml 23:22
-  > run layouts.ml 24:22
+  $ run layouts.ml 24:22
   > run layouts.ml 25:22
+  > run layouts.ml 26:22
   type _                p0 = A
                        ^
   With verbosity 0: "type _ p0 = A"
@@ -283,9 +320,9 @@ to print everything on one line.
   
 
 - parameter
-  $ run layouts.ml 23:6
-  > run layouts.ml 24:6
+  $ run layouts.ml 24:6
   > run layouts.ml 25:6
+  > run layouts.ml 26:6
   type _                p0 = A
        ^
   With verbosity 0: "'_"
@@ -304,9 +341,9 @@ to print everything on one line.
 
 (V) Parameterized type client
 - definition
-  $ run layouts.ml 27:5
-  > run layouts.ml 28:5
+  $ run layouts.ml 28:5
   > run layouts.ml 29:5
+  > run layouts.ml 30:5
   let param_client1 (x : 'a p0) (a : 'a) = x, a
       ^
   With verbosity 0: "'a p0 -> 'a -> 'a p0 * 'a"
@@ -324,9 +361,9 @@ to print everything on one line.
   
 
 - parameter
-  $ run layouts.ml 27:19
-  > run layouts.ml 28:19
+  $ run layouts.ml 28:19
   > run layouts.ml 29:19
+  > run layouts.ml 30:19
   let param_client1 (x : 'a p0) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p0"
