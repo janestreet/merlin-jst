@@ -207,7 +207,7 @@ FIXME: Not satisfying, expected core not more
         "line": 9,
         "col": 13
       },
-      "type": "type unit : immediate = ()",
+      "type": "type unit = ()",
       "tail": "no"
     }
   ]
