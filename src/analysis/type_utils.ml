@@ -215,15 +215,13 @@ let print_type_with_decl ~verbosity env ppf typ =
         Env.with_cmis @@ fun () ->
         Env.find_type path env
       in
-      (* Print expression in addition to the type declaration
-         only if it is parameterized. *)
-      let print_expr = params <> [] in
+      let is_abstract = Btype.type_kind_is_abstract decl in
+      (* Print expression only if it is parameterized or abstract *)
+      let print_expr = is_abstract || params <> [] in
       if print_expr then
         Printtyp.type_scheme env ppf typ;
-      (* Jane Street only: print the declaration even if it's
-         abstract, because this gives us a place to print
-         the inferred layout annotation.
-      *)
+      (* If not abstract, also print the declaration *)
+      if not is_abstract then
         begin
           (* Separator if expression was printed *)
           if print_expr then
