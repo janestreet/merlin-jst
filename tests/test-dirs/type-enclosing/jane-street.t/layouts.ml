@@ -4,6 +4,7 @@ type t2 : immediate = A | B | C
 type t3 : value = D | E of int
 type t4 : immediate64 = A
 
+let f_int (x : int) = x
 let f0 (x : t0) = x
 let f1 (x : t1) = x
 let f2 (x : t2) = x
