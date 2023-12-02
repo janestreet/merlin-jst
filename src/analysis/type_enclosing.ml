@@ -5,7 +5,7 @@ let {Logger.log} = Logger.for_section log_section
 
 type type_info =
   | Modtype of Env.t * Types.module_type
-  | Type of Env.t * Types.type_expr
+  | Type of Env.t * Types.type_expr * Mode.Value.t option
   | Type_decl of Env.t * Ident.t * Types.type_declaration
   | String of string
 
@@ -17,11 +17,13 @@ let from_nodes ~path =
     let open Browse_raw in
     let ret x = Some (Mbrowse.node_loc node, x, tail) in
     match[@ocaml.warning "-9"] node with
-    | Expression {exp_type = t}
+    | Expression exp ->
+        let mode = Typecore.lookup_mode_for_merlin exp in
+        ret (Type (env, exp.exp_type, mode))
     | Pattern {pat_type = t}
     | Core_type {ctyp_type = t}
     | Value_description { val_desc = { ctyp_type = t } } ->
-      ret (Type (env, t))
+      ret (Type (env, t, None))
     | Type_declaration { typ_id = id; typ_type = t} ->
       ret (Type_decl (env, id, t))
     | Module_expr {mod_type = Types.Mty_for_hole} -> None
@@ -41,20 +43,20 @@ let from_nodes ~path =
                Tcfk_concrete
                  (_, {exp_type})) } ->
       begin match Types.get_desc exp_type with
-        | Tarrow (_, _, t, _) -> ret (Type (env, t))
+        | Tarrow (_, _, t, _) -> ret (Type (env, t, None))
         | _ -> None
       end
     | Class_field
         { cf_desc =
             Tcf_val (_, _, _, Tcfk_concrete (_, {exp_type = t }), _) } ->
-      ret (Type (env, t))
+      ret (Type (env, t, None))
     | Class_field { cf_desc =
                       Tcf_method (_, _, Tcfk_virtual {ctyp_type = t }) } ->
-      ret (Type (env, t))
+      ret (Type (env, t, None))
     | Class_field { cf_desc =
                       Tcf_val (_, _, _, Tcfk_virtual {ctyp_type = t }, _) } ->
-      ret (Type (env, t))
-    | Binding_op { bop_op_type; _ } -> ret (Type(env, bop_op_type))
+      ret (Type (env, t, None))
+    | Binding_op { bop_op_type; _ } -> ret (Type(env, bop_op_type, None))
     | _ -> None
   in
   List.filter_map ~f:aux path
@@ -106,7 +108,7 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
       | Some (Context.Label { lbl_name; lbl_arg; _ }) ->
         log ~title:"from_reconstructed" "ctx: label %s" lbl_name;
         let ppf, to_string = Format.to_string () in
-        Type_utils.print_type_with_decl ~verbosity env ppf lbl_arg;
+        Type_utils.print_type_with_decl ~verbosity env ppf lbl_arg None;
         Some (loc, String (to_string ()), `No)
       | Some Context.Constant -> None
       | _ ->

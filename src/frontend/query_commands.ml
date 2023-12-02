@@ -322,9 +322,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let ret x = (loc, x, tail) in
           match text with
           | Type_enclosing.String str -> ret (`String str)
-          | Type_enclosing.Type (env, t) when print ->
+          | Type_enclosing.Type (env, t, mode) when print ->
             Printtyp.wrap_printing_env env ~verbosity
-              (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
+              (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t mode);
             ret (`String (Format.flush_str_formatter ()))
           | Type_enclosing.Type_decl (env, id, t) when print ->
             Printtyp.wrap_printing_env env ~verbosity
@@ -600,7 +600,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let print ~nodes loc env type_ () =
       match type_ with
       | `Exp type_expr ->
-        Type_utils.print_type_with_decl ~verbosity env ppf type_expr
+        Type_utils.print_type_with_decl ~verbosity env ppf type_expr None
       | `Mod module_type ->
         (* For module_expr holes we need the type of the next enclosing
           to get a useful result *)

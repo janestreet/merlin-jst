@@ -36,7 +36,7 @@ val log_section : string
 
 type type_info =
   | Modtype of Env.t * Types.module_type
-  | Type of Env.t * Types.type_expr
+  | Type of Env.t * Types.type_expr * Mode.Value.t option
   | Type_decl of Env.t * Ident.t * Types.type_declaration
   | String of string
 

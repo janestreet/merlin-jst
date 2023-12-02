@@ -153,7 +153,7 @@
     match x with
           ^
   With verbosity 0: "string"
-  With verbosity 1: "string"
+  With verbosity 1: "string @ Local"
   
 (V) Larger expression that is local
 
@@ -170,28 +170,45 @@ in [modes.ml] it's clear enough what each of the types correspond
 to.
 
   $ diff "$verbosity0" "$verbosity1"
-  25c25,27
+  18a19,30
+  >         "col": 25
+  >       },
+  >       "end": {
+  >         "line": 66,
+  >         "col": 26
+  >       },
+  >       "type": "string @ Local",
+  >       "tail": "no"
+  >     },
+  >     {
+  >       "start": {
+  >         "line": 66,
+  25c37,39
   <       "type": "string option",
   ---
   >       "type": "string option
   > 
   > type 'a option = None | Some of 'a",
-  37c39,41
+  37c51,53
   <       "type": "string option option",
   ---
   >       "type": "string option option
   > 
   > type 'a option = None | Some of 'a",
-  49c53,55
+  49c65,67
   <       "type": "string option option option",
   ---
   >       "type": "string option option option
   > 
   > type 'a option = None | Some of 'a",
-  61c67,69
+  61c79,81
   <       "type": "string option option option option",
   ---
   >       "type": "string option option option option
   > 
   > type 'a option = None | Some of 'a",
+  73c93
+  <       "type": "string -> local_ string option option option option",
+  ---
+  >       "type": "string -> local_ once_ string option option option option",
   [1]

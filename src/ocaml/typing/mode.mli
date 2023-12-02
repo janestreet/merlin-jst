@@ -81,6 +81,8 @@ module Regionality : sig
       | Global
       | Regional
       | Local
+
+    val print : Format.formatter -> t -> unit
   end
 
   type t

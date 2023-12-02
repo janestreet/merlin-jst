@@ -206,7 +206,7 @@ let print_short_modtype verbosity env ppf md  =
   | _ ->
     Printtyp.modtype env ppf md
 
-let print_type_with_decl ~verbosity env ppf typ =
+let print_type_with_decl ~verbosity env ppf typ mode =
   match verbosity with
   | Verbosity.Smart | Lvl 0 ->  Printtyp.type_scheme env ppf typ
   | Lvl _ -> begin
@@ -219,8 +219,14 @@ let print_type_with_decl ~verbosity env ppf typ =
       let is_abstract = Btype.type_kind_is_abstract decl in
       (* Print expression only if it is parameterized or abstract *)
       let print_expr = is_abstract || params <> [] in
-      if print_expr then
-        Printtyp.type_scheme env ppf typ;
+      if print_expr then begin
+        match mode with
+        | None -> Printtyp.type_scheme env ppf typ
+        | Some mode ->
+            fprintf ppf "%a @@ %a"
+              (Printtyp.type_scheme env) typ
+              Mode.Regionality.Const.print (Mode.Value.constrain_upper mode).locality
+      end;
       (* If not abstract, also print the declaration *)
       if not is_abstract then
         begin
@@ -295,7 +301,7 @@ let type_in_env ?(verbosity=Verbosity.default) ?keywords ~context env ppf expr =
     let open Typedtree in
     match str.str_items with
     | [ { str_desc = Tstr_eval (exp,_,_); _ }] ->
-      print_type_with_decl ~verbosity env ppf exp.exp_type
+      print_type_with_decl ~verbosity env ppf exp.exp_type None
     | _ -> failwith "unhandled expression"
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->

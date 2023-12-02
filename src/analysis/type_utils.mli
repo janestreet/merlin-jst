@@ -65,6 +65,7 @@ val print_type_with_decl :
   -> Env.t
   -> Format.formatter
   -> Types.type_expr
+  -> Mode.Value.t option
   -> unit
 (** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
     type expression, except if it is a type constructor and verbosity is set then
