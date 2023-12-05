@@ -198,14 +198,12 @@ how to produce valid json.
   let poly3 (type a : float64) (x : a) = x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "'a -> 'a
-  constraint ('a : float64)"
+  With verbosity 1: "'a -> 'a (* 'a : float64 *)"
   
   let poly4 (type (a : immediate) (b : value)) (f : a -> b -> _) = f
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)
-  constraint ('a : immediate)"
+  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c) (* 'a : immediate *)"
   
 
 -parameter
@@ -272,14 +270,12 @@ how to produce valid json.
   let poly_client3 x = poly3 x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "'a -> 'a
-  constraint ('a : float64)"
+  With verbosity 1: "'a -> 'a (* 'a : float64 *)"
   
   let poly_client4 x = poly4 x
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)
-  constraint ('a : immediate)"
+  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c) (* 'a : immediate *)"
   
 
 -parameter
@@ -300,55 +296,52 @@ how to produce valid json.
   let poly_client3 x = poly3 x
                    ^
   With verbosity 0: "'a"
-  With verbosity 1: "'a
-  constraint ('a : float64)"
+  With verbosity 1: "'a (* 'a : float64 *)"
   
   let poly_client4 x = poly4 x
                    ^
   With verbosity 0: "'a -> ('b -> 'c)"
-  With verbosity 1: "'a -> ('b -> 'c)
-  constraint ('a : immediate)"
+  With verbosity 1: "'a -> ('b -> 'c) (* 'a : immediate *)"
   
 (V) Parameterized type
 - definition
   $ run layouts.ml 24:22
   > run layouts.ml 25:22
   > run layouts.ml 26:22
-  type _                p0 = A
+  type _                p0 = A0
                        ^
-  With verbosity 0: "type _ p0 = A"
-  With verbosity 1: "type _ p0 : immediate = A"
+  With verbosity 0: "type _ p0 = A0"
+  With verbosity 1: "type _ p0 : immediate = A0"
   
-  type 'a               p1 = A of 'a
+  type 'a               p1 = A1 of 'a
                        ^
-  With verbosity 0: "type 'a p1 = A of 'a"
-  With verbosity 1: "type 'a p1 = A of 'a"
+  With verbosity 0: "type 'a p1 = A1 of 'a"
+  With verbosity 1: "type 'a p1 = A1 of 'a"
   
-  type ('a : immediate) p2 = A of 'a [@@unboxed]
+  type ('a : immediate) p2 = A2 of 'a [@@unboxed]
                        ^
-  With verbosity 0: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
-  With verbosity 1: "type ('a : immediate) p2 : immediate = A of 'a [@@unboxed]"
+  With verbosity 0: "type ('a : immediate) p2 = A2 of 'a [@@unboxed]"
+  With verbosity 1: "type ('a : immediate) p2 : immediate = A2 of 'a [@@unboxed]"
   
 
 - parameter
   $ run layouts.ml 24:6
   > run layouts.ml 25:6
   > run layouts.ml 26:6
-  type _                p0 = A
+  type _                p0 = A0
        ^
   With verbosity 0: "'_"
   With verbosity 1: "'_"
   
-  type 'a               p1 = A of 'a
+  type 'a               p1 = A1 of 'a
        ^
   With verbosity 0: "'a"
   With verbosity 1: "'a"
   
-  type ('a : immediate) p2 = A of 'a [@@unboxed]
+  type ('a : immediate) p2 = A2 of 'a [@@unboxed]
        ^
   With verbosity 0: "'a"
-  With verbosity 1: "'a
-  constraint ('a : immediate)"
+  With verbosity 1: "'a (* 'a : immediate *)"
   
 
 (V) Parameterized type client
@@ -369,8 +362,7 @@ how to produce valid json.
   let param_client2 (x : 'a p2) (a : 'a) = x, a
       ^
   With verbosity 0: "'a p2 -> 'a -> 'a p2 * 'a"
-  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a
-  constraint ('a : immediate)"
+  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a (* 'a : immediate *)"
   
 
 - parameter
@@ -382,20 +374,36 @@ how to produce valid json.
   With verbosity 0: "'a p0"
   With verbosity 1: "'a p0
   
-  type _ p0 = A"
+  type _ p0 = A0"
   
   let param_client2 (x : 'a p1) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p1"
   With verbosity 1: "'a p1
   
-  type 'a p1 = A of 'a"
+  type 'a p1 = A1 of 'a"
   
   let param_client2 (x : 'a p2) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p2"
-  With verbosity 1: "'a p2
-  constraint ('a : immediate)
+  With verbosity 1: "'a p2 (* 'a : immediate *)
   
-  type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  type ('a : immediate) p2 = A2 of 'a [@@unboxed]"
+  
+(VI) Long type
+  $ run layouts.ml 32:4
+  let long_type a b c d e f g =
+     ^
+  With verbosity 0: "'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e -> 'f -> 'g -> 'a p2 * 'b p2 * 'c p2 * 'd p2 * 'e p2 * 'f p2 * 'g p2 * 'h"
+  With verbosity 1: "'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e -> 'f -> 'g -> 'a p2 * 'b p2 * 'c p2 * 'd p2 * 'e p2 * 'f p2 * 'g p2 * 'h 
+  (* 'g : immediate, 'f : immediate, 'e : immediate, 'd : immediate, 'c : immediate, 
+     'b : immediate, 'a : immediate *)"
   

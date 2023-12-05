@@ -1188,24 +1188,6 @@ let alias_nongen_row mode px ty =
           add_alias_proxy px
     | _ -> ()
 
-module Int_set = Stdlib.Set.Make (Int)
-
-(* Merlin-only: This configuration exists only in merlin, so
-   we'd like to avoid threading it through the recursive knot
-   and opening ourselves to merge conflicts. See the mli
-   for documentation on [print_non_value_jkind_on_type_variables].
-
-   The results are stored in the order in which the type variables
-   are printed in the original type.
-*)
-type non_value_jkinds_on_type_variables =
-  | Not_tracked
-  | Tracked of
-      { mutable ids_seen : Int_set.t;
-        types_seen : out_type Queue.t
-      }
-let non_value_jkinds_on_type_variables = ref Not_tracked
-
 let rec tree_of_typexp mode ty =
   let px = proxy ty in
   if List.memq px !printed_aliases && not (List.memq px !delayed) then
@@ -1216,24 +1198,10 @@ let rec tree_of_typexp mode ty =
   let pr_typ () =
     let tty = Transient_expr.repr ty in
     match tty.desc with
-    | Tvar { jkind } ->
+    | Tvar _ ->
         let non_gen = is_non_gen mode ty in
         let name_gen = Names.new_var_name ~non_gen ty in
-        let tvar = Otyp_var (non_gen, Names.name_of_type name_gen tty) in
-        begin match !non_value_jkinds_on_type_variables with
-        | Not_tracked -> ()
-        | Tracked tracked ->
-            if Int_set.mem tty.id tracked.ids_seen then ()
-            else begin
-              tracked.ids_seen <- Int_set.add tty.id tracked.ids_seen;
-              match Jkind.get_default_value jkind with
-              | Value -> ()
-              | jkind ->
-                  Queue.add (Otyp_jkind_annot (tvar, Olay_const jkind))
-                    tracked.types_seen
-            end
-        end;
-        tvar
+        Otyp_var (non_gen, Names.name_of_type name_gen tty)
     | Tarrow ((l, marg, mret), ty1, ty2, _) ->
         let lab =
           if !print_labels || is_optional l then string_of_label l else ""
@@ -3048,22 +3016,28 @@ let type_scheme_for_merlin ~print_non_value_jkind_on_type_variables ppf ty =
   match print_non_value_jkind_on_type_variables with
   | false -> type_scheme ppf ty
   | true ->
-      let types_seen = Queue.create () in
-      let tracked = Tracked { types_seen; ids_seen = Int_set.empty } in
-      let print_type_and_gather_constraints ppf =
-        Misc.protect_refs
-          [ R (non_value_jkinds_on_type_variables, tracked) ]
-          (fun () -> type_scheme ppf ty)
+      let annotated_qtv ppf (name, jkind) =
+        fprintf ppf "@['%s : %a@]" name !Oprint.out_jkind jkind
       in
-      let print_constraints ppf =
-        Queue.iter
-          (fun out ->
-            fprintf ppf "\n@[constraint %a@]" !Oprint.out_type out)
-          types_seen
+      type_scheme ppf ty;
+      let qtvs =
+        (* We call [extract_qtvs] after [type_scheme] so the variable
+           names are available.
+        *)
+        extract_qtvs [ ty ]
+        |> List.filter_map (function
+            | _, None -> None
+            | name, Some annot -> Some (name, annot))
       in
-      fprintf ppf "@[%t%t@]"
-        print_type_and_gather_constraints
-        print_constraints
+      match qtvs with
+      | [] -> ()
+      | qtv :: qtvs ->
+          fprintf ppf " @[(* @[%a%t@] *)@]"
+            annotated_qtv qtv
+            (fun ppf ->
+               List.iter
+                 (fprintf ppf ", %a" annotated_qtv)
+                 qtvs)
 
 let type_declaration_for_merlin = type_declaration
 

@@ -21,10 +21,20 @@ let poly_client2 x = poly2 x
 let poly_client3 x = poly3 x
 let poly_client4 x = poly4 x
 
-type _                p0 = A
-type 'a               p1 = A of 'a
-type ('a : immediate) p2 = A of 'a [@@unboxed]
+type _                p0 = A0
+type 'a               p1 = A1 of 'a
+type ('a : immediate) p2 = A2 of 'a [@@unboxed]
 
 let param_client1 (x : 'a p0) (a : 'a) = x, a
 let param_client2 (x : 'a p1) (a : 'a) = x, a
 let param_client2 (x : 'a p2) (a : 'a) = x, a
+
+let long_type a b c d e f g =
+  A2 a,
+  A2 b,
+  A2 c,
+  A2 d,
+  A2 e,
+  A2 f,
+  A2 g,
+;;
