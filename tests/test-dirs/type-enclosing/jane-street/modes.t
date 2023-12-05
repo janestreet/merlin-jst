@@ -102,12 +102,12 @@
   let simple3_1 (local_ x : string) = local_ x
                         ^
   With verbosity 0: "string"
-  With verbosity 1: "string"
+  With verbosity 1: "string @ local"
   
   let simple3_2 (local_ x : string) = x
                         ^
   With verbosity 0: "string"
-  With verbosity 1: "string"
+  With verbosity 1: "string @ local"
   
 (III) Constructing values
 
@@ -124,7 +124,7 @@
     let y = local_ Some x in
         ^
   With verbosity 0: "int option"
-  With verbosity 1: "int option
+  With verbosity 1: "int option @ local
   
   type 'a option = None | Some of 'a"
   
@@ -153,7 +153,7 @@
     match x with
           ^
   With verbosity 0: "string"
-  With verbosity 1: "string @ Local"
+  With verbosity 1: "string @ local"
   
 (V) Larger expression that is local
 
@@ -170,45 +170,28 @@ in [modes.ml] it's clear enough what each of the types correspond
 to.
 
   $ diff "$verbosity0" "$verbosity1"
-  18a19,30
-  >         "col": 25
-  >       },
-  >       "end": {
-  >         "line": 66,
-  >         "col": 26
-  >       },
-  >       "type": "string @ Local",
-  >       "tail": "no"
-  >     },
-  >     {
-  >       "start": {
-  >         "line": 66,
-  25c37,39
+  25c25,27
   <       "type": "string option",
   ---
-  >       "type": "string option
+  >       "type": "string option @ local
   > 
   > type 'a option = None | Some of 'a",
-  37c51,53
+  37c39,41
   <       "type": "string option option",
   ---
-  >       "type": "string option option
+  >       "type": "string option option @ local
   > 
   > type 'a option = None | Some of 'a",
-  49c65,67
+  49c53,55
   <       "type": "string option option option",
   ---
-  >       "type": "string option option option
+  >       "type": "string option option option @ local
   > 
   > type 'a option = None | Some of 'a",
-  61c79,81
+  61c67,69
   <       "type": "string option option option option",
   ---
-  >       "type": "string option option option option
+  >       "type": "string option option option option @ local
   > 
   > type 'a option = None | Some of 'a",
-  73c93
-  <       "type": "string -> local_ string option option option option",
-  ---
-  >       "type": "string -> local_ once_ string option option option option",
   [1]

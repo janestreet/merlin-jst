@@ -1,9 +1,9 @@
 (* [escape] forces a value to be global. *)
-include struct
+include (struct
   let escape _ = ()
 end : sig
   val escape : _ -> unit
-end
+end)
 
 type t0 = string -> string
 type t1 = local_ string -> string

@@ -206,6 +206,16 @@ let print_short_modtype verbosity env ppf md  =
   | _ ->
     Printtyp.modtype env ppf md
 
+let modes_to_print mode =
+  let locality = Mode.Value.regional_to_local_locality mode in
+  let locality =
+    match Mode.Locality.constrain_upper locality with
+    | Local -> Some "local"
+    | Global -> None
+  in
+  List.filter_map ~f:(fun x -> x)
+    [ locality ]
+
 let print_type_with_decl ~verbosity env ppf typ mode =
   match verbosity with
   | Verbosity.Smart | Lvl 0 ->  Printtyp.type_scheme env ppf typ
@@ -220,12 +230,12 @@ let print_type_with_decl ~verbosity env ppf typ mode =
       (* Print expression only if it is parameterized or abstract *)
       let print_expr = is_abstract || params <> [] in
       if print_expr then begin
-        match mode with
-        | None -> Printtyp.type_scheme env ppf typ
-        | Some mode ->
-            fprintf ppf "%a @@ %a"
+        match Option.map mode ~f:modes_to_print with
+        | None | Some [] -> Printtyp.type_scheme env ppf typ
+        | Some modes ->
+            fprintf ppf "%a @@ %s"
               (Printtyp.type_scheme env) typ
-              Mode.Regionality.Const.print (Mode.Value.constrain_upper mode).locality
+              (String.concat modes ~sep:" ")
       end;
       (* If not abstract, also print the declaration *)
       if not is_abstract then

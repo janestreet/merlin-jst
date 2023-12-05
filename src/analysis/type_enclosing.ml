@@ -12,15 +12,75 @@ type type_info =
 type typed_enclosings =
   (Location.t * type_info * Query_protocol.is_tail_position) list
 
+let pat_mode (type pat) env (pat_desc : pat Typedtree.pattern_desc) : Mode.Value.t option =
+  match pat_desc with
+  | Tpat_var (_, _, _, mode)
+  | Tpat_alias (_, _, _, _, mode) -> Some mode
+  | _ -> None
+
+let expr_mode env (exp_desc : Typedtree.expression_desc) : Mode.Value.t option =
+  match exp_desc with
+  | Texp_ident (_, lid, _, _, _) ->
+      begin match Env.lookup_value ~loc:lid.loc lid.txt env with
+      | _, _, mode, _ -> Some mode
+      | exception _ -> None
+      end
+  | Texp_function { alloc_mode; _ }
+  | Texp_tuple (_, alloc_mode)
+  | Texp_array (_, _, alloc_mode) ->
+      Some (Mode.Value.of_alloc alloc_mode)
+  | Texp_construct (_, _, _, alloc_mode)
+  | Texp_record { alloc_mode; _ } ->
+      Option.map alloc_mode ~f:Mode.Value.of_alloc
+  | Texp_variant (_, alloc_mode) ->
+      Option.map alloc_mode ~f:(fun (_, mode) -> Mode.Value.of_alloc mode)
+  (* [Texp_field] and [Texp_setfield] carry modes, but they're only relevant
+     to the boxing of floats. We don't print them to avoid confusion.
+  *)
+  | Texp_field _ | Texp_setfield _ -> None
+  | Texp_list_comprehension _
+  | Texp_array_comprehension _
+  | Texp_constant _
+  | Texp_let _
+  | Texp_apply _
+  | Texp_match _
+  | Texp_try _
+  | Texp_ifthenelse _
+  | Texp_sequence _
+  | Texp_while _
+  | Texp_for _
+  | Texp_send _
+  | Texp_new _
+  | Texp_instvar _
+  | Texp_setinstvar _
+  | Texp_override _
+  | Texp_letmodule _
+  | Texp_letexception _
+  | Texp_assert _
+  | Texp_lazy _
+  | Texp_object _
+  | Texp_pack _
+  | Texp_letop _
+  | Texp_unreachable
+  | Texp_extension_constructor _
+  | Texp_open _
+  | Texp_probe _
+  | Texp_probe_is_enabled _
+  | Texp_exclave _
+  | Texp_hole
+    -> None
+
 let from_nodes ~path =
   let aux (env, node, tail) =
     let open Browse_raw in
     let ret x = Some (Mbrowse.node_loc node, x, tail) in
     match[@ocaml.warning "-9"] node with
-    | Expression exp ->
-        let mode = Typecore.lookup_mode_for_merlin exp in
-        ret (Type (env, exp.exp_type, mode))
-    | Pattern {pat_type = t}
+    | Expression {exp_type = t; exp_desc = desc} ->
+        let mode = expr_mode env desc in
+        ret (Type (env, t, mode))
+    | Pattern {pat_type=t; pat_desc = desc} ->
+        let mode = pat_mode env desc in
+        ret (Type (env, t, mode))
     | Core_type {ctyp_type = t}
     | Value_description { val_desc = { ctyp_type = t } } ->
       ret (Type (env, t, None))

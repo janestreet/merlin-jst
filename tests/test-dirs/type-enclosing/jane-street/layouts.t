@@ -140,7 +140,7 @@
   let f5 (x : t5) = x
           ^
   With verbosity 0: "t5"
-  With verbosity 1: "t5"
+  With verbosity 1: "t5 @ local"
   
   let f6 (x : t6) = x
           ^

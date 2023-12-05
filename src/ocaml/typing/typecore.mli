@@ -337,5 +337,3 @@ val partial_pred :
   type_expr ->
   Typedtree.pattern ->
   Typedtree.pattern option
-
-val lookup_mode_for_merlin : Typedtree.expression -> Mode.Value.t option

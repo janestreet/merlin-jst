@@ -254,31 +254,6 @@ let error_of_filter_arrow_failure ~explanation ~first ty_fun
     end
   | Jkind_error (ty, err) -> Function_type_not_rep (ty, err)
 
-
-let stored_modes_for_merlin :
-  (Location.t, (expression * Mode.Value.t) list) Hashtbl.t =
-  Hashtbl.create 1024
-
-(* merlin: store modes keyed by location then by physical equality of
-   expression. This is a mega hack. We do it because modes aren't stored on the
-   typedtree expression.
-*)
-let store_mode_for_merlin exp mode =
-  let mode_by_exp =
-    Option.value
-      (Hashtbl.find_opt stored_modes_for_merlin exp.exp_loc)
-      ~default:[]
-  in
-  Hashtbl.replace
-    stored_modes_for_merlin
-    exp.exp_loc
-    ((exp, mode) :: mode_by_exp)
-
-let lookup_mode_for_merlin exp =
-  match Hashtbl.find_opt stored_modes_for_merlin exp.exp_loc with
-  | None -> None
-  | Some assq_list -> List.assq_opt exp assq_list
-
 (* merlin: deep copy types in errors, to keep them meaningful after
    backtracking *)
 let deep_copy () =
@@ -5319,7 +5294,6 @@ and type_expect_
   let with_explanation = with_explanation explanation in
   (* Unify the result with [ty_expected], enforcing the current level *)
   let rue exp =
-    store_mode_for_merlin exp expected_mode.mode;
     with_explanation (fun () ->
       unify_exp ~sdesc_for_hint:desc env (re exp) (instance ty_expected));
     exp
