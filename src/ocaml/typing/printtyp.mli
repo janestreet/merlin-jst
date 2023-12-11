@@ -136,6 +136,21 @@ val shared_type_scheme: formatter -> type_expr -> unit
     generators; most use cases, such as error messages, have narrower contexts
     for which [type_scheme] is better suited. *)
 
+val type_declaration_for_merlin:
+  (* Like [type_declaration].
+
+     [print_non_value_inferred_jkind] is a setting controlled by merlin
+     verbosity levels. When it's true, merlin will print the
+     inferred layout annotations on type declarations, except if the
+     layout is value. If the layout is value, a layout is printed in
+     exactly the cases that [type_declaration] prints a layout.
+
+     E.g. When this flag is [true],
+     [type t = A] is printed as [type t : immediate = A].
+  *)
+  print_non_value_inferred_jkind:bool ->
+  Ident.t -> formatter -> type_declaration -> unit
+
 val tree_of_value_description: Ident.t -> value_description -> out_sig_item
 val value_description: Ident.t -> formatter -> value_description -> unit
 val label : formatter -> label_declaration -> unit
@@ -147,7 +162,8 @@ val tree_of_type_declaration:
 val add_type_declaration_to_preparation :
   Ident.t -> type_declaration -> unit
 val prepared_type_declaration: Ident.t -> formatter -> type_declaration -> unit
-val type_declaration: Ident.t -> formatter -> type_declaration -> unit
+val type_declaration:
+  Ident.t -> formatter -> type_declaration -> unit
 val tree_of_extension_constructor:
     Ident.t -> extension_constructor -> ext_status -> out_sig_item
 val add_extension_constructor_to_preparation :

@@ -37,17 +37,17 @@ to print everything on one line.
   type t0 = int
       ^
   With verbosity 0: "type t0 = int"
-  With verbosity 1: "type t0 = int"
+  With verbosity 1: "type t0 : immediate = int"
   
   type t1 : immediate = int
       ^
   With verbosity 0: "type t1 = int"
-  With verbosity 1: "type t1 = int"
+  With verbosity 1: "type t1 : immediate = int"
   
   type t2 : immediate = A | B | C
       ^
   With verbosity 0: "type t2 = A | B | C"
-  With verbosity 1: "type t2 = A | B | C"
+  With verbosity 1: "type t2 : immediate = A | B | C"
   
   type t3 : value = D | E of int
       ^
@@ -57,7 +57,7 @@ to print everything on one line.
   type t4 : immediate64 = A
       ^
   With verbosity 0: "type t4 = A"
-  With verbosity 1: "type t4 = A"
+  With verbosity 1: "type t4 : immediate = A"
   
   type t5 : value
       ^
@@ -67,7 +67,7 @@ to print everything on one line.
   type t6 : value = { v : int } [@@unboxed]
       ^
   With verbosity 0: "type t6 : value = { v : int; } [@@unboxed]"
-  With verbosity 1: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 1: "type t6 : immediate = { v : int; } [@@unboxed]"
   
 
 (II) Functions
@@ -189,17 +189,17 @@ to print everything on one line.
   let f0 (x : t0) = x
               ^
   With verbosity 0: "type t0 = int"
-  With verbosity 1: "type t0 = int"
+  With verbosity 1: "type t0 : immediate = int"
   
   let f1 (x : t1) = x
               ^
   With verbosity 0: "type t1 = int"
-  With verbosity 1: "type t1 = int"
+  With verbosity 1: "type t1 : immediate = int"
   
   let f2 (x : t2) = x
               ^
   With verbosity 0: "type t2 = A | B | C"
-  With verbosity 1: "type t2 = A | B | C"
+  With verbosity 1: "type t2 : immediate = A | B | C"
   
   let f3 (x : t3) = x
               ^
@@ -209,7 +209,7 @@ to print everything on one line.
   let f4 (x : t4) = x
               ^
   With verbosity 0: "type t4 = A"
-  With verbosity 1: "type t4 = A"
+  With verbosity 1: "type t4 : immediate = A"
   
   let f5 (x : t5) = x
               ^
@@ -219,7 +219,7 @@ to print everything on one line.
   let f6 (x : t6) = x
               ^
   With verbosity 0: "type t6 : value = { v : int; } [@@unboxed]"
-  With verbosity 1: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 1: "type t6 : immediate = { v : int; } [@@unboxed]"
   
 
 (III) Polymorphic functions
@@ -291,7 +291,7 @@ to print everything on one line.
   let poly3 (type a : float64) (x : a) = x
                                     ^
   With verbosity 0: "type a"
-  With verbosity 1: "type a"
+  With verbosity 1: "type a : float64"
   
 
 (IV) Polymorphic function client
@@ -354,7 +354,7 @@ to print everything on one line.
   type _                p0 = A
                        ^
   With verbosity 0: "type _ p0 = A"
-  With verbosity 1: "type _ p0 = A"
+  With verbosity 1: "type _ p0 : immediate = A"
   
   type 'a               p1 = A of 'a
                        ^
@@ -364,7 +364,7 @@ to print everything on one line.
   type ('a : immediate) p2 = A of 'a [@@unboxed]
                        ^
   With verbosity 0: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
-  With verbosity 1: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "type ('a : immediate) p2 : immediate = A of 'a [@@unboxed]"
   
 
 - parameter

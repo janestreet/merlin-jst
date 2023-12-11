@@ -113,8 +113,9 @@ module Printtyp = struct
   let verbose_type_scheme env ppf t =
     Printtyp.type_scheme ppf (expand_type env t)
 
-  let verbose_type_declaration env id ppf t =
-    Printtyp.type_declaration id ppf (expand_type_decl env t)
+  let verbose_type_declaration ~print_non_value_inferred_jkind env id ppf t =
+    Printtyp.type_declaration_for_merlin id ppf (expand_type_decl env t)
+      ~print_non_value_inferred_jkind
 
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
@@ -132,8 +133,8 @@ module Printtyp = struct
 
   let type_declaration env id ppf =
     (select_by_verbosity
-      ~default:type_declaration
-      ~verbose:(verbose_type_declaration env)) id ppf
+      ~default:(type_declaration_for_merlin ~print_non_value_inferred_jkind:false)
+      ~verbose:(verbose_type_declaration ~print_non_value_inferred_jkind:true env)) id ppf
 
   let modtype env ppf mty =
     let smart ppf = function
@@ -234,7 +235,8 @@ let print_type_with_decl ~verbosity env ppf typ =
             | Path.Pdot _ | Path.Pextra_ty _ ->
                 Ident.create_persistent (Path.last path)
           in
-          Printtyp.type_declaration env ident ppf decl
+          Printtyp.verbose_type_declaration env ident ppf decl
+            ~print_non_value_inferred_jkind:false
         end
     | _ -> Printtyp.type_scheme env ppf typ
   end
@@ -245,12 +247,14 @@ let print_exn ppf exn =
     Format.pp_print_string ppf (Printexc.to_string exn)
   | Some (`Ok report) -> Location.print_main ppf report
 
-let print_type ppf env lid  =
+let print_type ppf verbosity env lid =
   let p, t = Env.find_type_by_name lid.Asttypes.txt env in
+  Printtyp.wrap_printing_env env ~verbosity begin fun () ->
   Printtyp.type_declaration env
     (Ident.create_persistent (* Incorrect, but doesn't matter. *)
        (Path.last p))
     ppf t
+  end
 
 let print_modtype ppf verbosity env lid =
   let _p, mtd = Env.find_modtype_by_name lid.Asttypes.txt env in
@@ -315,7 +319,7 @@ let type_in_env ?(verbosity=Verbosity.default) ?keywords ~context env ppf expr =
               can fail *)
               Printtyp.type_expr ppf lbl_des.lbl_arg;
             | Type ->
-              print_type ppf env longident
+              print_type ppf verbosity env longident
             (* TODO: special processing for module aliases ? *)
             | Module_type ->
               print_modtype ppf verbosity env longident
