@@ -67,7 +67,7 @@ to print everything on one line.
   type t6 : value = { v : int } [@@unboxed]
       ^
   With verbosity 0: "type t6 : value = { v : int; } [@@unboxed]"
-  With verbosity 1: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 1: "type t6 : immediate = { v : int; } [@@unboxed]"
   
 
 (II) Functions
@@ -219,7 +219,7 @@ to print everything on one line.
   let f6 (x : t6) = x
               ^
   With verbosity 0: "type t6 : value = { v : int; } [@@unboxed]"
-  With verbosity 1: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 1: "type t6 : immediate = { v : int; } [@@unboxed]"
   
 
 (III) Polymorphic functions
