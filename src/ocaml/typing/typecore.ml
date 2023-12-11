@@ -242,7 +242,7 @@ let deep_copy () =
         | Tvar _ | Tnil | Tunivar _ as desc -> desc
         | Tvariant _ as desc -> (* fixme *) desc
         | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
-        | Ttuple tl -> Ttuple (List.map copy tl)
+        | Ttuple tl -> Ttuple (List.map (fun (l, t) -> l, copy t) tl)
         | Tconstr (p, tl, _) -> Tconstr (p, List.map copy tl, ref Mnil)
         | Tobject (t1, r) ->
           let r = match !r with
@@ -2605,35 +2605,7 @@ and type_pat_aux
   | Ppat_interval _ ->
       raise (error (loc, !env, Invalid_interval))
   | Ppat_tuple spl ->
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-      let spl_ann = solve_Ppat_tuple ~refine ~alloc_mode loc env spl expected_ty in
-      let pl =
-        List.map (fun (p,t,alloc_mode) -> type_pat tps Value ~alloc_mode p t)
-          spl_ann
-      in
-      rvp {
-        pat_desc = Tpat_tuple pl;
-        pat_loc = loc; pat_extra=[];
-        pat_type = newty (Ttuple(List.map (fun p -> p.pat_type) pl));
-        pat_attributes = sp.ppat_attributes;
-        pat_env = !env }
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-      let spl_ann =
-        solve_Ppat_tuple ~refine ~alloc_mode loc env spl expected_ty
-      in
-      let pl =
-        List.map (fun (p,t,alloc_mode) -> type_pat tps Value ~alloc_mode p t)
-          spl_ann
-      in
-      rvp {
-        pat_desc = Tpat_tuple pl;
-        pat_loc = loc; pat_extra=[];
-        pat_type = newty (Ttuple(List.map (fun p -> p.pat_type) pl));
-        pat_attributes = sp.ppat_attributes;
-        pat_env = !env }
-=======
       type_tuple_pat (List.map (fun sp -> None, sp) spl) Closed
->>>>>>> ocaml-flambda/flambda-backend:main
   | Ppat_construct(lid, sarg) ->
       let expected_type =
         match extract_concrete_variant !env expected_ty with
@@ -3266,23 +3238,12 @@ let rec check_counter_example_pat
         solve_Ppat_tuple ~refine ~alloc_mode loc env tpl
           expected_ty
       in
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-      map_fold_cont (fun (p,t,_) -> check_rec p t) tpl_ann (fun pl ->
-        mkp k (Tpat_tuple pl)
-          ~pat_type:(newty (Ttuple(List.map (fun p -> p.pat_type) pl))))
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-      map_fold_cont (fun (p,t,_) -> check_rec p t) tpl_ann
-        (fun pl ->
-           mkp k (Tpat_tuple pl)
-             ~pat_type:(newty (Ttuple(List.map (fun p -> p.pat_type) pl))))
-=======
       map_fold_cont (fun (l,p,t,_) k -> check_rec p t (fun p -> k (l, p)))
         tpl_ann
         (fun pl ->
            mkp k (Tpat_tuple pl)
              ~pat_type:(newty (Ttuple (List.map (fun (l,p) -> (l,p.pat_type))
                                          pl))))
->>>>>>> ocaml-flambda/flambda-backend:main
   | Tpat_construct(cstr_lid, constr, targs, _) ->
       if constr.cstr_generalized && must_backtrack_on_gadt then
         raise Need_backtrack;
@@ -3500,15 +3461,7 @@ type untyped_apply_arg =
         ty_arg : type_expr;
         sort_arg : Jkind.sort;
         mode_arg : Alloc.t;
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-        level: int;
-      }
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-        level: int;
-        next_arg_loc: Location.t option }
-=======
         level: int; }
->>>>>>> ocaml-flambda/flambda-backend:main
 
 type untyped_omitted_param =
   { mode_fun: Alloc.t;
@@ -3672,15 +3625,7 @@ let collect_unknown_apply_args env funct ty_fun mode_fun rev_args sargs ret_tvar
                      program.  We diverge from upstream here by not trying to
                      provide a good location in the [Eliminated_optional_arg]
                      case - maybe fix one day if it is noticeable. *)
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
                   rev_args
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-                         | (_,
-                            Arg (Eliminated_optional_arg { next_arg_loc })) ->
-                           next_arg_loc
-=======
-                         | (_, Arg (Eliminated_optional_arg _))
->>>>>>> ocaml-flambda/flambda-backend:main
                   |> List.find_map
                        (function
                          | (_, Arg ( Known_arg { sarg; _ }
@@ -3751,14 +3696,7 @@ let collect_apply_args env funct ignore_labels ty_fun ty_fun0 mode_fun sargs ret
           may_warn funct.exp_loc
             (Warnings.Non_principal_labels "eliminated optional argument");
           Arg
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
             (Eliminated_optional_arg
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-               { mode_fun; ty_arg; mode_arg; sort_arg; level = lv;
-                 next_arg_loc })
-=======
-               { mode_fun; ty_arg; mode_arg; sort_arg; level = lv })
->>>>>>> ocaml-flambda/flambda-backend:main
                { mode_fun; ty_arg; mode_arg; sort_arg; level = lv })
         in
         let remaining_sargs, arg =
@@ -4346,32 +4284,8 @@ let rec type_approx env sexp ty_expected =
   | Pexp_match (_, {pc_rhs=e}::_) -> type_approx env e ty_expected
   | Pexp_try (e, _) -> type_approx env e ty_expected
   | Pexp_tuple l ->
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-      let tys = List.map
-                  (fun _ -> newvar (Jkind.value ~why:Tuple_element)) l
-      in
-      let ty = newty (Ttuple tys) in
-      begin try unify env ty ty_expected with Unify err ->
-        raise(error(loc, env, Expr_type_clash (err, None, None)))
-      end;
-      List.iter2
-        (fun e ty -> type_approx env e ty)
-        l tys
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-      let tys = List.map
-                  (fun _ -> newvar (Jkind.value ~why:Tuple_element)) l
-      in
-      let ty = newty (Ttuple tys) in
-      begin try unify env ty ty_expected with Unify err ->
-        raise(Error(loc, env, Expr_type_clash (err, None, None)))
-      end;
-      List.iter2
-        (fun e ty -> type_approx env e ty)
-        l tys
-=======
     type_tuple_approx env sexp.pexp_loc ty_expected
       (List.map (fun e -> None, e) l)
->>>>>>> ocaml-flambda/flambda-backend:main
   | Pexp_ifthenelse (_,e,_) -> type_approx env e ty_expected
   | Pexp_sequence (_,e) -> type_approx env e ty_expected
   | Pexp_constraint (e, sty) ->
@@ -4426,7 +4340,7 @@ and type_tuple_approx (env: Env.t) loc ty_expected l =
   in
   let ty = newty (Ttuple labeled_tys) in
   begin try unify env ty ty_expected with Unify err ->
-    raise(Error(loc, env, Expr_type_clash (err, None, None)))
+    raise(error(loc, env, Expr_type_clash (err, None, None)))
   end;
   List.iter2
     (fun (_, e) (_, ty) -> type_approx env e ty)
@@ -4964,63 +4878,40 @@ let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; pvb_attrib
       let expr = Exp.constraint_ ~attrs:mode_annot_attrs ~loc expr typ in
       List.fold_right (Exp.newtype ~loc) vars expr
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let vb_pat_constraint ~force_toplevel rec_mode_var
-      ({pvb_pat=pat; pvb_expr = exp; pvb_attributes = attrs; _ } as vb) =
-  let mode_annot_attrs =
-    Builtin_attributes.filter_attributes
-=======
 let vb_pat_constraint
       ({pvb_pat=pat; pvb_expr = exp; pvb_attributes = attrs; _ } as vb) =
-  let mode_annot_attrs =
-    Builtin_attributes.filter_attributes
->>>>>>> ocaml-flambda/flambda-backend:main
-let vb_pat_constraint
-    ({pvb_pat=pat; pvb_expr = exp; pvb_attributes = attrs; _ } as vb) =
-  vb.pvb_attributes,
-  let open Ast_helper in
   let mode_annot_attrs =
     Builtin_attributes.filter_attributes
       Builtin_attributes.mode_annotation_attributes_filter
       attrs
   in
-  match vb.pvb_constraint, pat.ppat_desc, exp.pexp_desc with
-  | Some (Pvc_constraint {locally_abstract_univars=[]; typ}
-         | Pvc_coercion { coercion=typ; _ }),
-    _, _ ->
-      Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat typ
-        ~attrs:mode_annot_attrs
-  | Some (Pvc_constraint {locally_abstract_univars=vars; typ }), _, _ ->
-      let varified = Typ.varify_constructors vars typ in
-      let t = Typ.poly ~loc:typ.ptyp_loc vars varified in
-      let loc_end = typ.ptyp_loc.Location.loc_end in
-      let loc =  { pat.ppat_loc with loc_end; loc_ghost=true } in
-      Pat.constraint_ ~loc pat t
-        ~attrs:mode_annot_attrs
-  | None, (Ppat_any | Ppat_constraint _), _ -> pat
-  | None, _, Pexp_coerce (_, _, sty)
-  | None, _, Pexp_constraint (_, sty) when !Clflags.principal ->
-      (* propagate type annotation to pattern,
-         to allow it to be generalized in -principal mode *)
-      Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat sty
-        ~attrs:mode_annot_attrs
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-  | _ -> pat
-
-let pat_modes ~force_toplevel rec_mode_var (attrs, spat) =
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
+  let spat =
+    let open Ast_helper in
+    match vb.pvb_constraint, pat.ppat_desc, exp.pexp_desc with
+    | Some (Pvc_constraint {locally_abstract_univars=[]; typ}
+           | Pvc_coercion { coercion=typ; _ }),
+      _, _ ->
+        Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat typ
           ~attrs:mode_annot_attrs
-    | _ -> pat
-  in
-=======
+    | Some (Pvc_constraint {locally_abstract_univars=vars; typ }), _, _ ->
+        let varified = Typ.varify_constructors vars typ in
+        let t = Typ.poly ~loc:typ.ptyp_loc vars varified in
+        let loc_end = typ.ptyp_loc.Location.loc_end in
+        let loc =  { pat.ppat_loc with loc_end; loc_ghost=true } in
+        Pat.constraint_ ~loc pat t
           ~attrs:mode_annot_attrs
-    | _ -> pat
+    | None, (Ppat_any | Ppat_constraint _), _ -> pat
+    | None, _, Pexp_coerce (_, _, sty)
+    | None, _, Pexp_constraint (_, sty) when !Clflags.principal ->
+        (* propagate type annotation to pattern,
+           to allow it to be generalized in -principal mode *)
+        Pat.constraint_ ~loc:{pat.ppat_loc with Location.loc_ghost=true} pat sty
+          ~attrs:mode_annot_attrs
+      | _ -> pat
   in
   vb.pvb_attributes, spat
 
 let pat_modes ~force_toplevel rec_mode_var (attrs, spat) =
->>>>>>> ocaml-flambda/flambda-backend:main
   let pat_mode, exp_mode =
     if force_toplevel
     then simple_pat_mode Value.legacy, mode_legacy
@@ -6708,64 +6599,32 @@ and type_function
            be a [Tpoly] node *)
         not has_poly
       in
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-      let { ty_arg; ty_ret; _ } as filtered_arrow =
-        try filter_arrow env (instance ty_expected) arg_label ~force_tpoly
-        with Filter_arrow_failed err ->
-          let first = Option.is_none in_function in
-          let err =
-            error_of_filter_arrow_failure ~explanation ~first ty_fun err
-          in
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-      let { ty_arg; ty_ret; _ } as filtered_arrow =
-        try filter_arrow env (instance ty_expected) arg_label ~force_tpoly
-        with Filter_arrow_failed err ->
-          let first = Option.is_none in_function in
-          let err =
-            error_of_filter_arrow_failure ~explanation ~first ty_fun err
-          in
-          raise (Error(loc_fun, env, err))
-      in
-      (filtered_arrow, [ty_arg; ty_ret])
-    end
-  in
-  apply_mode_annots ~loc ~env ~ty_expected mode_annots arg_mode;
-  if not has_poly && not (tpoly_is_mono ty_arg) && !Clflags.principal
-=======
       try filter_arrow env (instance ty_expected) arg_label ~force_tpoly
       with Filter_arrow_failed err ->
         let first = Option.is_none in_function in
         let err =
           error_of_filter_arrow_failure ~explanation ~first ty_fun err
         in
-        raise (Error(loc_fun, env, err))
+        (* Merlin: we recover with an expected type of 'a -> 'b *)
+        let level = get_level (instance ty_expected) in
+        raise_error (error(loc_fun, env, err));
+        let arg_kind, arg_sort =
+          Jkind.of_new_sort_var ~why:Function_argument
+        in
+        let ret_kind, ret_sort =
+          Jkind.of_new_sort_var ~why:Function_result
+        in
+        { ty_arg = newty (Tpoly (newvar2 level arg_kind, []))
+        ; arg_mode = Mode.Alloc.newvar ()
+        ; arg_sort
+        ; ty_ret = newvar2 level ret_kind
+        ; ret_mode = Mode.Alloc.newvar ()
+        ; ret_sort
+        }
     end
       ~post:(fun {ty_arg; ty_ret; _} ->
-        generalize_structure ty_arg;
-        generalize_structure ty_ret)
-  in
-  apply_mode_annots ~loc ~env ~ty_expected mode_annots arg_mode;
-  if not has_poly && not (tpoly_is_mono ty_arg) && !Clflags.principal
->>>>>>> ocaml-flambda/flambda-backend:main
-          (* Merlin: we recover with an expected type of 'a -> 'b *)
-          let level = get_level (instance ty_expected) in
-          raise_error (error(loc_fun, env, err));
-          let arg_kind, arg_sort =
-            Jkind.of_new_sort_var ~why:Function_argument
-          in
-          let ret_kind, ret_sort =
-            Jkind.of_new_sort_var ~why:Function_result
-          in
-          { ty_arg = newty (Tpoly (newvar2 level arg_kind, []))
-          ; arg_mode = Mode.Alloc.newvar ()
-          ; arg_sort
-          ; ty_ret = newvar2 level ret_kind
-          ; ret_mode = Mode.Alloc.newvar ()
-          ; ret_sort
-          }
-      in
-      (filtered_arrow, [ty_arg; ty_ret])
-    end
+          generalize_structure ty_arg;
+          generalize_structure ty_ret)
   in
   apply_mode_annots ~loc ~env ~ty_expected mode_annots arg_mode;
   if not has_poly && not (tpoly_is_mono ty_arg) && !Clflags.principal
@@ -8119,17 +7978,8 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
     | Recursive -> Some Value.legacy
     | Nonrecursive -> None
   in
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
   let spatl =  List.map vb_pat_constraint spat_sexp_list in
   let spatl = List.map (pat_modes ~force_toplevel rec_mode_var) spatl in
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-  let spatl =
-    List.map (vb_pat_constraint ~force_toplevel rec_mode_var) spat_sexp_list
-  in
-=======
-  let spatl = List.map vb_pat_constraint spat_sexp_list in
-  let spatl = List.map (pat_modes ~force_toplevel rec_mode_var) spatl in
->>>>>>> ocaml-flambda/flambda-backend:main
   let attrs_list = List.map (fun (attrs, _, _, _) -> attrs) spatl in
   let is_recursive = (rec_flag = Recursive) in
 

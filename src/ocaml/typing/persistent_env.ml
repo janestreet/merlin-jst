@@ -43,25 +43,6 @@ let error err = raise (Error err)
 module Persistent_signature = struct
   type t =
     { filename : string;
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-      cmi : Cmi_format.cmi_infos_lazy }
-
-  let load = ref (fun ~unit_name ->
-      let unit_name = CU.Name.to_string unit_name in
-      match Load_path.find_uncap (unit_name ^ ".cmi") with
-      | filename ->
-        let cmi = Cmi_cache.read filename in
-        Some { filename; cmi }
-      | exception Not_found -> None)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-      cmi : Cmi_format.cmi_infos_lazy }
-
-  let load = ref (fun ~unit_name ->
-      let unit_name = CU.Name.to_string unit_name in
-      match Load_path.find_uncap (unit_name ^ ".cmi") with
-      | filename -> Some { filename; cmi = read_cmi_lazy filename }
-      | exception Not_found -> None)
-=======
       cmi : Cmi_format.cmi_infos_lazy;
       visibility : Load_path.visibility }
 
@@ -69,12 +50,13 @@ module Persistent_signature = struct
     let unit_name = CU.Name.to_string unit_name in
     match Load_path.find_uncap_with_visibility (unit_name ^ ".cmi") with
     | filename, visibility when allow_hidden ->
-      Some { filename; cmi = read_cmi_lazy filename; visibility}
+      let cmi = Cmi_cache.read filename in
+      Some { filename; cmi; visibility}
     | filename, Visible ->
-      Some { filename; cmi = read_cmi_lazy filename; visibility = Visible}
+      let cmi = Cmi_cache.read filename in
+      Some { filename; cmi; visibility = Visible}
     | _, Hidden
     | exception Not_found -> None)
->>>>>>> ocaml-flambda/flambda-backend:main
 end
 
 type can_load_cmis =
@@ -341,28 +323,14 @@ let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
 let read_pers_struct penv val_of_pers_sig short_path_comps check modname
       filename ~add_binding =
   add_import penv modname;
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
   let cmi = Cmi_cache.read filename in
-  let pers_sig = { Persistent_signature.filename; cmi } in
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-  let cmi = read_cmi_lazy filename in
-  let pers_sig = { Persistent_signature.filename; cmi } in
-=======
-  let cmi = read_cmi_lazy filename in
   let pers_sig = { Persistent_signature.filename; cmi; visibility = Visible } in
->>>>>>> ocaml-flambda/flambda-backend:main
   let pm = val_of_pers_sig pers_sig in
   let ps = process_pers_struct penv check modname pers_sig in
   if add_binding then bind_pers_struct penv short_path_comps modname ps pm;
   (ps, pm)
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-let find_pers_struct penv val_of_pers_sig short_path_comps check name =
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let find_pers_struct penv val_of_pers_sig check name =
-=======
-let find_pers_struct ~allow_hidden penv val_of_pers_sig check name =
->>>>>>> ocaml-flambda/flambda-backend:main
+let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check name =
   let {persistent_structures; _} = penv in
   if CU.Name.equal name CU.Name.predef_exn then raise Not_found;
   match Hashtbl.find persistent_structures name with
@@ -393,22 +361,10 @@ let describe_prefix ppf prefix =
     Format.fprintf ppf "package %a" CU.Prefix.print prefix
 
 (* Emits a warning if there is no valid cmi for name *)
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-let check_pers_struct penv f1 f2 ~loc name =
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let check_pers_struct penv f ~loc name =
-=======
-let check_pers_struct ~allow_hidden penv f ~loc name =
->>>>>>> ocaml-flambda/flambda-backend:main
+let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
   let name_as_string = CU.Name.to_string name in
   try
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-    ignore (find_pers_struct penv f1 f2 false name)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    ignore (find_pers_struct penv f false name)
-=======
-    ignore (find_pers_struct ~allow_hidden penv f false name)
->>>>>>> ocaml-flambda/flambda-backend:main
+    ignore (find_pers_struct ~allow_hidden penv f1 f2 false name)
   with
   | Not_found ->
       let warn = Warnings.No_cmi_file(name_as_string, None) in
@@ -448,24 +404,10 @@ let check_pers_struct ~allow_hidden penv f ~loc name =
 let read penv f1 f2 modname filename ~add_binding =
   snd (read_pers_struct penv f1 f2 true modname filename ~add_binding)
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-let find penv f1 f2 name =
-  snd (find_pers_struct penv f1 f2 true name)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let find penv f name =
-  snd (find_pers_struct penv f true name)
-=======
-let find ~allow_hidden penv f name =
-  snd (find_pers_struct ~allow_hidden penv f true name)
->>>>>>> ocaml-flambda/flambda-backend:main
+let find ~allow_hidden penv f1 f2 name =
+  snd (find_pers_struct ~allow_hidden penv f1 f2 true name)
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-let check penv f1 f2 ~loc name =
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let check penv f ~loc name =
-=======
-let check ~allow_hidden penv f ~loc name =
->>>>>>> ocaml-flambda/flambda-backend:main
+let check ~allow_hidden penv f1 f2 ~loc name =
   let {persistent_structures; _} = penv in
   if not (Hashtbl.mem persistent_structures name) then begin
     (* PR#6843: record the weak dependency ([add_import]) regardless of
@@ -474,13 +416,7 @@ let check ~allow_hidden penv f ~loc name =
     add_import penv name;
     if (Warnings.is_active (Warnings.No_cmi_file("", None))) then
       !add_delayed_check_forward
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-        (fun () -> check_pers_struct penv f1 f2 ~loc name)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-        (fun () -> check_pers_struct penv f ~loc name)
-=======
-        (fun () -> check_pers_struct ~allow_hidden penv f ~loc name)
->>>>>>> ocaml-flambda/flambda-backend:main
+        (fun () -> check_pers_struct ~allow_hidden penv f1 f2 ~loc name)
   end
 
 (* CR mshinwell: delete this having moved to 4.14 build compilers *)
@@ -504,13 +440,7 @@ let crc_of_unit penv f1 f2 name =
   match Consistbl.find penv.crc_units name with
   | Some (_, crc) -> crc
   | None ->
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-    let (ps, _pm) = find_pers_struct penv f1 f2 true name in
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    let (ps, _pm) = find_pers_struct penv f true name in
-=======
-    let (ps, _pm) = find_pers_struct ~allow_hidden:true penv f true name in
->>>>>>> ocaml-flambda/flambda-backend:main
+    let (ps, _pm) = find_pers_struct ~allow_hidden:true penv f1 f2 true name in
     match Array.find_opt (Import_info.has_name ~name) ps.ps_crcs with
     | None -> assert false
     | Some import_info ->

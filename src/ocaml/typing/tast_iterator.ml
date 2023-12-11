@@ -583,8 +583,8 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_arrow (_, ct1, ct2) ->
       sub.typ sub ct1;
+      sub.typ sub ct2
   | Ttyp_tuple list -> List.iter (fun (_, t) -> sub.typ sub t) list
-  | Ttyp_tuple list -> List.iter (sub.typ sub) list
   | Ttyp_constr (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
@@ -596,13 +596,7 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       sub.typ sub ct;
       Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_variant (list, _, _) -> List.iter (sub.row_field sub) list
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
   | Ttyp_poly (vars, ct) ->
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-      List.iter (fun (_, l) -> Option.iter (fun (j, _) -> sub.jkind_annotation sub j) l) vars;
-=======
-      List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
->>>>>>> ocaml-flambda/flambda-backend:main
       List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
       sub.typ sub ct
   | Ttyp_package pack -> sub.package_type sub pack

@@ -53,19 +53,19 @@ let mk_var s = Location.mknoloc s
 
 module Predef_types = struct
   let char_ env ty =
-    let a = Tast_helper.Pat.constant env ty (Asttypes.Const_char 'a') in
+    let a = Tast_helper.Pat.constant env ty (Const_char 'a') in
     let z = Patterns.omega in
     [ a ; z ]
 
   let int_ env ty =
-    let zero = Tast_helper.Pat.constant env ty (Asttypes.Const_int 0) in
+    let zero = Tast_helper.Pat.constant env ty (Const_int 0) in
     let n = Patterns.omega in
     [ zero ; n ]
 
   let string_ env ty =
     let empty =
       Tast_helper.Pat.constant env ty (
-        Asttypes.Const_string ("", Location.none, None)
+        Const_string ("", Location.none, None)
       )
     in
     let s = Patterns.omega in
@@ -96,7 +96,12 @@ let rec gen_patterns ?(recurse=true) env type_expr =
   | Tobject _  -> raise (Not_allowed "object type")
   | Tpackage _ -> raise (Not_allowed "modules")
   | Ttuple lst ->
-    let patterns = Patterns.omega_list lst in
+    let patterns =
+      (* Both [List.map] and [Patterns.omega_list] are length-preserving,
+         so [combine] won't raise.
+      *)
+      List.combine (List.map ~f:fst lst) (Patterns.omega_list lst)
+    in
     [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
@@ -346,7 +351,7 @@ let rec subst_patt initial ~by patt =
   | Tpat_alias (p,x,y,uid,m) ->
     { patt with pat_desc = Tpat_alias (f p, x, y, uid, m) }
   | Tpat_tuple lst ->
-    { patt with pat_desc = Tpat_tuple (List.map lst ~f) }
+    { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
   | Tpat_construct (lid, cd, lst, lco) ->
     { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
@@ -373,7 +378,7 @@ let rec rm_sub patt sub =
   | Tpat_alias (p,x,y,uid,m) ->
     { patt with pat_desc = Tpat_alias (f p, x, y,uid,m)  }
   | Tpat_tuple lst ->
-    { patt with pat_desc = Tpat_tuple (List.map lst ~f) }
+    { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
   | Tpat_construct (lid, cd, lst, lco) ->
     { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
@@ -397,7 +402,7 @@ let rec qualify_constructors ~unmangling_tables f pat  =
   let pat_desc =
     match pat.pat_desc with
     | Tpat_alias (p, id, loc, uid, m) -> Tpat_alias (qualify_constructors f p, id, loc, uid, m)
-    | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
+    | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(fun (lbl, p) -> lbl, qualify_constructors f p))
     | Tpat_record (labels, closed) ->
       let labels =
         let open Longident in
@@ -470,7 +475,8 @@ let find_branch patterns sub =
       | Tpat_variant (_, Some p, _)
       | Tpat_lazy p ->
         is_sub_patt p ~sub
-      | Tpat_tuple lst
+      | Tpat_tuple lst ->
+        List.exists lst ~f:(fun (_lbl, p) -> is_sub_patt ~sub p)
       | Tpat_construct (_, _, lst, _)
       | Tpat_array (_, _, lst) ->
         List.exists lst ~f:(is_sub_patt ~sub)
@@ -514,10 +520,20 @@ module Conv = struct
       | Tpat_var _ ->
           mkpat Ppat_any
       | Tpat_constant c ->
-          mkpat (Ppat_constant (Untypeast.constant c))
+          begin match Untypeast.constant c with
+            | `Jane_syntax c ->
+                Jane_syntax.Layouts.pat_of (Lpat_constant c)
+                  ~loc:!Ast_helper.default_loc
+            | `Parsetree c -> mkpat (Ppat_constant c)
+          end
       | Tpat_alias (p,_,_,_,_) -> loop p
       | Tpat_tuple lst ->
-          mkpat (Ppat_tuple (List.map ~f:loop lst))
+          let lst = List.map ~f:(fun (lbl, p) -> lbl, loop p) lst in
+          if List.for_all lst ~f:(fun (lbl, _) -> not (Option.is_some lbl))
+          then mkpat (Ppat_tuple (List.map ~f:snd lst))
+          else
+            Jane_syntax.Pattern.pat_of ~loc:!Ast_helper.default_loc ~attrs:[]
+              (Jpat_tuple (Ltpat_tuple (lst, Closed)))
       | Tpat_construct (cstr_lid, cstr, lst, _) ->
           let id = fresh cstr.cstr_name in
           let lid = { cstr_lid with txt = Longident.Lident id } in

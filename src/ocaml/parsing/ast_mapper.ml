@@ -1233,20 +1233,11 @@ module PpxContext = struct
             else
               let alert = Location.auto_include_alert in
               Load_path.auto_include_otherlibs alert find_in_dir fn
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
           in *)
-          Load_path.(init
-            ~auto_include:no_auto_include (get_list get_string payload))
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-          in
-          Load_path.init ~auto_include (get_list get_string payload)
-=======
-          in
           let visible, hidden =
             get_pair (get_list get_string) (get_list get_string) payload
           in
-          Load_path.init ~auto_include ~visible ~hidden
->>>>>>> ocaml-flambda/flambda-backend:main
+          Load_path.(init ~auto_include:no_auto_include ~visible ~hidden)
       | "open_modules" ->
           Clflags.open_modules := get_list get_string payload
       | "for_package" ->

@@ -3494,24 +3494,8 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
             let alerts = Builtin_attributes.alerts_of_str ast in
             let kind = Cmi_format.Normal in
             let cmi =
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg modulename (outputprefix ^ ".cmi"))
-            in
-            Profile.record_call "save_cmt" (fun () ->
-              let annots = Cmt_format.Implementation str in
-=======
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg modulename kind (outputprefix ^ ".cmi"))
-            in
-            Profile.record_call "save_cmt" (fun () ->
-              let annots = Cmt_format.Implementation str in
->>>>>>> ocaml-flambda/flambda-backend:main
               Env.save_signature ~alerts
-                simple_sg modulename (outputprefix ^ ".cmi")
+                simple_sg modulename kind (outputprefix ^ ".cmi")
             in
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -3649,16 +3633,8 @@ let package_units initial_env objfiles cmifile modulename =
     if not !Clflags.dont_write_files then begin
       let kind = Cmi_format.Normal in
       let cmi =
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
-          sg modulename
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
-          sg modulename
-=======
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
           sg modulename kind
->>>>>>> ocaml-flambda/flambda-backend:main
           (prefix ^ ".cmi") (Array.of_list imports)
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in

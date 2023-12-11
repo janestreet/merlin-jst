@@ -16,7 +16,6 @@
 (* Auxiliaries for type-based optimizations, e.g. array kinds *)
 
 open Types
-open Asttypes
 open Typedtree
 
 (* Expand a type, looking through ordinary synonyms, private synonyms, links,

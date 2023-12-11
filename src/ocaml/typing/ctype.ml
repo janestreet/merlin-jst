@@ -2174,21 +2174,6 @@ let is_immediate64 env ty =
     let result = perform_check () in
     Btype.backtrack snap;
     result
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-  else
-    perform_check ()
-=======
-  else
-    (* CR layouts v2.8: Remove the backtracking once mode crossing is
-       implemented correctly; it's needed for now because checking whether
-       a jkind is immediate (rightly) sets the sort to be Value. It worked
-       previous to this patch because the subjkind check failed earlier. *)
-    let snap = Btype.snapshot () in
-    let result = perform_check () in
-    Btype.backtrack snap;
-    result
->>>>>>> ocaml-flambda/flambda-backend:main
 
 (* We will require Int63 to be [global many unique] on 32-bit platforms, so
    this is fine *)

@@ -8,6 +8,8 @@
     Parameters from OCaml compiler which affect Merlin behavior. *)
 val cmi_file             : string option ref
 val include_dirs         : string list ref
+(* CR 5.1.1minus-4: Do we need to handle -H in merlin? *)
+val hidden_include_dirs  : string list ref
 val fast                 : bool ref
 val classic              : bool ref
 val principal            : bool ref

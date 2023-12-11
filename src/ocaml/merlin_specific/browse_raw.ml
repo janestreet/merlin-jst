@@ -320,7 +320,9 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_alias (p,_,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
-  | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array (_,_,ps) ->
+  | Tpat_tuple ps ->
+    list_fold (fun (_lbl, p) -> of_pattern p) ps
+  | Tpat_construct (_,_,ps,None) | Tpat_array (_,_,ps) ->
     list_fold of_pattern ps
   | Tpat_construct (_,_,ps,Some (_, ct)) ->
     list_fold of_pattern ps ** of_core_type ct
@@ -356,7 +358,9 @@ let of_expression_desc loc = function
   | Texp_try (e,cs) ->
     of_expression e **
     list_fold of_case cs
-  | Texp_tuple (es,_) | Texp_construct (_,_,es,_) | Texp_array (_,es,_) ->
+  | Texp_tuple (es,_) ->
+    list_fold (fun (_lbl, e) -> of_expression e) es
+  | Texp_construct (_,_,es,_) | Texp_array (_,es,_) ->
     list_fold of_expression es
   | Texp_variant (_,Some (e,_))
   | Texp_assert (e, _) | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
@@ -408,7 +412,7 @@ let of_expression_desc loc = function
        the patterns patN when they are tuples themselves. *)
     let rec flatten_patterns ~size acc pat =
       match pat.pat_desc with
-      | Tpat_tuple [ tuple; pat ] when size > 0 ->
+      | Tpat_tuple [ (None, tuple); (None, pat) ] when size > 0 ->
            flatten_patterns ~size:(size - 1) (pat :: acc) tuple
       | _ -> List.rev (pat :: acc)
     in
@@ -565,7 +569,9 @@ and of_core_type_desc = function
   | Ttyp_var _ -> id_fold
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
-  | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
+  | Ttyp_tuple cts ->
+    list_fold (fun (_, ty) -> of_core_type ty) cts
+  | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
     list_fold of_core_type cts
   | Ttyp_object (cts,_) ->
     list_fold (fun of_ ->

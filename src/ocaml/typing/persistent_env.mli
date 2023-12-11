@@ -71,26 +71,14 @@ val fold : 'a t -> (Compilation_unit.Name.t -> 'a -> 'b -> 'b) -> 'b -> 'b
 val read : 'a t -> (Persistent_signature.t -> 'a)
   -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> 'a
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-val find : 'a t -> (Persistent_signature.t -> 'a)
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-val find : 'a t -> (Persistent_signature.t -> 'a)
-=======
 val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
->>>>>>> ocaml-flambda/flambda-backend:main
+  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> 'a
 
 val find_in_cache : 'a t -> Compilation_unit.Name.t -> 'a option
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-val check : 'a t -> (Persistent_signature.t -> 'a)
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-val check : 'a t -> (Persistent_signature.t -> 'a)
-=======
 val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
->>>>>>> ocaml-flambda/flambda-backend:main
+  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> Compilation_unit.Name.t -> unit
 
 (* Lets it be known that the given module is a parameter and thus is expected

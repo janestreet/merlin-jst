@@ -125,20 +125,7 @@ let input_cmt ic = (input_value ic : cmt_infos)
 
 let output_cmt oc cmt =
   output_string oc Config.cmt_magic_number;
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
   output_value oc (cmt : cmt_infos)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-  (* BACKPORT BEGIN *)
-  (* mshinwell: upstream uses [Compression] here *)
-  Marshal.(to_channel oc (cmt : cmt_infos) [])
-  (* BACKPORT END *)
-=======
-  (* BACKPORT BEGIN *)
-  (* CR ocaml 5 compressed-marshal mshinwell:
-     upstream uses [Compression] here *)
-  Marshal.(to_channel oc (cmt : cmt_infos) [])
-  (* BACKPORT END *)
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let read filename =
 (*  Printf.fprintf stderr "Cmt_format.read %s\n%!" filename; *)

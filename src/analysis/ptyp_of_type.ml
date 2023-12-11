@@ -43,7 +43,16 @@ and core_type type_expr =
     Typ.arrow label
       (core_type type_expr)
       (core_type type_expr_out)
-  | Ttuple type_exprs -> Typ.tuple @@ List.map ~f:core_type type_exprs
+  | Ttuple type_exprs ->
+      let labeled_type_exprs =
+        List.map ~f:(fun (lbl, ty) -> lbl, core_type ty) type_exprs
+      in
+      if List.for_all type_exprs ~f:(fun (lbl, _) -> not (Option.is_some lbl))
+      then
+        Typ.tuple @@ List.map ~f:snd labeled_type_exprs
+      else
+        Jane_syntax.Core_type.core_type_of ~loc:!default_loc ~attrs:[]
+          (Jtyp_tuple (Lttyp_tuple labeled_type_exprs))
   | Tconstr (path, type_exprs, _abbrev) ->
     let loc = Untypeast.lident_of_path path |> Location.mknoloc in
     Typ.constr loc @@ List.map ~f:core_type type_exprs

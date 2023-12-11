@@ -703,16 +703,7 @@ let raw_type_expr ppf t =
 
 let () = Btype.print_raw := raw_type_expr
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
 (* Normalize paths *)
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-type best_path = Paths of Path.t list | Best of Path.t
-=======
-(* In the [Paths] constructor, more preferred paths are stored later in the
-   list. *)
-
-type best_path = Paths of Path.t list | Best of Path.t
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let set_printing_env env =
   printing_env :=
@@ -782,40 +773,6 @@ let best_class_type_path_simple p =
   else Short_paths.find_class_type_simple (Env.short_paths !printing_env) p
 
 (* Print a type expression *)
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    Not_found ->
-      (Env.normalize_type_path None env p, Id)
-
-let penalty s =
-  if s <> "" && s.[0] = '_' then
-    10
-  else
-    match find_double_underscore s with
-    | None -> 1
-    | Some _ -> 10
-
-let rec path_size = function
-    Pident id ->
-      penalty (Ident.name id), -Ident.scope id
-  | Pdot (p, _) | Pextra_ty (p, Pcstr_ty _) ->
-      let (l, b) = path_size p in (1+l, b)
-  | Papply (p1, p2) ->
-      let (l, b) = path_size p1 in
-      (l + fst (path_size p2), b)
-  | Pextra_ty (p, _) -> path_size p
-
-let same_printing_env env =
-  let used_pers = Env.used_persistent () in
-  Env.same_types !printing_old env
-=======
-    Not_found ->
-      (Env.normalize_type_path None env p, Id)
-
-let same_printing_env env =
-  let used_pers = Env.used_persistent () in
-  Env.same_types !printing_old env
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let proxy ty = Transient_expr.repr (proxy ty)
 
@@ -1272,7 +1229,7 @@ let rec tree_of_typexp mode ty =
         let rm = tree_of_mode mret in
         Otyp_arrow (lab, am, t1, rm, t2)
     | Ttuple tyl ->
-        Otyp_tuple (tree_of_typlist mode tyl)
+        Otyp_tuple (tree_of_labeled_typlist mode tyl)
     | Tconstr(p, tyl, _abbrev) -> begin
         match best_type_path p with
         | Nth n -> tree_of_typexp mode (apply_nth n tyl)
@@ -1392,6 +1349,9 @@ and tree_of_row_field mode (l, f) =
 and tree_of_typlist mode tyl =
   List.map (tree_of_typexp mode) tyl
 
+and tree_of_labeled_typlist mode tyl =
+  List.map (fun (label, ty) -> label, tree_of_typexp mode ty) tyl
+
 and tree_of_typ_gf (ty, gf) =
   let gf =
     match gf with
@@ -1423,96 +1383,10 @@ and tree_of_typobject mode fi nm =
       let p' = best_type_path_simple p in
       Otyp_class (tree_of_path (Some Type) p', args)
   | _ ->
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
       fatal_error "Printtyp.tree_of_typobject"
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-              Paths l -> r := Paths (p :: l)
-            | Best p' -> r := Paths [p; p'] (* assert false *)
-          with Not_found ->
-            printing_map := Path.Map.add p1 (ref (Paths [p])) !printing_map)
-        env in
-    printing_cont := [cont];
-=======
-              Paths l -> r := Paths (p :: l)
-            | Best p' -> r := Paths [p; p'] (* assert false *)
-          with Not_found ->
-            (* Jane Street: Often the best choice for printing [p1] is
-               [p1] itself. And often [p1] is a path whose "penalty"
-               would be reduced if the double-underscore rewrite
-               applied.
-            *)
-            let rewritten_p1 = rewrite_double_underscore_paths env p1 in
-            printing_map := Path.Map.add p1 (ref (Paths [ p; rewritten_p1 ])) !printing_map)
-        env in
-    printing_cont := [cont];
->>>>>>> ocaml-flambda/flambda-backend:main
   end
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
 and tree_of_typfields mode rest = function
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let rec get_best_path r =
-  match !r with
-    Best p' -> p'
-  | Paths [] -> raise Not_found
-=======
-let penalty_size = 10
-
-let name_penalty s =
-  if s <> "" && s.[0] = '_' then
-    penalty_size
-  else
-    match find_double_underscore s with
-    | None -> 1
-    | Some _ -> penalty_size
-
-let ambiguity_penalty path env =
-  if is_unambiguous path env then 0 else penalty_size
-
-let path_size path env =
-  let rec size = function
-      Pident id ->
-        name_penalty (Ident.name id), -Ident.scope id
-    | Pdot (p, id) | Pextra_ty (p, Pcstr_ty id) ->
-        let (l, b) = size p in (name_penalty id + l, b)
-    | Papply (p1, p2) ->
-        let (l, b) = size p1 in
-        (l + fst (size p2), b)
-    | Pextra_ty (p, _) -> size p
-  in
-  let l, s = size path in
-  l + ambiguity_penalty path env, s
-
-let rec get_best_path r env =
-  match !r with
-    Best p' -> p'
-  | Paths [] -> raise Not_found
->>>>>>> ocaml-flambda/flambda-backend:main
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-        (fun p ->
-          (* Format.eprintf "evaluating %a@." path p; *)
-          match !r with
-            Best p' when path_size p >= path_size p' -> ()
-          | _ -> if is_unambiguous p !printing_env then r := Best p)
-              (* else Format.eprintf "%a ignored as ambiguous@." path p *)
-        l;
-      get_best_path r
-
-let best_type_path p =
-  if !printing_env == Env.empty
-=======
-        (fun p ->
-          (* Format.eprintf "evaluating %a@." path p; *)
-          match !r with
-            Best p' when path_size p env >= path_size p' env -> ()
-          | _ -> r := Best p)
-        (List.rev l);
-      get_best_path r env
-
-let best_type_path p =
-  if !printing_env == Env.empty
->>>>>>> ocaml-flambda/flambda-backend:main
   | [] ->
       let open_row =
         match get_desc rest with
@@ -1581,7 +1455,7 @@ let filter_params tyl =
     List.fold_left
       (fun tyl ty ->
         if List.exists (eq_type ty) tyl
-        then newty2 ~level:generic_level (Ttuple [ty]) :: tyl
+        then newty2 ~level:generic_level (Ttuple [None, ty]) :: tyl
         else ty :: tyl)
       (* Two parameters might be identical due to a constraint but we need to
          print them differently in order to make the output syntactically valid.
@@ -2247,60 +2121,10 @@ let with_hidden_items ids f =
   if not !Clflags.real_paths then
     with_hidden_in_printing_env ids f
   else
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
     Naming_context.with_hidden ids f
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    let (p', s) = normalize_type_path !printing_env p in
-    let get_path () = get_best_path (Path.Map.find  p' !printing_map) in
-    while !printing_cont <> [] &&
-      try fst (path_size (get_path ())) > !printing_depth with Not_found -> true
-    do
-      printing_cont := List.map snd (Env.run_iter_cont !printing_cont);
-      incr printing_depth;
-    done;
-    let p'' = try get_path () with Not_found -> p' in
-    (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
-    (p'', s)
-=======
-    let (p', s) = normalize_type_path !printing_env p in
-    let get_path () =
-      try
-        get_best_path (Path.Map.find p' !printing_map) !printing_env
-      with Not_found -> rewrite_double_underscore_paths !printing_env p'
-    in
-    while !printing_cont <> [] &&
-      fst (path_size (get_path ()) !printing_env) > !printing_depth
-    do
-      printing_cont := List.map snd (Env.run_iter_cont !printing_cont);
-      incr printing_depth;
-    done;
-    let p'' = get_path () in
-    (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
-    (p'', s)
->>>>>>> ocaml-flambda/flambda-backend:main
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
 let add_sigitem env x =
   Env.add_signature (Signature_group.flatten x) env
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-        let t2 = tree_of_typexp mode ty2 in
-        let rm = tree_of_mode mret in
-        Otyp_arrow (lab, am, t1, rm, t2)
-    | Ttuple tyl ->
-        Otyp_tuple (tree_of_typlist mode tyl)
-    | Tconstr(p, tyl, _abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
-=======
-        let t2 = tree_of_typexp mode ty2 in
-        let rm = tree_of_mode mret in
-        Otyp_arrow (lab, am, t1, rm, t2)
-    | Ttuple labeled_tyl ->
-        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
-    | Tconstr(p, tyl, _abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let expand_module_type =
   ref ((fun _env _mty -> assert false) :

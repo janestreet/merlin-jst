@@ -625,17 +625,7 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
   in
   match Jane_syntax.Core_type.of_ast styp with
   | Some (etyp, attrs) ->
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-    let desc, typ = transl_type_aux_jst env ~policy ~row_context mode attrs loc etyp in
-    ctyp desc typ
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    let desc, typ =
-      transl_type_aux_jst env ~policy ~row_context mode attrs loc etyp
-    in
-    ctyp desc typ
-=======
     transl_type_aux_jst env ~policy ~row_context mode attrs loc etyp
->>>>>>> ocaml-flambda/flambda-backend:main
   | None ->
   match styp.ptyp_desc with
     Ptyp_any ->

@@ -20,20 +20,10 @@ type pers_flags =
   | Alerts of alerts
   | Opaque
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-type error =
-  | Not_an_interface of filepath
-  | Wrong_version_interface of filepath * string
-=======
 type kind =
   | Normal
   | Parameter
 
-type error =
-  | Not_an_interface of filepath
-  | Wrong_version_interface of filepath * string
->>>>>>> ocaml-flambda/flambda-backend:main
 (* A serialized cmi file has the following format.contents
 
   - magic number
@@ -49,7 +39,7 @@ type error =
   (again, shallowly) representation can be found. When deserializing, we read
   the entire data block into memory as one blob and then deserialize from it as
   needed when values are forced.
-  
+
   Note that we are deliberately using int for offsets here because int64 is more
   expensive. On 32 bits architectures, this imposes a constraint on the size of
   .cmi files. *)
@@ -182,14 +172,6 @@ let output_cmi filename oc cmi =
   let len = Int64.sub val_pos data_pos in
   output_int64 oc len;
   Out_channel.seek oc val_pos;
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-  output_value oc ((cmi.cmi_name, sign) : header);
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-  (* BACKPORT BEGIN *)
-  (* mshinwell: upstream uses [Compression] here *)
-  output_value oc ((cmi.cmi_name, sign) : header);
-  (* BACKPORT END *)
-=======
   (* BACKPORT BEGIN *)
   (* CR ocaml 5 compressed-marshal mshinwell:
      upstream uses [Compression] here *)
@@ -200,7 +182,6 @@ let output_cmi filename oc cmi =
       header_sign = sign;
     };
   (* BACKPORT END *)
->>>>>>> ocaml-flambda/flambda-backend:main
   flush oc;
   let crc = Digest.file filename in
   let crcs =

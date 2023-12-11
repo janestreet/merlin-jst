@@ -1,6 +1,7 @@
 (** {0 OCaml compiler compatible command-line parameters} *)
 let cmi_file = ref None
 let include_dirs        = ref []
+let hidden_include_dirs = ref []
 let fast                = ref false
 let classic             = ref false
 let principal           = ref false

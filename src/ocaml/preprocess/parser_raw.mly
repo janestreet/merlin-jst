@@ -3664,26 +3664,8 @@ pattern_no_exn:
   | mkpat(
       self AS mkrhs(val_ident)
         { Ppat_alias($1, $3) }
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
     (*| self AS error
         { expecting $loc($3) "identifier" } *)
-    | pattern_comma_list(self) %prec below_COMMA
-        { Ppat_tuple(List.rev $1) }
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    | self AS error
-        { expecting $loc($3) "identifier" }
-    | pattern_comma_list(self) %prec below_COMMA
-        { Ppat_tuple(List.rev $1) }
-    | self COLONCOLON error
-        { expecting $loc($3) "pattern" }
-    | self BAR pattern
-=======
-    | self AS error
-        { expecting $loc($3) "identifier" }
-    | self COLONCOLON error
-        { expecting $loc($3) "pattern" }
-    | self BAR pattern
->>>>>>> ocaml-flambda/flambda-backend:main
     (*| self COLONCOLON error
         { expecting $loc($3) "pattern" } *)
     | self BAR pattern
@@ -3744,8 +3726,8 @@ labeled_tuple_pat_element_list(self):
       { $3 :: $1 }
   | labeled_tuple_pat_element_noprec(self) COMMA labeled_tuple_pat_element(self)
       { [ $3; $1 ] }
-  | self COMMA error
-      { expecting $loc($3) "pattern" }
+  (*| self COMMA error
+      { expecting $loc($3) "pattern" } *)
 ;
 
 reversed_labeled_tuple_pattern(self):
@@ -3860,20 +3842,6 @@ simple_delimited_pattern:
           $1
       }
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-pattern_comma_list(self):
-    pattern_comma_list(self) COMMA pattern      { $3 :: $1 }
-  | self COMMA pattern                          { [$3; $1] }
-  (*| self COMMA error                            { expecting $loc($3) "pattern" } *)
-;
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-pattern_comma_list(self):
-    pattern_comma_list(self) COMMA pattern      { $3 :: $1 }
-  | self COMMA pattern                          { [$3; $1] }
-  | self COMMA error                            { expecting $loc($3) "pattern" }
-;
-=======
->>>>>>> ocaml-flambda/flambda-backend:main
 %inline pattern_semi_list:
   ps = separated_or_terminated_nonempty_list(SEMI, pattern)
     { ps }
