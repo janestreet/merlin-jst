@@ -3,6 +3,8 @@ type t1 : immediate = int
 type t2 : immediate = A | B | C
 type t3 : value = D | E of int
 type t4 : immediate64 = A
+type t5 : value
+type t6 : value = { v : int } [@@unboxed]
 
 let f_int (x : int) = x
 let f0 (x : t0) = x
@@ -10,6 +12,8 @@ let f1 (x : t1) = x
 let f2 (x : t2) = x
 let f3 (x : t3) = x
 let f4 (x : t4) = x
+let f5 (x : t5) = x
+let f6 (x : t6) = x
 
 let poly1 (type a)           (x : a) = x
 let poly2 (type a : value)   (x : a) = x
