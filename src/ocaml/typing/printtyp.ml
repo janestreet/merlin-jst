@@ -3010,6 +3010,7 @@ let shorten_class_type_path env p =
   wrap_printing_env env
     (fun () -> best_class_type_path_simple p)
 
+<<<<<<< HEAD
 (* Export merlin-only versions of functions *)
 
 let type_scheme_for_merlin ~print_non_value_jkind_on_type_variables ppf ty =
@@ -3048,5 +3049,15 @@ let type_scheme x y : unit = type_scheme x y
 let type_declaration x y z : unit =
   type_declaration x y z ~print_non_value_inferred_jkind:false
 
+||||||| 5dcad22ff
+=======
+(* Export merlin-only versions of functions *)
+let type_declaration_for_merlin = type_declaration
+
+(* Drop merlin-only arguments from exported interface *)
+let type_declaration x y z : unit =
+  type_declaration x y z ~print_non_value_inferred_jkind:false
+
+>>>>>>> origin/main
 let () =
   Env.shorten_module_path := shorten_module_path
