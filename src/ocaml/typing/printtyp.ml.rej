@@ -1,0 +1,32 @@
+--- printtyp.ml
++++ printtyp.ml
+@@ -1577,6 +1606,9 @@ and tree_of_row_field mode (l, f) =
+ and tree_of_typlist mode tyl =
+   List.map (tree_of_typexp mode) tyl
+ 
++and tree_of_labeled_typlist mode tyl =
++  List.map (fun (label, ty) -> label, tree_of_typexp mode ty) tyl
++
+ and tree_of_typ_gf (ty, gf) =
+   let gf =
+     match gf with
+@@ -1683,7 +1715,7 @@ let filter_params tyl =
+     List.fold_left
+       (fun tyl ty ->
+         if List.exists (eq_type ty) tyl
+-        then newty2 ~level:generic_level (Ttuple [ty]) :: tyl
++        then newty2 ~level:generic_level (Ttuple [None, ty]) :: tyl
+         else ty :: tyl)
+       (* Two parameters might be identical due to a constraint but we need to
+          print them differently in order to make the output syntactically valid.
+@@ -1706,6 +1738,10 @@ let zap_qtvs_if_boring qtvs =
+    This implements Case (C3) from Note [When to print jkind annotations]. *)
+ let extract_qtvs tyl =
+   let fvs = Ctype.free_non_row_variables_of_list tyl in
++  (* The [Ctype.free*variables] family of functions returns the free
++     variables in reverse order they were encountered in the list of types.
++  *)
++  let fvs = List.rev fvs in
+   let tfvs = List.map Transient_expr.repr fvs in
+   let vars_jkinds = tree_of_qtvs tfvs in
+   zap_qtvs_if_boring vars_jkinds

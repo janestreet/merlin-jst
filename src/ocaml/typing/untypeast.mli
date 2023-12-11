@@ -82,8 +82,15 @@ val default_mapper : mapper
 val untype_structure : ?mapper:mapper -> Typedtree.structure -> structure
 val untype_signature : ?mapper:mapper -> Typedtree.signature -> signature
 
+<<<<<<< janestreet/merlin-jst:5.1.1minus-4
 val constant : Asttypes.constant -> Parsetree.constant
 
 (* Merlin *)
 val untype_pattern : _ Typedtree.general_pattern -> Parsetree.pattern
 val untype_expression : Typedtree.expression -> Parsetree.expression
+||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
+val constant : Asttypes.constant -> Parsetree.constant
+=======
+val constant : Typedtree.constant ->
+  [ `Parsetree of Parsetree.constant | `Jane_syntax of Jane_syntax.Layouts.constant ]
+>>>>>>> ocaml-flambda/flambda-backend:main
