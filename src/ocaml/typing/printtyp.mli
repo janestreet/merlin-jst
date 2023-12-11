@@ -140,8 +140,10 @@ val type_declaration_for_merlin:
   (* Like [type_declaration].
 
      [print_non_value_inferred_jkind] is a setting controlled by merlin
-     verbosity levels. When it's true, merlin will always print
-     layout annotations (even [value]!) on type declarations.
+     verbosity levels. When it's true, merlin will print the
+     inferred layout annotations on type declarations, except if the
+     layout is value. If the layout is value, a layout is printed in
+     exactly the cases that [type_declaration] prints a layout.
 
      E.g. When this flag is [true],
      [type t = A] is printed as [type t : immediate = A].
