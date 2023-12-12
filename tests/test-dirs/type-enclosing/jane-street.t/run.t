@@ -285,12 +285,12 @@ to print everything on one line.
   
   let poly2 (type a : value)   (x : a) = x
                                     ^
-  With verbosity 0: "type a"
-  With verbosity 1: "type a"
+  With verbosity 0: "type a : value"
+  With verbosity 1: "type a : value"
   
   let poly3 (type a : float64) (x : a) = x
                                     ^
-  With verbosity 0: "type a"
+  With verbosity 0: "type a : float64"
   With verbosity 1: "type a : float64"
   
 
