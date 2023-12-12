@@ -4,6 +4,7 @@ open Std
 
 type ocaml = {
   include_dirs         : string list;
+  hidden_include_dirs  : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -27,8 +28,12 @@ val dump_ocaml : ocaml -> json
 
 (** {1 Merlin high-level settings} *)
 
+type include_paths =
+  { visible : string list;
+    hidden : string list }
+
 type merlin = {
-  build_path  : string list;
+  build_path  : include_paths;
   source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
@@ -107,7 +112,7 @@ val document_arguments : out_channel -> unit
 
 val source_path : t -> string list
 
-val build_path : t -> string list
+val build_path : t -> include_paths
 
 val cmt_path : t -> string list
 

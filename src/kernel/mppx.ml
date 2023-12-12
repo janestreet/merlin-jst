@@ -2,6 +2,7 @@ open Mconfig
 
 let {Logger. log} = Logger.for_section "Mppx"
 
+(* CR -H: do we need to do something for hidden includes here? *)
 let with_include_dir path f =
   let saved = !Clflags.include_dirs in
   let restore () = Clflags.include_dirs := saved in
@@ -19,10 +20,11 @@ let with_include_dir path f =
   restore ();
   result
 
+(* CR -H: do we need to do something for hidden includes here? *)
 let rewrite parsetree cfg =
   let ppx = cfg.ocaml.ppx in
   (* add include path attribute to the parsetree *)
-  with_include_dir (Mconfig.build_path cfg) @@ fun () ->
+  with_include_dir (Mconfig.build_path cfg).visible @@ fun () ->
   match
     Pparse.apply_rewriters ~restore:false ~ppx ~tool_name:"merlin" parsetree
   with

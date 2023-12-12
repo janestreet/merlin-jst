@@ -32,8 +32,12 @@ let {Logger. log} = Logger.for_section "Mconfig_dot"
 
 type directive = Merlin_dot_protocol.directive
 
+type include_paths =
+  { visible : string list;
+    hidden : string list }
+
 type config = {
-  build_path   : string list;
+  build_path   : include_paths;
   source_path  : string list;
   cmi_path     : string list;
   cmt_path     : string list;
@@ -47,7 +51,7 @@ type config = {
 }
 
 let empty_config = {
-  build_path   = [];
+  build_path   = {visible = []; hidden = []};
   source_path  = [];
   cmi_path     = [];
   cmt_path     = [];
@@ -233,7 +237,13 @@ end
 let prepend_config ~dir:cwd configurator (directives : directive list) config =
   List.fold_left ~init:(config, []) ~f:(fun (config, errors) ->
     function
-    | `B path -> {config with build_path = path :: config.build_path}, errors
+    | `B path ->
+      (* CR ccasinghino: Probably some way to put hidden includes in merlin files is
+         needed. *)
+      let build_path = { config.build_path with
+                         visible = path :: config.build_path.visible }
+      in
+      {config with build_path = build_path}, errors
     | `S path -> {config with source_path = path :: config.source_path}, errors
     | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
     | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
@@ -266,7 +276,8 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
 let postprocess_config config =
   let clean list = List.rev (List.filter_dup list) in
   {
-    build_path   = clean config.build_path;
+    build_path   = { visible = clean config.build_path.visible;
+                     hidden = clean config.build_path.hidden };
     source_path  = clean config.source_path;
     cmi_path     = clean config.cmi_path;
     cmt_path     = clean config.cmt_path;
