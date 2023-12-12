@@ -52,33 +52,19 @@ module Dir = struct
     in
     List.find_map search t.files
 
-  let create path =
-    { path; files = Array.to_list (Directory_content_cache.read path) }
-
-  let check t = Directory_content_cache.check t.path
-
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-  let create path =
-    { path; files = Array.to_list (readdir_compat path) }
-=======
   let create ~hidden path =
-    { path; files = Array.to_list (readdir_compat path); hidden }
->>>>>>> ocaml-flambda/flambda-backend:main
+    { path; files = Array.to_list (Directory_content_cache.read path); hidden }
+
+  let check ~hidden t =
+    hidden = t.hidden && Directory_content_cache.check t.path
+
 end
 
 type auto_include_callback =
   (Dir.t -> string -> string option) -> string -> string
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-let dirs = s_ref []
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-
-let dirs = s_ref []
-=======
 
 let visible_dirs = s_ref []
 let hidden_dirs = s_ref []
->>>>>>> ocaml-flambda/flambda-backend:main
 let no_auto_include _ _ = raise Not_found
 let auto_include_callback = ref no_auto_include
 
@@ -124,53 +110,52 @@ let prepend_add dir =
       end
     ) dir.Dir.files
 
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-let init ~auto_include l =
+let init ~auto_include ~visible ~hidden =
   assert (not Config.merlin || Local_store.is_bound ());
-  let rec loop_changed acc = function
+  let rec loop_changed ~hidden acc = function
     | [] -> Some acc
     | new_path :: new_rest ->
-      loop_changed (Dir.create new_path :: acc) new_rest
+      loop_changed ~hidden (Dir.create new_path ~hidden :: acc) new_rest
   in
-  let rec loop_unchanged acc new_paths old_dirs =
+  let rec loop_unchanged ~hidden acc new_paths old_dirs =
     match new_paths, old_dirs with
     | [], [] -> None
     | new_path :: new_rest, [] ->
-      loop_changed (Dir.create new_path :: acc) new_rest
+      loop_changed ~hidden (Dir.create new_path ~hidden :: acc) new_rest
     | [], _ :: _ -> Some acc
     | new_path :: new_rest, old_dir :: old_rest ->
       if String.equal new_path (Dir.path old_dir) then begin
-        if Dir.check old_dir then begin
-          loop_unchanged (old_dir :: acc) new_rest old_rest
+        if Dir.check ~hidden old_dir then begin
+          loop_unchanged ~hidden (old_dir :: acc) new_rest old_rest
         end else begin
-          loop_changed (Dir.create new_path :: acc) new_rest
+          loop_changed ~hidden (Dir.create new_path ~hidden :: acc) new_rest
         end
       end else begin
-        loop_changed (Dir.create new_path :: acc) new_rest
+        loop_changed ~hidden (Dir.create new_path ~hidden :: acc) new_rest
       end
   in
-  match loop_unchanged [] l (List.rev !dirs) with
+  let new_visible =
+    loop_unchanged ~hidden:false [] visible (List.rev !visible_dirs)
+  in
+  let new_hidden =
+    loop_unchanged ~hidden:true [] hidden (List.rev !hidden_dirs)
+  in
+  let update =
+    match new_visible, new_hidden with
+    | None, None -> None
+    | Some v, None -> Some (v, !hidden_dirs)
+    | None, Some h -> Some (!visible_dirs, h)
+    | Some v, Some h -> Some (v, h)
+  in
+  match update with
   | None -> ()
-  | Some new_dirs ->
+  | Some (new_visible, new_hidden) ->
     reset ();
-    dirs := new_dirs;
-    List.iter prepend_add new_dirs;
+    visible_dirs := new_visible;
+    hidden_dirs := new_hidden;
+    List.iter prepend_add new_hidden;
+    List.iter prepend_add new_visible;
     auto_include_callback := auto_include
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-let init ~auto_include l =
-  reset ();
-  dirs := List.rev_map Dir.create l;
-  List.iter prepend_add !dirs;
-  auto_include_callback := auto_include
-=======
-let init ~auto_include ~visible ~hidden =
-  reset ();
-  visible_dirs := List.rev_map (Dir.create ~hidden:false) visible;
-  hidden_dirs := List.rev_map (Dir.create ~hidden:true) hidden;
-  List.iter prepend_add !hidden_dirs;
-  List.iter prepend_add !visible_dirs;
-  auto_include_callback := auto_include
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let remove_dir dir =
   assert (not Config.merlin || Local_store.is_bound ());
@@ -276,12 +261,6 @@ let find_uncap_with_visibility fn =
         (Misc.find_in_path_uncap (get_hidden_path_list ()) fn, Hidden)
   with Not_found ->
     let fn_uncap = String.uncapitalize_ascii fn in
-<<<<<<< janestreet/merlin-jst:5.1.1minus-4
-    !auto_include_callback Dir.find_uncap fn_uncap
-||||||| ocaml-flambda/flambda-backend:94df71946791a94c8bcb19e72f6127a30ee3a83b
-    !auto_include_callback Dir.find_uncap fn_uncap
-=======
     (!auto_include_callback Dir.find_uncap fn_uncap, Visible)
 
 let find_uncap fn = fst (find_uncap_with_visibility fn)
->>>>>>> ocaml-flambda/flambda-backend:main

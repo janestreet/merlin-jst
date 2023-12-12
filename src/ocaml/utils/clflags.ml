@@ -13,6 +13,7 @@ let applicative_functors = ref true
 let nopervasives        = ref false
 let strict_formats      = ref true
 let open_modules        = ref []
+let as_parameter        = ref false
 
 let annotations         = ref false
 let binary_annotations  = ref true
