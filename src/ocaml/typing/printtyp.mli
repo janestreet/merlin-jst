@@ -155,14 +155,13 @@ val type_declaration_for_merlin:
 
     [print_non_value_jkind_on_type_variables] is a setting controlled
     by merlin verbosity levels. When it's true, merlin will print
-    layout annotations on type variables when the layout isn't merely
-    value.
+    layout annotations for type variables when the layout isn't merely
+    value. The annotations are printed as a comment following the type.
 
     E.g. When this flag is [true],
     ['a -> 'b] is printed as:
     {[
-      'a -> 'b
-      constraint ('a : float64)
+      'a -> 'b (* 'a : float64 *)
     ]}
     if ['a] has layout [float64] and ['b] has layout [value].
 *)

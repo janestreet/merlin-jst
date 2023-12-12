@@ -3012,39 +3012,36 @@ let shorten_class_type_path env p =
 
 (* Export merlin-only versions of functions *)
 
-let type_scheme_for_merlin ~print_non_value_jkind_on_type_variables ppf ty =
-  match print_non_value_jkind_on_type_variables with
-  | false -> type_scheme ppf ty
-  | true ->
+let print_annotated_qtvs_as_comment ppf qtvs =
+  let qtvs =
+    List.filter_map
+      (function
+        | _, None -> None
+        | name, Some annot -> Some (name, annot))
+      qtvs
+  in
+  match qtvs with
+  | [] -> ()
+  | _ :: _ as qtvs ->
       let annotated_qtv ppf (name, jkind) =
         fprintf ppf "@['%s : %a@]" name !Oprint.out_jkind jkind
       in
-      type_scheme ppf ty;
-      let qtvs =
-        (* We call [extract_qtvs] after [type_scheme] so the variable
-           names are available.
-        *)
-        extract_qtvs [ ty ]
-        |> List.filter_map (function
-            | _, None -> None
-            | name, Some annot -> Some (name, annot))
-      in
-      match qtvs with
-      | [] -> ()
-      | qtv :: qtvs ->
-          fprintf ppf " @[(* @[%a%t@] *)@]"
-            annotated_qtv qtv
-            (fun ppf ->
-               List.iter
-                 (fprintf ppf ", %a" annotated_qtv)
-                 qtvs)
+      fprintf ppf " @[(* @[%a@] *)@]"
+        (Format.pp_print_list annotated_qtv
+           ~pp_sep:(fun ppf () -> fprintf ppf ", "))
+        qtvs
+
+let type_scheme_for_merlin ~print_non_value_jkind_on_type_variables ppf ty =
+  type_scheme ppf ty;
+  if print_non_value_jkind_on_type_variables
+  then (
+    let qtvs = extract_qtvs [ ty ] in
+    print_annotated_qtvs_as_comment ppf qtvs)
 
 let type_declaration_for_merlin = type_declaration
 
 (* Drop merlin-only arguments from exported interface *)
 
-let prepared_type_scheme x y : unit = prepared_type_scheme x y
-let type_scheme x y : unit = type_scheme x y
 let type_declaration x y z : unit =
   type_declaration x y z ~print_non_value_inferred_jkind:false
 
