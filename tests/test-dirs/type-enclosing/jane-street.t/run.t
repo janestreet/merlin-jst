@@ -456,3 +456,11 @@ how to produce valid json.
   (* 'g : immediate, 'f : immediate, 'e : immediate, 'd : immediate, 'c : immediate, 
      'b : immediate, 'a : immediate *)"
   
+
+(VII) Non-constant sort variable
+  $ run layouts.ml 46:5
+  let unconstrained_f x = x
+      ^
+  With verbosity 0: "'a -> 'a"
+  With verbosity 1: "'a -> 'a"
+  

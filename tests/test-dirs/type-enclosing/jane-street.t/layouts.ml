@@ -42,3 +42,5 @@ let long_type a b c d e f g =
   A2 f,
   A2 g,
 ;;
+
+let unconstrained_f x = x
