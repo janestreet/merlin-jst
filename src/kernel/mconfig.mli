@@ -21,6 +21,7 @@ type ocaml = {
   pp                   : string with_workdir option;
   warnings             : Warnings.state;
   cmi_file             : string option;
+  as_parameter         : bool;
 }
 
 val dump_ocaml : ocaml -> json

@@ -23,6 +23,7 @@ type ocaml = {
   pp                   : string with_workdir option;
   warnings             : Warnings.state;
   cmi_file             : string option;
+  as_parameter         : bool;
 }
 
 let dump_warnings st =
@@ -49,6 +50,7 @@ let dump_ocaml x = `Assoc [
     "pp"                   , Json.option (dump_with_workdir Json.string) x.pp;
     "warnings"             , dump_warnings x.warnings;
     "cmi_file"             , Json.option Json.string x.cmi_file;
+    "as_parameter"         , `Bool x.as_parameter;
   ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -701,6 +703,10 @@ let ocaml_flags = [
         {ocaml with cmi_file = Some cmi_file}),
     "<file>  Use the <file> interface to type-check"
   );
+  ( "-as-parameter",
+    Marg.unit (fun ocaml -> {ocaml with as_parameter = true}),
+    " Compiles the interface as a parameter for an open module."
+  );
 ]
 
 (** {1 Main configuration} *)
@@ -725,6 +731,7 @@ let initial = {
     pp                   = None;
     warnings             = Warnings.backup ();
     cmi_file             = None;
+    as_parameter         = false;
   };
   merlin = {
     build_path  = {visible = []; hidden = []};

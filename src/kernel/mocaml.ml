@@ -44,6 +44,7 @@ let setup_reader_config config = (
   strict_formats       := ocaml.strict_formats ;
   open_modules         := ocaml.open_modules ;
   cmi_file             := ocaml.cmi_file ;
+  as_parameter         := ocaml.as_parameter ;
 )
 
 let setup_typer_config config = (
