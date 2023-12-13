@@ -238,8 +238,8 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
   List.fold_left ~init:(config, []) ~f:(fun (config, errors) ->
     function
     | `B path ->
-      (* CR ccasinghino: Probably some way to put hidden includes in merlin files is
-         needed. *)
+      (* CR -H: Probably some way to put hidden includes in merlin files is needed
+         eventually. *)
       let build_path = { config.build_path with
                          visible = path :: config.build_path.visible }
       in

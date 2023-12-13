@@ -883,7 +883,7 @@ let build_path config = (
   { visible = visible'; hidden = hidden' }
 )
 
-(* CR ccasinghino: What is `cmt_path` and does it need to consider hidden_includes?  *)
+(* CR -H: What is `cmt_path` and does it need to consider hidden_includes?  *)
 let cmt_path config = (
   let dirs =
     match config.ocaml.threads with
@@ -905,8 +905,8 @@ let cmt_path config = (
 )
 
 let global_modules ?(include_current=false) config = (
-  (* CR 5.1.1minus-4: I took a look at a couple uses of `global_modules` and the
-     `.visible` below seems fine, but I'm not confident *)
+  (* CR -H: I took a look at a couple uses of `global_modules` and the `.visible` below
+     seems fine, but I'm not confident *)
   let modules = Misc.modules_in_path ~ext:".cmi" (build_path config).visible in
   if include_current then modules
   else match config.query.filename with
