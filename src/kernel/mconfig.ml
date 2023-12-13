@@ -568,7 +568,7 @@ let ocaml_flags = [
   (
     "-H",
     marg_path (fun dir ocaml ->
-        {ocaml with include_dirs = dir :: ocaml.hidden_include_dirs}),
+        {ocaml with hidden_include_dirs = dir :: ocaml.hidden_include_dirs}),
     "<dir> Add <dir> to the list of hidden include directories"
   );
   (
