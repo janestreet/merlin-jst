@@ -29,6 +29,9 @@ type error =
       filepath * Compilation_unit.t * Compilation_unit.t
   | Direct_reference_from_wrong_package of
       Compilation_unit.t * filepath * Compilation_unit.Prefix.t
+  | Illegal_import_of_parameter of Compilation_unit.Name.t * filepath
+  | Not_compiled_as_parameter of Compilation_unit.Name.t * filepath
+  | Cannot_implement_parameter of Compilation_unit.Name.t * filepath
 
 exception Error of error
 
@@ -37,12 +40,15 @@ val report_error: Format.formatter -> error -> unit
 module Persistent_signature : sig
   type t =
     { filename : string; (** Name of the file containing the signature. *)
-      cmi : Cmi_format.cmi_infos_lazy }
+      cmi : Cmi_format.cmi_infos_lazy;
+      visibility : Load_path.visibility
+    }
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
       it from memory, for instance to build a self-contained toplevel. *)
-  val load : (unit_name:Compilation_unit.Name.t -> t option) ref
+  val load :
+    (allow_hidden:bool -> unit_name:Compilation_unit.Name.t -> t option) ref
 end
 
 type can_load_cmis =
@@ -65,15 +71,25 @@ val fold : 'a t -> (Compilation_unit.Name.t -> 'a -> 'b -> 'b) -> 'b -> 'b
 val read : 'a t -> (Persistent_signature.t -> 'a)
   -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> 'a
-val find : 'a t -> (Persistent_signature.t -> 'a)
+val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
   -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> 'a
 
 val find_in_cache : 'a t -> Compilation_unit.Name.t -> 'a option
 
-val check : 'a t -> (Persistent_signature.t -> 'a)
+val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
   -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> Compilation_unit.Name.t -> unit
+
+(* Lets it be known that the given module is a parameter and thus is expected
+   to have been compiled as such. It may or may not be a parameter to _this_
+   module (see the forthcoming [register_exported_parameter]). Raises an
+   exception if the module has already been imported as a non-parameter. *)
+val register_parameter_import : 'a t -> Compilation_unit.Name.t -> unit
+
+(* [is_registered_parameter_import penv md] checks if [md] has been passed to
+   [register_parameter_import penv] *)
+val is_registered_parameter_import : 'a t -> Compilation_unit.Name.t -> bool
 
 (* [looked_up penv md] checks if one has already tried
    to read the signature for [md] in the environment
@@ -92,7 +108,11 @@ val is_imported_opaque : 'a t -> Compilation_unit.Name.t -> bool
    opaque module *)
 val register_import_as_opaque : 'a t -> Compilation_unit.Name.t -> unit
 
-val make_cmi : 'a t -> Compilation_unit.t -> Subst.Lazy.signature -> alerts
+val make_cmi : 'a t
+  -> Compilation_unit.t
+  -> Cmi_format.kind
+  -> Subst.Lazy.signature
+  -> alerts
   -> Cmi_format.cmi_infos_lazy
 
 val save_cmi : 'a t -> Persistent_signature.t -> unit

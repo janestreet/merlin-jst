@@ -428,7 +428,7 @@ let ident_name = Naming_context.ident_name
 let reset_naming_context = Naming_context.reset
 
 let ident ppf id = pp_print_string ppf
-    (Out_name.print (Naming_context.ident_name None id))
+    (Out_name.print (Naming_context.ident_name_simple None id))
 
 let namespaced_ident namespace  id =
   Out_name.print (Naming_context.ident_name (Some namespace) id)
@@ -613,7 +613,15 @@ let rec raw_type ppf ty =
     fprintf ppf "@[<1>{id=%d;level=%d;scope=%d;desc=@,%a}@]" ty.id ty.level
       ty.scope raw_type_desc ty.desc
   end
+and labeled_type ppf (label, ty) =
+  begin match label with
+    | Some s -> fprintf ppf "label=\"%s\" " s
+    | None -> ()
+  end;
+  raw_type ppf ty
+
 and raw_type_list tl = raw_list raw_type tl
+and labeled_type_list tl = raw_list labeled_type tl
 and raw_type_desc ppf = function
     Tvar { name; jkind } ->
       fprintf ppf "Tvar (@,%a,@,%s)" print_name name
@@ -626,7 +634,7 @@ and raw_type_desc ppf = function
         raw_type t1 raw_type t2
         (if is_commu_ok c then "Cok" else "Cunknown")
   | Ttuple tl ->
-      fprintf ppf "@[<1>Ttuple@,%a@]" raw_type_list tl
+      fprintf ppf "@[<1>Ttuple@,%a@]" labeled_type_list tl
   | Tconstr (p, tl, abbrev) ->
       fprintf ppf "@[<hov1>Tconstr(@,%a,@,%a,@,%a)@]" path p
         raw_type_list tl
@@ -724,6 +732,9 @@ let apply_subst s1 tyl =
     | Map l1 -> List.map (List.nth tyl) l1
     | Id -> tyl
 
+(* In the [Paths] constructor, more preferred paths are stored later in the
+   list. *)
+
 type best_path = Paths of Path.t list | Best of Path.t
 
 (** Short-paths cache: the five mutable variables below implement a one-slot
@@ -775,24 +786,6 @@ let rec normalize_type_path ?(cache=false) env p =
     Not_found ->
       (Env.normalize_type_path None env p, Id)
 
-let penalty s =
-  if s <> "" && s.[0] = '_' then
-    10
-  else
-    match find_double_underscore s with
-    | None -> 1
-    | Some _ -> 10
-
-let rec path_size = function
-    Pident id ->
-      penalty (Ident.name id), -Ident.scope id
-  | Pdot (p, _) | Pextra_ty (p, Pcstr_ty _) ->
-      let (l, b) = path_size p in (1+l, b)
-  | Papply (p1, p2) ->
-      let (l, b) = path_size p1 in
-      (l + fst (path_size p2), b)
-  | Pextra_ty (p, _) -> path_size p
-
 let same_printing_env env =
   let used_pers = Env.used_persistent () in
   Env.same_types !printing_old env
@@ -823,7 +816,13 @@ let set_printing_env env =
               Paths l -> r := Paths (p :: l)
             | Best p' -> r := Paths [p; p'] (* assert false *)
           with Not_found ->
-            printing_map := Path.Map.add p1 (ref (Paths [p])) !printing_map)
+            (* Jane Street: Often the best choice for printing [p1] is
+               [p1] itself. And often [p1] is a path whose "penalty"
+               would be reduced if the double-underscore rewrite
+               applied.
+            *)
+            let rewritten_p1 = rewrite_double_underscore_paths env p1 in
+            printing_map := Path.Map.add p1 (ref (Paths [ p; rewritten_p1 ])) !printing_map)
         env in
     printing_cont := [cont];
   end
@@ -860,7 +859,34 @@ let is_unambiguous path env =
       List.for_all (fun p -> lid_of_path p = id) rem &&
       Path.same p (fst (Env.find_type_by_name id env))
 
-let rec get_best_path r =
+let penalty_size = 10
+
+let name_penalty s =
+  if s <> "" && s.[0] = '_' then
+    penalty_size
+  else
+    match find_double_underscore s with
+    | None -> 1
+    | Some _ -> penalty_size
+
+let ambiguity_penalty path env =
+  if is_unambiguous path env then 0 else penalty_size
+
+let path_size path env =
+  let rec size = function
+      Pident id ->
+        name_penalty (Ident.name id), -Ident.scope id
+    | Pdot (p, id) | Pextra_ty (p, Pcstr_ty id) ->
+        let (l, b) = size p in (name_penalty id + l, b)
+    | Papply (p1, p2) ->
+        let (l, b) = size p1 in
+        (l + fst (size p2), b)
+    | Pextra_ty (p, _) -> size p
+  in
+  let l, s = size path in
+  l + ambiguity_penalty path env, s
+
+let rec get_best_path r env =
   match !r with
     Best p' -> p'
   | Paths [] -> raise Not_found
@@ -870,11 +896,10 @@ let rec get_best_path r =
         (fun p ->
           (* Format.eprintf "evaluating %a@." path p; *)
           match !r with
-            Best p' when path_size p >= path_size p' -> ()
-          | _ -> if is_unambiguous p !printing_env then r := Best p)
-              (* else Format.eprintf "%a ignored as ambiguous@." path p *)
-        l;
-      get_best_path r
+            Best p' when path_size p env >= path_size p' env -> ()
+          | _ -> r := Best p)
+        (List.rev l);
+      get_best_path r env
 
 let best_type_path p =
   if !printing_env == Env.empty
@@ -883,14 +908,18 @@ let best_type_path p =
   then (p, Id)
   else
     let (p', s) = normalize_type_path !printing_env p in
-    let get_path () = get_best_path (Path.Map.find  p' !printing_map) in
+    let get_path () =
+      try
+        get_best_path (Path.Map.find p' !printing_map) !printing_env
+      with Not_found -> rewrite_double_underscore_paths !printing_env p'
+    in
     while !printing_cont <> [] &&
-      try fst (path_size (get_path ())) > !printing_depth with Not_found -> true
+      fst (path_size (get_path ()) !printing_env) > !printing_depth
     do
       printing_cont := List.map snd (Env.run_iter_cont !printing_cont);
       incr printing_depth;
     done;
-    let p'' = try get_path () with Not_found -> p' in
+    let p'' = get_path () in
     (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
     (p'', s)
 
@@ -1272,8 +1301,8 @@ let rec tree_of_typexp mode ty =
         let t2 = tree_of_typexp mode ty2 in
         let rm = tree_of_mode mret in
         Otyp_arrow (lab, am, t1, rm, t2)
-    | Ttuple tyl ->
-        Otyp_tuple (tree_of_typlist mode tyl)
+    | Ttuple labeled_tyl ->
+        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
     | Tconstr(p, tyl, _abbrev) ->
         let p', s = best_type_path p in
         let tyl' = apply_subst s tyl in
@@ -1388,6 +1417,9 @@ and tree_of_row_field mode (l, f) =
 and tree_of_typlist mode tyl =
   List.map (tree_of_typexp mode) tyl
 
+and tree_of_labeled_typlist mode tyl =
+  List.map (fun (label, ty) -> label, tree_of_typexp mode ty) tyl
+
 and tree_of_typ_gf (ty, gf) =
   let gf =
     match gf with
@@ -1494,7 +1526,7 @@ let filter_params tyl =
     List.fold_left
       (fun tyl ty ->
         if List.exists (eq_type ty) tyl
-        then newty2 ~level:generic_level (Ttuple [ty]) :: tyl
+        then newty2 ~level:generic_level (Ttuple [None, ty]) :: tyl
         else ty :: tyl)
       (* Two parameters might be identical due to a constraint but we need to
          print them differently in order to make the output syntactically valid.
@@ -1517,6 +1549,10 @@ let zap_qtvs_if_boring qtvs =
    This implements Case (C3) from Note [When to print jkind annotations]. *)
 let extract_qtvs tyl =
   let fvs = Ctype.free_non_row_variables_of_list tyl in
+  (* The [Ctype.free*variables] family of functions returns the free
+     variables in reverse order they were encountered in the list of types.
+  *)
+  let fvs = List.rev fvs in
   let tfvs = List.map Transient_expr.repr fvs in
   let vars_jkinds = tree_of_qtvs tfvs in
   zap_qtvs_if_boring vars_jkinds

@@ -1091,6 +1091,9 @@ let is_imported_opaque modname =
 let register_import_as_opaque modname =
   Persistent_env.register_import_as_opaque !persistent_env modname
 
+let is_parameter_unit modname =
+  Persistent_env.is_registered_parameter_import !persistent_env modname
+
 let reset_declaration_caches () =
   Types.Uid.Tbl.clear !value_declarations;
   Types.Uid.Tbl.clear !type_declarations;
@@ -1167,7 +1170,7 @@ let find_ident_module id env =
   match find_same_module id env.modules with
   | Mod_local data -> data
   | Mod_unbound _ -> raise Not_found
-  | Mod_persistent -> find_pers_mod (id |> modname_of_ident)
+  | Mod_persistent -> find_pers_mod ~allow_hidden:true (id |> modname_of_ident)
 
 let rec find_module_components path env =
   match path with
@@ -1653,13 +1656,12 @@ let iter_env wrap proj1 proj2 f env () =
        | Mod_unbound _ -> ()
        | Mod_local data ->
            iter_components (Pident id) path data.mda_components
-       | Mod_persistent ->
-           let modname = modname_of_ident id in
-           match Persistent_env.find_in_cache !persistent_env modname with
-           | None -> ()
-           | Some data ->
-               iter_components (Pident id) path data.mda_components)
-    env.modules
+       | Mod_persistent -> ())
+    env.modules;
+  Persistent_env.fold !persistent_env (fun name data () ->
+    let id = Ident.create_persistent (Compilation_unit.Name.to_string name) in
+    let path = Pident id in
+    iter_components path path data.mda_components) ()
 
 let run_iter_cont l =
   iter_env_cont := [];
@@ -2823,7 +2825,8 @@ let persistent_structures_of_dir dir =
   |> String.Set.of_seq
 
 (* Save a signature to a file *)
-let save_signature_with_transform cmi_transform ~alerts sg modname filename =
+let save_signature_with_transform cmi_transform ~alerts sg modname kind
+      filename =
   Btype.cleanup_abbrev ();
   Subst.reset_additional_action_type_id ();
   let sg = Subst.Lazy.of_signature sg
@@ -2831,20 +2834,20 @@ let save_signature_with_transform cmi_transform ~alerts sg modname filename =
         (Subst.with_additional_action Prepare_for_saving Subst.identity)
   in
   let cmi =
-    Persistent_env.make_cmi !persistent_env modname sg alerts
+    Persistent_env.make_cmi !persistent_env modname kind sg alerts
     |> cmi_transform in
-  Persistent_env.save_cmi !persistent_env
-    { Persistent_env.Persistent_signature.filename; cmi };
+  let pers_sig =
+    Persistent_env.Persistent_signature.{ filename; cmi; visibility = Visible }
+  in
+  Persistent_env.save_cmi !persistent_env pers_sig;
   cmi
 
-let save_signature ~alerts sg modname filename =
-  save_signature_with_transform (fun cmi -> cmi)
-    ~alerts sg modname filename
+let save_signature ~alerts sg modname cu filename =
+  save_signature_with_transform (fun cmi -> cmi) ~alerts sg modname cu filename
 
-let save_signature_with_imports ~alerts sg modname filename imports =
+let save_signature_with_imports ~alerts sg modname cu filename imports =
   let with_imports cmi = { cmi with cmi_crcs = imports } in
-  save_signature_with_transform with_imports
-    ~alerts sg modname filename
+  save_signature_with_transform with_imports ~alerts sg modname cu filename
 
 (* Make the initial environment, without language extensions *)
 let initial =
@@ -3079,10 +3082,10 @@ let lookup_ident_module (type a) (load : a load) ~errors ~use ~loc s env =
       let name = s |> Compilation_unit.Name.of_string in
       match load with
       | Don't_load ->
-          check_pers_mod ~loc name;
+          check_pers_mod ~allow_hidden:false ~loc name;
           path, (() : a)
       | Load -> begin
-          match find_pers_mod name with
+          match find_pers_mod ~allow_hidden:false name with
           | mda ->
               use_module ~use ~loc path mda;
               path, (mda : a)
@@ -3690,7 +3693,10 @@ let bound_module name env =
   | exception Not_found ->
       if Current_unit_name.is name then false
       else begin
-        match find_pers_mod (name |> Compilation_unit.Name.of_string) with
+        match
+          find_pers_mod ~allow_hidden:false
+            (name |> Compilation_unit.Name.of_string)
+        with
         | _ -> true
         | exception Not_found -> false
       end

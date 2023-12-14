@@ -34,7 +34,7 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
-    jkind_annotation: iterator -> Jkind.const -> unit;
+    jkind_annotation: iterator -> Jkind.annotation -> unit;
     location: iterator -> Location.t -> unit;
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
@@ -240,7 +240,7 @@ let pat
   | Tpat_any  -> ()
   | Tpat_var (_, s, _, _) -> iter_loc sub s
   | Tpat_constant _ -> ()
-  | Tpat_tuple l -> List.iter (sub.pat sub) l
+  | Tpat_tuple l -> List.iter (fun (_, p) -> sub.pat sub p) l
   | Tpat_construct (lid, _, l, vto) ->
       iter_loc sub lid;
       List.iter (sub.pat sub) l;
@@ -291,7 +291,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_try (exp, cases) ->
       sub.expr sub exp;
       List.iter (sub.case sub) cases
-  | Texp_tuple (list, _) -> List.iter (sub.expr sub) list
+  | Texp_tuple (list, _) -> List.iter (fun (_,e) -> sub.expr sub e) list
   | Texp_construct (lid, _, args, _) ->
       iter_loc sub lid;
       List.iter (sub.expr sub) args
@@ -578,11 +578,11 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
   sub.env sub ctyp_env;
   match ctyp_desc with
   | Ttyp_var (_, jkind) ->
-      Option.iter (fun (jkind, _) -> sub.jkind_annotation sub jkind) jkind
+      Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_arrow (_, ct1, ct2) ->
       sub.typ sub ct1;
       sub.typ sub ct2
-  | Ttyp_tuple list -> List.iter (sub.typ sub) list
+  | Ttyp_tuple list -> List.iter (fun (_, t) -> sub.typ sub t) list
   | Ttyp_constr (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
@@ -592,10 +592,10 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       List.iter (sub.typ sub) list
   | Ttyp_alias (ct, _, jkind) ->
       sub.typ sub ct;
-      Option.iter (fun (jkind, _) -> sub.jkind_annotation sub jkind) jkind
+      Option.iter (sub.jkind_annotation sub) jkind
   | Ttyp_variant (list, _, _) -> List.iter (sub.row_field sub) list
   | Ttyp_poly (vars, ct) ->
-      List.iter (fun (_, l) -> Option.iter (fun (j, _) -> sub.jkind_annotation sub j) l) vars;
+      List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
       sub.typ sub ct
   | Ttyp_package pack -> sub.package_type sub pack
 
@@ -649,7 +649,7 @@ let value_binding sub {vb_loc; vb_pat; vb_expr; vb_attributes; _} =
 
 let env _sub _ = ()
 
-let jkind_annotation _sub _ = ()
+let jkind_annotation sub (_, l) = iter_loc sub l
 
 let default_iterator =
   {

@@ -509,10 +509,14 @@ module Gen = struct
                   Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
                     ([ param ], None, Pfunction_body expr))
         | Ttuple types ->
-          let choices = List.map types ~f:(exp_or_hole env)
+          let choices =
+            List.map types ~f:(fun (lbl, ty) ->
+              List.map (exp_or_hole env ty) ~f:(fun result -> lbl, result))
             |> Util.combinations
           in
-          List.map choices  ~f:Ast_helper.Exp.tuple
+          List.map choices ~f:(fun choice ->
+            Jane_syntax.Labeled_tuples.expr_of choice
+              ~loc:!Ast_helper.default_loc)
         | Tvariant row_desc -> variant env rtyp row_desc
         | Tpackage (path, lids_args) -> begin
           let open Ast_helper in

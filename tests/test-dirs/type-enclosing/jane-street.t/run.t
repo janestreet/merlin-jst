@@ -291,12 +291,12 @@ how to produce valid json.
   
   let poly2 (type a : value)   (x : a) = x
                                     ^
-  With verbosity 0: "type a"
-  With verbosity 1: "type a"
+  With verbosity 0: "type a : value"
+  With verbosity 1: "type a : value"
   
   let poly3 (type a : float64) (x : a) = x
                                     ^
-  With verbosity 0: "type a"
+  With verbosity 0: "type a : float64"
   With verbosity 1: "type a : float64"
   
 
@@ -453,8 +453,8 @@ how to produce valid json.
   'c ->
   'd ->
   'e -> 'f -> 'g -> 'a p2 * 'b p2 * 'c p2 * 'd p2 * 'e p2 * 'f p2 * 'g p2 * 'h 
-  (* 'g : immediate, 'f : immediate, 'e : immediate, 'd : immediate, 'c : immediate, 
-     'b : immediate, 'a : immediate *)"
+  (* 'a : immediate, 'b : immediate, 'c : immediate, 'd : immediate, 'e : immediate, 
+     'f : immediate, 'g : immediate *)"
   
 
 (VII) Non-constant sort variable

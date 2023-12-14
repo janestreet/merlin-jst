@@ -87,6 +87,8 @@ type error =
   | With_cannot_remove_packed_modtype of Path.t * module_type
   | Toplevel_nonvalue of string * Jkind.sort
   | Strengthening_mismatch of Longident.t * Includemod.explanation
+  | Cannot_pack_parameter
+  | Cannot_compile_implementation_as_parameter
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -219,7 +221,7 @@ let initial_env ~loc ~initially_opened_module
       env
   in
   let units =
-    List.map Env.persistent_structures_of_dir (Load_path.get ())
+    List.map Env.persistent_structures_of_dir (Load_path.get_visible ())
   in
   let env, units =
     match initially_opened_module with
@@ -3398,6 +3400,9 @@ let () =
 (* Typecheck an implementation file *)
 
 let type_implementation sourcefile outputprefix modulename initial_env ast =
+  let error e =
+    raise (Error (Location.in_file sourcefile, initial_env, e))
+  in
   Cmt_format.clear ();
   Cms_format.clear ();
   Misc.try_finally (fun () ->
@@ -3428,6 +3433,8 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           signature = simple_sg
         } (* result is ignored by Compile.implementation *)
       end else begin
+        if !Clflags.as_parameter then
+          error Cannot_compile_implementation_as_parameter;
         let sourceintf =
           Filename.remove_extension sourcefile ^ !Config.interface_suffix in
         if !Clflags.cmi_file <> None || Sys.file_exists sourceintf then begin
@@ -3466,6 +3473,8 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
             signature = dclsig
           }
         end else begin
+          if !Clflags.as_parameter then
+            error Cannot_compile_implementation_as_parameter;
           Location.prerr_warning (Location.in_file sourcefile)
             Warnings.Missing_mli;
           let coercion, shape =
@@ -3483,9 +3492,10 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           let shape = Shape.local_reduce shape in
           if not !Clflags.dont_write_files then begin
             let alerts = Builtin_attributes.alerts_of_str ast in
+            let kind = Cmi_format.Normal in
             let cmi =
               Env.save_signature ~alerts
-                simple_sg modulename (outputprefix ^ ".cmi")
+                simple_sg modulename kind (outputprefix ^ ".cmi")
             in
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -3518,7 +3528,10 @@ let save_signature modname tsg outputprefix source_file initial_env cmi =
   Cms_format.save_cms  (outputprefix ^ ".cmsi") modname
     (Some source_file) None
 
-let type_interface env ast =
+let type_interface modulename env ast =
+  if !Clflags.as_parameter && Compilation_unit.is_packed modulename then begin
+    raise(Error(Location.none, Env.empty, Cannot_pack_parameter))
+  end;
   transl_signature env ast
 
 (* "Packaging" of several compilation units into one unit
@@ -3618,9 +3631,10 @@ let package_units initial_env objfiles cmifile modulename =
         (Env.imports()) in
     (* Write packaged signature *)
     if not !Clflags.dont_write_files then begin
+      let kind = Cmi_format.Normal in
       let cmi =
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
-          sg modulename
+          sg modulename kind
           (prefix ^ ".cmi") (Array.of_list imports)
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
@@ -3852,6 +3866,12 @@ let report_error ~loc _env = function
              does not match the underlying type@]@ \
            %t@]"
         longident lid main
+  | Cannot_pack_parameter ->
+      Location.errorf ~loc
+        "Cannot compile a parameter with -for-pack."
+  | Cannot_compile_implementation_as_parameter ->
+      Location.errorf ~loc
+        "Cannot compile an implementation with -as-parameter."
 
 let report_error env ~loc err =
   Printtyp.wrap_printing_env ~error:true env

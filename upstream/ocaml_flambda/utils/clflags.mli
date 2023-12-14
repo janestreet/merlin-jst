@@ -58,6 +58,7 @@ val cmi_file : string option ref
 val compile_only : bool ref
 val output_name : string option ref
 val include_dirs : string list ref
+val hidden_include_dirs : string list ref
 val no_std_include : bool ref
 val no_cwd : bool ref
 val print_types : bool ref
@@ -114,6 +115,7 @@ val float_const_prop : bool ref
 val transparent_modules : bool ref
 val unique_ids : bool ref
 val locations : bool ref
+val as_parameter : bool ref
 val dump_source : bool ref
 val dump_parsetree : bool ref
 val dump_typedtree : bool ref

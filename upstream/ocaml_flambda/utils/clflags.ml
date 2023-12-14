@@ -46,7 +46,8 @@ let cmi_file = ref None
 
 let compile_only = ref false            (* -c *)
 and output_name = ref (None : string option) (* -o *)
-and include_dirs = ref ([] : string list)(* -I *)
+and include_dirs = ref ([] : string list) (* -I *)
+and hidden_include_dirs = ref ([] : string list) (* -H *)
 and no_std_include = ref false          (* -nostdlib *)
 and no_cwd = ref false                  (* -nocwd *)
 and print_types = ref false             (* -i *)
@@ -103,6 +104,7 @@ and float_const_prop = ref true         (* -no-float-const-prop *)
 and transparent_modules = ref false     (* -trans-mod *)
 let unique_ids = ref true               (* -d(no-)unique-ds *)
 let locations = ref true                (* -d(no-)locations *)
+let as_parameter = ref false            (* -as-parameter *)
 let dump_source = ref false             (* -dsource *)
 let dump_parsetree = ref false          (* -dparsetree *)
 and dump_typedtree = ref false          (* -dtypedtree *)
@@ -671,7 +673,7 @@ module Annotations = struct
      \      \"all\" covers both \"opt\" and \"default\" and is intended for optimized builds."
 end
 
-let zero_alloc_check = ref Annotations.No_check         (* -zero-alloc-check *)
+let zero_alloc_check = ref Annotations.Check_default    (* -zero-alloc-check *)
 let zero_alloc_check_assert_all = ref false (* -zero-alloc-check-assert-all *)
 
 let no_auto_include_otherlibs = ref false      (* -no-auto-include-otherlibs *)

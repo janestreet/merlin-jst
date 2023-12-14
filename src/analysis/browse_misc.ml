@@ -41,10 +41,13 @@ let print_constructor c =
     let args_without_modalities =
       List.map ~f:(fun (arg, (_ : global_flag)) -> arg) args
     in
+    let labeled_args_without_modalities =
+      List.map ~f:(fun arg -> None, arg) args_without_modalities
+    in
     let desc = Tarrow ((Ast_helper.no_label,
                         Mode.Alloc.legacy,
                         Mode.Alloc.legacy),
-                       dummy_type_scheme (Ttuple args_without_modalities),
+                       dummy_type_scheme (Ttuple labeled_args_without_modalities),
                        c.cstr_res, commu_ok)
     in
     Printtyp.tree_of_type_scheme (dummy_type_scheme desc)

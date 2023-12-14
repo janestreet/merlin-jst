@@ -12,7 +12,10 @@
 
   $ echo | $MERLIN single dump-configuration -filename test.ml 2> /dev/null | jq '.value.merlin'
   {
-    "build_path": [],
+    "build_path": {
+      "visible": [],
+      "hidden": []
+    },
     "source_path": [],
     "cmi_path": [],
     "cmt_path": [],

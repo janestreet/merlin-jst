@@ -63,7 +63,7 @@ let match_query env query t =
       traverse pos pos_fun neg neg_fun t1
 
     | Types.Ttuple ts ->
-      List.iter ~f:(traverse neg neg_fun pos pos_fun) ts
+      List.iter ~f:(fun (_label, t) -> traverse neg neg_fun pos pos_fun t) ts
 
     | Types.Tvar _ | Types.Tunivar _ ->
       decr cost (* Favor polymorphic defs *)
