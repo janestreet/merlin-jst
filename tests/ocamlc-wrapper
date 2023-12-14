@@ -8,4 +8,10 @@ fi
 
 MERLIN_TEST_OCAMLC_PATH="$MERLIN_TEST_OCAML_PATH/bin/ocamlc"
 
+if [ ! -f "$MERLIN_TEST_OCAMLC_PATH" ]; then
+    echo >&2 "Error: $MERLIN_TEST_OCAMLC_PATH does not exist."
+    echo >&2 "Check that you've set MERLIN_TEST_OCAML_PATH correctly."
+    exit 1
+fi
+
 "$MERLIN_TEST_OCAMLC_PATH" "$@"

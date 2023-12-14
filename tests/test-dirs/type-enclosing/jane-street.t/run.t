@@ -1,6 +1,8 @@
 [run <file> <pos>] queries <file> at position <pos>. The multiline
-json that merlin produces can't be parsed by jq, so we use [paste -sd ' ']
-to print everything on one line.
+json that merlin produces can't be parsed by jq, as they include
+escape characters in string literals, so we do a tremendous hack to
+rewrite \n in string literals to \\n. Really we should teach merlin
+how to produce valid json.
 
   $ run_with_verbosity () {
   >   file=$1
@@ -9,8 +11,11 @@ to print everything on one line.
   >   echo -n "With verbosity $verbosity: "
   >   $MERLIN single type-enclosing -position "$position" -verbosity "$verbosity" \
   >     -filename "$file" < "$file" |
-  >     paste -sd ' ' |
-  >     jq '.value[0].type'
+  >     tr '\n' '\a'  |
+  >     sed ':a;s/\(^[^\"]*\"\([^\"]*\"[^\"]*\"\)*[^\"]*\)\a/\1\\n/;ta' |
+  >     sed 's/\a/\n/g' |
+  >     jq '.value[0].type' |
+  >     sed 's/\\n/\n/g'
   > }
 
   $ run () {
@@ -24,6 +29,7 @@ to print everything on one line.
   >   run_with_verbosity "$file" "$position" 1
   >   echo
   > }
+
 
 (I) Type declarations
 
@@ -241,12 +247,12 @@ to print everything on one line.
   let poly3 (type a : float64) (x : a) = x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "'a -> 'a"
+  With verbosity 1: "'a -> 'a (* 'a : float64 *)"
   
   let poly4 (type (a : immediate) (b : value)) (f : a -> b -> _) = f
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
+  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c) (* 'a : immediate *)"
   
 
 -parameter
@@ -313,12 +319,12 @@ to print everything on one line.
   let poly_client3 x = poly3 x
       ^
   With verbosity 0: "'a -> 'a"
-  With verbosity 1: "'a -> 'a"
+  With verbosity 1: "'a -> 'a (* 'a : float64 *)"
   
   let poly_client4 x = poly4 x
       ^
   With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
+  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c) (* 'a : immediate *)"
   
 
 -parameter
@@ -339,52 +345,52 @@ to print everything on one line.
   let poly_client3 x = poly3 x
                    ^
   With verbosity 0: "'a"
-  With verbosity 1: "'a"
+  With verbosity 1: "'a (* 'a : float64 *)"
   
   let poly_client4 x = poly4 x
                    ^
   With verbosity 0: "'a -> ('b -> 'c)"
-  With verbosity 1: "'a -> ('b -> 'c)"
+  With verbosity 1: "'a -> ('b -> 'c) (* 'a : immediate *)"
   
 (V) Parameterized type
 - definition
   $ run layouts.ml 28:22
   > run layouts.ml 29:22
   > run layouts.ml 30:22
-  type _                p0 = A
+  type _                p0 = A0
                        ^
-  With verbosity 0: "type _ p0 = A"
-  With verbosity 1: "type _ p0 : immediate = A"
+  With verbosity 0: "type _ p0 = A0"
+  With verbosity 1: "type _ p0 : immediate = A0"
   
-  type 'a               p1 = A of 'a
+  type 'a               p1 = A1 of 'a
                        ^
-  With verbosity 0: "type 'a p1 = A of 'a"
-  With verbosity 1: "type 'a p1 = A of 'a"
+  With verbosity 0: "type 'a p1 = A1 of 'a"
+  With verbosity 1: "type 'a p1 = A1 of 'a"
   
-  type ('a : immediate) p2 = A of 'a [@@unboxed]
+  type ('a : immediate) p2 = A2 of 'a [@@unboxed]
                        ^
-  With verbosity 0: "type ('a : immediate) p2 = A of 'a [@@unboxed]"
-  With verbosity 1: "type ('a : immediate) p2 : immediate = A of 'a [@@unboxed]"
+  With verbosity 0: "type ('a : immediate) p2 = A2 of 'a [@@unboxed]"
+  With verbosity 1: "type ('a : immediate) p2 : immediate = A2 of 'a [@@unboxed]"
   
 
 - parameter
   $ run layouts.ml 28:6
   > run layouts.ml 29:6
   > run layouts.ml 30:6
-  type _                p0 = A
+  type _                p0 = A0
        ^
   With verbosity 0: "'_"
   With verbosity 1: "'_"
   
-  type 'a               p1 = A of 'a
+  type 'a               p1 = A1 of 'a
        ^
   With verbosity 0: "'a"
   With verbosity 1: "'a"
   
-  type ('a : immediate) p2 = A of 'a [@@unboxed]
+  type ('a : immediate) p2 = A2 of 'a [@@unboxed]
        ^
   With verbosity 0: "'a"
-  With verbosity 1: "'a"
+  With verbosity 1: "'a (* 'a : immediate *)"
   
 
 (V) Parameterized type client
@@ -405,7 +411,7 @@ to print everything on one line.
   let param_client2 (x : 'a p2) (a : 'a) = x, a
       ^
   With verbosity 0: "'a p2 -> 'a -> 'a p2 * 'a"
-  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a"
+  With verbosity 1: "'a p2 -> 'a -> 'a p2 * 'a (* 'a : immediate *)"
   
 
 - parameter
@@ -415,15 +421,46 @@ to print everything on one line.
   let param_client1 (x : 'a p0) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p0"
-  With verbosity 1: "'a p0  type _ p0 = A"
+  With verbosity 1: "'a p0
+  
+  type _ p0 = A0"
   
   let param_client2 (x : 'a p1) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p1"
-  With verbosity 1: "'a p1  type 'a p1 = A of 'a"
+  With verbosity 1: "'a p1
+  
+  type 'a p1 = A1 of 'a"
   
   let param_client2 (x : 'a p2) (a : 'a) = x, a
                     ^
   With verbosity 0: "'a p2"
-  With verbosity 1: "'a p2  type ('a : immediate) p2 = A of 'a [@@unboxed]"
+  With verbosity 1: "'a p2 (* 'a : immediate *)
+  
+  type ('a : immediate) p2 = A2 of 'a [@@unboxed]"
+  
+(VI) Long type
+  $ run layouts.ml 36:4
+  let long_type a b c d e f g =
+     ^
+  With verbosity 0: "'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e -> 'f -> 'g -> 'a p2 * 'b p2 * 'c p2 * 'd p2 * 'e p2 * 'f p2 * 'g p2 * 'h"
+  With verbosity 1: "'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e -> 'f -> 'g -> 'a p2 * 'b p2 * 'c p2 * 'd p2 * 'e p2 * 'f p2 * 'g p2 * 'h 
+  (* 'g : immediate, 'f : immediate, 'e : immediate, 'd : immediate, 'c : immediate, 
+     'b : immediate, 'a : immediate *)"
+  
+
+(VII) Non-constant sort variable
+  $ run layouts.ml 46:5
+  let unconstrained_f x = x
+      ^
+  With verbosity 0: "'a -> 'a"
+  With verbosity 1: "'a -> 'a"
   
