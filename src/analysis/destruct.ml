@@ -529,11 +529,8 @@ module Conv = struct
       | Tpat_alias (p,_,_,_,_) -> loop p
       | Tpat_tuple lst ->
           let lst = List.map ~f:(fun (lbl, p) -> lbl, loop p) lst in
-          if List.for_all lst ~f:(fun (lbl, _) -> not (Option.is_some lbl))
-          then mkpat (Ppat_tuple (List.map ~f:snd lst))
-          else
-            Jane_syntax.Pattern.pat_of ~loc:!Ast_helper.default_loc ~attrs:[]
-              (Jpat_tuple (Ltpat_tuple (lst, Closed)))
+          Jane_syntax.Labeled_tuples.pat_of (lst, Closed)
+            ~loc:!Ast_helper.default_loc
       | Tpat_construct (cstr_lid, cstr, lst, _) ->
           let id = fresh cstr.cstr_name in
           let lid = { cstr_lid with txt = Longident.Lident id } in
