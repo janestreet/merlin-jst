@@ -659,8 +659,12 @@ let rec node config source selected_node parents =
             let ty = patt.Typedtree.pat_type in
             begin match gen_patterns patt.Typedtree.pat_env ty with
             | [] ->
-              (* gen_patterns might raise Not_allowed, but should never return [] *)
-              assert false
+                (* gen_patterns might raise Not_allowed, but should never return [].
+                   Nonetheless, we've found it to return [] in a hard-to-describe
+                   set of circumstances, so we report an error message rather
+                   than raising (see the test containing the below string).
+                *)
+              raise (Not_allowed "type that merlin doesn't know enough about")
             | [ more_precise ] ->
               (* If only one pattern is generated, then we're only refining the
                 current pattern, not generating new branches. *)
