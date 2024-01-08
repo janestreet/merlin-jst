@@ -77,7 +77,9 @@ let tail_positions = function
 (* If the expression is a function, return all of its entry-points (which are
    in tail-positions). Returns an empty list otherwise *)
 let expr_entry_points = function
-  | Texp_function {cases; _} -> List.map cases ~f:(fun c -> Case c)
+  | Texp_function {body = Tfunction_body expr; _} -> [Expression expr]
+  | Texp_function {body = Tfunction_cases {fc_cases; _}; _} ->
+    List.map fc_cases ~f:(fun c -> Case c)
   | _ -> []
 
 let entry_points = function

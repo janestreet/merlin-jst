@@ -344,8 +344,10 @@ let of_expression_desc loc = function
   | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
-  | Texp_function { cases; _ } ->
-    list_fold of_case cases
+  | Texp_function { body = Tfunction_body expr; _ } ->
+    of_expression expr
+  | Texp_function { body = Tfunction_cases {fc_cases; _}; _ } ->
+    list_fold of_case fc_cases
   | Texp_apply (e,ls,_,_) ->
     of_expression e **
     list_fold (function

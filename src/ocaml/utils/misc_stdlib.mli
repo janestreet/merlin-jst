@@ -49,3 +49,21 @@ module String : sig
   val starts_with : prefix:string -> string -> bool
   val ends_with : suffix:string -> string -> bool
 end
+
+module Int : sig
+  include module type of Int
+
+  val min : t -> t -> t
+  val max : t -> t -> t
+end
+
+val format_as_unboxed_literal : string -> string
+(** [format_as_unboxed_literal constant_literal] converts [constant_literal] to its
+    corresponding unboxed literal by either adding "#" in front or changing
+    "-" to "-#".
+
+    Examples:
+
+      [0.1] to [#0.1]
+      [-3] to [-#3]
+      [0xa.cp-1] to [#0xa.cp-1] *)

@@ -104,3 +104,14 @@ module String = struct
       else aux (i + 1)
     in diff >= 0 && aux 0
 end
+
+module Int = struct
+  include Int
+  let min (a : int) (b : int) = min a b
+  let max (a : int) (b : int) = max a b
+end
+
+let format_as_unboxed_literal s =
+  if String.starts_with ~prefix:"-" s
+  then "-#" ^ (String.sub s 1 (String.length s - 1))
+  else "#" ^ s

@@ -38,6 +38,10 @@ let mark_property_checked txt loc =
 let register_property attr =
     Attribute_table.replace unchecked_properties attr ()
 let warn_unchecked_property () =
+    (* When using -i, attributes will not have been translated, so we can't
+     warn about missing ones. *)
+  if !Clflags.print_types then ()
+  else
   let keys = List.of_seq (Attribute_table.to_seq_keys unchecked_properties) in
   let keys = List.sort attr_order keys in
   List.iter (fun sloc ->
@@ -50,7 +54,6 @@ let warn_unused () =
   if !Clflags.print_types then ()
   else
   begin
-    warn_unchecked_property ();
     let keys = List.of_seq (Attribute_table.to_seq_keys unused_attrs) in
     let keys = List.sort attr_order keys in
     List.iter (fun sloc ->
@@ -102,7 +105,8 @@ let builtin_attrs =
   ; "builtin"; "ocaml.builtin"
   ; "no_effects"; "ocaml.no_effects"
   ; "no_coeffects"; "ocaml.no_coeffects"
-  ; "only_generative_effects"; "ocaml.only_generative_effects";
+  ; "only_generative_effects"; "ocaml.only_generative_effects"
+  ; "error_message"; "ocaml.error_message"
   ]
 
 (* nroberts: When we upstream the builtin-attribute whitelisting, we shouldn't
@@ -432,11 +436,11 @@ module Attributes_filter = struct
   let create (t : t) = t
 end
 
-let filter_attributes (nms_and_conds : Attributes_filter.t) attrs =
+let filter_attributes ?(mark=true) (nms_and_conds : Attributes_filter.t) attrs =
   List.filter (fun a ->
     List.exists (fun (nms, cond) ->
       if List.mem a.attr_name.txt nms
-      then (mark_used a.attr_name; cond)
+      then (if mark then mark_used a.attr_name; cond)
       else false)
       nms_and_conds
   ) attrs
@@ -592,11 +596,14 @@ let zero_alloc_attribute (attr : Parsetree.attribute)  =
   parse_attribute_with_ident_payload attr
     ~name:"zero_alloc" ~f:(function
       | "check" -> Clflags.zero_alloc_check := Clflags.Annotations.Check_default
+      | "check_opt" -> Clflags.zero_alloc_check := Clflags.Annotations.Check_opt_only
+      | "check_all" -> Clflags.zero_alloc_check := Clflags.Annotations.Check_all
+      | "check_none" -> Clflags.zero_alloc_check := Clflags.Annotations.No_check
       | "all" ->
         Clflags.zero_alloc_check_assert_all := true
       | _ ->
         warn_payload attr.attr_loc attr.attr_name.txt
-          "Only 'check' and 'all' are supported")
+          "Only 'all', 'check', 'check_opt', 'check_all', and 'check_none' are supported")
 
 let afl_inst_ratio_attribute attr =
   clflags_attribute_with_int_payload attr
@@ -704,3 +711,18 @@ let tailcall attr =
           (Warnings.Attribute_payload
              (t.attr_name.txt, "Only 'hint' is supported"));
         Ok (Some `Tail_if_possible)
+
+let error_message_attr l =
+  let inner x =
+    match x.attr_name.txt with
+    | "ocaml.error_message"|"error_message" ->
+      begin match string_of_payload x.attr_payload with
+      | Some _ as r ->
+        mark_used x.attr_name;
+        r
+      | None -> warn_payload x.attr_loc x.attr_name.txt
+                  "error_message attribute expects a string argument";
+        None
+      end
+    | _ -> None in
+  List.find_map inner l

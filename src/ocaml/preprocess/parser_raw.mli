@@ -353,6 +353,9 @@ module MenhirInterpreter : sig
     | N_use_file : (Parsetree.toplevel_phrase list) nonterminal
     | N_unboxed_constant : (Jane_syntax.jane_constant) nonterminal
     | N_type_variance : (Asttypes.variance * Asttypes.injectivity) nonterminal
+    | N_type_unboxed_longident : (Longident.t) nonterminal
+    | N_type_trailing_no_hash : (string) nonterminal
+    | N_type_trailing_hash : (string) nonterminal
     | N_type_parameters : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_type_parameter : (Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) nonterminal
     | N_type_longident : (Longident.t) nonterminal
@@ -480,6 +483,8 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_longident_val_ident_ : (Longident.t) nonterminal
     | N_mk_longident_mod_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_longident_LIDENT_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident_type_trailing_no_hash_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident_type_trailing_hash_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident___anonymous_46_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
