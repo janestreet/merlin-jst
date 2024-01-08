@@ -339,15 +339,31 @@ let of_method_call obj meth loc =
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
+let of_function_param (param : Typedtree.function_param) =
+  (* We should consider taking into account param.fp_loc at some point, as it
+     allows us to respond with the *parameter*'s type (as opposed to the
+     function's type) when the user queries the label:
+
+     let f ?y:(x = 3) () = x
+           ^
+  *)
+  match param.fp_kind with
+  | Tparam_pat pat -> of_pattern pat
+  | Tparam_optional_default (pat, expr, _) ->
+      of_pattern pat ** of_expression expr
+
 let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
-  | Texp_function { body = Tfunction_body expr; _ } ->
-    of_expression expr
-  | Texp_function { body = Tfunction_cases {fc_cases; _}; _ } ->
-    list_fold of_case fc_cases
+  | Texp_function { params; body; _ } ->
+    let body =
+      match body with
+      | Tfunction_body expr -> of_expression expr
+      | Tfunction_cases {fc_cases; _} -> list_fold of_case fc_cases
+    in
+    list_fold of_function_param params ** body
   | Texp_apply (e,ls,_,_) ->
     of_expression e **
     list_fold (function
