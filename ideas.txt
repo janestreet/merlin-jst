@@ -1,0 +1,20 @@
+Idea:
+  - Stephen pointed out that the user doesn't want to be told that
+    a half-written program's variable is local (meaning "it can't escape!")
+    when really just its associated heap allocation is unconstrained
+    (meaning, "right now it could be locally allocated")
+
+    e.g.
+
+    let x = Some y in
+    ...
+
+I propose to resolve this by saying:
+  - querying for the mode of [x] should not be local.
+  - querying for the mode of [Some _] *should* be local.
+
+This is a little tricky because asking for the type of [Some]
+will give you just the type of the constructor... so there's not
+an easy way to get the "local"-ness.
+So this should probably also give you the mode of the constructor
+application expression it's used in.

@@ -209,9 +209,9 @@ let print_short_modtype verbosity env ppf md  =
 let modes_to_print mode =
   let locality = Mode.Value.regional_to_local_locality mode in
   let locality =
-    match Mode.Locality.constrain_upper locality with
-    | Local -> Some "local"
-    | Global -> None
+    match Mode.Locality.check_const locality with
+    | Some Local -> Some "local"
+    | Some Global | None -> None
   in
   List.filter_map ~f:(fun x -> x)
     [ locality ]

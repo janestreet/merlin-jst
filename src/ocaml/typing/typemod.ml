@@ -3215,7 +3215,7 @@ let type_toplevel_phrase env sig_acc s =
     type_structure ~toplevel:(Some sig_acc) false None env sig_acc s in
   remove_mode_and_jkind_variables env sg;
   remove_mode_and_jkind_variables_for_toplevel str;
-  Typecore.optimise_allocations ();
+  (* Typecore.optimise_allocations (); *)
   (str, sg, (* to_remove_from_sg, *) shape, env)
 
 let type_module_alias = type_module ~alias:true true false None
@@ -3421,7 +3421,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       if !Clflags.print_types then begin
         remove_mode_and_jkind_variables finalenv sg;
         Typecore.force_delayed_checks ();
-        Typecore.optimise_allocations ();
+        (* Typecore.optimise_allocations (); *)
         let shape = Shape.local_reduce shape in
         Printtyp.wrap_printing_env ~error:false initial_env
           (fun () -> fprintf std_formatter "%a@."
@@ -3457,7 +3457,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
               sourcefile sg intf_file dclsig shape
           in
           Typecore.force_delayed_checks ();
-          Typecore.optimise_allocations ();
+          (* Typecore.optimise_allocations (); *)
           (* It is important to run these checks after the inclusion test above,
              so that value declarations which are not used internally but
              exported are not reported as being unused. *)
