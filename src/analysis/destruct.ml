@@ -204,7 +204,7 @@ let rec needs_parentheses = function
       | Texp_let _
         (* We are after the "in" keyword, we need to look at the parent of the
            binding. *)
-      | Texp_function {cases = [ _ ]; _ }
+      | Texp_function { body = Tfunction_body _ ; _ }
         (* The assumption here is that we're not in a [function ... | ...]
             situation but either in [fun param] or [let name param]. *)
         ->

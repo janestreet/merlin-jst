@@ -91,6 +91,7 @@ val mark_payload_attrs_used : Parsetree.payload -> unit
 (** Issue misplaced attribute warnings for all attributes created with
     [mk_internal] but not yet marked used. *)
 val warn_unused : unit -> unit
+val warn_unchecked_property : unit -> unit
 
 val check_alerts: Location.t -> Parsetree.attributes -> string -> unit
 val check_alerts_inclusion:
@@ -157,6 +158,7 @@ end
     count as misplaced if the compiler could use it in some configuration.
 *)
 val filter_attributes :
+  ?mark:bool ->
   Attributes_filter.t -> Parsetree.attributes -> Parsetree.attributes
 
 val warn_on_literal_pattern: Parsetree.attributes -> bool
@@ -205,3 +207,10 @@ val jkind_attribute_of_string : string -> jkind_attribute option
    as the attribute mechanism predates layouts.
 *)
 val jkind : Parsetree.attributes -> jkind_attribute Location.loc option
+
+(** Finds the first "error_message" attribute, marks it as used, and returns its
+    string payload. Returns [None] if no such attribute is present.
+
+    There should be at most one "error_message" attribute, additional ones are sliently
+    ignored. **)
+val error_message_attr : Parsetree.attributes -> string option

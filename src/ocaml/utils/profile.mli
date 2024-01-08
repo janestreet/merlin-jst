@@ -2,9 +2,9 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*              Damien Doligez, projet Para, INRIA Rocquencourt           *)
+(*                      Pierre Chambart, OCamlPro                         *)
 (*                                                                        *)
-(*   Copyright 1999 Institut National de Recherche en Informatique et     *)
+(*   Copyright 2015 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
@@ -13,25 +13,37 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** Raw printer for {!Parsetree}
+(** Compiler performance recording
 
   {b Warning:} this module is unstable and part of
   {{!Compiler_libs}compiler-libs}.
 
 *)
 
-open Parsetree
-open Format
+type file = string
 
-val interface : formatter -> signature_item list -> unit
-val implementation : formatter -> structure_item list -> unit
-val top_phrase : formatter -> toplevel_phrase -> unit
-val constant: formatter -> constant -> unit
+val reset : unit -> unit
+(** erase all recorded profile information *)
 
-val expression: int -> formatter -> expression -> unit
-val pattern: int -> formatter -> pattern -> unit
-val structure: int -> formatter -> structure -> unit
-val payload: int -> formatter -> payload -> unit
-val core_type: int -> formatter -> core_type -> unit
-val extension_constructor: int -> formatter -> extension_constructor -> unit
+val record_call : ?accumulate:bool -> string -> (unit -> 'a) -> 'a
+(** [record_call pass f] calls [f] and records its profile information. *)
 
+val record : ?accumulate:bool -> string -> ('a -> 'b) -> 'a -> 'b
+(** [record pass f arg] records the profile information of [f arg] *)
+
+type column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap ]
+
+val print : Format.formatter -> column list -> timings_precision:int -> unit
+(** Prints the selected recorded profiling information to the formatter. *)
+
+(** Command line flags *)
+
+val options_doc : string
+val all_columns : column list
+
+(** A few pass names that are needed in several places, and shared to
+    avoid typos. *)
+
+val generate : string
+val transl : string
+val typing : string

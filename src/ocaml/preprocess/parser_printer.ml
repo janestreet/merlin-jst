@@ -175,6 +175,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_use_file) -> "use_file"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_unboxed_constant) -> "unboxed_constant"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_variance) -> "type_variance"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_unboxed_longident) -> "type_unboxed_longident"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_trailing_no_hash) -> "type_trailing_no_hash"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_trailing_hash) -> "type_trailing_hash"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameters) -> "type_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameter) -> "type_parameter"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_longident) -> "type_longident"
@@ -297,6 +300,8 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_longident_val_ident_) -> "mk_longident_mod_longident_val_ident_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_longident_UIDENT_) -> "mk_longident_mod_longident_UIDENT_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_longident_LIDENT_) -> "mk_longident_mod_longident_LIDENT_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_no_hash_) -> "mk_longident_mod_ext_longident_type_trailing_no_hash_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_hash_) -> "mk_longident_mod_ext_longident_type_trailing_hash_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_ident_) -> "mk_longident_mod_ext_longident_ident_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_46_) -> "mk_longident_mod_ext_longident___anonymous_46_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_UIDENT_) -> "mk_longident_mod_ext_longident_UIDENT_"
@@ -555,6 +560,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_use_file -> (fun _ -> "use_file")
   | MenhirInterpreter.N MenhirInterpreter.N_unboxed_constant -> (fun _ -> "unboxed_constant")
   | MenhirInterpreter.N MenhirInterpreter.N_type_variance -> (fun _ -> "type_variance")
+  | MenhirInterpreter.N MenhirInterpreter.N_type_unboxed_longident -> (fun _ -> "type_unboxed_longident")
+  | MenhirInterpreter.N MenhirInterpreter.N_type_trailing_no_hash -> (fun _ -> "type_trailing_no_hash")
+  | MenhirInterpreter.N MenhirInterpreter.N_type_trailing_hash -> (fun _ -> "type_trailing_hash")
   | MenhirInterpreter.N MenhirInterpreter.N_type_parameters -> (fun _ -> "type_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_type_parameter -> (fun _ -> "type_parameter")
   | MenhirInterpreter.N MenhirInterpreter.N_type_longident -> (fun _ -> "type_longident")
@@ -677,6 +685,8 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_longident_val_ident_ -> (fun _ -> "mk_longident_mod_longident_val_ident_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_longident_UIDENT_ -> (fun _ -> "mk_longident_mod_longident_UIDENT_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_longident_LIDENT_ -> (fun _ -> "mk_longident_mod_longident_LIDENT_")
+  | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_no_hash_ -> (fun _ -> "mk_longident_mod_ext_longident_type_trailing_no_hash_")
+  | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_hash_ -> (fun _ -> "mk_longident_mod_ext_longident_type_trailing_hash_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_ident_ -> (fun _ -> "mk_longident_mod_ext_longident_ident_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_46_ -> (fun _ -> "mk_longident_mod_ext_longident___anonymous_46_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_UIDENT_ -> (fun _ -> "mk_longident_mod_ext_longident_UIDENT_")

@@ -205,6 +205,7 @@ val show_filename: string -> string
 val print_filename: formatter -> string -> unit
 
 val print_loc: formatter -> t -> unit
+val print_loc_in_lowercase: formatter -> t -> unit
 val print_locs: formatter -> t list -> unit
 
 (** {1 Toplevel-specific location highlighting} *)
