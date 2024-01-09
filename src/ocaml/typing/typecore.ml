@@ -6853,15 +6853,30 @@ and type_function
   : type_function_result =
   Msupport.with_saved_types (fun () ->
     let saved = save_levels () in
+    let { loc_fun; _ } = in_function in
+    (* The "rest of the function" extends from the start of the first parameter
+       to the end of the overall function. The parser does not construct such
+       a location so we forge one for type errors.
+    *)
+    let loc : Location.t =
+      let open Jane_syntax.N_ary_functions in
+      match params_suffix, body with
+      | param :: _, _ ->
+          { loc_start = param.pparam_loc.loc_start;
+            loc_end = loc_fun.loc_end;
+            loc_ghost = true;
+          }
+      | [], Pfunction_body pexp -> pexp.pexp_loc
+      | [], Pfunction_cases (_, loc_cases, _) -> loc_cases
+    in
     try
       type_function_
         env expected_mode ty_expected
-        params_suffix body_constraint body ~first ~in_function
+        params_suffix body_constraint body ~first ~loc ~in_function
     with exn ->
       Msupport.erroneous_type_register ty_expected;
       raise_error exn;
       set_levels saved;
-      let loc = in_function.loc_fun in
       assert (params_suffix = []);
       { function_ =
           newvar (Jkind.of_new_sort ~why:Function_result),
@@ -6910,25 +6925,11 @@ and type_function
 *)
 and type_function_
       env (expected_mode : expected_mode) ty_expected
-      params_suffix body_constraint body ~first ~in_function
+      params_suffix body_constraint body ~loc ~first ~in_function
   : type_function_result
   =
   let open Jane_syntax.N_ary_functions in
-  let { ty_fun; loc_fun; _ } = in_function in
-  (* The "rest of the function" extends from the start of the first parameter
-     to the end of the overall function. The parser does not construct such
-     a location so we forge one for type errors.
-  *)
-  let loc : Location.t =
-    match params_suffix, body with
-    | param :: _, _ ->
-        { loc_start = param.pparam_loc.loc_start;
-          loc_end = loc_fun.loc_end;
-          loc_ghost = true;
-        }
-    | [], Pfunction_body pexp -> pexp.pexp_loc
-    | [], Pfunction_cases (_, loc_cases, _) -> loc_cases
-  in
+  let { ty_fun; _ } = in_function in
   match params_suffix with
   | { pparam_desc = Pparam_newtype (newtype_var, jkind_annot) } :: rest ->
       (* Check everything else in the scope of (type a). *)
@@ -8469,7 +8470,6 @@ and type_function_cases_expect
         (newgenty
            (Tarrow ((Nolabel, arg_mode, ret_mode), ty_arg, ty_ret, commu_ok)))
     in
-    unify_exp_types loc env ty_fun (instance ty_expected);
     let param = name_cases "param" cases in
     let cases =
       { fc_cases = cases;
@@ -8481,6 +8481,28 @@ and type_function_cases_expect
         fc_arg_mode = arg_mode;
         fc_arg_sort = arg_sort;
       }
+    in
+    let () =
+      try unify_exp_types loc env ty_fun (instance ty_expected)
+      with exn ->
+        ignore
+          (re
+             { exp_desc =
+                 Texp_function
+                   { params = [];
+                     body = Tfunction_cases cases;
+                     ret_mode;
+                     ret_sort;
+                     alloc_mode;
+                     region = false;
+                   };
+               exp_loc = loc;
+               exp_extra = [];
+               exp_type = ty_fun;
+               exp_attributes = attrs;
+               exp_env = env;
+              } : expression);
+        raise exn
     in
     cases, ty_fun, alloc_mode, { ret_sort; ret_mode }
   end
