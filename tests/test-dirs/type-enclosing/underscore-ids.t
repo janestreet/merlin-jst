@@ -331,18 +331,6 @@ We try several places in the identifier to check the result stability
       {
         "start": {
           "line": 2,
-          "col": 18
-        },
-        "end": {
-          "line": 5,
-          "col": 17
-        },
-        "type": "'a",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 2,
           "col": 6
         },
         "end": {
