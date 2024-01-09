@@ -6847,6 +6847,54 @@ and type_binding_op_ident env s =
   assert (kind = Id_value);
   path, desc
 
+and type_function
+    env (expected_mode : expected_mode) ty_expected
+    params_suffix body_constraint body ~first ~(in_function : in_function)
+  : type_function_result =
+  Msupport.with_saved_types (fun () ->
+    let saved = save_levels () in
+    try
+      type_function_
+        env expected_mode ty_expected
+        params_suffix body_constraint body ~first ~in_function
+    with exn ->
+      Msupport.erroneous_type_register ty_expected;
+      raise_error exn;
+      set_levels saved;
+      let loc = in_function.loc_fun in
+      assert (params_suffix = []);
+      { function_ =
+          newvar (Jkind.of_new_sort ~why:Function_result),
+          [],
+          Tfunction_body {
+            exp_desc = Texp_ident
+              (Path.Pident (Ident.create_local "*type-error*"),
+              Location.mkloc (Longident.Lident "*type-error*") loc,
+              { Types.
+                val_type = ty_expected;
+                val_kind = Val_reg;
+                val_loc = loc;
+                val_attributes = [];
+                val_uid = Uid.internal_not_actually_unique;
+              },
+              Id_value,
+              (Uniqueness.legacy, Linearity.legacy));
+            exp_loc = loc;
+            exp_extra = [];
+            exp_type = ty_expected;
+            exp_env = env;
+            exp_attributes = Msupport.recovery_attributes [];
+          };
+        newtypes = [];
+        params_contain_gadt = No_gadt;
+        fun_alloc_mode = Some (Alloc.newvar ());
+        ret_info =
+          Some
+            { ret_mode = Alloc.newvar ();
+              ret_sort = Jkind.Sort.new_var ();
+            };
+      })
+
 (* Typecheck parameters one at a time followed by the body. Later parameters
    are checked in the scope of earlier ones. That's necessary to support
    constructs like [fun (type a) (x : a) -> ...] and
@@ -6860,7 +6908,7 @@ and type_binding_op_ident env s =
 
    See [type_function_result] for the meaning of the returned type.
 *)
-and type_function
+and type_function_
       env (expected_mode : expected_mode) ty_expected
       params_suffix body_constraint body ~first ~in_function
   : type_function_result
