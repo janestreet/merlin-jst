@@ -554,7 +554,7 @@ let expression sub exp =
                let default_arg = Option.map (sub.expr sub) default_arg in
                let newtypes =
                  List.map
-                   (fun (x, annot) ->
+                   (fun (_, x, annot) ->
                       { pparam_desc = Pparam_newtype (x, Option.map snd annot);
                         pparam_loc = x.loc;
                       })

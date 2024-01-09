@@ -5125,7 +5125,7 @@ type type_function_result =
   { function_ :
       type_expr * type_function_result_param list * function_body;
     (* The uninterrupted prefix of newtypes of the parameter suffix. *)
-    newtypes: (string loc * Jkind.annotation option) list;
+    newtypes: (Ident.t * string loc * Jkind.annotation option) list;
     (* Whether any of the value parameters contains a GADT pattern. *)
     params_contain_gadt: contains_gadt;
     (* The alloc mode of the "rest of the function". None only for
@@ -6932,7 +6932,7 @@ and type_function_
   | { pparam_desc = Pparam_newtype (newtype_var, jkind_annot) } :: rest ->
       (* Check everything else in the scope of (type a). *)
       let (params, body, newtypes, contains_gadt, fun_alloc_mode, ret_info),
-          exp_type, jkind_annot, _id =
+          exp_type, jkind_annot, id =
         type_newtype loc env newtype_var.txt jkind_annot (fun env ->
           let { function_ = exp_type, params, body;
                 newtypes; params_contain_gadt = contains_gadt;
@@ -6949,7 +6949,7 @@ and type_function_
           (params, body, newtypes, contains_gadt, fun_alloc_mode, ret_info),
           exp_type)
       in
-      let newtype = newtype_var, jkind_annot in
+      let newtype = id, newtype_var, jkind_annot in
       begin
         try with_explanation ty_fun.explanation (fun () ->
               unify_exp_types loc env exp_type (instance ty_expected));
@@ -9196,7 +9196,7 @@ and type_n_ary_function
         exp_loc = loc;
         exp_extra =
           List.map
-            (fun ({ txt; loc }, layout) -> Texp_newtype (txt, layout), loc, [])
+            (fun (id, ({ loc; _ } as txt_loc), layout) -> Texp_newtype' (id, txt_loc, layout), loc, [])
             newtypes;
         exp_type;
         exp_attributes = attributes;

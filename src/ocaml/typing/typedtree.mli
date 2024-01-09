@@ -410,7 +410,7 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.t;
     fp_curry: function_curry;
-    fp_newtypes: (string loc * Jkind.annotation option) list;
+    fp_newtypes: (Ident.t * string loc * Jkind.annotation option) list;
     (** [fp_newtypes] are the new type declarations that come *after* that
         parameter. The newtypes that come before the first parameter are
         placed as exp_extras on the Texp_function node. This is just used in
