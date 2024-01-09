@@ -1,6 +1,10 @@
 FIXME
 
-First result is incorrect when in the body of a function with an optional argument
+First result was incorrect when in the body of a function with an optional argument.
+
+Jane Street internal: the above text is incorrect -- this bug was fixed -- but
+we should make sure it stays fixed when we merge with upstream's implementation
+of n-ary functions.
 
   $ $MERLIN single occurrences -identifier-at 3:3 -filename opt.ml <<EOF | \
   > jq '.value'
@@ -9,16 +13,6 @@ First result is incorrect when in the body of a function with an optional argume
   > None
   > EOF
   [
-    {
-      "start": {
-        "line": 0,
-        "col": -1
-      },
-      "end": {
-        "line": 0,
-        "col": -1
-      }
-    },
     {
       "start": {
         "line": 3,
