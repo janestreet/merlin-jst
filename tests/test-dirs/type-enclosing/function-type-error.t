@@ -1,3 +1,8 @@
+Some tests that demonstrate that merlin produces reasonable-enough output when
+there is a type error involving a function. The relevant thing to look for is
+that merlin isn't outright dropping intermediate ASTs that are unrelated to the
+type error. The exact output may change slightly -- that's fine.
+
   $ $MERLIN single type-enclosing -position 1:16 -filename under.ml <<EOF
   > ((fun x y z -> x + y + z) : int -> int)
   > EOF
@@ -190,6 +195,40 @@
           "col": 40
         },
         "type": "int -> int",
+        "tail": "no"
+      }
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single type-enclosing -position 1:13 -filename under.ml <<EOF
+  > ((fun ?(z = 100) x y w -> x + y + z + w) : ?z:int -> int)
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 12
+        },
+        "end": {
+          "line": 1,
+          "col": 15
+        },
+        "type": "int",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 1
+        },
+        "end": {
+          "line": 1,
+          "col": 40
+        },
+        "type": "?z:int -> int",
         "tail": "no"
       }
     ],
