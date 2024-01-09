@@ -402,6 +402,13 @@ let rcp node =
   node
 
 
+(* Merlin: [record_exp_and_reraise] is used to save intermediate results
+   of type-checking functions. See [type_function].
+*)
+let record_exp_and_reraise node ~exn =
+  ignore (re node : expression);
+  Std.reraise exn
+
 (* Context for inline record arguments; see [type_ident] *)
 
 type recarg =
@@ -6850,6 +6857,54 @@ and type_binding_op_ident env s =
   assert (kind = Id_value);
   path, desc
 
+and type_function
+    env (expected_mode : expected_mode) ty_expected
+    params_suffix body_constraint body ~first ~(in_function : in_function)
+  : type_function_result =
+  (* The "rest of the function" extends from the start of the first parameter
+     to the end of the overall function. The parser does not construct such
+     a location so we forge one for type errors.
+  *)
+  let loc : Location.t =
+    let open Jane_syntax.N_ary_functions in
+    let { loc_fun; _ } = in_function in
+    match params_suffix, body with
+    | param :: _, _ ->
+        { loc_start = param.pparam_loc.loc_start;
+          loc_end = loc_fun.loc_end;
+          loc_ghost = true;
+        }
+    | [], Pfunction_body pexp -> pexp.pexp_loc
+    | [], Pfunction_cases (_, loc_cases, _) -> loc_cases
+  in
+  Msupport.with_saved_types (fun () ->
+    let saved = save_levels () in
+    try
+      type_function_
+        env expected_mode ty_expected
+        params_suffix body_constraint body ~first ~loc ~in_function
+    with exn ->
+      Msupport.erroneous_type_register ty_expected;
+      raise_error exn;
+      set_levels saved;
+      let fun_ty = newvar (Jkind.of_new_sort ~why:Merlin) in
+      let fun_body =
+        Tfunction_body
+          (create_merlin_type_error_node loc env ty_expected
+             ~attributes:(Msupport.recovery_attributes []))
+      in
+      let ret_info =
+        { ret_mode = Alloc.newvar ();
+          ret_sort = Jkind.Sort.new_var ();
+        }
+      in
+      { function_ = fun_ty, [], fun_body;
+        newtypes = [];
+        params_contain_gadt = No_gadt;
+        fun_alloc_mode = Some (Alloc.newvar ());
+        ret_info = Some ret_info;
+      })
+
 (* Typecheck parameters one at a time followed by the body. Later parameters
    are checked in the scope of earlier ones. That's necessary to support
    constructs like [fun (type a) (x : a) -> ...] and
@@ -6863,27 +6918,16 @@ and type_binding_op_ident env s =
 
    See [type_function_result] for the meaning of the returned type.
 *)
-and type_function
+and type_function_
       env (expected_mode : expected_mode) ty_expected
-      params_suffix body_constraint body ~first ~in_function
+      params_suffix body_constraint body ~loc ~first ~in_function
   : type_function_result
   =
   let open Jane_syntax.N_ary_functions in
-  let { loc_fun; ty_fun; _ } = in_function in
-  (* The "rest of the function" extends from the start of the first parameter
-     to the end of the overall function. The parser does not construct such
-     a location so we forge one for type errors.
+  (* Merlin: [loc] is computed in [type_function] and passed through to
+     here. (We use it in the error recovery in [type_function].)
   *)
-  let loc : Location.t =
-    match params_suffix, body with
-    | param :: _, _ ->
-        { loc_start = param.pparam_loc.loc_start;
-          loc_end = loc_fun.loc_end;
-          loc_ghost = true;
-        }
-    | [], Pfunction_body pexp -> pexp.pexp_loc
-    | [], Pfunction_cases (_, loc_cases, _) -> loc_cases
-  in
+  let { ty_fun; _ } = in_function in
   match params_suffix with
   | { pparam_desc = Pparam_newtype (newtype_var, jkind_annot) } :: rest ->
       (* Check everything else in the scope of (type a). *)
@@ -6906,8 +6950,34 @@ and type_function
           exp_type)
       in
       let newtype = newtype_var, jkind_annot in
-      with_explanation ty_fun.explanation (fun () ->
-          unify_exp_types loc env exp_type (instance ty_expected));
+      begin
+        try with_explanation ty_fun.explanation (fun () ->
+              unify_exp_types loc env exp_type (instance ty_expected));
+        with exn ->
+          (* Merlin: We recover from this error in [type_function]. *)
+          record_exp_and_reraise ~exn
+            { exp_desc =
+               (let params = List.map (fun { param; _ } -> param) params in
+                let ret_mode, ret_sort =
+                  match ret_info with
+                  | Some { ret_mode; ret_sort } -> ret_mode, ret_sort
+                  | None -> Alloc.newvar (), Jkind.Sort.new_var ()
+                in
+                let alloc_mode =
+                  match fun_alloc_mode with
+                  | Some alloc_mode -> alloc_mode
+                  | None -> Alloc.newvar ()
+                in
+                Texp_function
+                  { params; body; ret_mode; ret_sort; alloc_mode;
+                    region = in_function.region_locked });
+              exp_loc = loc;
+              exp_extra = [];
+              exp_type;
+              exp_attributes = [];
+              exp_env = env;
+            }
+      end;
       { function_ = exp_type, params, body;
         params_contain_gadt = contains_gadt; newtypes = newtype :: newtypes;
         fun_alloc_mode; ret_info;
@@ -7030,8 +7100,29 @@ and type_function
          type for each new parameter. Now that functions are n-ary, we
          could possibly run this once.
       *)
-      with_explanation ty_fun.explanation (fun () ->
+      begin
+        try with_explanation ty_fun.explanation (fun () ->
           unify_exp_types loc env exp_type (instance ty_expected));
+        with exn ->
+          (* Merlin: We recover from this error in [type_function]. *)
+          record_exp_and_reraise ~exn
+            { exp_desc =
+               (let params = List.map (fun { param; _ } -> param) params in
+                let ret_mode, ret_sort =
+                  match ret_info with
+                  | Some { ret_mode; ret_sort } -> ret_mode, ret_sort
+                  | None -> ret_mode, ret_sort
+                in
+                Texp_function
+                  { params; body; ret_mode; ret_sort; alloc_mode;
+                    region = in_function.region_locked });
+              exp_loc = loc;
+              exp_extra = [];
+              exp_type;
+              exp_attributes = [];
+              exp_env = env;
+            }
+      end;
       (* This is quadratic, as it extracts all of the parameters from an arrow
          type for each parameter that's added. Now that functions are n-ary,
          there might be an opportunity to improve this.
@@ -8440,24 +8531,22 @@ and type_function_cases_expect
       try unify_exp_types loc env ty_fun (instance ty_expected)
       with exn ->
         (* Merlin: We recover from this error in [type_function]. *)
-        ignore (
-          re
-            { exp_desc =
-                Texp_function
-                  { params = [];
-                    body = Tfunction_cases cases;
-                    ret_mode;
-                    ret_sort;
-                    alloc_mode;
-                    region = in_function.region_locked;
-                  };
-              exp_loc = loc;
-              exp_extra = [];
-              exp_type = ty_fun;
-              exp_attributes = attrs;
-              exp_env = env;
-            } : expression);
-        Std.reraise exn
+        record_exp_and_reraise ~exn
+          { exp_desc =
+              Texp_function
+                { params = [];
+                  body = Tfunction_cases cases;
+                  ret_mode;
+                  ret_sort;
+                  alloc_mode;
+                  region = in_function.region_locked;
+                };
+            exp_loc = loc;
+            exp_extra = [];
+            exp_type = ty_fun;
+            exp_attributes = attrs;
+            exp_env = env;
+          }
     in
     cases, ty_fun, alloc_mode, { ret_sort; ret_mode }
   end
