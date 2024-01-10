@@ -887,6 +887,10 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
     | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _, _) ->
       fake_path lid_loc cstr_res cstr_name
     | Texp_open (od,_) -> module_expr_paths od.open_expr
+    (* Normally, [expression_paths] just works at top-level, without
+       going deep into an expression. But freshly bound newtypes are
+       not part of any other expression or pattern or type, so they
+       need to be retrieved here. *)
     | Texp_function { params; _ } ->
       List.concat_map params ~f:(fun { fp_newtypes; _} ->
         List.concat_map fp_newtypes ~f:(function
