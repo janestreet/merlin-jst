@@ -344,8 +344,14 @@ let function_param sub
   in
   let fp_newtypes =
     List.map
-      (fun (id, var, annot) ->
-         id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
+      (function
+        | Newtype (var, annot) ->
+            Newtype
+              (map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
+        | Newtype' (id, var, annot) ->
+            Newtype'
+              (id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
+      )
       fp_newtypes
   in
   { fp_kind;

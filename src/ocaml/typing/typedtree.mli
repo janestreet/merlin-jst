@@ -410,7 +410,7 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.t;
     fp_curry: function_curry;
-    fp_newtypes: (Ident.t * string loc * Jkind.annotation option) list;
+    fp_newtypes: fp_newtype list;
     (** [fp_newtypes] are the new type declarations that come *after* that
         parameter. The newtypes that come before the first parameter are
         placed as exp_extras on the Texp_function node. This is just used in
@@ -420,6 +420,20 @@ and function_param =
         the [fp_newtypes].
     *)
   }
+
+(** This is a tremendous hack so we can keep track of the [Ident.t] of the
+    newtype in merlin while keeping binary compatibility with the OCaml
+    compiler. The first constructor, [Newtype], must stay in-sync with the type
+    of the [fp_newtypes] field in the compiler -- this takes advantage of the
+    fact that a tuple has the same runtime representation of the first
+    constructor of a variant with an inline tuple.
+
+    The naming (newtype/newtype') matches the naming of the similarly-hacky
+    [Texp_newtype'] in [exp_extra].
+*)
+and fp_newtype =
+  | Newtype of string loc * Jkind.annotation option
+  | Newtype' of Ident.t * string loc * Jkind.annotation option
 
 and function_param_kind =
   | Tparam_pat of pattern

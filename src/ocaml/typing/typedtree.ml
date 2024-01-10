@@ -214,9 +214,13 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.t;
     fp_curry: function_curry;
-    fp_newtypes: (Ident.t * string loc * Jkind.annotation option) list;
+    fp_newtypes: fp_newtype list;
     fp_loc: Location.t;
   }
+
+and fp_newtype =
+  | Newtype of string loc * Jkind.annotation option
+  | Newtype' of Ident.t * string loc * Jkind.annotation option
 
 and function_param_kind =
   | Tparam_pat of pattern

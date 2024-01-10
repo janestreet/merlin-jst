@@ -7152,7 +7152,8 @@ and type_function_
               fp_arg_label = arg_label;
               fp_param;
               fp_partial = partial;
-              fp_newtypes = newtypes;
+              fp_newtypes =
+                List.map (fun (id, t, loc) -> Newtype' (id, t, loc)) newtypes;
               fp_sort = arg_sort;
               fp_mode = arg_mode;
               fp_curry = curry;
