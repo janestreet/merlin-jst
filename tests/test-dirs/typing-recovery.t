@@ -99,9 +99,9 @@
             Texp_function
             region true
             alloc_mode Global, uniqueness:?, Many
-            Nolabel
             [
-              <case>
+              Nolabel
+              Param_pat
                 pattern (test.ml[2,15+7]..test.ml[2,15+8])
                   extra
                     Tpat_extra_constraint
@@ -110,66 +110,67 @@
                       []
                   Tpat_var \"x/279\"
                   value_mode Global, Unique, Many
-                expression (test.ml[3,31+2]..test.ml[6,69+12])
-                  Texp_match
-                  expression (test.ml[3,31+8]..test.ml[3,31+9])
-                    Texp_ident \"x/279\"
-                  value
-                  [
-                    <case>
-                      pattern (test.ml[4,46+4]..test.ml[4,46+5])
-                        Tpat_value
-                        pattern (test.ml[4,46+4]..test.ml[4,46+5])
-                          Tpat_construct \"A\"
-                          []
-                          None
-                      expression (test.ml[4,46+9]..test.ml[4,46+11])
-                        attribute \"merlin.loc\"
-                          []
-                        Texp_construct \"()\"
-                        []
-                    <case>
-                      pattern (test.ml[5,58+4]..test.ml[5,58+5])
-                        Tpat_value
-                        pattern (test.ml[5,58+4]..test.ml[5,58+5])
-                          Tpat_construct \"B\"
-                          []
-                          None
-                      expression (test.ml[5,58+9]..test.ml[5,58+10])
-                        attribute \"merlin.incorrect\"
-                          []
-                        attribute \"merlin.saved-parts\"
-                          [
-                            structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
-                              Pstr_eval
-                              expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (1,None)
-                          ]
-                        attribute \"merlin.loc\"
-                          []
-                        Texp_ident \"*type-error*/280\"
-                    <case>
-                      pattern (test.ml[6,69+4]..test.ml[6,69+5])
-                        Tpat_value
-                        pattern (test.ml[6,69+4]..test.ml[6,69+5])
-                          attribute \"merlin.incorrect\"
-                            []
-                          Tpat_any
-                      expression (test.ml[6,69+9]..test.ml[6,69+12])
-                        attribute \"merlin.incorrect\"
-                          []
-                        attribute \"merlin.saved-parts\"
-                          [
-                            structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
-                              Pstr_eval
-                              expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (2,None)
-                          ]
-                        attribute \"merlin.loc\"
-                          []
-                        Texp_ident \"*type-error*/281\"
-                  ]
             ]
+            Tfunction_body
+              expression (test.ml[3,31+2]..test.ml[6,69+12])
+                Texp_match
+                expression (test.ml[3,31+8]..test.ml[3,31+9])
+                  Texp_ident \"x/279\"
+                value
+                [
+                  <case>
+                    pattern (test.ml[4,46+4]..test.ml[4,46+5])
+                      Tpat_value
+                      pattern (test.ml[4,46+4]..test.ml[4,46+5])
+                        Tpat_construct \"A\"
+                        []
+                        None
+                    expression (test.ml[4,46+9]..test.ml[4,46+11])
+                      attribute \"merlin.loc\"
+                        []
+                      Texp_construct \"()\"
+                      []
+                  <case>
+                    pattern (test.ml[5,58+4]..test.ml[5,58+5])
+                      Tpat_value
+                      pattern (test.ml[5,58+4]..test.ml[5,58+5])
+                        Tpat_construct \"B\"
+                        []
+                        None
+                    expression (test.ml[5,58+9]..test.ml[5,58+10])
+                      attribute \"merlin.incorrect\"
+                        []
+                      attribute \"merlin.saved-parts\"
+                        [
+                          structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
+                            Pstr_eval
+                            expression (_none_[0,0+-1]..[0,0+-1]) ghost
+                              Pexp_constant PConst_int (1,None)
+                        ]
+                      attribute \"merlin.loc\"
+                        []
+                      Texp_ident \"*type-error*/280\"
+                  <case>
+                    pattern (test.ml[6,69+4]..test.ml[6,69+5])
+                      Tpat_value
+                      pattern (test.ml[6,69+4]..test.ml[6,69+5])
+                        attribute \"merlin.incorrect\"
+                          []
+                        Tpat_any
+                    expression (test.ml[6,69+9]..test.ml[6,69+12])
+                      attribute \"merlin.incorrect\"
+                        []
+                      attribute \"merlin.saved-parts\"
+                        [
+                          structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
+                            Pstr_eval
+                            expression (_none_[0,0+-1]..[0,0+-1]) ghost
+                              Pexp_constant PConst_int (2,None)
+                        ]
+                      attribute \"merlin.loc\"
+                        []
+                      Texp_ident \"*type-error*/281\"
+                ]
       ]
   ]
   
@@ -259,9 +260,9 @@
             Texp_function
             region true
             alloc_mode Global, uniqueness:?, Many
-            Nolabel
             [
-              <case>
+              Nolabel
+              Param_pat
                 pattern (test2.ml[2,15+7]..test2.ml[2,15+8])
                   attribute \"merlin.incorrect\"
                     []
@@ -271,23 +272,24 @@
                       Ttyp_constr \"t/274\"
                       []
                   Tpat_any
-                expression (test2.ml[2,15+22]..test2.ml[2,15+24])
-                  attribute \"merlin.incorrect\"
-                    []
-                  attribute \"merlin.saved-parts\"
-                    [
-                      structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
-                        Pstr_eval
-                        expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                          Pexp_constant PConst_int (1,None)
-                    ]
-                  extra
-                    Texp_constraint
-                    core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
-                      Ttyp_constr \"int/1!\"
-                      []
-                  Texp_ident \"*type-error*/279\"
             ]
+            Tfunction_body
+              expression (test2.ml[2,15+22]..test2.ml[2,15+24])
+                attribute \"merlin.incorrect\"
+                  []
+                attribute \"merlin.saved-parts\"
+                  [
+                    structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
+                      Pstr_eval
+                      expression (_none_[0,0+-1]..[0,0+-1]) ghost
+                        Pexp_constant PConst_int (1,None)
+                  ]
+                extra
+                  Texp_constraint
+                  core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
+                    Ttyp_constr \"int/1!\"
+                    []
+                Texp_ident \"*type-error*/279\"
       ]
   ]
   

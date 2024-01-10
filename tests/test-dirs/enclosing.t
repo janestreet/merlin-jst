@@ -33,16 +33,6 @@
       {
         "start": {
           "line": 3,
-          "col": 17
-        },
-        "end": {
-          "line": 3,
-          "col": 33
-        }
-      },
-      {
-        "start": {
-          "line": 3,
           "col": 13
         },
         "end": {

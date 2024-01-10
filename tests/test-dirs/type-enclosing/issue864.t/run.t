@@ -30,18 +30,6 @@
       {
         "start": {
           "line": 5,
-          "col": 9
-        },
-        "end": {
-          "line": 5,
-          "col": 24
-        },
-        "type": "X.t -> int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 5,
           "col": 7
         },
         "end": {
@@ -87,18 +75,6 @@
       {
         "start": {
           "line": 7,
-          "col": 20
-        },
-        "end": {
-          "line": 7,
-          "col": 37
-        },
-        "type": "X.t -> int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 7,
           "col": 7
         },
         "end": {
@@ -139,18 +115,6 @@
           "col": 35
         },
         "type": "int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 9,
-          "col": 20
-        },
-        "end": {
-          "line": 9,
-          "col": 35
-        },
-        "type": "X.t -> int",
         "tail": "no"
       },
       {
