@@ -887,6 +887,14 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
     | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _, _) ->
       fake_path lid_loc cstr_res cstr_name
     | Texp_open (od,_) -> module_expr_paths od.open_expr
+    | Texp_function { params; _ } ->
+      List.concat_map params ~f:(fun { fp_newtypes; _} ->
+        List.concat_map fp_newtypes ~f:(function
+          | Newtype _ -> []  (* shouldn't happen *)
+          | Newtype' (id, label_loc, _) ->
+            let path = Path.Pident id in
+            let lid = Longident.Lident (label_loc.txt) in
+            [mkloc path label_loc.loc, Some lid]))
     | _ -> []
   in
   List.fold_left ~init exp_extra

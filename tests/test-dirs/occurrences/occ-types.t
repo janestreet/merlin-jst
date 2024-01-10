@@ -72,16 +72,6 @@
     {
       "start": {
         "line": 1,
-        "col": 18
-      },
-      "end": {
-        "line": 1,
-        "col": 19
-      }
-    },
-    {
-      "start": {
-        "line": 1,
         "col": 28
       },
       "end": {
@@ -92,11 +82,21 @@
     {
       "start": {
         "line": 1,
-        "col": 48
+        "col": 38
       },
       "end": {
         "line": 1,
-        "col": 49
+        "col": 39
+      }
+    },
+    {
+      "start": {
+        "line": 1,
+        "col": 58
+      },
+      "end": {
+        "line": 1,
+        "col": 59
       }
     }
   ]
