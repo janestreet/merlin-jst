@@ -271,7 +271,8 @@ let rec get_every_pattern = function
       let patterns : Typedtree.pattern list =
         Mbrowse.fold_node (fun env node acc ->
             match node with
-            | Pattern _ -> (* Not expected here *) assert false
+            | Pattern _ ->
+              raise (Not_allowed ("pattern in function argument"))
             | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
                   match node with
