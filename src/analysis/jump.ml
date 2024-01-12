@@ -47,6 +47,14 @@ let is_node_pattern = function
   | _ -> false
 ;;
 
+let rec find_map ~f = function
+  | [] -> None
+  | head :: tail ->
+      match f head with
+      | Some v -> Some v
+      | None -> find_map tail ~f
+;;
+
 let fun_pred = fun all ->
   (* For:
      `let f x y z = ...` jump to f
@@ -94,12 +102,40 @@ let match_pred = function
   | _ -> None
 ;;
 
-let rec find_map ~f = function
-  | [] -> None
-  | head :: tail ->
-    match f head with
-    | Some v -> Some v
-    | None -> find_map tail ~f
+let next_or_prev_case_pred ~next_or_prev = function
+  | Case case :: rest -> (
+      prerr_endline "here";
+      match classify_pattern case.c_lhs with
+      | Value -> None
+      | Computation ->
+            prerr_endline "here";
+              find_map rest ~f:(function
+                | (Expression { exp_desc = Texp_match (_, _, cases, _); _ }) ->
+                    let rec find_relevant_case cases =
+                      match cases with
+                      | [] | [ _ ] -> None
+                      | case1 :: (case2 :: _) as rest ->
+                          let found_case =
+                            match next_or_prev with
+                            | `Next ->
+                                if case1 == case then Some case2 else None
+                            | `Prev ->
+                                if case2 == case then Some case1 else None
+                          in
+                          match found_case with
+                          | None -> find_relevant_case rest
+                          | Some found_case -> Some (Case found_case)
+                    in
+                    find_relevant_case cases
+                | _ -> None))
+  | ok ->
+      (match ok with
+       | [] -> prerr_endline "[]"
+       | Case _ :: _ -> prerr_endline "Case"
+       | Expression _ :: _ -> prerr_endline "Expr"
+       | Pattern _ :: _ -> prerr_endline "pattern"
+       | Structure_item _ :: _ -> prerr_endline "structure item"| _ -> ());
+      None
 ;;
 
 exception No_matching_target
@@ -139,7 +175,8 @@ let get typed_tree pos target =
     "fun", fun_pred;
     "let", let_pred;
     "module", module_pred;
-    "match", match_pred;
+    "next_case", next_or_prev_case_pred ~next_or_prev:`Next;
+    "prev_case", next_or_prev_case_pred ~next_or_prev:`Prev;
   ] in
   let targets = Str.split (Str.regexp "[, ]") target in
   try

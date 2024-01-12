@@ -34,3 +34,27 @@ Same line should fail:
     "notifications": []
   }
 
+
+  $ $MERLIN single jump -target next_case -position 3:10 -filename test.ml <<EOF
+  > let f x =
+  >   match x with
+  >   | A -> ()
+  >   | B -> ()
+  > EOF
+  {
+    "class": "return",
+    "value": "No matching target",
+    "notifications": []
+  }
+
+  $ $MERLIN single jump -target prev_case -position 4:10 -filename test.ml <<EOF
+  > let f x =
+  >   match x with
+  >   | A -> ()
+  >   | B -> ()
+  > EOF
+  {
+    "class": "return",
+    "value": "No matching target",
+    "notifications": []
+  }
