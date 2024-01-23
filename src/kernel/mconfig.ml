@@ -476,6 +476,10 @@ let ocaml_ignored_flags = [
   "-use-cached-generic-functions";
   "-flambda2-expert-shorten-symbol-names";
   "-no-flambda2-expert-shorten-symbol-names";
+  "-symbol-visibility-protected";
+  "-no-symbol-visibility-protected";
+  "-flambda2-basic-meet";
+  "-flambda2-advanced-meet";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
@@ -501,6 +505,16 @@ let ocaml_ignored_flags = [
   "-fclmul";
   "-fno-clmul";
   "-no-auto-include-otherlibs";
+  "-fbmi2";
+  "-fno-bmi2";
+  "-fbmi";
+  "-fno-bmi";
+  "-fprefetchwt1";
+  "-fno-prefetchwt1";
+  "-fprefetchw";
+  "-fno-prefetchw";
+  "-fpopcnt";
+  "-fno-popcnt";
 ]
 
 let ocaml_ignored_parametrized_flags = [
