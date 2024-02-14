@@ -490,6 +490,8 @@ let ocaml_ignored_flags = [
   "-ddebug-invariants";
   "-cfg-peephole-optimize";
   "-no-cfg-peephole-optimize";
+  "-cfg-cse-optimize";
+  "-no-cfg-cse-optimize";
   "-verbose-types";
   "-no-verbose-types";
   "-fsse3";
@@ -502,6 +504,8 @@ let ocaml_ignored_flags = [
   "-fno-sse42";
   "-fsimd-regalloc";
   "-fno-simd-regalloc";
+  "-farch-check";
+  "-fno-arch-check";
   "-fclmul";
   "-fno-clmul";
   "-no-auto-include-otherlibs";
@@ -509,6 +513,8 @@ let ocaml_ignored_flags = [
   "-fno-bmi2";
   "-fbmi";
   "-fno-bmi";
+  "-flzcnt";
+  "-fno-lzcnt";
   "-fprefetchwt1";
   "-fno-prefetchwt1";
   "-fprefetchw";
@@ -554,6 +560,7 @@ let ocaml_ignored_parametrized_flags = [
   "-regalloc-param";
   "-cached-generic-functions-path";
   "-gdwarf-max-function-complexity";
+  "-function-layout";
 ]
 
 let ocaml_warnings_spec ~error =
