@@ -44,7 +44,7 @@ The licence is correctly ignored when looking for the doc of Lib
   > -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "No documentation available",
+    "value": "Documentation of Lib",
     "notifications": []
   }
 
@@ -53,6 +53,6 @@ Same when the doc is in the ml file
   > -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "No documentation available",
+    "value": "Documentation of Libimpl",
     "notifications": []
   }
