@@ -643,12 +643,14 @@ let pat_of_label lbl =
 let mk_newtypes ~loc newtypes exp =
   let mk_one (name, jkind) exp =
     match jkind with
-    | None -> mkexp ~loc (Pexp_newtype (name, exp))
+    | None -> ghexp ~loc (Pexp_newtype (name, exp))
     | Some jkind ->
-      Jane_syntax.Layouts.expr_of ~loc:(make_loc loc)
+      Jane_syntax.Layouts.expr_of ~loc:(ghost_loc loc)
         (Lexp_newtype (name, jkind, exp))
   in
-  List.fold_right mk_one newtypes exp
+  let exp = List.fold_right mk_one newtypes exp in
+  (* outermost expression should have non-ghost location *)
+  { exp with pexp_loc = make_loc loc }
 
 (* The [typloc] argument is used to adjust a location for something we're
    parsing a bit differently than upstream.  See comment about [Pvc_constraint]
@@ -1000,7 +1002,7 @@ let unboxed_int sloc int_loc sign (n, m) =
       Constant.unboxed ~loc:int_loc (Integer (with_sign sign n, m))
   | None ->
       if Language_extension.is_enabled unboxed_literals_extension then
-        (expecting int_loc "unboxed integer literal with type-specifying suffix";
+        (raise_error Syntaxerr.(Error(Missing_unboxed_literal_suffix (make_loc int_loc)));
          Constant.unboxed ~loc:int_loc (Integer (with_sign sign n, 'l')))
       else
         (not_expecting sloc "line number directive";

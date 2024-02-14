@@ -12,6 +12,7 @@ type _ t =
   | Layouts : maturity t
   | SIMD : unit t
   | Labeled_tuples : unit t
+  | Small_numbers : unit t
 
 type 'a language_extension_kernel = 'a t
 
@@ -29,6 +30,7 @@ module Exist = struct
     ; Pack Layouts
     ; Pack SIMD
     ; Pack Labeled_tuples
+    ; Pack Small_numbers
     ]
 end
 
@@ -48,6 +50,7 @@ let to_string : type a. a t -> string = function
   | Layouts -> "layouts"
   | SIMD -> "simd"
   | Labeled_tuples -> "labeled_tuples"
+  | Small_numbers -> "small_numbers"
 
 (* converts full extension names, like "layouts_alpha" to a pair of
    an extension and its maturity. For extensions that don't take an
@@ -67,6 +70,7 @@ let pair_of_string extn_name : Exist_pair.t option =
   | "layouts_beta" -> Some (Pair (Layouts, Beta))
   | "simd" -> Some (Pair (SIMD, ()))
   | "labeled_tuples" -> Some (Pair (Labeled_tuples, ()))
+  | "small_numbers" -> Some (Pair (Small_numbers, ()))
   | _ -> None
 
 let maturity_to_string = function
@@ -89,16 +93,18 @@ let of_string extn_name : Exist.t option =
 *)
 let is_erasable : type a. a t -> bool = function
   | Local
-  | Unique
-  | Layouts ->
+  | Unique ->
       true
+  (* CR layouts v2.6: Layouts should be erasable *)
+  | Layouts
   | Comprehensions
   | Include_functor
   | Polymorphic_parameters
   | Immutable_arrays
   | Module_strengthening
   | SIMD
-  | Labeled_tuples ->
+  | Labeled_tuples
+  | Small_numbers ->
       false
 
 (* See the mli. *)
