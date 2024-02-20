@@ -516,11 +516,6 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
    comparisons of [Env.get_unit_name ()] with [comp_unit]; we don't use
    [Option.equal] because [Std.Option] doesn't have it so the patch would be
    less local in order to add a module alias before [open Std]. *)
-let is_current_unit comp_unit =
-  match Env.get_unit_name () with
-  | Some current_unit ->
-    String.equal (Compilation_unit.name_as_string current_unit) comp_unit
-  | None -> false
 
 type find_source_result =
   | Found of string
@@ -666,7 +661,7 @@ let find_source ~config loc path =
   This function lookups a uid's location in the appropriate table. *)
 let find_loc_of_uid ~config ~local_defs uid comp_unit =
   let title = "find_loc_of_uid" in
-  if is_current_unit comp_unit then begin
+  if Misc_utils.is_current_unit comp_unit then begin
     log ~title "We look for %a in the current compilation unit."
       Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
     log ~title "Looking for %a in the uid_to_loc table"
@@ -903,7 +898,7 @@ let doc_from_uid ~config ~loc uid =
   begin match uid with
   | Shape.Uid.Item { comp_unit; _ }
   | Shape.Uid.Compilation_unit comp_unit
-      when not (is_current_unit comp_unit) ->
+      when not (Misc_utils.is_current_unit comp_unit) ->
         log ~title:"get_doc" "the doc (%a) you're looking for is in another
           compilation unit (%s)"
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;

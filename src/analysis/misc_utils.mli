@@ -25,3 +25,6 @@ val parenthesize_name : string -> string
 
 (** Extracts the loc from cmt's cmt_uid_to_decl tables *)
 val loc_of_decl : uid:Shape.Uid.t -> Typedtree.item_declaration -> string Location.loc option
+
+(* [is_current_unit cu] returns true if [cu] is the current compilation unit *)
+val is_current_unit : string -> bool

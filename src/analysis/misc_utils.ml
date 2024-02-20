@@ -81,3 +81,9 @@ let loc_of_decl ~uid =
   | Module_substitution msd -> Some msd.ms_name
   | Class cd -> Some cd.ci_id_name
   | Class_type ctd -> Some ctd.ci_id_name
+
+let is_current_unit comp_unit =
+  match Env.get_unit_name () with
+  | Some current_unit ->
+    String.equal (Compilation_unit.name_as_string current_unit) comp_unit
+  | None -> false
