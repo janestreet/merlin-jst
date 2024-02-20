@@ -348,9 +348,9 @@ let function_param sub
         | Newtype (var, annot) ->
             Newtype
               (map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
-        | Newtype' (id, var, annot) ->
+        | Newtype' (id, var, annot, uid) ->
             Newtype'
-              (id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
+              (id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot, uid)
       )
       fp_newtypes
   in

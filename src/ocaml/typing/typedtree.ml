@@ -118,7 +118,7 @@ and exp_extra =
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
   | Texp_newtype of string * Jkind.annotation option
-  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option
+  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
 
 and expression_desc =
     Texp_ident of
@@ -221,7 +221,7 @@ and function_param =
 
 and fp_newtype =
   | Newtype of string loc * Jkind.annotation option
-  | Newtype' of Ident.t * string loc * Jkind.annotation option
+  | Newtype' of Ident.t * string loc * Jkind.annotation option * Uid.t
 
 and function_param_kind =
   | Tparam_pat of pattern
