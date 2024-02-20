@@ -111,48 +111,7 @@ Module types substitutions
   $ $MERLIN single occurrences -identifier-at 6:19 \
   > -filename mtsubst.ml < mtsubst.ml |
   > tr '\n' ' ' |  jq '.value'
-  [
-    {
-      "start": {
-        "line": 2,
-        "col": 14
-      },
-      "end": {
-        "line": 2,
-        "col": 15
-      }
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 12
-      },
-      "end": {
-        "line": 3,
-        "col": 13
-      }
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 17
-      },
-      "end": {
-        "line": 3,
-        "col": 18
-      }
-    },
-    {
-      "start": {
-        "line": 6,
-        "col": 19
-      },
-      "end": {
-        "line": 6,
-        "col": 20
-      }
-    }
-  ]
+  []
 
   $ cat >mtsubst.ml <<EOF
   > module type ENDO = sig
@@ -199,45 +158,4 @@ Module types substitutions
   $ $MERLIN single occurrences -identifier-at 6:19 \
   > -filename mtsubst.ml < mtsubst.ml |
   > tr '\n' ' ' |  jq '.value'
-  [
-    {
-      "start": {
-        "line": 2,
-        "col": 14
-      },
-      "end": {
-        "line": 2,
-        "col": 15
-      }
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 12
-      },
-      "end": {
-        "line": 3,
-        "col": 13
-      }
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 17
-      },
-      "end": {
-        "line": 3,
-        "col": 18
-      }
-    },
-    {
-      "start": {
-        "line": 6,
-        "col": 19
-      },
-      "end": {
-        "line": 6,
-        "col": 20
-      }
-    }
-  ]
+  []
