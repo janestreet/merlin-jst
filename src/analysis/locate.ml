@@ -500,7 +500,7 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
 
 let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
   let module Shape_reduce =
-    Shape.Make_reduce (struct
+    Shape_reduce.Make (struct
       type env = Env.t
 
       let fuel = 10
