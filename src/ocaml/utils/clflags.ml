@@ -18,6 +18,7 @@ let as_parameter        = ref false
 let annotations         = ref false
 let binary_annotations  = ref true
 let binary_annotations_cms  = ref false
+let store_occurrences   = ref true
 let print_types         = ref false
 let native_code         = ref false
 let error_size          = ref 500

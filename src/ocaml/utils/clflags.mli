@@ -26,6 +26,7 @@ val as_parameter         : bool ref
 val annotations          : bool ref
 val binary_annotations   : bool ref
 val binary_annotations_cms   : bool ref
+val store_occurrences    : bool ref
 val print_types          : bool ref
 val native_code          : bool ref
 val dont_write_files     : bool ref
