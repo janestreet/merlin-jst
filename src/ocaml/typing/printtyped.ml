@@ -408,7 +408,7 @@ and expression_extra i ppf x attrs =
       option i core_type ppf cto;
   | Texp_newtype (s, lay) ->
       line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
-  | Texp_newtype' (id, _, lay) ->
+  | Texp_newtype' (id, _, lay, _) ->
       line i ppf "Texp_newtype' %a\n" typevar_layout' (id, lay);
       attributes i ppf attrs;
   | Texp_mode_coerce modes ->

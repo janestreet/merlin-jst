@@ -285,7 +285,7 @@ let extra sub = function
 let function_param sub { fp_loc; fp_kind; fp_newtypes; _ } =
   sub.location sub fp_loc;
   List.iter
-    (function Newtype (var, annot) | Newtype' (_, var, annot) ->
+    (function Newtype (var, annot) | Newtype' (_, var, annot, _) ->
        iter_loc sub var;
        Option.iter (sub.jkind_annotation sub) annot)
     fp_newtypes;
