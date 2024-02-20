@@ -412,7 +412,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
-    let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    let local_defs = Mtyper.get_typedtree typer in
+    let structures = Mbrowse.of_typedtree local_defs in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node =
       match Mbrowse.enclosing pos [structures] with
@@ -438,15 +439,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | None -> `Invalid_context
       | Some (env, path) ->
         Locate.log ~title:"debug" "found type: %s" (Path.name path);
+        let config = Locate.{
+            mconfig = Mpipeline.final_config pipeline;
+            ml_or_mli = `MLI;
+            traverse_aliases = true
+          }
+        in
         match Locate.from_path
+                ~config
                 ~env
-                ~config:(Mpipeline.final_config pipeline)
-                ~namespace:`Type `MLI
+                ~local_defs
+                ~namespace:Type
                 path with
-        | `Builtin -> `Builtin (Path.name path)
+        | `Builtin (_, s) -> `Builtin s
         | `Not_in_env _ as s -> s
         | `Not_found _ as s -> s
-        | `Found (_uid, file, pos) -> `Found (file, pos)
+        | `Found { file; location; _ } -> `Found (Some file, location.loc_start)
         | `File_not_found _ as s -> s
     end
 
@@ -570,19 +578,24 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         path
     in
     if path = "" then `Invalid_context else
-    begin match
-      Locate.from_string
-        ~config:(Mpipeline.final_config pipeline)
-        ~env ~local_defs ~pos ml_or_mli path
-    with
-    | `Found (_, file, pos) ->
+    let config = Locate.{
+        mconfig = Mpipeline.final_config pipeline;
+        ml_or_mli;
+        traverse_aliases = true
+      }
+    in
+    begin match Locate.from_string ~config ~env ~local_defs ~pos path with
+    | `Found { file; location; _ } ->
       Locate.log ~title:"result"
-        "found: %s" (Option.value ~default:"<local buffer>" file);
-      `Found (file, pos)
+        "found: %s"  file;
+      `Found (Some file, location.loc_start)
     | `Missing_labels_namespace ->
       (* Can't happen because we haven't passed a namespace as input. *)
       assert false
-    | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _|`Builtin _) as
+    | `Builtin (_, s) ->
+      Locate.log ~title:"result" "found builtin %s" s;
+      `Builtin s
+    | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _) as
       otherwise ->
       Locate.log ~title:"result" "not found";
       otherwise
