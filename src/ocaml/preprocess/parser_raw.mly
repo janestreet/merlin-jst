@@ -1148,13 +1148,6 @@ let merloc startpos ?endpos x =
 
 %token EOL                    "\\n"      (* not great, but EOL is unused *)
 
-%token LET_LWT [@cost 1] [@symbol "lwt"]
-%token TRY_LWT [@cost 1] [@symbol "try_lwt"]
-%token MATCH_LWT [@cost 1] [@symbol "match_lwt"]
-%token FINALLY_LWT [@cost 1] [@symbol "finally"]
-%token FOR_LWT [@cost 1] [@symbol "for_lwt"]
-%token WHILE_LWT [@cost 1] [@symbol "while_lwt"]
-
 %token DOTLESS [@cost 1] [@symbol ".<"]
 %token DOTTILDE [@cost 1] [@symbol ".~"]
 %token GREATERDOT [@cost 1] [@symbol ">."]
@@ -1185,10 +1178,9 @@ The precedences must be listed from low to high.
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI                          /* below EQUAL ({lbl=...; lbl=...}) */
-%nonassoc LET FOR LET_LWT               /* above SEMI ( ...; let ... in ...) */
+%nonassoc LET FOR               /* above SEMI ( ...; let ... in ...) */
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 /* below BAR  (match ... with ...) */
-%nonassoc FINALLY_LWT
 %nonassoc AND             /* above WITH (module rec A: SIG with ... and ...) */
 %nonassoc THEN                          /* below ELSE (if ... then ...) */
 %nonassoc ELSE                          /* (if ... then ... else ...) */

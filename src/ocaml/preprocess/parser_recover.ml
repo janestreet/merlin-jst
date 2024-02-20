@@ -22,7 +22,6 @@ module Default = struct
   let value (type a) : a MenhirInterpreter.symbol -> a = function
     | MenhirInterpreter.T MenhirInterpreter.T_error -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_WITH -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_WHILE_LWT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_WHILE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_WHEN -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_VIRTUAL -> ()
@@ -31,7 +30,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_UNDERSCORE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_UIDENT -> "_"
     | MenhirInterpreter.T MenhirInterpreter.T_TYPE -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_TRY_LWT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_TRY -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_TRUE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_TO -> ()
@@ -72,12 +70,10 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_MINUSDOT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_MINUS -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_METHOD -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_MATCH_LWT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_MATCH -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LOCAL -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> "_"
-    | MenhirInterpreter.T MenhirInterpreter.T_LET_LWT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LETOP -> raise Not_found
     | MenhirInterpreter.T MenhirInterpreter.T_LET -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS -> ()
@@ -122,10 +118,8 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_FUNCTOR -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_FUNCTION -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_FUN -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_FOR_LWT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_FOR -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_FLOAT -> ("0.",None)
-    | MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_FALSE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_EXCLAVE -> ()
@@ -435,7 +429,6 @@ let depth =
 
 let can_pop (type a) : a terminal -> bool = function
   | T_WITH -> true
-  | T_WHILE_LWT -> true
   | T_WHILE -> true
   | T_WHEN -> true
   | T_VIRTUAL -> true
@@ -443,7 +436,6 @@ let can_pop (type a) : a terminal -> bool = function
   | T_UNIQUE -> true
   | T_UNDERSCORE -> true
   | T_TYPE -> true
-  | T_TRY_LWT -> true
   | T_TRY -> true
   | T_TRUE -> true
   | T_TO -> true
@@ -479,11 +471,9 @@ let can_pop (type a) : a terminal -> bool = function
   | T_MINUSDOT -> true
   | T_MINUS -> true
   | T_METHOD -> true
-  | T_MATCH_LWT -> true
   | T_MATCH -> true
   | T_LPAREN -> true
   | T_LOCAL -> true
-  | T_LET_LWT -> true
   | T_LET -> true
   | T_LESSMINUS -> true
   | T_LESS -> true
@@ -517,9 +507,7 @@ let can_pop (type a) : a terminal -> bool = function
   | T_FUNCTOR -> true
   | T_FUNCTION -> true
   | T_FUN -> true
-  | T_FOR_LWT -> true
   | T_FOR -> true
-  | T_FINALLY_LWT -> true
   | T_FALSE -> true
   | T_EXTERNAL -> true
   | T_EXCLAVE -> true
