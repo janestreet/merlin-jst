@@ -2843,11 +2843,11 @@ let initial =
     (add_extension ~check:false ~rebind:false)
     empty
 
-let add_type_long_path ~check id info env =
-  add_type ~check ~predef:false ~long_path:true id info env
+let add_type_long_path ~check ?shape id info env =
+  add_type ~check ?shape ~predef:false ~long_path:true id info env
 
-let add_type ~check id info env =
-  add_type ~check ~predef:false ~long_path:false id info env
+let add_type ~check ?shape id info env =
+  add_type ~check ?shape ~predef:false ~long_path:false id info env
 
 let add_language_extension_types env =
   let add ext f env  =

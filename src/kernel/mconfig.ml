@@ -432,7 +432,7 @@ let ocaml_ignored_flags = [
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
   "-verbose"; "-where";
-  "-no-absname"; "-no-g"; "-safe-matching";
+  "-no-absname"; "-no-g"; "-safe-matching"; "-bin-annot-occurrences";
 
   (* flambda-backend specific *)
   "-basic-block-sections";
