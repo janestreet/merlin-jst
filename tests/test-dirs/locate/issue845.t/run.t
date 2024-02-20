@@ -11,8 +11,6 @@ module containing a functor locally:
 
 Test jumping to impl:
 
-FIXME: this jumps to the .mli...
-
   $ $MERLIN single locate -look-for ml -position 1:24 -filename test.ml <<EOF
   > module SM = Local_map.Make(String)
   > EOF
