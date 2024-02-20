@@ -346,8 +346,8 @@ end) = struct
 
   (* Sharing the memo tables is safe at the level of a compilation unit since
     idents should be unique *)
-  let reduce_memo_table = Local_store.s_table ReduceMemoTable.create 42
-  let read_back_memo_table = Local_store.s_table ReadBackMemoTable.create 42
+  let reduce_memo_table = ReduceMemoTable.create 42
+  let read_back_memo_table = ReadBackMemoTable.create 42
 
   let reduce global_env t =
     let fuel = ref Params.fuel in
@@ -355,8 +355,8 @@ end) = struct
     let env = {
       fuel;
       global_env;
-      reduce_memo_table = !reduce_memo_table;
-      read_back_memo_table = !read_back_memo_table;
+      reduce_memo_table = reduce_memo_table;
+      read_back_memo_table = read_back_memo_table;
       local_env;
     } in
     reduce_ env t |> read_back env
@@ -387,8 +387,8 @@ end) = struct
     let env = {
       fuel;
       global_env;
-      reduce_memo_table = !reduce_memo_table;
-      read_back_memo_table = !read_back_memo_table;
+      reduce_memo_table = reduce_memo_table;
+      read_back_memo_table = read_back_memo_table;
       local_env;
     } in
     let nf = reduce_ env t in
