@@ -19,7 +19,8 @@ available:
     "notifications": []
   }
 
-  $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
+  $ grep -A0 fall log 
+  [1]
 
   $ rm log
 
@@ -37,7 +38,8 @@ available:
     "notifications": []
   }
 
-  $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
+  $ grep -A0 fall log 
+  [1]
 
   $ rm log
 
@@ -59,7 +61,7 @@ In the absence of cmt though, fallbacking to the cmi loc makes sense:
     "notifications": []
   }
 
-  $ grep -A1 from_uid log | grep -v from_uid
-  [1]
+  $ grep -A0 fall log
+  No definition uid, falling back to the declaration uid: A.0
 
   $ rm log
