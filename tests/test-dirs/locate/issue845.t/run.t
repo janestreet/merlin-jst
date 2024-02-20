@@ -22,7 +22,7 @@ FIXME: this jumps to the .mli...
       "file": "$TESTCASE_ROOT/local_map.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []
@@ -39,7 +39,7 @@ Test jumping to intf:
       "file": "$TESTCASE_ROOT/local_map.mli",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []

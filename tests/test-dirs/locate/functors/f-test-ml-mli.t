@@ -36,7 +36,7 @@ Should jump to mySet.ml:
     "file": "$TESTCASE_ROOT/mySet.ml",
     "pos": {
       "line": 2,
-      "col": 2
+      "col": 7
     }
   }
 
@@ -47,6 +47,6 @@ Should jump to mySet.mli:
     "file": "$TESTCASE_ROOT/mySet.mli",
     "pos": {
       "line": 2,
-      "col": 2
+      "col": 7
     }
   }

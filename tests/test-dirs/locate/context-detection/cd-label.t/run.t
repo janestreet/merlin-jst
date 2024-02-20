@@ -49,7 +49,7 @@ We could expect 2:12 or at least 2:4
     "file": "$TESTCASE_ROOT/record.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 11
     }
   }
 
@@ -68,6 +68,6 @@ doesn't find it. We need a compiler fix for this, see #1505.
     "file": "$TESTCASE_ROOT/record.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 11
     }
   }

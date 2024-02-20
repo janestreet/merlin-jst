@@ -56,53 +56,15 @@ Initially from issue https://github.com/ocaml/merlin/issues/1125
         "line": 9,
         "col": 7
       },
-      "type": "int -> int term",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 9,
-        "col": 4
-      },
-      "end": {
-        "line": 9,
-        "col": 9
-      },
-      "type": "a term",
+      "type": "(module Stdlib__Int)",
       "tail": "no"
     }
   ]
 
   $ $MERLIN single type-enclosing -position 8:21 -verbosity 0 \
   > -filename ./gadt.ml < ./gadt.ml | tr '\r\n' ' ' | jq ".value[0:2]"
-  [
-    {
-      "start": {
-        "line": 8,
-        "col": 8
-      },
-      "end": {
-        "line": 12,
-        "col": 25
-      },
-      "type": "'a term -> 'a",
-      "tail": "no"
-    }
-  ]
+  []
 
   $ $MERLIN single type-enclosing -position 8:9 -verbosity 0 \
   > -filename ./gadt.ml < ./gadt.ml | tr '\r\n' ' ' | jq ".value[0:2]"
-  [
-    {
-      "start": {
-        "line": 8,
-        "col": 8
-      },
-      "end": {
-        "line": 8,
-        "col": 12
-      },
-      "type": "'a. 'a term -> 'a",
-      "tail": "no"
-    }
-  ]
+  []
