@@ -540,6 +540,43 @@ shape =
     end
   ;
 
+  command "stack-or-heap-enclosing"
+~doc:"TODO"
+    ~spec: [
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (expr,cursor,_pos,index) -> (expr,cursor,pos,index)));
+      optional "-expression" "<string> Expression to type"
+        (Marg.param "string" (fun expr (_expr,cursor,pos,index) -> (expr,cursor,pos,index)));
+      optional "-cursor" "<int> Position of the cursor inside expression"
+        (Marg.param "int" (fun cursor (expr,_cursor,pos,index) ->
+            match int_of_string cursor with
+            | cursor -> (expr,cursor,pos,index)
+            | exception _ ->
+              failwith "cursor should be an integer"
+          ));
+      optional "-index" "<int> Only print type of <index>'th result"
+        (Marg.param "int" (fun index (expr,cursor,pos,_index) ->
+            match int_of_string index with
+            | index -> (expr,cursor,pos,Some index)
+            | exception _ ->
+              failwith "index should be an integer"
+          ));
+    ]
+    ~default:("",-1,`None,None)
+    begin fun buffer (expr,cursor,pos,index) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        let expr =
+          if expr = "" then None
+          else
+            let cursor = if cursor = -1 then String.length expr else cursor in
+            Some (expr, cursor)
+        in
+        run buffer (Query_protocol.Stack_or_heap_enclosing (expr,pos,index))
+    end
+  ;
+
   command "type-enclosing"
 ~doc:"Returns a list of type information for all expressions at given \
 position, sorted by increasing size.

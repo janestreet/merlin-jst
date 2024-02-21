@@ -274,6 +274,70 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     ignore (Type_utils.type_in_env ~verbosity ~context env ppf source : bool);
     to_string ()
 
+  | Stack_or_heap_enclosing (expro, pos, index) ->
+    let typer = Mpipeline.typer_result pipeline in
+    let verbosity = verbosity pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let structures = Mbrowse.enclosing pos
+      [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
+    let path = match structures with
+      | [] -> []
+      | browse -> Browse_misc.annotate_tail_calls browse
+    in
+
+    let result = Stack_or_heap_enclosing.from_nodes ~path in
+
+    (* enclosings of cursor in given expression *)
+    let exprs = reconstruct_identifier pipeline pos expro in
+    let () =
+      Logger.log ~section:Stack_or_heap_enclosing.log_section
+        ~title:"reconstruct identifier" "%a"
+        Logger.json (fun () ->
+          let lst =
+            List.map exprs ~f:(fun { Location.loc; txt } ->
+              `Assoc [ "start", Lexing.json_of_position loc.Location.loc_start
+                     ; "end",   Lexing.json_of_position loc.Location.loc_end
+                     ; "identifier", `String txt]
+            )
+          in
+          `List lst
+        )
+    in
+    let small_enclosings =
+      Stack_or_heap_enclosing.from_reconstructed exprs
+       ~nodes:structures ~cursor:pos ~verbosity
+    in
+    Logger.log ~section:Stack_or_heap_enclosing.log_section ~title:"small enclosing" "%a"
+      Logger.fmt (fun fmt ->
+        Format.fprintf fmt "result = [ %a ]"
+          (Format.pp_print_list ~pp_sep:Format.pp_print_space
+             (fun fmt (loc, _, _) -> Location.print_loc fmt loc))
+          small_enclosings
+      );
+
+    let ppf = Format.str_formatter in
+    let all_results = List.mapi (small_enclosings @ result)
+      ~f:(fun i (loc,text,tail) ->
+          let print = match index with None -> true | Some index -> index = i in
+          let ret x = (loc, x, tail) in
+          match text with
+          | _ ->
+            let _ : _ = ppf in
+            let _ : _ = print in
+            ret (`Index i)
+        )
+    in
+    let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
+      Lexing.split_pos loc_start, Lexing.split_pos loc_end, text
+    in
+    (* We remove duplicates from the list. Duplicates can appear when the type
+       from the reconstructed identifier is the same as the one stored in the
+       typedtree *)
+    List.merge_cons
+      ~f:(fun a b ->
+          if compare (normalize a) (normalize b) = 0 then Some b else None)
+      all_results
+
   | Type_enclosing (expro, pos, index) ->
     let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
