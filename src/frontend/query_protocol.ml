@@ -105,7 +105,7 @@ type _ t =
     :  string * Msource.position
     -> string t
   | Stack_or_heap_enclosing(* *)
-    :  (string * int) option * Msource.position * int option
+    :  Msource.position * int option
     -> (Location.t * [`String of string | `Index of int] * is_tail_position) list t
   | Type_enclosing(* *)
     :  (string * int) option * Msource.position * int option

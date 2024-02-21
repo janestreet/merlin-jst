@@ -62,15 +62,8 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
-  | Stack_or_heap_enclosing (opt_cursor, pos, index) ->
+  | Stack_or_heap_enclosing (pos, index) ->
     mk "stack-or-heap-enclosing" [
-      "cursor", (match opt_cursor with
-          | None -> `Null
-          | Some (text, offset) -> `Assoc [
-              "text", `String text;
-              "offset", `Int offset;
-            ]
-        );
       "index", (match index with
           | None -> `String "all"
           | Some n -> `Int n

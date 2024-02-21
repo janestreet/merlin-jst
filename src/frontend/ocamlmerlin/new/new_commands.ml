@@ -563,17 +563,11 @@ shape =
           ));
     ]
     ~default:("",-1,`None,None)
-    begin fun buffer (expr,cursor,pos,index) ->
+    begin fun buffer (_,_,pos,index) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        let expr =
-          if expr = "" then None
-          else
-            let cursor = if cursor = -1 then String.length expr else cursor in
-            Some (expr, cursor)
-        in
-        run buffer (Query_protocol.Stack_or_heap_enclosing (expr,pos,index))
+        run buffer (Query_protocol.Stack_or_heap_enclosing (pos,index))
     end
   ;
 
