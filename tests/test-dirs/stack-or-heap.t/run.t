@@ -59,7 +59,7 @@ how to produce valid json.
   >   echo
   > }
 
-(I) Type declarations
+(I) Tests
 
   $ run inputs.ml 3:9
   > run inputs.ml 7:13
