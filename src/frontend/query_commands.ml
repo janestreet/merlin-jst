@@ -276,7 +276,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Stack_or_heap_enclosing (pos, index) ->
     let typer = Mpipeline.typer_result pipeline in
-    (* let verbosity = verbosity pipeline in *)
+    let verbose = 
+      let verbosity = verbosity pipeline in
+      Mconfig.Verbosity.to_int ~for_smart:0 verbosity > 0
+    in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let structures = Mbrowse.enclosing pos
       [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
@@ -293,22 +296,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let print = match index with None -> true | Some index -> index = i in
           let ret x = (loc, x, tail) in
           match text with
-          | _ ->
-            let _ : _ = ppf in
-            let _ : _ = print in
-            ret (`Index i)
+          | Stack_or_heap_enclosing.String str -> ret (`String str)
+          | Stack_or_heap_enclosing.Alloc_mode alloc_mode when print ->
+            Mode.Alloc.print' ~verbose ppf alloc_mode;
+            ret (`String (Format.flush_str_formatter ()))
+          | _ -> ret (`Index i)
         )
     in
-    let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
-      Lexing.split_pos loc_start, Lexing.split_pos loc_end, text
-    in
-    (* We remove duplicates from the list. Duplicates can appear when the type
-       from the reconstructed identifier is the same as the one stored in the
-       typedtree *)
-    List.merge_cons
-      ~f:(fun a b ->
-          if compare (normalize a) (normalize b) = 0 then Some b else None)
-      all_results
+    all_results
 
   | Type_enclosing (expro, pos, index) ->
     let typer = Mpipeline.typer_result pipeline in

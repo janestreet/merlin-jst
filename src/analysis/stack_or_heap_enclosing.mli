@@ -6,9 +6,7 @@
 val log_section : string
 
 type stack_or_heap =
-  | Stack
-  | Heap
-  | Not_inside_allocating_expr
+  | Alloc_mode of Mode.Alloc.t
   | String of string
 
 type typed_enclosings =
