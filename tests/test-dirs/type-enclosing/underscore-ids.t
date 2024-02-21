@@ -364,7 +364,6 @@ We try several places in the identifier to check the result stability
   >   | Some _aa -> 4
   > EOF
   {
-
     "class": "return",
     "value": "[
     structure_item (under.ml[1,0+0]..under.ml[1,0+12])
@@ -372,7 +371,8 @@ We try several places in the identifier to check the result stability
       [
         <def>
           pattern (under.ml[1,0+4]..under.ml[1,0+6])
-            Tpat_var \"aa/276\"
+            Tpat_var \"aa/274\"
+            value_mode Global, uniqueness:?, Many
           expression (under.ml[1,0+9]..under.ml[1,0+12])
             Texp_constant Const_float 4.2
       ]
@@ -381,55 +381,31 @@ We try several places in the identifier to check the result stability
       [
         <def>
           pattern (under.ml[2,13+4]..under.ml[2,13+5])
-            Tpat_var \"f/277\"
+            Tpat_var \"f/275\"
+            value_mode Global, uniqueness:?, Many
           expression (under.ml[2,13+6]..under.ml[5,70+17]) ghost
             Texp_function
+            region true
+            alloc_mode Global, uniqueness:?, Many
             [
               Nolabel
               Param_pat
                 pattern (under.ml[2,13+6]..under.ml[2,13+9])
-                  Tpat_var \"x/279\"
+                  Tpat_var \"x/277\"
+                  value_mode locality: r_as_l=? r_as_g=Global, uniqueness:?, linearity:?
             ]
-            Tfunction_cases (under.ml[2,13+18]..under.ml[5,70+17])
-              Texp_constraint
-              core_type (under.ml[2,13+12]..under.ml[2,13+15])
-                Ttyp_constr \"int/1!\"
-                []
-              [
-                <case>
-                  pattern (under.ml[3,40+4]..under.ml[3,40+8])
-                    Tpat_construct \"None\"
-                    []
-                    None
-                  expression (under.ml[3,40+12]..under.ml[3,40+13])
-                    attribute \"merlin.loc\"
-                      []
-                    Texp_constant Const_int 3
-                <case>
-                  pattern (under.ml[4,54+4]..under.ml[4,54+10])
-                    Tpat_construct \"Some\"
-                    [
-                      pattern (under.ml[4,54+9]..under.ml[4,54+10])
-                        Tpat_constant Const_int 5
-                    ]
-                    None
-                  expression (under.ml[4,54+14]..under.ml[4,54+15])
-                    attribute \"merlin.loc\"
-                      []
-                    Texp_constant Const_int 4
-                <case>
-                  pattern (under.ml[5,70+4]..under.ml[5,70+12])
-                    Tpat_construct \"Some\"
-                    [
-                      pattern (under.ml[5,70+9]..under.ml[5,70+12])
-                        Tpat_var \"_aa/280\"
-                    ]
-                    None
-                  expression (under.ml[5,70+16]..under.ml[5,70+17])
-                    attribute \"merlin.loc\"
-                      []
-                    Texp_constant Const_int 4
-              ]
+            Tfunction_body
+              expression (under.ml[2,13+18]..under.ml[5,70+17])
+                attribute \"merlin.incorrect\"
+                  []
+                attribute \"merlin.saved-parts\"
+                  [
+                    structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
+                      Pstr_eval
+                      expression (_none_[0,0+-1]..[0,0+-1]) ghost
+                        Pexp_constant PConst_int (1,None)
+                  ]
+                Texp_ident \"*type-error*/280\"
       ]
   ]
   
