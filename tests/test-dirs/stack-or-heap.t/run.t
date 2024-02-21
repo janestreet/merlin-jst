@@ -33,3 +33,8 @@ how to produce valid json.
 (I) Type declarations
 
   $ run inputs.ml 1:5
+  let f g x y =
+      ^
+  With verbosity 0: 0
+  With verbosity 1: 0
+  
