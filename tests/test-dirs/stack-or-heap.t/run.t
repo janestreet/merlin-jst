@@ -17,10 +17,10 @@ how to produce valid json.
   >   for l in $(seq $l1 $l2)
   >   do
   >     txt=$(sed -n "${l}p" "$file")
-  >     if [ $l -eq $l1 ]; then u1=$c1; else u1=1; fi
+  >     if [ $l -eq $l1 ]; then u1=$c1; else u1=0; fi
   >     if [ $l -eq $l2 ]; then u2=$c2; else u2=${#txt}; fi
   >     printf '|%s\n|%s%s\n' \
-  >       "$txt" "$(rep $(expr $u1 - 1) ' ')" "$(rep $(expr $u2 - $u1 + 1) '^')"
+  >       "$txt" "$(rep $(expr $u1) ' ')" "$(rep $(expr $u2 - $u1) '^')"
   >   done
   > }
 
@@ -70,7 +70,7 @@ how to produce valid json.
   >   position=$2
   >   line=$(echo "$position" | cut -d ':' -f 1)
   >   col=$(echo "$position" | cut -d ':' -f 2)
-  >   highlight_range "$file" $line $col $line $col
+  >   highlight_range "$file" $line $(expr $col - 1) $line $col
   >   run_with_verbosity "$file" "$position" 0
   >   run_with_verbosity "$file" "$position" 1
   >   echo
@@ -92,7 +92,7 @@ how to produce valid json.
   |        ^
   
   |  Some (g z)
-  | ^^^^^^^^^^^
+  |  ^^^^^^^^^^
   
   With verbosity 0: "Global, uniqueness:?, linearity:?"
   With verbosity 1: "Global, uniqueness:?21[> ?33], linearity:^?20"
@@ -101,7 +101,7 @@ how to produce valid json.
   |                 ^
   
   |  exclave_ Some (g z)
-  |          ^^^^^^^^^^^
+  |           ^^^^^^^^^^
   
   With verbosity 0: "Local, uniqueness:?, linearity:?"
   With verbosity 1: "Local, uniqueness:?57[> ?69], linearity:^?56"
@@ -110,7 +110,7 @@ how to produce valid json.
   |                ^
   
   |  let z = Some (g x) in
-  |         ^^^^^^^^^^^
+  |          ^^^^^^^^^^
   
   With verbosity 0: "locality:?, uniqueness:?, linearity:?"
   With verbosity 1: "locality:?58[> ?62], uniqueness:?94[> ?101], linearity:^?95"
@@ -119,7 +119,7 @@ how to produce valid json.
   |    ^
   
   |  None
-  | ^^^^^
+  |  ^^^^
   
   With verbosity 0: "does not allocate"
   With verbosity 1: "does not allocate"
@@ -128,7 +128,7 @@ how to produce valid json.
   |             ^
   
   |  exclave_ None
-  |          ^^^^^
+  |           ^^^^
   
   With verbosity 0: "does not allocate"
   With verbosity 1: "does not allocate"
@@ -141,7 +141,7 @@ how to produce valid json.
   |    ^
   
   |  { z }
-  | ^^^^^^
+  |  ^^^^^
   
   With verbosity 0: "Global, Shared, linearity:?"
   With verbosity 1: "Global, Shared, linearity:^?20"
@@ -150,7 +150,7 @@ how to produce valid json.
   |             ^
   
   |  exclave_ { z }
-  |          ^^^^^^
+  |           ^^^^^
   
   With verbosity 0: "Local, Shared, linearity:?"
   With verbosity 1: "Local, Shared, linearity:^?51"
@@ -159,7 +159,7 @@ how to produce valid json.
   |                ^
   
   |  let y = { z = x } in
-  |         ^^^^^^^^^^
+  |          ^^^^^^^^^
   
   With verbosity 0: "Global, uniqueness:?, linearity:?"
   With verbosity 1: "Global, uniqueness:?77[> ?74], linearity:^?78[> ?75]"
@@ -168,7 +168,7 @@ how to produce valid json.
   |    ^
   
   |  { z }
-  | ^^^^^^
+  |  ^^^^^
   
   With verbosity 0: "does not allocate"
   With verbosity 1: "does not allocate"
@@ -177,7 +177,7 @@ how to produce valid json.
   |             ^
   
   |  exclave_ { z }
-  |          ^^^^^^
+  |           ^^^^^
   
   With verbosity 0: "does not allocate"
   With verbosity 1: "does not allocate"
@@ -190,7 +190,7 @@ how to produce valid json.
   |           ^
   
   |  fun x -> g x
-  | ^^^^^^^^^^^^^
+  |  ^^^^^^^^^^^^
   
   With verbosity 0: "Global, uniqueness:?, linearity:?"
   With verbosity 1: "Global, uniqueness:?8, linearity:^?9[> ?6]"
@@ -199,7 +199,7 @@ how to produce valid json.
   |                    ^
   
   |  exclave_ fun x -> g x
-  |          ^^^^^^^^^^^^^
+  |           ^^^^^^^^^^^^
   
   With verbosity 0: "Local, uniqueness:?, linearity:?"
   With verbosity 1: "Local, uniqueness:?31, linearity:^?32[> ?29]"
@@ -208,7 +208,7 @@ how to produce valid json.
   |           ^
   
   |  fun x -> x
-  | ^^^^^^^^^^^
+  |  ^^^^^^^^^^
   
   With verbosity 0: "Global, uniqueness:?, linearity:?"
   With verbosity 1: "Global, uniqueness:?54, linearity:^?55[> ?52]"
@@ -220,7 +220,7 @@ how to produce valid json.
   |            ^
   
   |let f g x y =
-  |     ^^^^^^^^
+  |      ^^^^^^^
   |  let z = x + y in
   |^^^^^^^^^^^^^^^^^^
   |  exclave_ Some (g z)
@@ -236,7 +236,7 @@ how to produce valid json.
   |                ^
   
   |  let z = Some (g x) in
-  |         ^^^^^^^^^^^
+  |          ^^^^^^^^^^
   
   With verbosity 0: "locality:?, uniqueness:?, linearity:?"
   With verbosity 1: "locality:?12[> ?16], uniqueness:?22[> ?29], linearity:^?23"
@@ -245,7 +245,7 @@ how to produce valid json.
   |                  ^
   
   |  let t = { x = f x } in
-  |         ^^^^^^^^^^^^
+  |          ^^^^^^^^^^^
   
   With verbosity 0: "Local, Shared, linearity:?"
   With verbosity 1: "Local, Shared, linearity:^?45"
