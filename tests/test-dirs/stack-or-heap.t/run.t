@@ -30,9 +30,10 @@ how to produce valid json.
   >   echo '' > "$orig_file.tmp.ml"
   >   while IFS= read -r line
   >   do
-  >     if [[ "$line" =~ ^(\ *\(\*\ *\^)\ *\*\)$ ]]
+  >     cursor=$(echo "$line" | sed -En 's/^( *\(\* *\^) *\*\)$/\1/p' | tr -d '\n')
+  >     if [ -n "$cursor" ]
   >     then
-  >       printf "%s:%s\n" $l $(echo -n "${BASH_REMATCH[1]}" | wc -c)
+  >       printf "%s:%s\n" $l $(echo -n "$cursor" | wc -c)
   >     else
   >       echo "$line" >> "$orig_file.tmp.ml"
   >       l=$(expr $l + 1)
