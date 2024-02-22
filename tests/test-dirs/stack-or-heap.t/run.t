@@ -24,6 +24,22 @@ how to produce valid json.
   >   done
   > }
 
+  $ process_cursors () {
+  >   orig_file=$1
+  >   l=1
+  >   echo '' > "$orig_file.tmp.ml"
+  >   while IFS= read -r line
+  >   do
+  >     if [[ "$line" =~ ^(\ *\(\*\ *\^)\ *\*\)$ ]]
+  >     then
+  >       printf "%s:%s\n" $l $(echo -n "${BASH_REMATCH[1]}" | wc -c)
+  >     else
+  >       echo "$line" >> "$orig_file.tmp.ml"
+  >       l=$(expr $l + 1)
+  >     fi
+  >   done < "$orig_file"
+  > }
+
   $ run_with_verbosity () {
   >   file=$1
   >   position=$2
@@ -59,13 +75,18 @@ how to produce valid json.
   >   echo
   > }
 
+  $ run_annotated_file () {
+  >   orig_file=$1
+  >   process_cursors "$orig_file" | while read -r lc
+  >   do
+  >     run "$orig_file.tmp.ml" $lc
+  >   done
+  >   rm "$orig_file.tmp.ml"
+  > }
+
 (I) Tests
 
-  $ run inputs.ml 3:9
-  > run inputs.ml 7:13
-  > run inputs.ml 13:18
-  > run inputs.ml 17:17
-  > run inputs.ml 22:17
+  $ run_annotated_file inputs.ml
   |  Some (g z)
   |        ^
   
@@ -74,6 +95,15 @@ how to produce valid json.
   
   With verbosity 0: "Global, uniqueness:?, linearity:?"
   With verbosity 1: "Global, uniqueness:?21[> ?33], linearity:^?20"
+  
+  |  exclave_ Some (g z)
+  |                 ^
+  
+  |  exclave_ Some (g z)
+  |          ^^^^^^^^^^^
+  
+  With verbosity 0: "Local, uniqueness:?, linearity:?"
+  With verbosity 1: "Local, uniqueness:?57[> ?69], linearity:^?56"
   
   |  let z = x + y in
   |            ^
@@ -86,16 +116,7 @@ how to produce valid json.
   |^^^^^^^^^^^^^^^^^^^^^
   
   With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?38, Many"
-  
-  |  exclave_ Some (g z)
-  |                 ^
-  
-  |  exclave_ Some (g z)
-  |          ^^^^^^^^^^^
-  
-  With verbosity 0: "Local, uniqueness:?, linearity:?"
-  With verbosity 1: "Local, uniqueness:?93[> ?105], linearity:^?92"
+  With verbosity 1: "Global, uniqueness:?74, Many"
   
   |  let z = Some (g x) in
   |                ^
@@ -115,4 +136,3 @@ how to produce valid json.
   With verbosity 0: "locality:?, uniqueness:?, linearity:?"
   With verbosity 1: "locality:?99[> ?103], uniqueness:?162[> ?169], linearity:^?163"
   
-
