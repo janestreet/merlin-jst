@@ -85,9 +85,9 @@ how to produce valid json.
   >   rm "$orig_file.tmp.ml"
   > }
 
-(I) Tests
+(I) Variants
 
-  $ run_annotated_file inputs.ml
+  $ run_annotated_file variants.ml
   |  Some (g z)
   |        ^
   
@@ -106,6 +106,132 @@ how to produce valid json.
   With verbosity 0: "Local, uniqueness:?, linearity:?"
   With verbosity 1: "Local, uniqueness:?57[> ?69], linearity:^?56"
   
+  |  let z = Some (g x) in
+  |                ^
+  
+  |  let z = Some (g x) in
+  |         ^^^^^^^^^^^
+  
+  With verbosity 0: "locality:?, uniqueness:?, linearity:?"
+  With verbosity 1: "locality:?58[> ?62], uniqueness:?94[> ?101], linearity:^?95"
+  
+  |  None
+  |    ^
+  
+  |let f g x y =
+  |     ^^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  None
+  |^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, Many"
+  With verbosity 1: "Global, uniqueness:?106, Many"
+  
+  |  exclave_ None
+  |             ^
+  
+  |let f g x y =
+  |     ^^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ None
+  |^^^^^^^^^^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, Many"
+  With verbosity 1: "Global, uniqueness:?134, Many"
+  
+
+(II) Records
+
+  $ run_annotated_file records.ml
+  |  { z }
+  |    ^
+  
+  |  { z }
+  | ^^^^^^
+  
+  With verbosity 0: "Global, Shared, linearity:?"
+  With verbosity 1: "Global, Shared, linearity:^?20"
+  
+  |  exclave_ { z }
+  |             ^
+  
+  |  exclave_ { z }
+  |          ^^^^^^
+  
+  With verbosity 0: "Local, Shared, linearity:?"
+  With verbosity 1: "Local, Shared, linearity:^?51"
+  
+  |  let y = { z = x } in
+  |                ^
+  
+  |  let y = { z = x } in
+  |         ^^^^^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, linearity:?"
+  With verbosity 1: "Global, uniqueness:?77[> ?74], linearity:^?78[> ?75]"
+  
+  |  { z }
+  |    ^
+  
+  |let f g x y =
+  |     ^^^^^^^^
+  |  let z = ref (x + y) in
+  |^^^^^^^^^^^^^^^^^^^^^^^^
+  |  { z }
+  |^^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, Many"
+  With verbosity 1: "Global, uniqueness:?81, Many"
+  
+  |  exclave_ { z }
+  |             ^
+  
+  |let f g x y =
+  |     ^^^^^^^^
+  |  let z = ref (x + y) in
+  |^^^^^^^^^^^^^^^^^^^^^^^^
+  |  exclave_ { z }
+  |^^^^^^^^^^^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, Many"
+  With verbosity 1: "Global, uniqueness:?112, Many"
+  
+
+(III) Closures
+
+  $ run_annotated_file closures.ml
+  |  fun x -> g x
+  |           ^
+  
+  |  fun x -> g x
+  | ^^^^^^^^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, linearity:?"
+  With verbosity 1: "Global, uniqueness:?8, linearity:^?9[> ?6]"
+  
+  |  exclave_ fun x -> g x
+  |                    ^
+  
+  |  exclave_ fun x -> g x
+  |          ^^^^^^^^^^^^^
+  
+  With verbosity 0: "Local, uniqueness:?, linearity:?"
+  With verbosity 1: "Local, uniqueness:?31, linearity:^?32[> ?29]"
+  
+  |  fun x -> x
+  |           ^
+  
+  |  fun x -> x
+  | ^^^^^^^^^^^
+  
+  With verbosity 0: "Global, uniqueness:?, linearity:?"
+  With verbosity 1: "Global, uniqueness:?54, linearity:^?55[> ?52]"
+  
+(IV) Nonsense
+
+  $ run_annotated_file nonsensical.ml
   |  let z = x + y in
   |            ^
   
@@ -117,8 +243,11 @@ how to produce valid json.
   |^^^^^^^^^^^^^^^^^^^^^
   
   With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?74, Many"
+  With verbosity 1: "Global, uniqueness:?2, Many"
   
+(V) Unfinished
+
+  $ run_annotated_file unfinished.ml
   |  let z = Some (g x) in
   |                ^
   
@@ -126,14 +255,14 @@ how to produce valid json.
   |         ^^^^^^^^^^^
   
   With verbosity 0: "locality:?, uniqueness:?, linearity:?"
-  With verbosity 1: "locality:?81[> ?85], uniqueness:?130[> ?137], linearity:^?131"
+  With verbosity 1: "locality:?12[> ?16], uniqueness:?22[> ?29], linearity:^?23"
   
-  |  let z = Some (g x) in
-  |                ^
+  |  let t = { x = f x } in
+  |                  ^
   
-  |  let z = Some (g x) in
-  |         ^^^^^^^^^^^
+  |  let t = { x = f x } in
+  |         ^^^^^^^^^^^^
   
-  With verbosity 0: "locality:?, uniqueness:?, linearity:?"
-  With verbosity 1: "locality:?99[> ?103], uniqueness:?162[> ?169], linearity:^?163"
+  With verbosity 0: "Local, Shared, linearity:?"
+  With verbosity 1: "Local, Shared, linearity:^?45"
   
