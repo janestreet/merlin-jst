@@ -295,12 +295,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       ~f:(fun i (loc,text,tail) ->
           let print = match index with None -> true | Some index -> index = i in
           let ret x = (loc, x, tail) in
-          match text with
-          | Stack_or_heap_enclosing.String str -> ret (`String str)
-          | Stack_or_heap_enclosing.Alloc_mode alloc_mode when print ->
+          match text, print with
+          | Stack_or_heap_enclosing.String str, _ -> ret (`String str)
+          | Stack_or_heap_enclosing.No_alloc, true -> ret (`String "does not allocate")
+          | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
             Mode.Alloc.print' ~verbose ppf alloc_mode;
             ret (`String (Format.flush_str_formatter ()))
-          | _ -> ret (`Index i)
+          | _, false -> ret (`Index i)
         )
     in
     all_results

@@ -118,28 +118,20 @@ how to produce valid json.
   |  None
   |    ^
   
-  |let f g x y =
-  |     ^^^^^^^^
-  |  let z = x + y in
-  |^^^^^^^^^^^^^^^^^^
   |  None
-  |^^^^^^
+  | ^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?106, Many"
+  With verbosity 0: "does not allocate"
+  With verbosity 1: "does not allocate"
   
   |  exclave_ None
   |             ^
   
-  |let f g x y =
-  |     ^^^^^^^^
-  |  let z = x + y in
-  |^^^^^^^^^^^^^^^^^^
   |  exclave_ None
-  |^^^^^^^^^^^^^^^
+  |          ^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?134, Many"
+  With verbosity 0: "does not allocate"
+  With verbosity 1: "does not allocate"
   
 
 (II) Records
@@ -175,28 +167,20 @@ how to produce valid json.
   |  { z }
   |    ^
   
-  |let f g x y =
-  |     ^^^^^^^^
-  |  let z = ref (x + y) in
-  |^^^^^^^^^^^^^^^^^^^^^^^^
   |  { z }
-  |^^^^^^^
+  | ^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?81, Many"
+  With verbosity 0: "does not allocate"
+  With verbosity 1: "does not allocate"
   
   |  exclave_ { z }
   |             ^
   
-  |let f g x y =
-  |     ^^^^^^^^
-  |  let z = ref (x + y) in
-  |^^^^^^^^^^^^^^^^^^^^^^^^
   |  exclave_ { z }
-  |^^^^^^^^^^^^^^^^
+  |          ^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?112, Many"
+  With verbosity 0: "does not allocate"
+  With verbosity 1: "does not allocate"
   
 
 (III) Closures
