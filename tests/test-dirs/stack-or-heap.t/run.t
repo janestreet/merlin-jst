@@ -207,14 +207,6 @@ how to produce valid json.
 (V) Unfinished
 
   $ run_annotated_file unfinished.ml
-  |  let z = Some (g x) in
-  |                ^
-  
-  |  let z = Some (g x) in
-  |          ^^^^^^^^^^
-  
-  "couldn't tell whether stack or heap"
-  
   |  let t = { x = f x } in
   |                  ^
   
@@ -222,4 +214,12 @@ how to produce valid json.
   |          ^^^^^^^^^^^
   
   "stack"
+  
+  |  let t = { x = f x } in
+  |                  ^
+  
+  |  let t = { x = f x } in
+  |          ^^^^^^^^^^^
+  
+  "couldn't tell whether stack or heap"
   
