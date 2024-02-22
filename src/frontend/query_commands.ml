@@ -286,7 +286,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
     let result = Stack_or_heap_enclosing.from_nodes ~path in
 
-    let ppf = Format.str_formatter in
     let all_results = List.mapi result
       ~f:(fun i (loc,text,tail) ->
           let print = match index with None -> true | Some index -> index = i in
@@ -295,8 +294,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Stack_or_heap_enclosing.String str, _ -> ret (`String str)
           | Stack_or_heap_enclosing.No_alloc, true -> ret (`String "does not allocate")
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
-            Mode.Alloc.print ppf alloc_mode;
-            ret (`String (Format.flush_str_formatter ()))
+              let str =
+                match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
+                | Some Global -> "heap"
+                | Some Local -> "stack"
+                | None -> "couldn't tell whether stack or heap"
+              in ret (`String str)
           | _, false -> ret (`Index i)
         )
     in

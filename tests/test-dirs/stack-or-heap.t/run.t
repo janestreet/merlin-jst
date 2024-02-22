@@ -83,7 +83,7 @@ how to produce valid json.
   |  Some (g z)
   |  ^^^^^^^^^^
   
-  "Global, uniqueness:?21[> ?33], linearity:^?20"
+  "heap"
   
   |  exclave_ Some (g z)
   |                 ^
@@ -91,7 +91,7 @@ how to produce valid json.
   |  exclave_ Some (g z)
   |           ^^^^^^^^^^
   
-  "Local, uniqueness:?57[> ?69], linearity:^?56"
+  "stack"
   
   |  let z = Some (g x) in
   |                ^
@@ -99,7 +99,7 @@ how to produce valid json.
   |  let z = Some (g x) in
   |          ^^^^^^^^^^
   
-  "locality:?58[> ?62], uniqueness:?94[> ?101], linearity:^?95"
+  "couldn't tell whether stack or heap"
   
   |  None
   |    ^
@@ -127,7 +127,7 @@ how to produce valid json.
   |  { z }
   |  ^^^^^
   
-  "Global, Shared, linearity:^?20"
+  "heap"
   
   |  exclave_ { z }
   |             ^
@@ -135,7 +135,7 @@ how to produce valid json.
   |  exclave_ { z }
   |           ^^^^^
   
-  "Local, Shared, linearity:^?51"
+  "stack"
   
   |  let y = { z = x } in
   |                ^
@@ -143,7 +143,7 @@ how to produce valid json.
   |  let y = { z = x } in
   |          ^^^^^^^^^
   
-  "Global, uniqueness:?77[> ?74], linearity:^?78[> ?75]"
+  "heap"
   
   |  { z }
   |    ^
@@ -171,7 +171,7 @@ how to produce valid json.
   |  fun x -> g x
   |  ^^^^^^^^^^^^
   
-  "Global, uniqueness:?8, linearity:^?9[> ?6]"
+  "heap"
   
   |  exclave_ fun x -> g x
   |                    ^
@@ -179,7 +179,7 @@ how to produce valid json.
   |  exclave_ fun x -> g x
   |           ^^^^^^^^^^^^
   
-  "Local, uniqueness:?31, linearity:^?32[> ?29]"
+  "stack"
   
   |  fun x -> x
   |           ^
@@ -187,7 +187,7 @@ how to produce valid json.
   |  fun x -> x
   |  ^^^^^^^^^^
   
-  "Global, uniqueness:?54, linearity:^?55[> ?52]"
+  "heap"
   
 (IV) Nonsense
 
@@ -202,7 +202,7 @@ how to produce valid json.
   |  exclave_ Some (g z)
   |^^^^^^^^^^^^^^^^^^^^^
   
-  "Global, uniqueness:?2, Many"
+  "heap"
   
 (V) Unfinished
 
@@ -213,7 +213,7 @@ how to produce valid json.
   |  let z = Some (g x) in
   |          ^^^^^^^^^^
   
-  "locality:?12[> ?16], uniqueness:?22[> ?29], linearity:^?23"
+  "couldn't tell whether stack or heap"
   
   |  let t = { x = f x } in
   |                  ^
@@ -221,5 +221,5 @@ how to produce valid json.
   |  let t = { x = f x } in
   |          ^^^^^^^^^^^
   
-  "Local, Shared, linearity:^?45"
+  "stack"
   
