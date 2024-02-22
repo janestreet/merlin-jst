@@ -41,10 +41,12 @@ how to produce valid json.
   >   done < "$orig_file"
   > }
 
-  $ run_with_verbosity () {
+  $ run () {
   >   file=$1
   >   position=$2
-  >   verbosity=$3
+  >   line=$(echo "$position" | cut -d ':' -f 1)
+  >   col=$(echo "$position" | cut -d ':' -f 2)
+  >   highlight_range "$file" $line $(expr $col - 1) $line $col
   >   merlin=$(
   >     $MERLIN single stack-or-heap-enclosing -position "$position" -verbosity "$verbosity" \
   >       -filename "$file" < "$file" |
@@ -52,27 +54,14 @@ how to produce valid json.
   >       sed ':a;s/\(^[^\"]*\"\([^\"]*\"[^\"]*\"\)*[^\"]*\)\a/\1\\n/;ta' |
   >       sed 's/\a/\n/g'
   >   )
-  >   if [ $verbosity -eq 0 ]; then
-  >     echo
-  >     highlight_range "$file" $(
-  >       echo "$merlin" |
-  >         jq '.value[0] | "\(.start.line) \(.start.col) \(.end.line) \(.end.col)"' |
-  >         tr -d '"'
-  >     )
-  >     echo
-  >   fi
-  >   printf "With verbosity $verbosity: "
+  >   echo
+  >   highlight_range "$file" $(
+  >     echo "$merlin" |
+  >       jq '.value[0] | "\(.start.line) \(.start.col) \(.end.line) \(.end.col)"' |
+  >       tr -d '"'
+  >   )
+  >   echo
   >   echo "$merlin" | jq '.value[0].type' | sed 's/\\n/\n/g'
-  > }
-
-  $ run () {
-  >   file=$1
-  >   position=$2
-  >   line=$(echo "$position" | cut -d ':' -f 1)
-  >   col=$(echo "$position" | cut -d ':' -f 2)
-  >   highlight_range "$file" $line $(expr $col - 1) $line $col
-  >   run_with_verbosity "$file" "$position" 0
-  >   run_with_verbosity "$file" "$position" 1
   >   echo
   > }
 
@@ -94,8 +83,7 @@ how to produce valid json.
   |  Some (g z)
   |  ^^^^^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, linearity:?"
-  With verbosity 1: "Global, uniqueness:?21[> ?33], linearity:^?20"
+  "Global, uniqueness:?21[> ?33], linearity:^?20"
   
   |  exclave_ Some (g z)
   |                 ^
@@ -103,8 +91,7 @@ how to produce valid json.
   |  exclave_ Some (g z)
   |           ^^^^^^^^^^
   
-  With verbosity 0: "Local, uniqueness:?, linearity:?"
-  With verbosity 1: "Local, uniqueness:?57[> ?69], linearity:^?56"
+  "Local, uniqueness:?57[> ?69], linearity:^?56"
   
   |  let z = Some (g x) in
   |                ^
@@ -112,8 +99,7 @@ how to produce valid json.
   |  let z = Some (g x) in
   |          ^^^^^^^^^^
   
-  With verbosity 0: "locality:?, uniqueness:?, linearity:?"
-  With verbosity 1: "locality:?58[> ?62], uniqueness:?94[> ?101], linearity:^?95"
+  "locality:?58[> ?62], uniqueness:?94[> ?101], linearity:^?95"
   
   |  None
   |    ^
@@ -121,8 +107,7 @@ how to produce valid json.
   |  None
   |  ^^^^
   
-  With verbosity 0: "does not allocate"
-  With verbosity 1: "does not allocate"
+  "does not allocate"
   
   |  exclave_ None
   |             ^
@@ -130,8 +115,7 @@ how to produce valid json.
   |  exclave_ None
   |           ^^^^
   
-  With verbosity 0: "does not allocate"
-  With verbosity 1: "does not allocate"
+  "does not allocate"
   
 
 (II) Records
@@ -143,8 +127,7 @@ how to produce valid json.
   |  { z }
   |  ^^^^^
   
-  With verbosity 0: "Global, Shared, linearity:?"
-  With verbosity 1: "Global, Shared, linearity:^?20"
+  "Global, Shared, linearity:^?20"
   
   |  exclave_ { z }
   |             ^
@@ -152,8 +135,7 @@ how to produce valid json.
   |  exclave_ { z }
   |           ^^^^^
   
-  With verbosity 0: "Local, Shared, linearity:?"
-  With verbosity 1: "Local, Shared, linearity:^?51"
+  "Local, Shared, linearity:^?51"
   
   |  let y = { z = x } in
   |                ^
@@ -161,8 +143,7 @@ how to produce valid json.
   |  let y = { z = x } in
   |          ^^^^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, linearity:?"
-  With verbosity 1: "Global, uniqueness:?77[> ?74], linearity:^?78[> ?75]"
+  "Global, uniqueness:?77[> ?74], linearity:^?78[> ?75]"
   
   |  { z }
   |    ^
@@ -170,8 +151,7 @@ how to produce valid json.
   |  { z }
   |  ^^^^^
   
-  With verbosity 0: "does not allocate"
-  With verbosity 1: "does not allocate"
+  "does not allocate"
   
   |  exclave_ { z }
   |             ^
@@ -179,8 +159,7 @@ how to produce valid json.
   |  exclave_ { z }
   |           ^^^^^
   
-  With verbosity 0: "does not allocate"
-  With verbosity 1: "does not allocate"
+  "does not allocate"
   
 
 (III) Closures
@@ -192,8 +171,7 @@ how to produce valid json.
   |  fun x -> g x
   |  ^^^^^^^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, linearity:?"
-  With verbosity 1: "Global, uniqueness:?8, linearity:^?9[> ?6]"
+  "Global, uniqueness:?8, linearity:^?9[> ?6]"
   
   |  exclave_ fun x -> g x
   |                    ^
@@ -201,8 +179,7 @@ how to produce valid json.
   |  exclave_ fun x -> g x
   |           ^^^^^^^^^^^^
   
-  With verbosity 0: "Local, uniqueness:?, linearity:?"
-  With verbosity 1: "Local, uniqueness:?31, linearity:^?32[> ?29]"
+  "Local, uniqueness:?31, linearity:^?32[> ?29]"
   
   |  fun x -> x
   |           ^
@@ -210,8 +187,7 @@ how to produce valid json.
   |  fun x -> x
   |  ^^^^^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, linearity:?"
-  With verbosity 1: "Global, uniqueness:?54, linearity:^?55[> ?52]"
+  "Global, uniqueness:?54, linearity:^?55[> ?52]"
   
 (IV) Nonsense
 
@@ -226,8 +202,7 @@ how to produce valid json.
   |  exclave_ Some (g z)
   |^^^^^^^^^^^^^^^^^^^^^
   
-  With verbosity 0: "Global, uniqueness:?, Many"
-  With verbosity 1: "Global, uniqueness:?2, Many"
+  "Global, uniqueness:?2, Many"
   
 (V) Unfinished
 
@@ -238,8 +213,7 @@ how to produce valid json.
   |  let z = Some (g x) in
   |          ^^^^^^^^^^
   
-  With verbosity 0: "locality:?, uniqueness:?, linearity:?"
-  With verbosity 1: "locality:?12[> ?16], uniqueness:?22[> ?29], linearity:^?23"
+  "locality:?12[> ?16], uniqueness:?22[> ?29], linearity:^?23"
   
   |  let t = { x = f x } in
   |                  ^
@@ -247,6 +221,5 @@ how to produce valid json.
   |  let t = { x = f x } in
   |          ^^^^^^^^^^^
   
-  With verbosity 0: "Local, Shared, linearity:?"
-  With verbosity 1: "Local, Shared, linearity:^?45"
+  "Local, Shared, linearity:^?45"
   

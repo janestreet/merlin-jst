@@ -276,10 +276,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Stack_or_heap_enclosing (pos, index) ->
     let typer = Mpipeline.typer_result pipeline in
-    let verbose = 
-      let verbosity = verbosity pipeline in
-      Mconfig.Verbosity.to_int ~for_smart:0 verbosity > 0
-    in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let structures = Mbrowse.enclosing pos
       [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
@@ -299,7 +295,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Stack_or_heap_enclosing.String str, _ -> ret (`String str)
           | Stack_or_heap_enclosing.No_alloc, true -> ret (`String "does not allocate")
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
-            Mode.Alloc.print' ~verbose ppf alloc_mode;
+            Mode.Alloc.print ppf alloc_mode;
             ret (`String (Format.flush_str_formatter ()))
           | _, false -> ret (`Index i)
         )
