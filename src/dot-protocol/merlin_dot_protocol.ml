@@ -31,7 +31,7 @@ open Merlin_utils.Std.Result
 
 module Directive = struct
   type include_path =
-    [ `B of string | `S of string | `CMI of string | `CMT of string ]
+    [ `B of string | `S of string | `CMI of string | `CMT of string | `INDEX of string ]
 
   type no_processing_required =
     [ `EXT of string list
@@ -84,6 +84,7 @@ module Sexp = struct
         | "B" -> `B value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
+        | "INDEX" -> `INDEX value
         | "STDLIB" -> `STDLIB value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
@@ -114,6 +115,7 @@ module Sexp = struct
         | `S s -> ("S", single s)
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
+        | `INDEX s -> ("INDEX", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)
