@@ -20,13 +20,16 @@
   -open
   Merlin_extend
   -open
-  Merlin_kernel)
+  Merlin_kernel
+  -open
+  Merlin_index_format)
  (libraries
   merlin_config
   merlin_specific
   merlin_extend
   merlin_kernel
   merlin_utils
+  merlin_index_format
   ocaml_parsing
   ocaml_preprocess
   query_protocol
