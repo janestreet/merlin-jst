@@ -5,7 +5,7 @@ let { Logger.log } = Logger.for_section log_section
 
 type stack_or_heap =
   | Alloc_mode of Mode.Alloc.t
-  | No_alloc
+  | No_alloc of string
   | String of string
 
 type typed_enclosings =
@@ -15,20 +15,30 @@ let from_nodes ~path =
   let aux (env, node, tail) =
     let open Browse_raw in
     let ret alloc_mode = Some (Mbrowse.node_loc node, alloc_mode, tail) in
-    let maybe_ret = function
+    let maybe_ret reason = function
       | Some alloc_mode -> ret (Alloc_mode alloc_mode)
-      | None -> ret No_alloc
+      | None -> ret (No_alloc reason)
     in
     match node with
     | Expression { exp_desc; _ } ->
       (match exp_desc with
        | Texp_function { alloc_mode; _ } | Texp_array (_, _, alloc_mode) ->
          ret (Alloc_mode alloc_mode)
-       | Texp_construct (_, _, _, maybe_alloc_mode)
-       | Texp_record { alloc_mode = maybe_alloc_mode; _ }
-       | Texp_field (_, _, _, _, maybe_alloc_mode) -> maybe_ret maybe_alloc_mode
+       | Texp_construct (_, _, _, maybe_alloc_mode) ->
+         maybe_ret
+           "unboxed constructors and constructors without arguments don't allocate"
+           maybe_alloc_mode
+       | Texp_record { alloc_mode = maybe_alloc_mode; _ } ->
+         maybe_ret "unboxed records don't allocate" maybe_alloc_mode
+       | Texp_field (_, _, _, _, maybe_alloc_mode) ->
+         maybe_ret
+           "field access only allocates when retrieving [float]s from an unboxed float \
+            record"
+           maybe_alloc_mode
        | Texp_variant (_, maybe_exp_and_alloc_mode) ->
-         maybe_exp_and_alloc_mode |> Option.map ~f:snd |> maybe_ret
+         maybe_exp_and_alloc_mode
+         |> Option.map ~f:snd
+         |> maybe_ret "variants without arguments don't allocate"
        | _ -> None)
     | _ -> None
   in

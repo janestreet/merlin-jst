@@ -74,9 +74,9 @@ how to produce valid json.
   >   rm "$orig_file.tmp.ml"
   > }
 
-(I) Variants
+(I) Variant constructors
 
-  $ run_annotated_file variants.ml
+  $ run_annotated_file constructors.ml
   |  Some (g z)
   |        ^
   
@@ -107,7 +107,7 @@ how to produce valid json.
   |  None
   |  ^^^^
   
-  "does not allocate"
+  "does not allocate (unboxed constructors and constructors without arguments don't allocate)"
   
   |  exclave_ None
   |             ^
@@ -115,10 +115,61 @@ how to produce valid json.
   |  exclave_ None
   |           ^^^^
   
-  "does not allocate"
+  "does not allocate (unboxed constructors and constructors without arguments don't allocate)"
+  
+  |  Box (g z)
+  |       ^
+  
+  |  Box (g z)
+  |  ^^^^^^^^^
+  
+  "does not allocate (unboxed constructors and constructors without arguments don't allocate)"
+  
+(II) Variants
+
+  $ run_annotated_file variants.ml
+  |  `Some (g z)
+  |         ^
+  
+  |  `Some (g z)
+  |  ^^^^^^^^^^^
+  
+  "heap"
+  
+  |  exclave_ `Some (g z)
+  |                  ^
+  
+  |  exclave_ `Some (g z)
+  |           ^^^^^^^^^^^
+  
+  "stack"
+  
+  |  let z = `Some (g x) in
+  |                 ^
+  
+  |  let z = `Some (g x) in
+  |          ^^^^^^^^^^^
+  
+  "couldn't tell whether stack or heap"
+  
+  |  `None
+  |     ^
+  
+  |  `None
+  |  ^^^^^
+  
+  "does not allocate (variants without arguments don't allocate)"
+  
+  |  exclave_ `None
+  |              ^
+  
+  |  exclave_ `None
+  |           ^^^^^
+  
+  "does not allocate (variants without arguments don't allocate)"
   
 
-(II) Records
+(III) Records
 
   $ run_annotated_file records.ml
   |  { z }
@@ -151,7 +202,7 @@ how to produce valid json.
   |  { z }
   |  ^^^^^
   
-  "does not allocate"
+  "does not allocate (unboxed records don't allocate)"
   
   |  exclave_ { z }
   |             ^
@@ -159,10 +210,10 @@ how to produce valid json.
   |  exclave_ { z }
   |           ^^^^^
   
-  "does not allocate"
+  "does not allocate (unboxed records don't allocate)"
   
 
-(III) Closures
+(IV) Closures
 
   $ run_annotated_file closures.ml
   |  fun x -> g x
@@ -189,7 +240,43 @@ how to produce valid json.
   
   "heap"
   
-(IV) Nonsense
+
+(V) Records
+
+  $ run_annotated_file field_access.ml
+  |let f (t : t) = t.a
+  |                 ^
+  
+  |let f (t : t) = t.a
+  |                ^^^
+  
+  "does not allocate (field access only allocates when retrieving [float]s from an unboxed float record)"
+  
+  |let f (t : t) = t.a
+  |                 ^
+  
+  |let f (t : t) = t.a
+  |                ^^^
+  
+  "does not allocate (field access only allocates when retrieving [float]s from an unboxed float record)"
+  
+  |let f (t : floats_t) = t.a
+  |                        ^
+  
+  |let f (t : floats_t) = t.a
+  |                       ^^^
+  
+  "heap"
+  
+  |let f (t : floats_t) = exclave_ t.a
+  |                                 ^
+  
+  |let f (t : floats_t) = exclave_ t.a
+  |                                ^^^
+  
+  "stack"
+  
+(VI) Nonsense
 
   $ run_annotated_file nonsensical.ml
   |  let z = x + y in
@@ -204,7 +291,7 @@ how to produce valid json.
   
   "heap"
   
-(V) Unfinished
+(VII) Unfinished
 
   $ run_annotated_file unfinished.ml
   |  let t = { x = f x } in

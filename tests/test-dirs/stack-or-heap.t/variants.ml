@@ -1,31 +1,31 @@
-(* Cursor is inside a variant constructor (some of which don't allocate) *)
+(* Cursor is inside a variant (some of which don't allocate) *)
 
 let f g x y =
   let z = x + y in
-  Some (g z)
-     (* ^ *)
+  `Some (g z)
+      (* ^ *)
 ;;
 
 let f g x y =
   let z = x + y in
-  exclave_ Some (g z)
+  exclave_ `Some (g z)
+               (* ^ *)
+;;
+
+let f g x y =
+  let z = `Some (g x) in
               (* ^ *)
-;;
-
-let f g x y =
-  let z = Some (g x) in
-             (* ^ *)
   y
 ;;
 
 let f g x y =
   let z = x + y in
-  None
- (* ^ *)
+  `None
+  (* ^ *)
 ;;
 
 let f g x y =
   let z = x + y in
-  exclave_ None
-          (* ^ *)
+  exclave_ `None
+           (* ^ *)
 ;;
