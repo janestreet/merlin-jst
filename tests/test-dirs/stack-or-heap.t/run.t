@@ -107,7 +107,7 @@ how to produce valid json.
   |  None
   |  ^^^^
   
-  "does not allocate (unboxed constructors and constructors without arguments don't allocate)"
+  "does not allocate (constructors without arguments don't allocate)"
   
   |  exclave_ None
   |             ^
@@ -115,7 +115,7 @@ how to produce valid json.
   |  exclave_ None
   |           ^^^^
   
-  "does not allocate (unboxed constructors and constructors without arguments don't allocate)"
+  "does not allocate (constructors without arguments don't allocate)"
   
   |  Box (g z)
   |       ^
@@ -123,7 +123,7 @@ how to produce valid json.
   |  Box (g z)
   |  ^^^^^^^^^
   
-  "does not allocate (unboxed constructors and constructors without arguments don't allocate)"
+  "does not allocate (unboxed constructors don't allocate)"
   
 (II) Variants
 
