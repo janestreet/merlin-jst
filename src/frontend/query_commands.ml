@@ -846,7 +846,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let config = Mpipeline.final_config pipeline in
     Mconfig.(config.merlin.source_path)
 
-  | Occurrences (`Ident_at pos, _scope) ->
+  | Occurrences (`Ident_at pos, scope) ->
     let config = Mpipeline.final_config pipeline in
     let typer_result = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -860,12 +860,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       path
     in
     let locs =
-      Occurrences.locs_of ~config ~env ~typer_result ~pos path
-      |> Result.value ~default:[]
+      match Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path with
+      | Ok { locs; _ } -> locs
+      | Error _ -> []
     in
-    let loc_start l = l.Location.loc_start in
-    let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
-    List.sort ~cmp locs
+    locs
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
