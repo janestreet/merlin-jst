@@ -166,7 +166,7 @@ how to produce valid json.
 
   $ run_annotated_file closures.ml
   |  fun x -> g x
-  |           ^
+  |         ^
   
   |  fun x -> g x
   |  ^^^^^^^^^^^^
@@ -174,7 +174,7 @@ how to produce valid json.
   "heap"
   
   |  exclave_ fun x -> g x
-  |                    ^
+  |                  ^
   
   |  exclave_ fun x -> g x
   |           ^^^^^^^^^^^^
@@ -182,7 +182,7 @@ how to produce valid json.
   "stack"
   
   |  fun x -> x
-  |           ^
+  |         ^
   
   |  fun x -> x
   |  ^^^^^^^^^^
