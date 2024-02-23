@@ -80,7 +80,7 @@ module Stats = Map.Make (String)
     let magic_number = "Merl2023I001"
 
     let write ~file index =
-      Merlin_utils.Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
+      Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
         (fun _temp_file_name oc ->
           output_string oc magic_number;
           output_value oc (index : index))
@@ -169,12 +169,12 @@ let pp_payload (fmt : Format.formatter) pl =
   Format.fprintf fmt "and shapes for CUS %s.@ "
     (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq))
 
-let pp (fmt : Format.formatter) ff =
+let _pp (fmt : Format.formatter) ff =
   match ff with V1 tbl -> Format.fprintf fmt "V1@,%a" pp_payload tbl
 
-let ext = "uideps"
+let _ext = "uideps"
 
-let write ~file tbl =
+let _write ~file tbl =
   let oc = open_out_bin file in
   Marshal.to_channel oc (V1 tbl) [];
   close_out oc

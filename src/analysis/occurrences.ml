@@ -244,7 +244,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       let exception File_changed in
       try
         let locs = List.filter_map config.merlin.index_files ~f:(fun file ->
-          let external_index = Index_format.read_exn ~file in
+          let external_index = Index_cache.read file in
           Hashtbl.find_opt external_index.defs def_uid
           |> Option.map ~f:(fun locs -> LidSet.filter (fun {loc; _} ->
             (* We ignore external results that concern the current buffer *)
