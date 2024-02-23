@@ -1785,7 +1785,8 @@ Empty string defaults to jumping to all these."
         (dolist (pos positions)
           (let* ((start (assoc 'start pos))
                  (end (assoc 'end pos))
-                 (occ-buff (find-file-noselect (cdr (assoc 'file pos))))
+                 (file (cdr (assoc 'file pos)))
+                 (occ-buff (if file (find-file-noselect file) src-buff))
                  (marker (with-current-buffer occ-buff
                           (copy-marker (merlin--point-of-pos start))))
                  (line (cdr (assoc 'line start)))
@@ -1797,14 +1798,13 @@ Empty string defaults to jumping to all these."
                  (start-offset (+ prefix-length
                                   (cdr (assoc 'col start))))
                  (lines-text
-                  (if (equal line pending-line)
-                      pending-lines-text
+                  (if (and (equal line pending-line) occ-buff)
+                    pending-lines-text
                     (merlin--occurrence-text line
                                             marker
                                             start-buf-pos
                                             end-buf-pos
                                             occ-buff))))
-
             ;; Insert the critical text properties that occur-mode
             ;; makes use of
             (add-text-properties start-offset
@@ -1823,7 +1823,7 @@ Empty string defaults to jumping to all these."
               (insert pending-lines-text))
 
             (when (not (equal previous-buf occ-buff))
-              (insert (propertize (format "Occurrences in buffer: %s"
+              (insert (propertize (format "Occurrences in buffer %s:"
                                           ;(length lst)
                                           occ-buff)
                                   'font-lock-face
