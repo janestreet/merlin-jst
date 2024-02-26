@@ -10,7 +10,7 @@
         "line": 5,
         "col": 14
       },
-      "type": "'a -> 'b",
+      "type": "'a -> 'a",
       "tail": "no"
     },
     {
