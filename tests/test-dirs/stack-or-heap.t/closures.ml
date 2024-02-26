@@ -16,3 +16,20 @@ let f g =
   fun x -> x
       (* ^ *)
 ;;
+
+(* Sometimes, a function expression is in a non-obvious way the nearest enclosing
+   allocating expression. It's possible we'll decide to ignore functions unless the cursor
+   is on something that syntactically belongs just to the function *)
+
+let f g x y =
+  let z = x + y in
+         (* ^ *)
+  exclave_ Some (g z)
+;;
+
+
+let f g x y =
+       (* ^ *)
+  let z = x + y in
+  exclave_ Some (g z)
+;;

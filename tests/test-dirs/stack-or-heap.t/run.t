@@ -55,12 +55,15 @@ how to produce valid json.
   >       sed 's/\a/\n/g'
   >   )
   >   echo
-  >   highlight_range "$file" $(
-  >     echo "$merlin" |
-  >       jq '.value[0] | "\(.start.line) \(.start.col) \(.end.line) \(.end.col)"' |
-  >       tr -d '"'
-  >   )
-  >   echo
+  >   if [ "$(echo "$merlin" | jq '.value[0]')" != null ]
+  >   then
+  >     highlight_range "$file" $(
+  >       echo "$merlin" |
+  >         jq '.value[0] | "\(.start.line) \(.start.col) \(.end.line) \(.end.col)"' |
+  >         tr -d '"'
+  >     )
+  >     echo
+  >   fi
   >   echo "$merlin" | jq '.value[0].type' | sed 's/\\n/\n/g'
   >   echo
   > }
@@ -240,6 +243,30 @@ how to produce valid json.
   
   "heap"
   
+  |  let z = x + y in
+  |            ^
+  
+  |let f g x y =
+  |      ^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |let f g x y =
+  |          ^
+  
+  |let f g x y =
+  |      ^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
 
 (V) Records
 
@@ -299,17 +326,15 @@ how to produce valid json.
 (VII) Nonsense
 
   $ run_annotated_file nonsensical.ml
-  |  let z = x + y in
-  |            ^
+  |module M = struct
+  |       ^
   
-  |let f g x y =
-  |      ^^^^^^^
-  |  let z = x + y in
-  |^^^^^^^^^^^^^^^^^^
-  |  exclave_ Some (g z)
-  |^^^^^^^^^^^^^^^^^^^^^
+  null
   
-  "heap"
+  |
+  |      ^
+  
+  null
   
 (VIII) Unfinished
 
