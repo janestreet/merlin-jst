@@ -64,7 +64,7 @@ how to produce valid json.
   >     )
   >     echo
   >   fi
-  >   echo "$merlin" | jq '.value[0].type' | sed 's/\\n/\n/g'
+  >   echo "$merlin" | jq '.value[0].stack_or_heap' | sed 's/\\n/\n/g'
   >   echo
   > }
 

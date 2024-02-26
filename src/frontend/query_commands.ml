@@ -287,9 +287,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let result = Stack_or_heap_enclosing.from_nodes ~pos ~path in
 
     let all_results = List.mapi result
-      ~f:(fun i (loc,text,tail) ->
+      ~f:(fun i (loc,text) ->
           let print = match index with None -> true | Some index -> index = i in
-          let ret x = (loc, x, tail) in
+          let ret x = (loc, x) in
           match text, print with
           | Stack_or_heap_enclosing.String str, _ -> ret (`String str)
           | Stack_or_heap_enclosing.No_alloc reason, true ->

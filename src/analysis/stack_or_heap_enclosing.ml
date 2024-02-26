@@ -8,13 +8,12 @@ type stack_or_heap =
   | No_alloc of string
   | String of string
 
-type typed_enclosings =
-  (Location.t * stack_or_heap * Query_protocol.is_tail_position) list
+type stack_or_heap_enclosings = (Location.t * stack_or_heap) list
 
 let from_nodes ~pos ~path =
   let aux (env, node, tail) =
     let open Browse_raw in
-    let ret alloc_mode = Some (Mbrowse.node_loc node, alloc_mode, tail) in
+    let ret alloc_mode = Some (Mbrowse.node_loc node, alloc_mode) in
     let maybe_ret reason = function
       | Some alloc_mode -> ret (Alloc_mode alloc_mode)
       | None -> ret (No_alloc reason)
