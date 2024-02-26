@@ -2927,23 +2927,7 @@ and type_pat_aux
       in
       let p = type_pat ~alloc_mode tps category sp_constrained expected_ty' in
       let extra = (Tpat_constraint cty, loc, sp_constrained.ppat_attributes) in
-      (* For merlin *)
-      begin match category, (p : k general_pattern) with
-      | Value, {pat_desc = Tpat_var (id,s,x,uid); _} ->
-          { p with
-            pat_type = ty;
-            pat_desc =
-                Tpat_alias
-                  ({p with
-                    pat_desc = Tpat_any;
-                    pat_attributes = (* Merlin should ignore these nodes *)
-                      [Ast_helper.Attr.mk (mknoloc "merlin.hide") (PStr [])];
-                    pat_loc = { p.pat_loc with loc_ghost = true }}, id,s,x,uid);
-            pat_extra = [extra];
-          }
-      | _, p ->
-          { p with pat_type = ty; pat_extra = extra::p.pat_extra }
-      end
+      { p with pat_type = ty; pat_extra = extra::p.pat_extra }
   | Ppat_type lid ->
       let (path, p) = build_or_pat !env loc lid in
       pure category @@ solve_expected

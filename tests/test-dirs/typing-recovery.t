@@ -108,12 +108,8 @@
                     core_type (test.ml[2,15+11]..test.ml[2,15+12])
                       Ttyp_constr \"t/274\"
                       []
-                  Tpat_alias \"x/279\"
+                  Tpat_var \"x/279\"
                   value_mode Global, Unique, Many
-                  pattern (test.ml[2,15+7]..test.ml[2,15+8]) ghost
-                    attribute \"merlin.hide\"
-                      []
-                    Tpat_any
             ]
             Tfunction_body
               expression (test.ml[3,31+2]..test.ml[6,69+12])
@@ -566,17 +562,8 @@ make sure we also handle that correctly in structures:
               core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
                 Ttyp_constr \"int/1!\"
                 []
-<<<<<<< HEAD
             Tpat_var \"foo1/274\"
-            value_mode global,many,unique
-=======
-            Tpat_alias \"foo1/274\"
             value_mode Global, Unique, Many
-            pattern (test_ct.ml[1,0+4]..test_ct.ml[1,0+8]) ghost
-              attribute \"merlin.hide\"
-                []
-              Tpat_any
->>>>>>> 9b1a2fdc7 (tests: promote improved tests)
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
@@ -604,17 +591,8 @@ make sure we also handle that correctly in structures:
                     Ttyp_var _
                     None
                 ]
-<<<<<<< HEAD
             Tpat_var \"foo2/275\"
-            value_mode global,many,join_shared(3[shared,unique])
-=======
-            Tpat_alias \"foo2/275\"
             value_mode Global, uniqueness:?, Many
-            pattern (test_ct.ml[3,20+4]..test_ct.ml[3,20+8]) ghost
-              attribute \"merlin.hide\"
-                []
-              Tpat_any
->>>>>>> 9b1a2fdc7 (tests: promote improved tests)
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -662,17 +640,8 @@ make sure we also handle that correctly in structures:
                     Ttyp_constr \"int/1!\"
                     []
                 ]
-<<<<<<< HEAD
             Tpat_var \"foo3/276\"
-            value_mode global,many,join_shared(5[shared,unique])
-=======
-            Tpat_alias \"foo3/276\"
             value_mode Global, uniqueness:?, Many
-            pattern (test_ct.ml[5,50+4]..test_ct.ml[5,50+8]) ghost
-              attribute \"merlin.hide\"
-                []
-              Tpat_any
->>>>>>> 9b1a2fdc7 (tests: promote improved tests)
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint

@@ -90,12 +90,8 @@
                           Ttyp_constr \"t/276\"
                           []
                       ]
-                  Tpat_alias \"foo/277\"
+                  Tpat_var \"foo/277\"
                   value_mode locality: r_as_l=? r_as_g=Global, uniqueness:?, linearity:?
-                  pattern (type.ml[1,0+22]..type.ml[1,0+25]) ghost
-                    attribute \"merlin.hide\"
-                      []
-                    Tpat_any
             ]
             Tfunction_body
               expression (type.ml[1,0+39]..type.ml[1,0+61])
