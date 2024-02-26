@@ -276,7 +276,27 @@ how to produce valid json.
   
   "stack"
   
-(VI) Nonsense
+
+(VI) Arrays
+
+  $ run_annotated_file arrays.ml
+  |let x () = [| 1; 2; 3 |]
+  |                 ^
+  
+  |let x () = [| 1; 2; 3 |]
+  |           ^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |let x () = exclave_ [| 1; 2; 3 |]
+  |                          ^
+  
+  |let x () = exclave_ [| 1; 2; 3 |]
+  |                    ^^^^^^^^^^^^^
+  
+  "stack"
+  
+(VII) Nonsense
 
   $ run_annotated_file nonsensical.ml
   |  let z = x + y in
@@ -291,7 +311,7 @@ how to produce valid json.
   
   "heap"
   
-(VII) Unfinished
+(VIII) Unfinished
 
   $ run_annotated_file unfinished.ml
   |  let t = { x = f x } in
