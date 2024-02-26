@@ -11,7 +11,7 @@ type stack_or_heap =
 type typed_enclosings =
   (Location.t * stack_or_heap * Query_protocol.is_tail_position) list
 
-let from_nodes ~path =
+let from_nodes ~pos ~path =
   let aux (env, node, tail) =
     let open Browse_raw in
     let ret alloc_mode = Some (Mbrowse.node_loc node, alloc_mode, tail) in
@@ -22,8 +22,17 @@ let from_nodes ~path =
     match node with
     | Expression { exp_desc; _ } ->
       (match exp_desc with
-       | Texp_function { alloc_mode; _ } | Texp_array (_, _, alloc_mode) ->
-         ret (Alloc_mode alloc_mode)
+       | Texp_function { alloc_mode; body; _ } ->
+         let body_loc =
+           match body with
+           | Tfunction_body { exp_loc; _ } -> exp_loc
+           | Tfunction_cases { fc_loc; _ } -> fc_loc
+         in
+         if Lexing.compare_pos pos body_loc.loc_start >= 0
+         && Lexing.compare_pos pos body_loc.loc_end <= 0
+         then None
+         else ret (Alloc_mode alloc_mode)
+       | Texp_array (_, _, alloc_mode) -> ret (Alloc_mode alloc_mode)
        | Texp_construct (_, _, args, maybe_alloc_mode) ->
          (match args with
           | [] ->

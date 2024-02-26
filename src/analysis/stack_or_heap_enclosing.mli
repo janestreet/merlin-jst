@@ -14,5 +14,6 @@ type typed_enclosings =
   (Location.t * stack_or_heap * Query_protocol.is_tail_position) list
 
 val from_nodes :
+  pos:Lexing.position ->
   path:(Env.t * Browse_raw.node * Query_protocol.is_tail_position) list ->
   typed_enclosings

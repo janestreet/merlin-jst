@@ -284,7 +284,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | browse -> Browse_misc.annotate_tail_calls browse
     in
 
-    let result = Stack_or_heap_enclosing.from_nodes ~path in
+    let result = Stack_or_heap_enclosing.from_nodes ~pos ~path in
 
     let all_results = List.mapi result
       ~f:(fun i (loc,text,tail) ->

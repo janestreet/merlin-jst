@@ -246,14 +246,7 @@ how to produce valid json.
   |  let z = x + y in
   |            ^
   
-  |let f g x y =
-  |      ^^^^^^^
-  |  let z = x + y in
-  |^^^^^^^^^^^^^^^^^^
-  |  exclave_ Some (g z)
-  |^^^^^^^^^^^^^^^^^^^^^
-  
-  "heap"
+  null
   
   |let f g x y =
   |          ^
