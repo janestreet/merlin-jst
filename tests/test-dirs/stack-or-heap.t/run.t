@@ -251,7 +251,10 @@ how to produce valid json.
   |  let z = x + y in
   |            ^
   
-  null
+  |  let z = x + y in
+  |            ^
+  
+  "no relevant allocation to show"
   
   |let f g x y =
   |          ^
@@ -368,12 +371,18 @@ how to produce valid json.
   |module M = struct
   |       ^
   
-  null
+  |module M = struct
+  |       ^
+  
+  "no relevant allocation to show"
   
   |
   |      ^
   
-  null
+  |
+  |      ^
+  
+  "no relevant allocation to show"
   
 (IX) Unfinished
 

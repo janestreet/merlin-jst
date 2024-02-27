@@ -304,6 +304,16 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | _, false -> ret (`Index i)
         )
     in
+
+    let all_results =
+      match all_results with
+      | _ :: _ -> all_results
+      | [] -> 
+          let pos' : Lexing.position = { pos with pos_cnum = pos.pos_cnum - 1 } in
+          let loc : Location.t = { loc_start=pos'; loc_end=pos; loc_ghost=false } in
+          [ (loc, `String "no relevant allocation to show") ]
+    in
+
     all_results
 
   | Type_enclosing (expro, pos, index) ->
