@@ -20,7 +20,7 @@ how to produce valid json.
   >     if [ $l -eq $l1 ]; then u1=$c1; else u1=0; fi
   >     if [ $l -eq $l2 ]; then u2=$c2; else u2=${#txt}; fi
   >     printf '|%s\n|%s%s\n' \
-  >       "$txt" "$(rep $(expr $u1) ' ')" "$(rep $(expr $u2 - $u1) '^')"
+  >       "$txt" "$(rep $u1 ' ')" "$(rep $(expr $u2 - $u1) '^')"
   >   done
   > }
 
@@ -44,6 +44,7 @@ how to produce valid json.
   $ run () {
   >   file=$1
   >   position=$2
+  >   index=$3
   >   line=$(echo "$position" | cut -d ':' -f 1)
   >   col=$(echo "$position" | cut -d ':' -f 2)
   >   highlight_range "$file" $line $(expr $col - 1) $line $col
@@ -55,24 +56,28 @@ how to produce valid json.
   >       sed 's/\a/\n/g'
   >   )
   >   echo
-  >   if [ "$(echo "$merlin" | jq '.value[0]')" != null ]
+  >   if [ "$(echo "$merlin" | jq ".value[$index]")" != null ]
   >   then
   >     highlight_range "$file" $(
   >       echo "$merlin" |
-  >         jq '.value[0] | "\(.start.line) \(.start.col) \(.end.line) \(.end.col)"' |
+  >         jq ".value[$index] | \"\(.start.line) \(.start.col) \(.end.line) \(.end.col)\"" |
   >         tr -d '"'
   >     )
   >     echo
   >   fi
-  >   echo "$merlin" | jq '.value[0].stack_or_heap' | sed 's/\\n/\n/g'
+  >   echo "$merlin" | jq ".value[$index].stack_or_heap" | sed 's/\\n/\n/g'
   >   echo
   > }
 
   $ run_annotated_file () {
   >   orig_file=$1
+  >   if [ $# -lt 2 ]; then until=0; else until=$(expr "$2" - 1); fi
   >   process_cursors "$orig_file" | while read -r lc
   >   do
-  >     run "$orig_file.tmp.ml" $lc
+  >     for i in $(seq 0 $until)
+  >     do
+  >       run "$orig_file.tmp.ml" $lc $i
+  >     done
   >   done
   >   rm "$orig_file.tmp.ml"
   > }
@@ -316,7 +321,48 @@ how to produce valid json.
   
   "stack"
   
-(VII) Nonsense
+
+(VII) Nested
+
+  $ run_annotated_file nested.ml 5
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                                       ^
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                                 ^^^^^^^^
+  
+  "heap"
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                                       ^
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                           ^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                                       ^
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                     ^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                                       ^
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |let f x = exclave_ T { t = Not_t (Some x) }
+  |                                       ^
+  
+  null
+  
+(VIII) Nonsense
 
   $ run_annotated_file nonsensical.ml
   |module M = struct
@@ -329,7 +375,7 @@ how to produce valid json.
   
   null
   
-(VIII) Unfinished
+(IX) Unfinished
 
   $ run_annotated_file unfinished.ml
   |  let t = { x = f x } in
