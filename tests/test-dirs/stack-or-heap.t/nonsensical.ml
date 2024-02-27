@@ -8,3 +8,28 @@ module M = struct
 
    (* ^ *)
 end
+
+type t_rec = { x : int }
+
+let f y = { y }
+         (* ^ *)
+
+let f () = { x = "OK" }
+                (* ^ *)
+
+type t_var = A of int | B of { b : int }
+
+let f x = A { a = x }
+               (* ^ *)
+
+let f () = A "OK"
+            (* ^ *)
+
+let f () = C "OK"
+            (* ^ *)
+
+let f () = D
+        (* ^ *)
+
+let f x = x.maybe_a_float_field
+          (* ^ *)

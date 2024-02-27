@@ -384,6 +384,62 @@ how to produce valid json.
   
   "no relevant allocation to show"
   
+  |let f y = { y }
+  |            ^
+  
+  |let f y = { y }
+  |          ^^^^^
+  
+  "does not allocate (unboxed records don't allocate)"
+  
+  |let f () = { x = "OK" }
+  |                   ^
+  
+  |let f () = { x = "OK" }
+  |           ^^^^^^^^^^^^
+  
+  "heap"
+  
+  |let f x = A { a = x }
+  |                  ^
+  
+  |let f x = A { a = x }
+  |            ^^^^^^^^^
+  
+  "does not allocate (unboxed records don't allocate)"
+  
+  |let f () = A "OK"
+  |               ^
+  
+  |let f () = A "OK"
+  |           ^^^^^^
+  
+  "heap"
+  
+  |let f () = C "OK"
+  |               ^
+  
+  |let f () = C "OK"
+  |               ^
+  
+  "no relevant allocation to show"
+  
+  |let f () = D
+  |           ^
+  
+  |let f () = D
+  |           ^
+  
+  "no relevant allocation to show"
+  
+  |let f x = x.maybe_a_float_field
+  |             ^
+  
+  |let f x = x.maybe_a_float_field
+  |          ^^^^^^^^^^^^^^^^^^^^^
+  
+  "does not allocate (field access only allocates when retrieving [float]s from an unboxed float record)"
+  
 (IX) Unfinished
 
   $ run_annotated_file unfinished.ml
