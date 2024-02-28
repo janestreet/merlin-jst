@@ -291,7 +291,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let print = match index with None -> true | Some index -> index = i in
           let ret x = (loc, x) in
           match text, print with
-          | Stack_or_heap_enclosing.String str, _ -> ret (`String str)
           | Stack_or_heap_enclosing.No_alloc { reason }, true ->
               ret (`String ("does not allocate (" ^ reason ^ ")"))
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->

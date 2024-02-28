@@ -541,19 +541,34 @@ shape =
   ;
 
   command "stack-or-heap-enclosing"
-~doc:"TODO"
+~doc:"Returns a list of the \"stack-or-heap\" for all expressions that could allocate at \
+given position, sorted by increasing size.
+That is, asking for stack-or-heap-enclosing around `{ foo = (Bar baz) }` will return \
+whether `Bar baz` allocates on the heap or the stack, and also whether the entire \
+record allocates on the heap or the stack.
+Expressions that never allocate (like function applications) are skipped.
+Expressions that are statically known not to allocate (like unboxed records) give \
+\"does not allocate\" with a summary of the reason there is no allocation.
+Expressions that may allocate give \"stack\", \"heap\", or \"couldn't tell whether \
+stack or heap\". The latter indicates that locality of the expression is underconstrained.
+Expressions to which the typechecker failed to ascribe an allocation mode, but which do \
+not fit into one of the aformentioned categories of expressions known not to allocate, \
+give \"unknown (does your code contain a type error?)\". As suggested by the message, \
+this should only occur if the input does not typecheck.
+
+`-index` can be used to print only one \"stack-or-heap\".
+
+The result is returned as a list of:
+```javascript
+{
+  'start': position,
+  'end': position,
+  'stack_or_heap: string
+}
+```"
     ~spec: [
       arg "-position" "<position> Position to complete"
         (marg_position (fun pos (expr,cursor,_pos,index) -> (expr,cursor,pos,index)));
-      optional "-expression" "<string> Expression to type"
-        (Marg.param "string" (fun expr (_expr,cursor,pos,index) -> (expr,cursor,pos,index)));
-      optional "-cursor" "<int> Position of the cursor inside expression"
-        (Marg.param "int" (fun cursor (expr,_cursor,pos,index) ->
-            match int_of_string cursor with
-            | cursor -> (expr,cursor,pos,index)
-            | exception _ ->
-              failwith "cursor should be an integer"
-          ));
       optional "-index" "<int> Only print type of <index>'th result"
         (Marg.param "int" (fun index (expr,cursor,pos,_index) ->
             match int_of_string index with
