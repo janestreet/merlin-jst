@@ -292,7 +292,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let ret x = (loc, x) in
           match text, print with
           | Stack_or_heap_enclosing.String str, _ -> ret (`String str)
-          | Stack_or_heap_enclosing.No_alloc reason, true ->
+          | Stack_or_heap_enclosing.No_alloc { reason }, true ->
               ret (`String ("does not allocate (" ^ reason ^ ")"))
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
               let str =
@@ -301,6 +301,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
                 | Some Local -> "stack"
                 | None -> "couldn't tell whether stack or heap"
               in ret (`String str)
+          | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
+              ret (`String "unknown (does your code contain a type error?)")
           | _, false -> ret (`Index i)
         )
     in

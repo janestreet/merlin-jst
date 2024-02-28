@@ -327,7 +327,7 @@ how to produce valid json.
 
 (VII) Nested
 
-  $ run_annotated_file nested.ml 5
+  $ run_annotated_file nested.ml 4
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                       ^
   
@@ -343,14 +343,6 @@ how to produce valid json.
   |                           ^^^^^^^^^^^^^^
   
   "heap"
-  
-  |let f x = exclave_ T { t = Not_t (Some x) }
-  |                                       ^
-  
-  |let f x = exclave_ T { t = Not_t (Some x) }
-  |                     ^^^^^^^^^^^^^^^^^^^^^^
-  
-  "stack"
   
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                       ^
@@ -390,7 +382,7 @@ how to produce valid json.
   |let f y = { y }
   |          ^^^^^
   
-  "does not allocate (unboxed records don't allocate)"
+  "unknown (does your code contain a type error?)"
   
   |let f () = { x = "OK" }
   |                   ^
@@ -406,7 +398,7 @@ how to produce valid json.
   |let f x = A { a = x }
   |            ^^^^^^^^^
   
-  "does not allocate (unboxed records don't allocate)"
+  "unknown (does your code contain a type error?)"
   
   |let f () = A "OK"
   |               ^
