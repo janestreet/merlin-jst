@@ -361,7 +361,7 @@ module Gen = struct
           let args =
             List.map
               ty_args
-              ~f:(fun (typ, (_ : global_flag)) -> exp_or_hole env typ)
+              ~f:(fun (typ, (_ : Mode.Global_flag.t)) -> exp_or_hole env typ)
           in
           let args_combinations = Util.combinations args in
           let exps = List.map args_combinations

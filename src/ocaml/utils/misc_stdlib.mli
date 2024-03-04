@@ -67,3 +67,19 @@ val format_as_unboxed_literal : string -> string
       [0.1] to [#0.1]
       [-3] to [-#3]
       [0xa.cp-1] to [#0xa.cp-1] *)
+
+(** The result of a less-than-or-equal comparison *)
+module Le_result : sig
+  type t =
+    | Equal
+    | Less
+    | Not_le
+
+  val combine : t -> t -> t
+  val combine_list : t list -> t
+
+  val is_le : t -> bool
+  val is_equal : t -> bool
+end
+
+type (_, _) eq = Refl : ('a, 'a) eq

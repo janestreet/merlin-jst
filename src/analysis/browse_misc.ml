@@ -39,7 +39,7 @@ let print_constructor c =
       (dummy_type_scheme (get_desc c.cstr_res))
   | args ->
     let args_without_modalities =
-      List.map ~f:(fun (arg, (_ : global_flag)) -> arg) args
+      List.map ~f:(fun (arg, (_ : Mode.Global_flag.t)) -> arg) args
     in
     let labeled_args_without_modalities =
       List.map ~f:(fun arg -> None, arg) args_without_modalities

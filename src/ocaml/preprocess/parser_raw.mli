@@ -369,9 +369,7 @@ module MenhirInterpreter : sig
     | N_structure_item : (Parsetree.structure_item) nonterminal
     | N_structure : (Parsetree.structure) nonterminal
     | N_strict_function_or_labeled_tuple_type : (Parsetree.core_type) nonterminal
-    | N_strict_binding_modes : ((Jane_syntax.N_ary_functions.mode_annotation *
-   (Lexing.position * Lexing.position))
-  list -> Parsetree.expression) nonterminal
+    | N_strict_binding_modes : (Ocaml_parsing.Jane_syntax.Mode_expr.t -> Parsetree.expression) nonterminal
     | N_str_exception_declaration : (Parsetree.type_exception * string Location.loc option) nonterminal
     | N_single_attr_id : (string) nonterminal
     | N_simple_pattern_not_ident : (Parsetree.pattern) nonterminal
@@ -459,15 +457,13 @@ module MenhirInterpreter : sig
     | N_nonempty_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
     | N_nonempty_list_raw_string_ : (string list) nonterminal
     | N_nonempty_list_newtype_ : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
-    | N_nonempty_list_mode_flag_ : ((Jane_syntax.N_ary_functions.mode_annotation *
-   (Lexing.position * Lexing.position))
-  list) nonterminal
+    | N_nonempty_list_mode_legacy_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
     | N_newtypes : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
     | N_newtype : (string Location.loc * Jane_asttypes.jkind_annotation option) nonterminal
     | N_name_tag : (string) nonterminal
     | N_mutable_virtual_flags : (Asttypes.mutable_flag * Asttypes.virtual_flag) nonterminal
-    | N_mutable_or_global_flag : (Asttypes.mutable_flag * Jane_asttypes.global_flag) nonterminal
+    | N_mutable_or_global_flag : (Asttypes.mutable_flag * Jane_syntax.Mode_expr.t) nonterminal
     | N_mutable_flag : (Asttypes.mutable_flag) nonterminal
     | N_mty_longident : (Longident.t) nonterminal
     | N_module_type_subst : (Parsetree.module_type_declaration * string Location.loc option) nonterminal
