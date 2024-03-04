@@ -94,11 +94,11 @@
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
             Tpat_var \"f/277\"
-            value_mode Global, uniqueness:?, Many
+            value_mode Global,Many,id(1[Shared,Unique])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
             region true
-            alloc_mode Global, uniqueness:?, Many
+            alloc_mode Global,Many,id(3[Shared,Unique])
             [
               Nolabel
               Param_pat
@@ -109,7 +109,7 @@
                       Ttyp_constr \"t/274\"
                       []
                   Tpat_var \"x/279\"
-                  value_mode Global, Unique, Many
+                  value_mode Global,Many,Unique
             ]
             Tfunction_body
               expression (test.ml[3,31+2]..test.ml[6,69+12])
@@ -255,11 +255,11 @@
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
             Tpat_var \"f/277\"
-            value_mode Global, uniqueness:?, Many
+            value_mode Global,Many,id(1[Shared,Unique])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
             region true
-            alloc_mode Global, uniqueness:?, Many
+            alloc_mode Global,Many,id(3[Shared,Unique])
             [
               Nolabel
               Param_pat
@@ -563,7 +563,7 @@ make sure we also handle that correctly in structures:
                 Ttyp_constr \"int/1!\"
                 []
             Tpat_var \"foo1/274\"
-            value_mode Global, Unique, Many
+            value_mode Global,Many,Unique
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
@@ -592,7 +592,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/275\"
-            value_mode Global, uniqueness:?, Many
+            value_mode Global,Many,id(3[Shared,Unique])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -609,7 +609,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Texp_tuple
-            alloc_mode Global, uniqueness:?, Many
+            alloc_mode Global,Many,id(3[Shared,Unique])
             [
               <tuple component>
               Label: None
@@ -641,7 +641,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/276\"
-            value_mode Global, uniqueness:?, Many
+            value_mode Global,Many,id(5[Shared,Unique])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
@@ -658,7 +658,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Texp_tuple
-            alloc_mode Global, uniqueness:?, Many
+            alloc_mode Global,Many,id(5[Shared,Unique])
             [
               <tuple component>
               Label: None
