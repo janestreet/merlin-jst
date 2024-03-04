@@ -278,7 +278,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_type_kind) -> "nonempty_type_kind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_raw_string_) -> "nonempty_list_raw_string_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_) -> "nonempty_list_newtype_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_flag_) -> "nonempty_list_mode_flag_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_legacy_) -> "nonempty_list_mode_legacy_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mkrhs_LIDENT__) -> "nonempty_list_mkrhs_LIDENT__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_newtypes) -> "newtypes"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_newtype) -> "newtype"
@@ -663,7 +663,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_type_kind -> (fun _ -> "nonempty_type_kind")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_raw_string_ -> (fun _ -> "nonempty_list_raw_string_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_ -> (fun _ -> "nonempty_list_newtype_")
-  | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_flag_ -> (fun _ -> "nonempty_list_mode_flag_")
+  | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_legacy_ -> (fun _ -> "nonempty_list_mode_legacy_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mkrhs_LIDENT__ -> (fun _ -> "nonempty_list_mkrhs_LIDENT__")
   | MenhirInterpreter.N MenhirInterpreter.N_newtypes -> (fun _ -> "newtypes")
   | MenhirInterpreter.N MenhirInterpreter.N_newtype -> (fun _ -> "newtype")

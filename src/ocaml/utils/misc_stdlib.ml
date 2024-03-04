@@ -115,3 +115,32 @@ let format_as_unboxed_literal s =
   if String.starts_with ~prefix:"-" s
   then "-#" ^ (String.sub s 1 (String.length s - 1))
   else "#" ^ s
+
+module Le_result = struct
+  type t =
+    | Equal
+    | Less
+    | Not_le
+
+  let combine sr1 sr2 =
+    match sr1, sr2 with
+    | Equal, Equal -> Equal
+    | Equal, Less | Less, Equal | Less, Less -> Less
+    | Not_le, _ | _, Not_le -> Not_le
+
+  let combine_list ts = List.fold_left combine Equal ts
+
+  let is_le = function
+    | Equal -> true
+    | Less -> true
+    | Not_le -> false
+
+  let is_equal = function
+    | Equal -> true
+    | Less | Not_le -> false
+end
+
+(*********************************************)
+(* Fancy types *)
+
+type (_, _) eq = Refl : ('a, 'a) eq
