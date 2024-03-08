@@ -565,7 +565,9 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~keywords ~prefix
       | `Declaration (ty,decls) ->
         List.fold_right ~f:(add_label_declaration ty) decls ~init:[]
     in
-    if base_completion = [] then
+    match base_completion, prefix_path with
+    | _ :: _, None -> base_completion
+    | [], _ | _, Some _ ->
       let order =
         if kinds = [] then
           let kind = classify_node node in
@@ -578,9 +580,8 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~keywords ~prefix
           ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch
         :: acc
       in
-      List.fold_left ~f:add_completions order ~init:[]
+      List.fold_left ~f:add_completions order ~init:[ base_completion ]
       |> List.concat
-    else base_completion
   in
   try
     match prefix with
