@@ -4,122 +4,42 @@
   >   module Inner = struct
   >     let y = 4
   >     type t = { field : int }
+  >     let default = { field = 3 }
   >   end
   > end
   > 
   > let create (_ : Outer.Inner.t) = ()
   > 
-  > let () = create { $1
+  > let () = create {
   > EOF
 
+`run` positions the cursor at the very end of the last line in the above
+program, right after the curly brace. We treat the first argument to `run`
+as what the user has typed at that location.
+
   $ run () {
-  >   $MERLIN single complete-prefix -position 11:18 -prefix "$1" \
-  >     -filename test.ml < test.ml | jq '.value.entries'
+  >   $MERLIN single complete-prefix -position 12:18 -prefix "$1" \
+  >     -filename test.ml < test.ml
   > }
 
-  $ run ""
-  [
-    {
-      "name": "field",
-      "kind": "Label",
-      "desc": "Outer.Inner.t -> int",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "Topdirs",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "Stdlib",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "Std_exit",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "Opttopdirs",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "Gc_timings",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalMod",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalFormatBasics",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "Compiler_owee",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalFormat",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalComprehension",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalOO",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalAtomic",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    },
-    {
-      "name": "CamlinternalLazy",
-      "kind": "Module",
-      "desc": "",
-      "info": "",
-      "deprecated": false
-    }
-  ]
+The best autocompletion option is the field that is known to belong
+to the record type under consideration.
 
-  $ run Outer.
+  $ run "" | jq '.value.entries[0]'
+  {
+    "name": "field",
+    "kind": "Label",
+    "desc": "Outer.Inner.t -> int",
+    "info": "",
+    "deprecated": false
+  }
+
+If the user types `Outer`, it is important to provide auto-completion
+options other than just `field`. The user is probably trying to type
+`Outer.Inner.field` here. (Just typing `Outer.field` would be a type
+error.)
+
+  $ run Outer. | jq '.value.entries'
   [
     {
       "name": "field",
@@ -144,7 +64,7 @@
     }
   ]
 
-  $ run Outer.I
+  $ run Outer.I | jq '.value.entries'
   [
     {
       "name": "Inner",
@@ -155,12 +75,24 @@
     }
   ]
 
-  $ run Outer.Inner.
+At this point, the user likely intends to type
+`Outer.Inner.field`. This is no guarantee, though.
+They might be starting to type `Outer.Inner.default with y = 5`.
+So we should continue to provide other auto-completion options.
+
+  $ run Outer.Inner. | jq '.value.entries'
   [
     {
       "name": "field",
       "kind": "Label",
       "desc": "Outer.Inner.t -> int",
+      "info": "",
+      "deprecated": false
+    },
+    {
+      "name": "default",
+      "kind": "Value",
+      "desc": "Outer.Inner.t",
       "info": "",
       "deprecated": false
     },
