@@ -298,7 +298,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
                 match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
                 | Some Global -> "heap"
                 | Some Local -> "stack"
-                | None -> "couldn't tell whether stack or heap"
+                | None -> "could be stack or heap"
               in ret (`String str)
           | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
               ret (`String "unknown (does your code contain a type error?)")

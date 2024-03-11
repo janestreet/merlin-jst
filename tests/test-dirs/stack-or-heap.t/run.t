@@ -107,7 +107,7 @@ how to produce valid json.
   |  let z = Some (g x) in
   |          ^^^^^^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
   |  None
   |    ^
@@ -131,7 +131,7 @@ how to produce valid json.
   |  f (Some x);
   |    ^^^^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
   |  f (local_ Some x);
   |                 ^
@@ -155,7 +155,7 @@ how to produce valid json.
   |let g x = f (Some x) [@nontail]
   |            ^^^^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
   |  Box (g z)
   |       ^
@@ -190,7 +190,7 @@ how to produce valid json.
   |  let z = `Some (g x) in
   |          ^^^^^^^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
   |  `None
   |     ^
@@ -242,7 +242,7 @@ how to produce valid json.
   |  f { z };
   |    ^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
   |  f (local_ { z });
   |              ^
@@ -266,7 +266,7 @@ how to produce valid json.
   |let g z = f { z } [@nontail]
   |            ^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
   |  { z }
   |    ^
@@ -597,5 +597,5 @@ how to produce valid json.
   |  let t = { x = f x } in
   |          ^^^^^^^^^^^
   
-  "couldn't tell whether stack or heap"
+  "could be stack or heap"
   
