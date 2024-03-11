@@ -304,6 +304,14 @@ how to produce valid json.
   
   "stack"
   
+  |let f g = (fun x -> g x)
+  |                       ^
+  
+  |let f g = (fun x -> g x)
+  |          ^^^^^^^^^^^^^^
+  
+  "heap"
+  
   |  fun x -> x
   |         ^
   
@@ -312,13 +320,39 @@ how to produce valid json.
   
   "heap"
   
-  |  let z = x + y in
-  |            ^
+  |  function | x -> x
+  |         ^
   
-  |  let z = x + y in
-  |            ^
+  |  function | x -> x
+  |  ^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |  exclave_ function | x -> x
+  |                  ^
+  
+  |  exclave_ function | x -> x
+  |                  ^
   
   "no relevant allocation to show"
+  
+  |let f = (function | x -> x)
+  |                          ^
+  
+  |let f = (function | x -> x)
+  |        ^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |  function | x -> g x
+  |         ^
+  
+  |let f g =
+  |      ^^^
+  |  function | x -> g x
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
   
   |let f g x y =
   |          ^
@@ -331,6 +365,22 @@ how to produce valid json.
   |^^^^^^^^^^^^^^^^^^^^^
   
   "heap"
+  
+  |  let z = x + y in
+  |            ^
+  
+  |  let z = x + y in
+  |            ^
+  
+  "no relevant allocation to show"
+  
+  |  | Some _ -> 1
+  |            ^
+  
+  |  | Some _ -> 1
+  |            ^
+  
+  "no relevant allocation to show"
   
 
 (V) Records

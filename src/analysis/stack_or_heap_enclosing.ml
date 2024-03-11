@@ -25,14 +25,38 @@ let from_nodes ~pos ~path =
       (match exp_desc with
        | Texp_function { alloc_mode; body; _ } ->
          let body_loc =
+           (* A function expression is often in a non-obvious way the nearest enclosing
+              allocating expression. To avoid confusion, we only consider a function
+              "enclosing" for the purposes of this check if the cursor is not inside its
+              body.
+
+              - For [fun _ _ -> expr], the body is [expr]
+              - For [function | p1 -> expr1 | p2 -> expr2], the body is the contiguous
+                range from [p1] to [expr2]
+           *)
            match body with
-           | Tfunction_body { exp_loc; _ } -> exp_loc
-           | Tfunction_cases { fc_loc; _ } -> fc_loc
+           | Tfunction_body { exp_loc; _ } -> Some exp_loc
+           | Tfunction_cases { fc_cases; _ } ->
+             (match fc_cases with
+              | first_case :: remaining_cases ->
+                let { Typedtree.c_lhs = { pat_loc = first_pat; _ }; _ } = first_case
+                and { Typedtree.c_rhs = { exp_loc = last_expr; _ }; _ } =
+                  List.last remaining_cases |> Option.value ~default:first_case
+                in
+                Some
+                  { loc_start = first_pat.loc_start
+                  ; loc_end = last_expr.loc_end
+                  ; loc_ghost = true
+                  }
+              | [] -> None)
          in
-         if Lexing.compare_pos pos body_loc.loc_start >= 0
-         && Lexing.compare_pos pos body_loc.loc_end <= 0
-         then None
-         else ret (Alloc_mode alloc_mode)
+         let cursor_is_inside_function_body =
+           match body_loc with
+           | None -> false
+           | Some { loc_start; loc_end; loc_ghost = _ } ->
+             Lexing.compare_pos pos loc_start >= 0 && Lexing.compare_pos pos loc_end <= 0
+         in
+         if cursor_is_inside_function_body then None else ret (Alloc_mode alloc_mode)
        | Texp_array (_, _, alloc_mode) -> ret (Alloc_mode alloc_mode)
        | Texp_construct (_, { cstr_repr; _ }, args, maybe_alloc_mode) ->
          (match maybe_alloc_mode with

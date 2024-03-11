@@ -10,16 +10,41 @@ let f g =
                (* ^ *)
 ;;
 
-(* It is unfortunate that this allocates no closure, but still has allocation mode
-   [global] *)
+let f g = (fun x -> g x)
+                    (* ^ *)
+
+(* Doesn't close over anything, but merlin does not know this *)
 let f g =
   fun x -> x
       (* ^ *)
 ;;
 
-(* Sometimes, a function expression is in a non-obvious way the nearest enclosing
-   allocating expression. It's possible we'll decide to ignore functions unless the cursor
-   is on something that syntactically belongs just to the function *)
+let f =
+  function | x -> x
+      (* ^ *)
+;;
+
+let f =
+  exclave_ function | x -> x
+               (* ^ *)
+;;
+
+let f = (function | x -> x)
+                       (* ^ *)
+
+(* Doesn't close over anything, but merlin does not know this *)
+let f g =
+  function | x -> g x
+      (* ^ *)
+;;
+
+let f g x y =
+       (* ^ *)
+  let z = x + y in
+  exclave_ Some (g z)
+;;
+
+(* If we are inside the body of a function, we don't count that function as enclosing *)
 
 let f g x y =
   let z = x + y in
@@ -27,9 +52,7 @@ let f g x y =
   exclave_ Some (g z)
 ;;
 
-
-let f g x y =
-       (* ^ *)
-  let z = x + y in
-  exclave_ Some (g z)
-;;
+let f = function
+  | None -> 0
+  | Some _ -> 1
+         (* ^ *)
