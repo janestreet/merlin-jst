@@ -8,6 +8,9 @@ let f (t : t) = t.a
 let f (t : t) = t.a
               (* ^ *)
 
+let f t1 t2 = { t1 with b = t2.b }
+                           (* ^ *)
+
 type floats_t = { a : float; b : float }
 
 let f (t : floats_t) = t.a

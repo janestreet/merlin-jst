@@ -340,17 +340,25 @@ how to produce valid json.
   |                 ^
   
   |let f (t : t) = t.a
-  |                ^^^
+  |                 ^
   
-  "does not allocate (field access only allocates when retrieving [float]s from an unboxed float record)"
+  "no relevant allocation to show"
   
   |let f (t : t) = t.a
   |                 ^
   
   |let f (t : t) = t.a
-  |                ^^^
+  |                 ^
   
-  "does not allocate (field access only allocates when retrieving [float]s from an unboxed float record)"
+  "no relevant allocation to show"
+  
+  |let f t1 t2 = { t1 with b = t2.b }
+  |                              ^
+  
+  |let f t1 t2 = { t1 with b = t2.b }
+  |              ^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
   
   |let f (t : floats_t) = t.a
   |                        ^
@@ -518,9 +526,9 @@ how to produce valid json.
   |             ^
   
   |let f x = x.maybe_a_float_field
-  |          ^^^^^^^^^^^^^^^^^^^^^
+  |             ^
   
-  "does not allocate (field access only allocates when retrieving [float]s from an unboxed float record)"
+  "no relevant allocation to show"
   
 (IX) Unfinished
 

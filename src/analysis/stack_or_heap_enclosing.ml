@@ -52,10 +52,7 @@ let from_nodes ~pos ~path =
           | None, (Record_boxed _ | Record_float | Record_ufloat) ->
             ret Unexpected_no_alloc)
        | Texp_field (_, _, _, _, maybe_alloc_mode) ->
-         ret_maybe_alloc
-           "field access only allocates when retrieving [float]s from an unboxed float \
-            record"
-           maybe_alloc_mode
+         Option.bind maybe_alloc_mode ~f:ret_alloc
        | Texp_variant (_, maybe_exp_and_alloc_mode) ->
          maybe_exp_and_alloc_mode
          |> Option.map ~f:snd
