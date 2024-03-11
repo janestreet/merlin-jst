@@ -115,7 +115,7 @@ how to produce valid json.
   |  None
   |  ^^^^
   
-  "does not allocate (constructors without arguments don't allocate)"
+  "not an allocation (constructor without arguments)"
   
   |  exclave_ None
   |             ^
@@ -123,7 +123,7 @@ how to produce valid json.
   |  exclave_ None
   |           ^^^^
   
-  "does not allocate (constructors without arguments don't allocate)"
+  "not an allocation (constructor without arguments)"
   
   |  f (Some x);
   |          ^
@@ -163,7 +163,7 @@ how to produce valid json.
   |  Box (g z)
   |  ^^^^^^^^^
   
-  "does not allocate (unboxed constructors don't allocate)"
+  "not an allocation (unboxed constructor)"
   
 (II) Variants
 
@@ -198,7 +198,7 @@ how to produce valid json.
   |  `None
   |  ^^^^^
   
-  "does not allocate (variants without arguments don't allocate)"
+  "not an allocation (variant without argument)"
   
   |  exclave_ `None
   |              ^
@@ -206,7 +206,7 @@ how to produce valid json.
   |  exclave_ `None
   |           ^^^^^
   
-  "does not allocate (variants without arguments don't allocate)"
+  "not an allocation (variant without argument)"
   
 
 (III) Records
@@ -274,7 +274,7 @@ how to produce valid json.
   |  { z }
   |  ^^^^^
   
-  "does not allocate (unboxed records don't allocate)"
+  "not an allocation (unboxed record)"
   
   |  exclave_ { z }
   |             ^
@@ -282,7 +282,7 @@ how to produce valid json.
   |  exclave_ { z }
   |           ^^^^^
   
-  "does not allocate (unboxed records don't allocate)"
+  "not an allocation (unboxed record)"
   
 
 (IV) Closures

@@ -39,16 +39,16 @@ let from_nodes ~pos ~path =
           | Some alloc_mode -> ret (Alloc_mode alloc_mode)
           | None ->
             (match args with
-             | [] -> ret_no_alloc "constructors without arguments don't allocate"
+             | [] -> ret_no_alloc "constructor without arguments"
              | _ :: _ ->
                (match cstr_repr with
-                | Variant_unboxed -> ret_no_alloc "unboxed constructors don't allocate"
+                | Variant_unboxed -> ret_no_alloc "unboxed constructor"
                 | Variant_extensible | Variant_boxed _ -> ret Unexpected_no_alloc)))
        | Texp_record { representation; alloc_mode = maybe_alloc_mode; _ } ->
          (match maybe_alloc_mode, representation with
           | _, Record_inlined _ -> None
           | Some alloc_mode, _ -> ret_alloc alloc_mode
-          | None, Record_unboxed -> ret_no_alloc "unboxed records don't allocate"
+          | None, Record_unboxed -> ret_no_alloc "unboxed record"
           | None, (Record_boxed _ | Record_float | Record_ufloat) ->
             ret Unexpected_no_alloc)
        | Texp_field (_, _, _, _, maybe_alloc_mode) ->
@@ -56,7 +56,7 @@ let from_nodes ~pos ~path =
        | Texp_variant (_, maybe_exp_and_alloc_mode) ->
          maybe_exp_and_alloc_mode
          |> Option.map ~f:snd
-         |> ret_maybe_alloc "variants without arguments don't allocate"
+         |> ret_maybe_alloc "variant without argument"
        | _ -> None)
     | _ -> None
   in

@@ -292,7 +292,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let ret x = (loc, x) in
           match text, print with
           | Stack_or_heap_enclosing.No_alloc { reason }, true ->
-              ret (`String ("does not allocate (" ^ reason ^ ")"))
+              ret (`String ("not an allocation (" ^ reason ^ ")"))
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
               let str =
                 match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
