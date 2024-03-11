@@ -6,3 +6,6 @@ type t =
 
 let f x = exclave_ T { t = Not_t (Some x) }
                                     (* ^ *)
+
+let f x = local_ (Some (Some x))
+                          (* ^ *)

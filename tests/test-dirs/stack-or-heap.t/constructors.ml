@@ -30,6 +30,19 @@ let f g x y =
           (* ^ *)
 ;;
 
+let f (local_ _) = ()
+
+let g x =
+  f (Some x);
+       (* ^ *)
+  f (local_ Some x);
+              (* ^ *)
+  f (Some x)
+       (* ^ *)
+
+let g x = f (Some x) [@nontail]
+               (* ^ *)
+
 type t = Box of string [@@unboxed]
 
 let f g x y =

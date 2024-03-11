@@ -125,6 +125,38 @@ how to produce valid json.
   
   "does not allocate (constructors without arguments don't allocate)"
   
+  |  f (Some x);
+  |          ^
+  
+  |  f (Some x);
+  |    ^^^^^^^^
+  
+  "couldn't tell whether stack or heap"
+  
+  |  f (local_ Some x);
+  |                 ^
+  
+  |  f (local_ Some x);
+  |    ^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |  f (Some x)
+  |          ^
+  
+  |  f (Some x)
+  |    ^^^^^^^^
+  
+  "heap"
+  
+  |let g x = f (Some x) [@nontail]
+  |                  ^
+  
+  |let g x = f (Some x) [@nontail]
+  |            ^^^^^^^^
+  
+  "couldn't tell whether stack or heap"
+  
   |  Box (g z)
   |       ^
   
@@ -203,6 +235,38 @@ how to produce valid json.
   |          ^^^^^^^^^
   
   "heap"
+  
+  |  f { z };
+  |      ^
+  
+  |  f { z };
+  |    ^^^^^
+  
+  "couldn't tell whether stack or heap"
+  
+  |  f (local_ { z });
+  |              ^
+  
+  |  f (local_ { z });
+  |    ^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |  f { z }
+  |      ^
+  
+  |  f { z }
+  |    ^^^^^
+  
+  "heap"
+  
+  |let g z = f { z } [@nontail]
+  |              ^
+  
+  |let g z = f { z } [@nontail]
+  |            ^^^^^
+  
+  "couldn't tell whether stack or heap"
   
   |  { z }
   |    ^
@@ -354,6 +418,32 @@ how to produce valid json.
   
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                       ^
+  
+  null
+  
+  |let f x = local_ (Some (Some x))
+  |                             ^
+  
+  |let f x = local_ (Some (Some x))
+  |                       ^^^^^^^^
+  
+  "stack"
+  
+  |let f x = local_ (Some (Some x))
+  |                             ^
+  
+  |let f x = local_ (Some (Some x))
+  |          ^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |let f x = local_ (Some (Some x))
+  |                             ^
+  
+  null
+  
+  |let f x = local_ (Some (Some x))
+  |                             ^
   
   null
   
