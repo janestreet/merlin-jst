@@ -262,28 +262,7 @@ let reconstruct_identifier pipeline pos = function
         aux acc (succ i) in
     aux [] offset
 
-
 let dispatch pipeline (type a) : a Query_protocol.t -> a =
-  let query_enclosings ~analysis ~extra_enclosings ~printer ~postprocess ~pos ~index =
-    let typer = Mpipeline.typer_result pipeline in
-    let verbosity = verbosity pipeline in
-    let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let structures = Mbrowse.enclosing pos
-      [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
-    let path = match structures with
-      | [] -> []
-      | browse -> Browse_misc.annotate_tail_calls browse
-    in
-    let results =
-      List.mapi (extra_enclosings ~pos ~verbosity ~structures @ analysis ~pos ~path)
-      ~f:( 
-        fun i x ->
-          let print = match index with None -> true | Some index -> index = i in
-          printer ~print ~verbosity i x)
-    in
-    postprocess ~pos results
-  in
-
   function
   | Type_expr (source, pos) ->
     let typer = Mpipeline.typer_result pipeline in
@@ -296,72 +275,93 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     to_string ()
 
   | Stack_or_heap_enclosing (pos, index) ->
-    query_enclosings ~pos ~index
-      ~analysis:Stack_or_heap_enclosing.from_nodes
-      ~extra_enclosings:(fun ~pos:_ ~verbosity:_ ~structures:_ -> [])
-      ~printer:(
-        fun ~print ~verbosity:_ i (loc, text) ->
-        let ret x = (loc, x) in
-        match text, print with
-        | Stack_or_heap_enclosing.No_alloc { reason }, true ->
-            ret (`String ("not an allocation (" ^ reason ^ ")"))
-        | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
-            let str =
-              match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
-              | Some Global -> "heap"
-              | Some Local -> "stack"
-              | None -> "could be stack or heap"
-            in ret (`String str)
-        | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
-            ret (`String "unknown (does your code contain a type error?)")
-        | _, false -> ret (`Index i)
-      )
-      ~postprocess:(
-        fun ~pos all_results ->
-        match all_results with
-        | _ :: _ -> all_results
-        | [] -> 
-            let pos' : Lexing.position = { pos with pos_cnum = pos.pos_cnum - 1 } in
-            let loc : Location.t = { loc_start=pos'; loc_end=pos; loc_ghost=false } in
-            [ (loc, `String "no relevant allocation to show") ]
-      )
+    let typer = Mpipeline.typer_result pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let structures = Mbrowse.enclosing pos
+      [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
+    let path = match structures with
+      | [] -> []
+      | browse -> Browse_misc.annotate_tail_calls browse
+    in
+
+    let result = Stack_or_heap_enclosing.from_nodes ~pos ~path in
+
+    let all_results = List.mapi result
+      ~f:(fun i (loc,text) ->
+          let print = match index with None -> true | Some index -> index = i in
+          let ret x = (loc, x) in
+          match text, print with
+          | Stack_or_heap_enclosing.No_alloc { reason }, true ->
+              ret (`String ("not an allocation (" ^ reason ^ ")"))
+          | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
+              let str =
+                match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
+                | Some Global -> "heap"
+                | Some Local -> "stack"
+                | None -> "could be stack or heap"
+              in ret (`String str)
+          | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
+              ret (`String "unknown (does your code contain a type error?)")
+          | _, false -> ret (`Index i)
+        )
+    in
+
+    let all_results =
+      match all_results with
+      | _ :: _ -> all_results
+      | [] -> 
+          let pos' : Lexing.position = { pos with pos_cnum = pos.pos_cnum - 1 } in
+          let loc : Location.t = { loc_start=pos'; loc_end=pos; loc_ghost=false } in
+          [ (loc, `String "no relevant allocation to show") ]
+    in
+
+    all_results
 
   | Type_enclosing (expro, pos, index) ->
-    query_enclosings ~pos ~index
-      ~analysis:(fun ~pos:_ ~path -> Type_enclosing.from_nodes ~path)
-      ~extra_enclosings:(
-        fun ~pos ~verbosity ~structures ->
-          let exprs = reconstruct_identifier pipeline pos expro in
-          let () =
-            Logger.log ~section:Type_enclosing.log_section
-              ~title:"reconstruct identifier" "%a"
-              Logger.json (fun () ->
-                let lst =
-                  List.map exprs ~f:(fun { Location.loc; txt } ->
-                    `Assoc [ "start", Lexing.json_of_position loc.Location.loc_start
-                           ; "end",   Lexing.json_of_position loc.Location.loc_end
-                           ; "identifier", `String txt]
-                  )
-                in
-                `List lst
-              )
+    let typer = Mpipeline.typer_result pipeline in
+    let verbosity = verbosity pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let structures = Mbrowse.enclosing pos
+      [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
+    let path = match structures with
+      | [] -> []
+      | browse -> Browse_misc.annotate_tail_calls browse
+    in
+
+    let result = Type_enclosing.from_nodes ~path in
+
+    (* enclosings of cursor in given expression *)
+    let exprs = reconstruct_identifier pipeline pos expro in
+    let () =
+      Logger.log ~section:Type_enclosing.log_section
+        ~title:"reconstruct identifier" "%a"
+        Logger.json (fun () ->
+          let lst =
+            List.map exprs ~f:(fun { Location.loc; txt } ->
+              `Assoc [ "start", Lexing.json_of_position loc.Location.loc_start
+                     ; "end",   Lexing.json_of_position loc.Location.loc_end
+                     ; "identifier", `String txt]
+            )
           in
-          let small_enclosings =
-            Type_enclosing.from_reconstructed exprs
-             ~nodes:structures ~cursor:pos ~verbosity
-          in
-          Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
-            Logger.fmt (fun fmt ->
-              Format.fprintf fmt "result = [ %a ]"
-                (Format.pp_print_list ~pp_sep:Format.pp_print_space
-                   (fun fmt (loc, _, _) -> Location.print_loc fmt loc))
-                small_enclosings
-            );
+          `List lst
+        )
+    in
+    let small_enclosings =
+      Type_enclosing.from_reconstructed exprs
+       ~nodes:structures ~cursor:pos ~verbosity
+    in
+    Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
+      Logger.fmt (fun fmt ->
+        Format.fprintf fmt "result = [ %a ]"
+          (Format.pp_print_list ~pp_sep:Format.pp_print_space
+             (fun fmt (loc, _, _) -> Location.print_loc fmt loc))
           small_enclosings
-      )
-      ~printer:(
-        let ppf = Format.str_formatter in
-        fun ~print ~verbosity i (loc, text, tail) ->
+      );
+
+    let ppf = Format.str_formatter in
+    let all_results = List.mapi (small_enclosings @ result)
+      ~f:(fun i (loc,text,tail) ->
+          let print = match index with None -> true | Some index -> index = i in
           let ret x = (loc, x, tail) in
           match text with
           | Type_enclosing.String str -> ret (`String str)
@@ -378,20 +378,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               (fun () -> Printtyp.modtype env ppf m);
             ret (`String (Format.flush_str_formatter ()))
           | _ -> ret (`Index i)
-      )
-      ~postprocess:(
-        let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
-          Lexing.split_pos loc_start, Lexing.split_pos loc_end, text
-        in
-        (* We remove duplicates from the list. Duplicates can appear when the type
-           from the reconstructed identifier is the same as the one stored in the
-           typedtree *)
-        fun ~pos:_ all_results ->
-          List.merge_cons
-            ~f:(fun a b ->
-                if compare (normalize a) (normalize b) = 0 then Some b else None)
-            all_results
-      )
+        )
+    in
+    let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
+      Lexing.split_pos loc_start, Lexing.split_pos loc_end, text
+    in
+    (* We remove duplicates from the list. Duplicates can appear when the type
+       from the reconstructed identifier is the same as the one stored in the
+       typedtree *)
+    List.merge_cons
+      ~f:(fun a b ->
+          if compare (normalize a) (normalize b) = 0 then Some b else None)
+      all_results
 
   | Enclosing pos ->
     let typer = Mpipeline.typer_result pipeline in
