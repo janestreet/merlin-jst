@@ -318,6 +318,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     all_results
 
   | Type_enclosing (expro, pos, index) ->
+    (* This case shares some boilerplate with the one for [Stack_or_heap_enclosing]
+       (above), since they both deal with querying increasingly widening enclosing
+       expressions. Changes to this code that from upstream should also be reflected
+       there. *)
     let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
