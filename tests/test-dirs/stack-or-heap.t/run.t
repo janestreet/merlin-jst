@@ -383,7 +383,7 @@ how to produce valid json.
   "no relevant allocation to show"
   
 
-(V) Records
+(V) Record field access
 
   $ run_annotated_file field_access.ml
   |let f (t : t) = t.a
