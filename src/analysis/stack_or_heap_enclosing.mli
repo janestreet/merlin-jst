@@ -20,7 +20,7 @@
 val log_section : string
 
 type stack_or_heap =
-  | Alloc_mode of Mode.Alloc.t
+  | Alloc_mode of Mode.Alloc.r
   | No_alloc of { reason : string }
   | Unexpected_no_alloc
 

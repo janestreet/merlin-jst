@@ -4,7 +4,7 @@ let log_section = "stack-or-heap-enclosing"
 let { Logger.log } = Logger.for_section log_section
 
 type stack_or_heap =
-  | Alloc_mode of Mode.Alloc.t
+  | Alloc_mode of Mode.Alloc.r
   | No_alloc of { reason : string }
   | Unexpected_no_alloc
 
