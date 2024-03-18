@@ -62,6 +62,15 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
+  | Stack_or_heap_enclosing (pos, index) ->
+    mk "stack-or-heap-enclosing" [
+      "index", (match index with
+          | None -> `String "all"
+          | Some n -> `Int n
+        );
+      "position", mk_position pos;
+    ]
+
   | Type_enclosing (opt_cursor, pos, index) ->
     mk "type-enclosing" [
       "cursor", (match opt_cursor with
@@ -243,6 +252,13 @@ let with_location ?(with_file=false) ?(skip_none=false) loc assoc =
       ("end",   Lexing.json_of_position loc.Location.loc_end) ::
       assoc )
 
+let json_of_stack_or_heap (loc,desc) =
+  with_location loc [
+    "stack_or_heap", (match desc with
+        | `String _ as str -> str
+        | `Index n -> `Int n)
+  ]
+
 let json_of_type_loc (loc,desc,tail) =
   with_location loc [
     "type", (match desc with
@@ -350,6 +366,8 @@ let json_of_locate resp =
 let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
+  | Stack_or_heap_enclosing _, results ->
+    `List (List.map ~f:json_of_stack_or_heap results)
   | Type_enclosing _, results ->
     `List (List.map ~f:json_of_type_loc results)
   | Enclosing _, results ->

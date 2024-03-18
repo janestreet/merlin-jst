@@ -274,7 +274,54 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     ignore (Type_utils.type_in_env ~verbosity ~context env ppf source : bool);
     to_string ()
 
+  | Stack_or_heap_enclosing (pos, index) ->
+    let typer = Mpipeline.typer_result pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let structures = Mbrowse.enclosing pos
+      [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
+    let path = match structures with
+      | [] -> []
+      | browse -> Browse_misc.annotate_tail_calls browse
+    in
+
+    let result = Stack_or_heap_enclosing.from_nodes ~pos ~path in
+
+    let all_results = List.mapi result
+      ~f:(fun i (loc,text) ->
+          let print = match index with None -> true | Some index -> index = i in
+          let ret x = (loc, x) in
+          match text, print with
+          | Stack_or_heap_enclosing.No_alloc { reason }, true ->
+              ret (`String ("not an allocation (" ^ reason ^ ")"))
+          | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
+              let str =
+                match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
+                | Some Global -> "heap"
+                | Some Local -> "stack"
+                | None -> "could be stack or heap"
+              in ret (`String str)
+          | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
+              ret (`String "unknown (does your code contain a type error?)")
+          | _, false -> ret (`Index i)
+        )
+    in
+
+    let all_results =
+      match all_results with
+      | _ :: _ -> all_results
+      | [] -> 
+          let pos' : Lexing.position = { pos with pos_cnum = pos.pos_cnum - 1 } in
+          let loc : Location.t = { loc_start=pos'; loc_end=pos; loc_ghost=false } in
+          [ (loc, `String "no relevant allocation to show") ]
+    in
+
+    all_results
+
   | Type_enclosing (expro, pos, index) ->
+    (* This case shares some boilerplate with the one for [Stack_or_heap_enclosing]
+       (above), since they both deal with querying increasingly widening enclosing
+       expressions. Changes to this code that from upstream should also be reflected
+       there. *)
     let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
