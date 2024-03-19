@@ -395,6 +395,14 @@ and expression_extra i ppf x attrs =
   | Texp_newtype' (id, _, lay) ->
       line i ppf "Texp_newtype' %a\n" typevar_layout' (id, lay);
       attributes i ppf attrs;
+  | Texp_mode_coerce modes ->
+      let modes = (modes :> string Location.loc list Location.loc) in
+      line i ppf "Texp_mode_coerce %s\n"
+        (String.concat ","
+          (List.map
+            (fun loc -> Printf.sprintf "\"%s\"" loc.txt)
+            modes.txt));
+      attributes i ppf attrs;
 
 and alloc_mode: type l r. _ -> _ -> (l * r) Mode.Alloc.t -> _
   = fun i ppf m -> line i ppf "alloc_mode %a\n" (Mode.Alloc.print ()) m
@@ -487,15 +495,17 @@ and expression i ppf x =
       expression i ppf e1;
       longident i ppf li;
       expression i ppf e2;
-  | Texp_array (amut, l, amode) ->
+  | Texp_array (amut, sort, l, amode) ->
       line i ppf "Texp_array %a\n" fmt_mutable_flag amut;
+      line i ppf "%a\n" Jkind.Sort.format sort;
       alloc_mode i ppf amode;
       list i expression ppf l;
   | Texp_list_comprehension comp ->
       line i ppf "Texp_list_comprehension\n";
       comprehension i ppf comp
-  | Texp_array_comprehension (amut, comp) ->
+  | Texp_array_comprehension (amut, sort, comp) ->
       line i ppf "Texp_array_comprehension %a\n" fmt_mutable_flag amut;
+      line i ppf "%a\n" Jkind.Sort.format sort;
       comprehension i ppf comp
   | Texp_ifthenelse (e1, e2, eo) ->
       line i ppf "Texp_ifthenelse\n";

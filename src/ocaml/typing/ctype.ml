@@ -1600,8 +1600,8 @@ let prim_mode mvar = function
 let with_locality locality m =
   let m' = Alloc.newvar () in
   Locality.equate_exn (Alloc.locality m') locality;
-  Alloc.submode_exn m' (Alloc.set_locality_max m);
-  Alloc.submode_exn (Alloc.set_locality_min m) m';
+  Alloc.submode_exn m' (Alloc.join_with_locality Locality.Const.max m);
+  Alloc.submode_exn (Alloc.meet_with_locality Locality.Const.min m) m';
   m'
 
 let rec instance_prim_locals locals mvar macc finalret ty =
@@ -2229,6 +2229,14 @@ let check_decl_jkind env decl jkind =
       match decl.type_manifest with
       | None -> err
       | Some ty -> check_type_jkind env ty jkind
+
+let constrain_decl_jkind env decl jkind =
+  match Jkind.sub_or_error decl.type_jkind jkind with
+  | Ok () as ok -> ok
+  | Error _ as err ->
+      match decl.type_manifest with
+      | None -> err
+      | Some ty -> constrain_type_jkind env ty jkind
 
 let check_type_jkind_exn env texn ty jkind =
   match check_type_jkind env ty jkind with
@@ -5567,10 +5575,8 @@ let build_submode posi m =
   if posi then build_submode_pos (Alloc.allow_left m)
   else build_submode_neg (Alloc.allow_right m)
 
-(* CR layouts v2.8: use the meet-with-constant morphism when available *)
 (* CR layouts v2.8: merge with Typecore.mode_cross_left when [Value] and
    [Alloc] get unified *)
-(* The approach here works only for 2-element modal axes. *)
 let mode_cross_left env ty mode =
   (* CR layouts v2.8: The old check didn't check for principality, and so
      this one doesn't either. I think it should. But actually test results
@@ -5579,49 +5585,16 @@ let mode_cross_left env ty mode =
      now; will return and figure this out later. *)
   let jkind = type_jkind_purely env ty in
   let upper_bounds = Jkind.get_modal_upper_bounds jkind in
-  let mode = Alloc.disallow_right mode in
-  let mode =
-    if Locality.Const.le upper_bounds.locality Locality.Const.min
-    then Alloc.set_locality_min mode
-    else mode
-  in
-  let mode =
-    if Linearity.Const.le upper_bounds.linearity Linearity.Const.min
-    then Alloc.set_linearity_min mode
-    else mode
-  in
-  let mode =
-    if Uniqueness.Const.le upper_bounds.uniqueness Uniqueness.Const.min
-    then Alloc.set_uniqueness_min mode
-    else mode
-  in
-  mode
+  Alloc.meet_with upper_bounds mode
 
 (* CR layouts v2.8: merge with Typecore.expect_mode_cross when [Value]
    and [Alloc] get unified *)
-(* The approach here works only for 2-element modal axes. *)
 let mode_cross_right env ty mode =
   (* CR layouts v2.8: This should probably check for principality. See
      similar comment in [mode_cross_left]. *)
   let jkind = type_jkind_purely env ty in
   let upper_bounds = Jkind.get_modal_upper_bounds jkind in
-  let mode = Alloc.disallow_left mode in
-  let mode =
-    if Locality.Const.le upper_bounds.locality Locality.Const.min
-    then Alloc.set_locality_max mode
-    else mode
-  in
-  let mode =
-    if Linearity.Const.le upper_bounds.linearity Linearity.Const.min
-    then Alloc.set_linearity_max mode
-    else mode
-  in
-  let mode =
-    if Uniqueness.Const.le upper_bounds.uniqueness Uniqueness.Const.min
-    then Alloc.set_uniqueness_max mode
-    else mode
-  in
-  mode
+  Alloc.imply upper_bounds mode
 
 let rec build_subtype env (visited : transient_expr list)
     (loops : (int * type_expr) list) posi level t =

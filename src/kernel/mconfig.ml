@@ -521,6 +521,7 @@ let ocaml_ignored_flags = [
   "-fno-prefetchw";
   "-fpopcnt";
   "-fno-popcnt";
+  "-disable-checkmach";
 ]
 
 let ocaml_ignored_parametrized_flags = [

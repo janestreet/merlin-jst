@@ -57,7 +57,7 @@ let from_nodes ~pos ~path =
              Lexing.compare_pos pos loc_start >= 0 && Lexing.compare_pos pos loc_end <= 0
          in
          if cursor_is_inside_function_body then None else ret (Alloc_mode alloc_mode)
-       | Texp_array (_, _, alloc_mode) -> ret (Alloc_mode alloc_mode)
+       | Texp_array (_, _, _, alloc_mode) -> ret (Alloc_mode alloc_mode)
        | Texp_construct (_, { cstr_repr; _ }, args, maybe_alloc_mode) ->
          (match maybe_alloc_mode with
           | Some alloc_mode -> ret (Alloc_mode alloc_mode)

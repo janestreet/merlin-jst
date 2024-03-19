@@ -82,16 +82,23 @@ let is_always_gc_ignorable env ty =
 type classification =
   | Int   (* any immediate type *)
   | Float
+  (* | Unboxed_float of unboxed_float
+   * | Unboxed_int of unboxed_integer *)
+  | Unboxed_float
+  | Unboxed_int
+  (* merlin-jst: for the one use of these that remains in merlin, the argument is not
+     needed.  Which is good, because it comes from lambda.mli, which we don't have in
+     merlin. *)
   | Lazy
   | Addr  (* anything except a float or a lazy *)
   | Any
 
 (* Classify a ty into a [classification]. Looks through synonyms, using [scrape_ty].
    Returning [Any] is safe, though may skip some optimizations. *)
-(* CR layouts v2.5: when we allow [float# array] or [float# lazy], this should
-   be updated to check for unboxed float. *)
-let classify env ty : classification =
+let classify env (* loc *) ty sort : classification =
   let ty = scrape_ty env ty in
+  match Jkind.(Sort.get_default_value sort) with
+  | Value -> begin
   if is_always_gc_ignorable env ty then Int
   else match get_desc ty with
   | Tvar _ | Tunivar _ ->
@@ -123,17 +130,33 @@ let classify env ty : classification =
       Addr
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ ->
       assert false
+  end
+  | Float64 -> Unboxed_float (* Pfloat64 *)
+  | Bits32 -> Unboxed_int (* Pint32 *)
+  | Bits64 -> Unboxed_int (* Pint64 *)
+  | Word -> Unboxed_int (* Pnativeint *)
+  | Void ->
+    (* raise (Error (loc, Unsupported_sort Void)) *)
+    Misc.fatal_error "merlin-jst: void encountered in classify"
 
 (*
-let array_type_kind env ty =
+let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
   | Tconstr(p, [elt_ty], _)
     when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
-      begin match classify env elt_ty with
+      let elt_sort =
+        match elt_sort with
+        | Some s -> s
+        | None ->
+          type_sort ~why:Array_element env loc elt_ty
+      in
+      begin match classify env loc elt_ty elt_sort with
       | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
       | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
       | Addr | Lazy -> Paddrarray
       | Int -> Pintarray
+      | Unboxed_float f -> Punboxedfloatarray f
+      | Unboxed_int i -> Punboxedintarray i
       end
   | Tconstr(p, [], _) when Path.same p Predef.path_floatarray ->
       Pfloatarray
@@ -141,9 +164,15 @@ let array_type_kind env ty =
       (* This can happen with e.g. Obj.field *)
       Pgenarray
 
-let array_kind exp = array_type_kind exp.exp_env exp.exp_type
+let array_kind exp elt_sort =
+  array_type_kind
+    ~elt_sort:(Some elt_sort)
+    exp.exp_env exp.exp_loc exp.exp_type
 
-let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
+let array_pattern_kind pat elt_sort =
+  array_type_kind
+    ~elt_sort:(Some elt_sort)
+    pat.pat_env pat.pat_loc pat.pat_type
 
 let bigarray_decode_type env ty tbl dfl =
   match scrape env ty with
@@ -332,7 +361,9 @@ let rec value_kind env ~loc ~visited ~depth ~num_nodes_visited ty
   | Tconstr(p, _, _)
     when (Path.same p Predef.path_array
           || Path.same p Predef.path_floatarray) ->
-    num_nodes_visited, Parrayval (array_type_kind env ty)
+    (* CR layouts: [~elt_sort:None] here is bad for performance. To
+       fix it, we need a place to store the sort on a [Tconstr]. *)
+    num_nodes_visited, Parrayval (array_type_kind ~elt_sort:None env loc ty)
   | Tconstr(p, _, _) -> begin
       let decl =
         try Env.find_type p env with Not_found -> raise Missing_cmi_fallback
@@ -607,9 +638,16 @@ let function_arg_layout env loc sort ty =
 
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.
     if the value can be represented as a float/forward/lazy *)
-let lazy_val_requires_forward env ty =
-  match classify env ty with
+let lazy_val_requires_forward env (* loc *) ty =
+  let sort = Jkind.Sort.for_lazy_body in
+  match classify env (* loc *) ty sort with
   | Any | Lazy -> true
+  (* CR layouts: Fix this when supporting lazy unboxed values.
+     Blocks with forward_tag can get scanned by the gc thus can't
+     store unboxed values. Not boxing is also incorrect since the lazy
+     type has layout [value] which is different from these unboxed layouts. *)
+  | Unboxed_float (* _ *) | Unboxed_int (* _ *) ->
+    Misc.fatal_error "Unboxed value encountered inside lazy expression"
   | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false
 
@@ -632,7 +670,7 @@ let classify_lazy_argument : Typedtree.expression ->
       (* TODO: handle flat float array, either at configure time or from the
          .merlin. *)
        `Constant_or_function
-    | Texp_ident _ when lazy_val_requires_forward e.exp_env e.exp_type ->
+    | Texp_ident _ when lazy_val_requires_forward e.exp_env (* e.exp_loc *) e.exp_type ->
        `Identifier `Forward_value
     | Texp_ident _ ->
        `Identifier `Other
