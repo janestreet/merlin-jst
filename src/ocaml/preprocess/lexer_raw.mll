@@ -107,11 +107,14 @@ let keyword_table : keywords =
     "include", INCLUDE;
     "inherit", INHERIT;
     "initializer", INITIALIZER;
+    "kind_abbrev_", KIND_ABBREV;
+    "kind_of_", KIND_OF;
     "lazy", LAZY;
     "let", LET;
     "local_", LOCAL;
     "match", MATCH;
     "method", METHOD;
+    "mod", MOD;
     "module", MODULE;
     "mutable", MUTABLE;
     "new", NEW;
@@ -140,7 +143,6 @@ let keyword_table : keywords =
 
     "lor", INFIXOP3("lor"); (* Should be INFIXOP2 *)
     "lxor", INFIXOP3("lxor"); (* Should be INFIXOP2 *)
-    "mod", INFIXOP3("mod");
     "land", INFIXOP3("land");
     "lsl", INFIXOP4("lsl");
     "lsr", INFIXOP4("lsr");
@@ -795,6 +797,8 @@ rule token state = parse
   | ['=' '<' '|' '&' '$' '>'] symbolchar * as op
             { return (keyword_or state op
                        (INFIXOP0 op)) }
+  | "@" { return AT }
+  | "@@" { return ATAT }
   | ['@' '^'] symbolchar * as op
             { return (INFIXOP1 op) }
   | ['+' '-'] symbolchar * as op

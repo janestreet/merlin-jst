@@ -48,6 +48,7 @@ type token =
   | NEW
   | MUTABLE
   | MODULE
+  | MOD
   | MINUSGREATER
   | MINUSDOT
   | MINUS
@@ -76,6 +77,8 @@ type token =
   | LBRACE
   | LAZY
   | LABEL of (string)
+  | KIND_OF
+  | KIND_ABBREV
   | INT of (string * char option)
   | INITIALIZER
   | INHERIT
@@ -138,6 +141,8 @@ type token =
   | BAR
   | BANG
   | BACKQUOTE
+  | ATAT
+  | AT
   | ASSERT
   | AS
   | ANDOP of (string)
@@ -238,6 +243,7 @@ module MenhirInterpreter : sig
     | T_NEW : unit terminal
     | T_MUTABLE : unit terminal
     | T_MODULE : unit terminal
+    | T_MOD : unit terminal
     | T_MINUSGREATER : unit terminal
     | T_MINUSDOT : unit terminal
     | T_MINUS : unit terminal
@@ -266,6 +272,8 @@ module MenhirInterpreter : sig
     | T_LBRACE : unit terminal
     | T_LAZY : unit terminal
     | T_LABEL : (string) terminal
+    | T_KIND_OF : unit terminal
+    | T_KIND_ABBREV : unit terminal
     | T_INT : (string * char option) terminal
     | T_INITIALIZER : unit terminal
     | T_INHERIT : unit terminal
@@ -328,6 +336,8 @@ module MenhirInterpreter : sig
     | T_BAR : unit terminal
     | T_BANG : unit terminal
     | T_BACKQUOTE : unit terminal
+    | T_ATAT : unit terminal
+    | T_AT : unit terminal
     | T_ASSERT : unit terminal
     | T_AS : unit terminal
     | T_ANDOP : (string) terminal
@@ -389,7 +399,7 @@ module MenhirInterpreter : sig
     | N_row_field : (Parsetree.row_field) nonterminal
     | N_reversed_separated_nontrivial_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_ : ((string option * Parsetree.core_type) list) nonterminal
-    | N_reversed_separated_nonempty_llist_STAR_atomic_type_gbl_ : (Parsetree.core_type list) nonterminal
+    | N_reversed_separated_nonempty_llist_STAR_atomic_type_with_modality_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
@@ -458,6 +468,7 @@ module MenhirInterpreter : sig
     | N_nonempty_list_raw_string_ : (string list) nonterminal
     | N_nonempty_list_newtype_ : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
     | N_nonempty_list_mode_legacy_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
+    | N_nonempty_list_mode_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
     | N_newtypes : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
     | N_newtype : (string Location.loc * Jane_asttypes.jkind_annotation option) nonterminal
@@ -482,7 +493,7 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_ext_longident_type_trailing_no_hash_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_type_trailing_hash_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
-    | N_mk_longident_mod_ext_longident___anonymous_46_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident___anonymous_47_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_LIDENT_ : (Longident.t) nonterminal
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
@@ -507,7 +518,7 @@ module MenhirInterpreter : sig
     | N_list_and_class_declaration_ : (Parsetree.class_expr Parsetree.class_infos list) nonterminal
     | N_letop_bindings : (Parsetree.pattern * Parsetree.expression * Parsetree.binding_op list) nonterminal
     | N_letop_binding_body : (Parsetree.pattern * Parsetree.expression) nonterminal
-    | N_let_pattern : (Parsetree.pattern) nonterminal
+    | N_let_pattern : (Parsetree.pattern * Jane_syntax.Mode_expr.t) nonterminal
     | N_let_bindings_no_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression *
@@ -520,12 +531,14 @@ module MenhirInterpreter : sig
     | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal
-    | N_label_let_pattern : (string * Parsetree.pattern) nonterminal
+    | N_label_let_pattern : (string * Parsetree.pattern * Jane_syntax.Mode_expr.t) nonterminal
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal
     | N_label_declaration_semi : (Parsetree.label_declaration) nonterminal
     | N_label_declaration : (Parsetree.label_declaration) nonterminal
+    | N_kind_abbreviation_decl : (string Location.loc * Jane_asttypes.jkind_annotation) nonterminal
     | N_jkind_constraint : (Jane_asttypes.jkind_annotation) nonterminal
     | N_jkind_annotation : (Jane_asttypes.jkind_annotation) nonterminal
+    | N_jkind : (Jane_asttypes.const_jkind) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
     | N_index_mod : (string) nonterminal
@@ -589,6 +602,8 @@ module MenhirInterpreter : sig
     | N_attr_payload : (Parsetree.payload) nonterminal
     | N_attr_id : (string Location.loc) nonterminal
     | N_atomic_type : (Parsetree.core_type) nonterminal
+    | N_atat_mode_expr : (Jane_syntax.Mode_expr.t) nonterminal
+    | N_at_mode_expr : (Jane_syntax.Mode_expr.t) nonterminal
     | N_any_longident : (Longident.t) nonterminal
     | N_and_let_binding : (Ast_helper.let_binding) nonterminal
     | N_alias_type : (Parsetree.core_type) nonterminal

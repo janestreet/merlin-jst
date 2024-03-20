@@ -261,6 +261,7 @@ let of_exp_extra (exp,_,_) = match exp with
     of_core_type ct ** option_fold of_core_type cto
   | Texp_poly cto ->
     option_fold of_core_type cto
+  | Texp_mode_coerce _
   | Texp_newtype' _
   | Texp_newtype _ ->
     id_fold
@@ -378,7 +379,7 @@ let of_expression_desc loc = function
     list_fold of_case cs
   | Texp_tuple (es,_) ->
     list_fold (fun (_lbl, e) -> of_expression e) es
-  | Texp_construct (_,_,es,_) | Texp_array (_,es,_) ->
+  | Texp_construct (_,_,es,_) | Texp_array (_,_,es,_) ->
     list_fold of_expression es
   | Texp_variant (_,Some (e,_))
   | Texp_assert (e, _) | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
@@ -402,7 +403,7 @@ let of_expression_desc loc = function
   | Texp_ifthenelse (e1,e2,Some e3)
   | Texp_for { for_from = e1; for_to = e2; for_body = e3; _ } ->
     of_expression e1 ** of_expression e2 ** of_expression e3
-  | Texp_list_comprehension cs | Texp_array_comprehension (_, cs) ->
+  | Texp_list_comprehension cs | Texp_array_comprehension (_, _, cs) ->
     of_comprehension cs
   | Texp_send (e,meth,_) ->
     of_expression e **

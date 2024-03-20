@@ -140,11 +140,10 @@ module Mode_expr : sig
   (** The mode expression containing a single mode constant. *)
   val singleton : Const.t -> t
 
-  (** The string used to mark extensions as containing mode expressions. *)
-  val extension_name : string
-
-  (** The string used to mark attributes as containing mode expressions. *)
-  val attribute_name : string
+  (** Merging two mode expressions. This will be hard to define as mode
+      expressions gets complex. Currently it's for merging legacy and new syntax
+      *)
+  val concat : t -> t -> t
 
   (** Extract the mode attribute (if any) from a list of attributes; also
       returns the rest of the attributes; Raises if multiple relevant attributes
@@ -165,17 +164,25 @@ module Mode_expr : sig
       attribute is found. *)
   val of_attrs : Parsetree.attributes -> t * Parsetree.attributes
 
-  (** Encodes a mode expression into a [payload]. If the expression is safe to
-      ignore (i.e. empty), returns [None]. *)
-  val payload_of : t -> Parsetree.payload option
-
-  (** Decode a mode expression from a [payload] whose location is [loc]. Raises
-      if the payload encodes an empty mode expression. *)
-  val of_payload : loc:Location.t -> Parsetree.payload -> t
-
   (** In some cases, a single mode expression appears twice in the parsetree;
       one of them needs to be made ghost to make our internal tools happy. *)
   val ghostify : t -> t
+end
+
+(** A subset of the mode-related syntax extensions that is embedded
+    using full-blown Jane Syntax. By "full-blown" Jane Syntax, we
+    mean the [Expression], [Pattern], (etc.) modules below that
+    attempt to create a variant of all possible Jane Street syntax
+    for the syntactic form.
+
+    We avoid full-blown Jane Syntax when it isn't very lightweight to fit the
+    new construct into the (somewhat opinionated) framework. Mode coercions are
+    lightweight to fit into full-blown Jane Syntax.
+*)
+module Modes : sig
+  type expression = Coerce of Mode_expr.t * Parsetree.expression
+
+  val expr_of : loc:Location.t -> expression -> Parsetree.expression
 end
 
 module N_ary_functions : sig
@@ -591,6 +598,7 @@ module Expression : sig
     | Jexp_layout of Layouts.expression
     | Jexp_n_ary_function of N_ary_functions.expression
     | Jexp_tuple of Labeled_tuples.expression
+    | Jexp_modes of Modes.expression
 
   include
     AST

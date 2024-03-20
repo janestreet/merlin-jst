@@ -43,7 +43,6 @@ type iterator = {
   constructor_declaration: iterator -> constructor_declaration -> unit;
   expr: iterator -> expression -> unit;
   expr_jane_syntax: iterator -> Jane_syntax.Expression.t -> unit;
-  expr_mode_syntax: iterator -> Jane_syntax.Mode_expr.t -> expression -> unit;
   extension: iterator -> extension -> unit;
   extension_constructor: iterator -> extension_constructor -> unit;
   include_declaration: iterator -> include_declaration -> unit;
@@ -467,6 +466,7 @@ module E = struct
   module L = Jane_syntax.Layouts
   module N_ary = Jane_syntax.N_ary_functions
   module LT = Jane_syntax.Labeled_tuples
+  module Modes = Jane_syntax.Modes
 
   let iter_iterator sub : C.iterator -> _ = function
     | Range { start; stop; direction = _ } ->
@@ -518,7 +518,8 @@ module E = struct
   let iter_function_constraint sub : N_ary.function_constraint -> _ =
     (* Enable warning 9 to ensure that the record pattern doesn't miss any
        field. *)
-    fun[@ocaml.warning "+9"] { mode_annotations = _; type_constraint } ->
+    fun[@ocaml.warning "+9"] { mode_annotations; type_constraint } ->
+      sub.modes sub mode_annotations;
       match type_constraint with
       | Pconstraint ty ->
           sub.typ sub ty
@@ -543,28 +544,22 @@ module E = struct
   let iter_labeled_tuple sub : LT.expression -> _ = function
     | el -> List.iter (iter_snd (sub.expr sub)) el
 
+  let iter_modes_exp sub : Modes.expression -> _ = function
+    | Coerce (modes, expr) ->
+        sub.modes sub modes;
+        sub.expr sub expr
+
   let iter_jst sub : Jane_syntax.Expression.t -> _ = function
     | Jexp_comprehension comp_exp -> iter_comp_exp sub comp_exp
     | Jexp_immutable_array iarr_exp -> iter_iarr_exp sub iarr_exp
     | Jexp_layout layout_exp -> iter_layout_exp sub layout_exp
     | Jexp_n_ary_function n_ary_exp -> iter_n_ary_function sub n_ary_exp
     | Jexp_tuple lt_exp -> iter_labeled_tuple sub lt_exp
-
-  let iter_mode sub modes expr =
-    sub.modes sub modes;
-    sub.expr sub expr
+    | Jexp_modes mode_exp -> iter_modes_exp sub mode_exp
 
   let iter sub
         ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as expr)=
     sub.location sub loc;
-    match desc with
-    | Pexp_apply
-        ({ pexp_desc = Pexp_extension(
-          {txt; _}, payload); pexp_loc },
-         [Nolabel, e]) when txt = Jane_syntax.Mode_expr.extension_name ->
-        let modes = Jane_syntax.Mode_expr.of_payload ~loc:pexp_loc payload in
-        sub.expr_mode_syntax sub modes e
-    | _ ->
     match Jane_syntax.Expression.of_ast expr with
     | Some (jexp, attrs) ->
         sub.attributes sub attrs;
@@ -820,6 +815,11 @@ let default_iterator =
     value_description =
       (fun this {pval_name; pval_type; pval_prim = _; pval_loc;
                  pval_attributes} ->
+        let modes, ptyp_attributes =
+          Jane_syntax.Mode_expr.maybe_of_attrs pval_type.ptyp_attributes
+        in
+        Option.iter (this.modes this) modes;
+        let pval_type = {pval_type with ptyp_attributes} in
         iter_loc this pval_name;
         this.typ this pval_type;
         this.location this pval_loc;
@@ -831,7 +831,6 @@ let default_iterator =
     pat_mode_syntax = P.iter_mode;
     expr = E.iter;
     expr_jane_syntax = E.iter_jst;
-    expr_mode_syntax = E.iter_mode;
     binding_op = E.iter_binding_op;
 
     module_declaration =
@@ -969,8 +968,13 @@ let default_iterator =
       this.location this a.attr_loc
     );
     attributes = (fun this l -> List.iter (this.attribute this) l);
-    (* [ast_iterator] should not know about the structure of mode expressions *)
-    modes = (fun _this _m -> ());
+    (* Location inside a mode expression needs to be traversed. *)
+    modes = (fun this m ->
+      let open Jane_syntax.Mode_expr in
+      let iter_const sub : Const.t -> _ =
+        fun m -> iter_loc sub (m : Const.t :> _ Location.loc)
+      in
+      iter_loc_txt this (fun sub -> List.iter (iter_const sub)) m);
     payload =
       (fun this -> function
          | PStr x -> this.structure this x

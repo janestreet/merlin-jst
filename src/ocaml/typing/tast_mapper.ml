@@ -373,6 +373,7 @@ let extra sub = function
   | Texp_newtype _ as d -> d
   | Texp_newtype' _ as d -> d
   | Texp_poly cto -> Texp_poly (Option.map (sub.typ sub) cto)
+  | Texp_mode_coerce modes -> Texp_mode_coerce modes
 
 let function_body sub body =
   match body with
@@ -493,12 +494,12 @@ let expr sub x =
           ld,
           sub.expr sub exp2
         )
-    | Texp_array (amut, list, alloc_mode) ->
-        Texp_array (amut, List.map (sub.expr sub) list, alloc_mode)
+    | Texp_array (amut, sort, list, alloc_mode) ->
+        Texp_array (amut, sort, List.map (sub.expr sub) list, alloc_mode)
     | Texp_list_comprehension comp ->
         Texp_list_comprehension (map_comprehension comp)
-    | Texp_array_comprehension (amut, comp) ->
-        Texp_array_comprehension (amut, map_comprehension comp)
+    | Texp_array_comprehension (amut, sort, comp) ->
+        Texp_array_comprehension (amut, sort, map_comprehension comp)
     | Texp_ifthenelse (exp1, exp2, expo) ->
         Texp_ifthenelse (
           sub.expr sub exp1,

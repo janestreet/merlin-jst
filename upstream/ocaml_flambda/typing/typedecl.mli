@@ -46,6 +46,9 @@ val transl_with_constraint:
     outer_env:Env.t -> Parsetree.type_declaration ->
     Typedtree.type_declaration
 
+val transl_package_constraint:
+  loc:Location.t -> type_expr -> Types.type_declaration
+
 val abstract_type_decl:
   injective:bool ->
   jkind:Jkind.t ->
@@ -142,6 +145,9 @@ type error =
   | Local_not_enabled
   | Unexpected_jkind_any_in_primitive of string
   | Useless_layout_poly
+  | Modalities_on_value_description
+  | Missing_unboxed_attribute_on_non_value_sort of Jkind.Sort.const
+  | Non_value_sort_not_upstream_compatible of Jkind.Sort.const
 
 exception Error of Location.t * error
 

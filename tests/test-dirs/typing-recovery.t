@@ -94,7 +94,7 @@
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
             Tpat_var \"f/277\"
-            value_mode Global,Many,id(1[Shared,Unique])
+            value_mode Global,Many,join_Shared(1[Shared,Unique])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
             region true
@@ -255,7 +255,7 @@
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
             Tpat_var \"f/277\"
-            value_mode Global,Many,id(1[Shared,Unique])
+            value_mode Global,Many,join_Shared(1[Shared,Unique])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
             region true
@@ -592,7 +592,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/275\"
-            value_mode Global,Many,id(3[Shared,Unique])
+            value_mode Global,Many,join_Shared(3[Shared,Unique])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -609,7 +609,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Texp_tuple
-            alloc_mode Global,Many,id(3[Shared,Unique])
+            alloc_mode Global,Many,subtract_Shared(3[Shared,Unique])
             [
               <tuple component>
               Label: None
@@ -641,7 +641,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/276\"
-            value_mode Global,Many,id(5[Shared,Unique])
+            value_mode Global,Many,join_Shared(5[Shared,Unique])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
@@ -658,7 +658,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Texp_tuple
-            alloc_mode Global,Many,id(5[Shared,Unique])
+            alloc_mode Global,Many,subtract_Shared(5[Shared,Unique])
             [
               <tuple component>
               Label: None

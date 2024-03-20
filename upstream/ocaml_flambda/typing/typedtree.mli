@@ -209,6 +209,12 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of string * Jkind.annotation option
         (** fun (type t : immediate) ->  *)
+  | Texp_mode_coerce of Jane_syntax.Mode_expr.t
+        (** local_ E *)
+
+(* CR modes: Consider fusing [Texp_mode_coerce] and [Texp_constraint] when
+   the syntax changes.
+*)
 
 (** Jkinds in the typed tree: Compilation of the typed tree to lambda
     sometimes requires jkind information.  Our approach is to
@@ -335,9 +341,9 @@ and expression_desc =
       expression * Mode.Locality.l * Longident.t loc *
       Types.label_description * expression
     (** [alloc_mode] translates to the [modify_mode] of the record *)
-  | Texp_array of mutable_flag * expression list * Mode.Alloc.r
+  | Texp_array of mutable_flag * Jkind.Sort.t * expression list * Mode.Alloc.r
   | Texp_list_comprehension of comprehension
-  | Texp_array_comprehension of mutable_flag * comprehension
+  | Texp_array_comprehension of mutable_flag * Jkind.sort * comprehension
   | Texp_ifthenelse of expression * expression * expression option
   | Texp_sequence of expression * Jkind.sort * expression
   | Texp_while of {

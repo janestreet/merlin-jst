@@ -423,9 +423,6 @@ module Mode_expr = struct
 
       let to_string s = s
 
-      (* Ideally, we should check that [s] consists of only alphabet and numbers.
-         However, this func *)
-
       let of_string' s = s
 
       let of_string s = Some (of_string' s)
@@ -452,19 +449,16 @@ module Mode_expr = struct
     let const' = (const : Const.t :> _ Location.loc) in
     Location.mkloc [const] const'.loc
 
+  let concat mode0 mode1 =
+    let txt = mode0.txt @ mode1.txt in
+    Location.mknoloc txt
+
   let feature : Feature.t = Language_extension Mode
 
-  let attribute_components = []
+  let attribute_or_extension_name =
+    Embedded_name.of_feature feature [] |> Embedded_name.to_string
 
-  let extension_components = []
-
-  let attribute_name =
-    Embedded_name.of_feature feature attribute_components
-    |> Embedded_name.to_string
-
-  let extension_name =
-    Embedded_name.of_feature feature extension_components
-    |> Embedded_name.to_string
+  let attribute_name = attribute_or_extension_name
 
   let payload_of { txt; _ } =
     match txt with
@@ -513,6 +507,38 @@ module Mode_expr = struct
     let loc = { loc with loc_ghost = true } in
     let txt = List.map Const.ghostify txt in
     { loc; txt }
+end
+
+(** Some mode-related constructs *)
+module Modes = struct
+  let feature : Feature.t = Language_extension Mode
+
+  type nonrec expression = Coerce of Mode_expr.t * expression
+
+  let extension_name = Mode_expr.attribute_or_extension_name
+
+  let of_expr ({ pexp_desc; pexp_attributes; _ } as expr) =
+    match pexp_desc with
+    | Pexp_apply
+        ( { pexp_desc = Pexp_extension ({ txt; _ }, payload); pexp_loc; _ },
+          [(Nolabel, body)] )
+      when txt = extension_name ->
+      let modes = Mode_expr.of_payload ~loc:pexp_loc payload in
+      Coerce (modes, body), pexp_attributes
+    | _ ->
+      Misc.fatal_errorf "Improperly encoded modes expression: %a"
+        (Printast.expression 0) expr
+
+  let expr_of ~loc (Coerce (modes, body)) =
+    match Mode_expr.payload_of modes with
+    | None -> body
+    | Some payload ->
+      let ext =
+        Ast_helper.Exp.extension ~loc:modes.loc
+          (Location.mknoloc extension_name, payload)
+      in
+      Expression.make_entire_jane_syntax ~loc feature (fun () ->
+          Ast_helper.Exp.apply ~loc ext [Nolabel, body])
 end
 
 (** List and array comprehensions *)
@@ -1900,6 +1926,7 @@ module Expression = struct
     | Jexp_layout of Layouts.expression
     | Jexp_n_ary_function of N_ary_functions.expression
     | Jexp_tuple of Labeled_tuples.expression
+    | Jexp_modes of Modes.expression
 
   let of_ast_internal (feat : Feature.t) expr =
     match feat with
@@ -1919,6 +1946,9 @@ module Expression = struct
     | Language_extension Labeled_tuples ->
       let expr, attrs = Labeled_tuples.of_expr expr in
       Some (Jexp_tuple expr, attrs)
+    | Language_extension Mode ->
+      let expr, attrs = Modes.of_expr expr in
+      Some (Jexp_modes expr, attrs)
     | _ -> None
 
   let of_ast = Expression.make_of_ast ~of_ast_internal
@@ -1931,6 +1961,7 @@ module Expression = struct
       | Jexp_layout x -> Layouts.expr_of ~loc x
       | Jexp_n_ary_function x -> N_ary_functions.expr_of ~loc x
       | Jexp_tuple x -> Labeled_tuples.expr_of ~loc x
+      | Jexp_modes x -> Modes.expr_of ~loc x
     in
     (* Performance hack: save an allocation if [attrs] is empty. *)
     match attrs with
