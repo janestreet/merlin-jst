@@ -7896,8 +7896,22 @@ and type_application env app_loc expected_mode position_and_mode
       let mode_ret =
         mode_cross_left env ty_ret (alloc_as_value mode_ret)
       in
-      submode ~loc:app_loc ~env ~reason:(Application ty_ret)
-        mode_ret expected_mode;
+      let () =
+        try submode ~loc:app_loc ~env ~reason:(Application ty_ret)
+                            mode_ret expected_mode
+        with exn ->
+          (* CR lstevenson for reisenberg: I'm not sure these values are all the correct
+             ones to fill in *)
+          record_exp_and_reraise ~exn
+            { exp_desc =
+                Texp_apply (funct, args, position_and_mode.apply_position, ap_mode);
+              exp_loc = app_loc;
+              exp_extra = [];
+              exp_type = ty_ret;
+              exp_attributes = [];
+              exp_env = env;
+            }
+      in
 
       check_tail_call_local_returning app_loc env ap_mode position_and_mode;
       args, ty_ret, ap_mode, position_and_mode
