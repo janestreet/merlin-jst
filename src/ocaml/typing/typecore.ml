@@ -7900,8 +7900,6 @@ and type_application env app_loc expected_mode position_and_mode
         try submode ~loc:app_loc ~env ~reason:(Application ty_ret)
                             mode_ret expected_mode
         with exn ->
-          (* CR lstevenson for reisenberg: I'm not sure these values are all the correct
-             ones to fill in *)
           record_exp_and_reraise ~exn
             { exp_desc =
                 Texp_apply (funct, args, position_and_mode.apply_position, ap_mode);
