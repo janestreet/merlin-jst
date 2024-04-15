@@ -271,28 +271,10 @@ end
    (2) Every member of [!extensions] satisfies [Universe.is_allowed]. (For
    instance, [!universe = No_extensions] implies [!extensions = []]). *)
 
-<<<<<<< janestreet/merlin-jst:temp
 (* merlin-jst: ignored - see the end of this file. *)
-let default_extensions : extn_pair list =
-  [ Pair (Mode, ());
-    Pair (Include_functor, ());
-    Pair (Polymorphic_parameters, ());
-    Pair (Immutable_arrays, ());
-    Pair (Labeled_tuples, ());
-    Pair (Layouts, Stable) ]
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-let default_extensions : extn_pair list =
-  [ Pair (Mode, ());
-    Pair (Include_functor, ());
-    Pair (Polymorphic_parameters, ());
-    Pair (Immutable_arrays, ());
-    Pair (Labeled_tuples, ());
-    Pair (Layouts, Stable) ]
-=======
 (* After the migration to extension universes, this will be an empty list. *)
 let legacy_default_extensions : extn_pair list =
   Universe.allowed_extensions_in Stable
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
 
 let extensions : extn_pair list ref = ref legacy_default_extensions
 
@@ -449,4 +431,8 @@ end
 
 (* merlin-jst: Enable all the ocaml-jst language extensions.  We do it this way
    rather than updating [default_extensions] to avoid merge conflicts. *)
-let _ = enable_maximal ()
+let _ =
+  assert Universe.(is maximal);
+  (* It's safe to call this here because we've confirmed that we can. *)
+  unconditionally_enable_maximal_without_checks ()
+;;

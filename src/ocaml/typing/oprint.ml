@@ -363,19 +363,9 @@ let string_of_gbl_space = function
 let rec print_out_type_0 ppf =
   function
   | Otyp_alias {non_gen; aliased; alias } ->
-<<<<<<< janestreet/merlin-jst:temp
-      fprintf ppf "@[%a@ as %a@]"
-        (print_out_type_0 mode) aliased
-        (ty_var ~non_gen) alias
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-    fprintf ppf "@[%a@ as %a@]"
-      (print_out_type_0 mode) aliased
-      (ty_var ~non_gen) alias
-=======
     fprintf ppf "@[%a@ as %a@]"
       print_out_type_0 aliased
       (ty_var ~non_gen) alias
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
   | Otyp_poly ([], ty) ->
       print_out_type_0 ppf ty  (* no "." if there are no vars *)
   | Otyp_poly (sl, ty) ->

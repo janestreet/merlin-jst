@@ -403,12 +403,8 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_probe {handler;_} -> sub.expr sub handler
   | Texp_probe_is_enabled _ -> ()
   | Texp_exclave exp -> sub.expr sub exp
-<<<<<<< janestreet/merlin-jst:temp
-  | Texp_hole -> ()
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-=======
   | Texp_src_pos -> ()
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
+  | Texp_hole -> ()
 
 
 let package_type sub {pack_fields; pack_txt; _} =

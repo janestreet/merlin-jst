@@ -1373,12 +1373,8 @@ let rec check_uniqueness_exp (ienv : Ienv.t) exp : UF.t =
   | Texp_probe { handler } -> check_uniqueness_exp ienv handler
   | Texp_probe_is_enabled _ -> UF.unused
   | Texp_exclave e -> check_uniqueness_exp ienv e
-<<<<<<< janestreet/merlin-jst:temp
-  | Texp_hole -> UF.unused
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-=======
   | Texp_src_pos -> UF.unused
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
+  | Texp_hole -> UF.unused
 
 (**
 Corresponds to the first mode.

@@ -324,9 +324,8 @@ module Gen = struct
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
       fun env label ty ->
-        let open Asttypes in
         match label with
-        | Labelled s | Optional s ->
+        | Labelled s | Optional s | Position s ->
             (* Pun for labelled arguments *)
             Ast_helper.Pat.var ( Location.mknoloc s), s
         | Nolabel -> begin match get_desc ty with

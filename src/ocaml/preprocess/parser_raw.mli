@@ -410,7 +410,7 @@ module MenhirInterpreter : sig
     | N_reversed_preceded_or_separated_nonempty_llist_BAR_match_case_ : (Parsetree.case list) nonterminal
     | N_reversed_nonempty_llist_typevar_ : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
     | N_reversed_nonempty_llist_name_tag_ : (string list) nonterminal
-    | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Asttypes.arg_label * Parsetree.expression) list) nonterminal
+    | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Parsetree.arg_label * Parsetree.expression) list) nonterminal
     | N_reversed_nonempty_llist_functor_arg_ : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_reversed_nonempty_llist_comprehension_clause_ : (Jane_syntax.Comprehensions.clause list) nonterminal
     | N_reversed_nonempty_concat_fun_param_as_list_ : (Jane_syntax.N_ary_functions.function_param list) nonterminal
@@ -528,8 +528,8 @@ module MenhirInterpreter : sig
   Parsetree.attribute list) nonterminal
     | N_labeled_tuple_pat_element_list_pattern_no_exn_ : ((string option * Parsetree.pattern) list) nonterminal
     | N_labeled_tuple_pat_element_list_pattern_ : ((string option * Parsetree.pattern) list) nonterminal
-    | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
-    | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
+    | N_labeled_simple_pattern : (Parsetree.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
+    | N_labeled_simple_expr : (Parsetree.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal
     | N_label_let_pattern : (string * Parsetree.pattern * Jane_syntax.Mode_expr.t) nonterminal
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal

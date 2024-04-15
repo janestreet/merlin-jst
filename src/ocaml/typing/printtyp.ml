@@ -1240,54 +1240,22 @@ let rec tree_of_typexp mode alloc_mode ty =
           else
             tree_of_typexp mode arg_mode ty1
         in
-<<<<<<< janestreet/merlin-jst:temp
-        let am = tree_of_mode marg in
-        let t2 = tree_of_typexp mode ty2 in
-        let rm = tree_of_mode mret in
-        Otyp_arrow (lab, am, t1, rm, t2)
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-        let am = tree_of_mode marg in
-        let t2 = tree_of_typexp mode ty2 in
-        let rm = tree_of_mode mret in
-        Otyp_arrow (lab, am, t1, rm, t2)
-    | Ttuple labeled_tyl ->
-        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
-    | Tconstr(p, tyl, _abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
-        if is_nth s && not (tyl'=[])
-        then tree_of_typexp mode (List.hd tyl')
-        else Otyp_constr (tree_of_path (Some Type) p', tree_of_typlist mode tyl')
-    | Tvariant row ->
-        let Row {fields; name; closed; _} = row_repr row in
-=======
         let acc_mode = curry_mode alloc_mode arg_mode in
         let (rm, t2) = tree_of_ret_typ_mutating mode acc_mode (mret, ty2) in
         Btype.backtrack snap;
         Otyp_arrow (lab, tree_of_modes arg_mode, t1, rm, t2)
     | Ttuple labeled_tyl ->
-        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
-    | Tconstr(p, tyl, _abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
-        if is_nth s && not (tyl'=[])
-        then tree_of_typexp mode Alloc.Const.legacy (List.hd tyl')
-        else Otyp_constr (tree_of_path (Some Type) p', tree_of_typlist mode tyl')
-    | Tvariant row ->
-        let Row {fields; name; closed; _} = row_repr row in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
-    | Ttuple tyl ->
-        Otyp_tuple (tree_of_labeled_typlist mode tyl)
+      Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
     | Tconstr(p, tyl, _abbrev) -> begin
-        match best_type_path p with
-        | Nth n -> tree_of_typexp mode (apply_nth n tyl)
-        | Path(nso, p) ->
-            let tyl' = apply_subst_opt nso tyl in
-            Otyp_constr (tree_of_path (Some Type) p, tree_of_typlist mode tyl')
-      end
+      match best_type_path p with
+      | Nth n -> tree_of_typexp mode Alloc.Const.legacy (apply_nth n tyl)
+      | Path(nso, p) ->
+          let tyl' = apply_subst_opt nso tyl in
+          Otyp_constr (tree_of_path (Some Type) p, tree_of_typlist mode tyl')
+    end
     | Tvariant row ->
       let Row {fields; name; closed; _} = row_repr row in
-        let fields =
+      let fields =
           if closed then
             List.filter (fun (_, f) -> row_field_repr f <> Rabsent)
               fields
@@ -1304,7 +1272,7 @@ let rec tree_of_typexp mode alloc_mode ty =
         | Some(p, tyl) when nameable_row row ->
             let out_variant =
               match best_type_path p with
-              | Nth n -> tree_of_typexp mode (apply_nth n tyl)
+              | Nth n -> tree_of_typexp mode Alloc.Const.legacy (apply_nth n tyl)
               | Path(s, p) ->
                 let id = tree_of_path (Some Type) p in
                 let args = tree_of_typlist mode (apply_subst_opt s tyl) in

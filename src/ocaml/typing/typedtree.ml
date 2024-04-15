@@ -214,12 +214,8 @@ and expression_desc =
   | Texp_probe of { name:string; handler:expression; enabled_at_init:bool; }
   | Texp_probe_is_enabled of { name:string }
   | Texp_exclave of expression
-<<<<<<< janestreet/merlin-jst:temp
-  | Texp_hole
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-=======
   | Texp_src_pos
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
+  | Texp_hole
 
 and function_curry =
   | More_args of { partial_mode : Mode.Alloc.l }
@@ -1111,7 +1107,7 @@ let rec exp_is_nominal exp =
   | Texp_variant (_, None)
   | Texp_construct (_, _, [], _) ->
       true
-  | Texp_field (parent, _, _, _, _) | Texp_send (parent, _, _) ->
+  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
       exp_is_nominal parent
   | _ -> false
 
@@ -1122,23 +1118,7 @@ let unpack_functor_me me =
   | Tmod_functor (fp, mty) -> fp, mty
   | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
 
-<<<<<<< janestreet/merlin-jst:temp
 let unpack_functor_mty mty =
   match mty.mty_desc with
   | Tmty_functor (fp, mty) -> fp, mty
   | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-  | Texp_variant (_, None)
-  | Texp_construct (_, _, [], _) ->
-      true
-  | Texp_field (parent, _, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
-=======
-  | Texp_variant (_, None)
-  | Texp_construct (_, _, [], _) ->
-      true
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13

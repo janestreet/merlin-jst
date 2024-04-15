@@ -595,13 +595,9 @@ let expr sub x =
     | Texp_probe_is_enabled _ as e -> e
     | Texp_exclave exp ->
         Texp_exclave (sub.expr sub exp)
-<<<<<<< janestreet/merlin-jst:temp
+    | Texp_src_pos -> Texp_src_pos
     | Texp_hole ->
         Texp_hole
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-=======
-    | Texp_src_pos -> Texp_src_pos
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
   in
   let exp_attributes = sub.attributes sub x.exp_attributes in
   {x with exp_loc; exp_extra; exp_desc; exp_env; exp_attributes}

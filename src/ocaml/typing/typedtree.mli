@@ -409,15 +409,11 @@ and expression_desc =
   | Texp_probe of { name:string; handler:expression; enabled_at_init:bool }
   | Texp_probe_is_enabled of { name:string }
   | Texp_exclave of expression
-<<<<<<< janestreet/merlin-jst:temp
-  | Texp_hole
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-=======
   | Texp_src_pos
     (* A source position value which has been automatically inferred, either
        as a result of [%call_pos] occuring in an expression, or omission of a
        Position argument in function application *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
+  | Texp_hole
 
 and function_curry =
   | More_args of { partial_mode : Mode.Alloc.l }

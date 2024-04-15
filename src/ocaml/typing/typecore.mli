@@ -331,23 +331,13 @@ val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
 val check_recursive_class_bindings :
   Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
 
+val src_pos : Location.t -> Typedtree.attributes -> Env.t -> Typedtree.expression 
+
 (* Merlin specific *)
 val partial_pred :
   lev:int ->
   ?explode:int ->
   Env.t ->
-<<<<<<< janestreet/merlin-jst:temp
   type_expr ->
   Typedtree.pattern ->
   Typedtree.pattern option
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
-val check_recursive_class_bindings :
-  Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
-=======
-val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
-val check_recursive_class_bindings :
-  Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
-
-val src_pos : Location.t -> Typedtree.attributes -> Env.t -> Typedtree.expression 
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13

@@ -559,7 +559,7 @@ module Conv = struct
       | Tpat_array (mut, _, lst) ->
           let lst = List.map ~f:loop lst in
           begin match mut with
-          | Mutable -> mkpat (Ppat_array lst)
+          | Mutable _ -> mkpat (Ppat_array lst)
           | Immutable ->
               Jane_syntax.Immutable_arrays.pat_of ~loc:pat.pat_loc
                 (Iapat_immutable_array lst)

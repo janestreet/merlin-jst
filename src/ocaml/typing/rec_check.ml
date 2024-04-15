@@ -195,15 +195,9 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_unreachable
     | Texp_extension_constructor _
     | Texp_probe _
-<<<<<<< janestreet/merlin-jst:temp
     | Texp_probe_is_enabled _
+    | Texp_src_pos
     | Texp_hole ->
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-    | Texp_probe_is_enabled _ ->
-=======
-    | Texp_probe_is_enabled _
-    | Texp_src_pos ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
         Static
 
     | Texp_match _
@@ -541,14 +535,8 @@ let array_mode exp elt_sort = match Typeopt.array_kind exp elt_sort with
     (* non-generic, non-float arrays act as constructors *)
     Guard
   | Lambda.Punboxedfloatarray _ | Lambda.Punboxedintarray _ ->
-<<<<<<< janestreet/merlin-jst:temp
-    Guard
-*)
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-    Guard
-=======
     Dereference
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
+*)
 
 (* Expression judgment:
      G |- e : m

@@ -756,14 +756,10 @@ let expression sub exp =
         pexp_loc_stack = [];
         pexp_attributes = [];
       }, [Nolabel, sub.expr sub exp])
-<<<<<<< janestreet/merlin-jst:temp
+    | Texp_src_pos -> Pexp_extension ({ txt = "src_pos"; loc }, PStr [])
     | Texp_hole ->
         let id = Location.mkloc hole_txt loc in
         Pexp_extension (id, PStr [])
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-=======
-    | Texp_src_pos -> Pexp_extension ({ txt = "src_pos"; loc }, PStr [])
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
   in
   List.fold_right (exp_extra sub) exp.exp_extra
     (Exp.mk ~loc ~attrs:!attrs desc)

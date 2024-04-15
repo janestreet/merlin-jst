@@ -592,17 +592,11 @@ and expression i ppf x =
       line i ppf "Texp_probe_is_enabled \"%s\"\n" name;
   | Texp_exclave (e) ->
       line i ppf "Texp_exclave";
-<<<<<<< janestreet/merlin-jst:temp
       expression i ppf e
-  | Texp_hole ->
-      line i ppf "Texp_hole"
-||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
-      expression i ppf e;
-=======
-      expression i ppf e;
   | Texp_src_pos ->
     line i ppf "Texp_src_pos"
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
+  | Texp_hole ->
+      line i ppf "Texp_hole"
 
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_ident x.val_id fmt_location
