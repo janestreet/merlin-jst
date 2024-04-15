@@ -84,6 +84,12 @@ let fmt_mutable_flag f x =
   | Immutable -> fprintf f "Immutable"
   | Mutable -> fprintf f "Mutable"
 
+let fmt_mutable_mode_flag f (x : Types.mutability) =
+  match x with
+  | Immutable -> fprintf f "Immutable"
+  | Mutable m ->
+    fprintf f "Mutable(%a)" Mode.Alloc.Comonadic.Const.print m
+
 let fmt_virtual_flag f x =
   match x with
   | Virtual -> fprintf f "Virtual"
@@ -148,6 +154,7 @@ let arg_label i ppf = function
   | Nolabel -> line i ppf "Nolabel\n"
   | Optional s -> line i ppf "Optional \"%s\"\n" s
   | Labelled s -> line i ppf "Labelled \"%s\"\n" s
+  | Position s -> line i ppf "Position \"%s\"\n" s
 
 
 let typevar_jkind ~print_quote ppf (v, l) =
@@ -273,6 +280,7 @@ let rec core_type i ppf x =
   | Ttyp_package { pack_path = s; pack_fields = l } ->
       line i ppf "Ttyp_package %a\n" fmt_path s;
       list i package_with ppf l;
+  | Ttyp_call_pos -> line i ppf "Ttyp_call_pos\n";
 
 and labeled_core_type i ppf (l, t) =
   tuple_component_label i ppf l;
@@ -321,7 +329,7 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
       line i ppf "Tpat_record\n";
       list i longident_x_pattern ppf l;
   | Tpat_array (am, arg_sort, l) ->
-      line i ppf "Tpat_array %a\n" fmt_mutable_flag am;
+      line i ppf "Tpat_array %a\n" fmt_mutable_mode_flag am;
       line i ppf "%a\n" Jkind.Sort.format arg_sort;
       list i pattern ppf l;
   | Tpat_lazy p ->
@@ -405,16 +413,16 @@ and expression_extra i ppf x attrs =
       attributes i ppf attrs;
 
 and alloc_mode: type l r. _ -> _ -> (l * r) Mode.Alloc.t -> _
-  = fun i ppf m -> line i ppf "alloc_mode %a\n" (Mode.Alloc.print ()) m
+  = fun i ppf m -> line i ppf "alloc_mode %a\n" (Mode.Alloc.print_raw ()) m
 
 and alloc_mode_option i ppf m = Option.iter (alloc_mode i ppf) m
 
 and locality_mode i ppf m =
   line i ppf "locality_mode %a\n"
-    (Mode.Locality.print ()) m
+    (Mode.Locality.print_raw ()) m
 
 and value_mode i ppf m =
-  line i ppf "value_mode %a\n" (Mode.Value.print ()) m
+  line i ppf "value_mode %a\n" (Mode.Value.print_raw ()) m
 
 and expression_alloc_mode i ppf (expr, am) =
   alloc_mode i ppf am;
@@ -484,9 +492,8 @@ and expression i ppf x =
       record_representation (i+1) ppf representation;
       line i ppf "extended_expression =\n";
       option (i+1) expression ppf extended_expression;
-  | Texp_field (e, li, _, _, am) ->
+  | Texp_field (e, li, _, _) ->
       line i ppf "Texp_field\n";
-      alloc_mode_option i ppf am;
       expression i ppf e;
       longident i ppf li;
   | Texp_setfield (e1, am, li, _, e2) ->
@@ -496,7 +503,7 @@ and expression i ppf x =
       longident i ppf li;
       expression i ppf e2;
   | Texp_array (amut, sort, l, amode) ->
-      line i ppf "Texp_array %a\n" fmt_mutable_flag amut;
+      line i ppf "Texp_array %a\n" fmt_mutable_mode_flag amut;
       line i ppf "%a\n" Jkind.Sort.format sort;
       alloc_mode i ppf amode;
       list i expression ppf l;
@@ -504,7 +511,7 @@ and expression i ppf x =
       line i ppf "Texp_list_comprehension\n";
       comprehension i ppf comp
   | Texp_array_comprehension (amut, sort, comp) ->
-      line i ppf "Texp_array_comprehension %a\n" fmt_mutable_flag amut;
+      line i ppf "Texp_array_comprehension %a\n" fmt_mutable_mode_flag amut;
       line i ppf "%a\n" Jkind.Sort.format sort;
       comprehension i ppf comp
   | Texp_ifthenelse (e1, e2, eo) ->
@@ -585,9 +592,17 @@ and expression i ppf x =
       line i ppf "Texp_probe_is_enabled \"%s\"\n" name;
   | Texp_exclave (e) ->
       line i ppf "Texp_exclave";
+<<<<<<< janestreet/merlin-jst:temp
       expression i ppf e
   | Texp_hole ->
       line i ppf "Texp_hole"
+||||||| ocaml-flambda/flambda-backend:756b22dc416d43ac92b6341b9678ca0ed9f3b07f
+      expression i ppf e;
+=======
+      expression i ppf e;
+  | Texp_src_pos ->
+    line i ppf "Texp_src_pos"
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-13
 
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_ident x.val_id fmt_location
@@ -1068,7 +1083,7 @@ and label_decl i ppf {ld_id; ld_name = _; ld_mutable; ld_type; ld_loc;
                       ld_attributes} =
   line i ppf "%a\n" fmt_location ld_loc;
   attributes i ppf ld_attributes;
-  line (i+1) ppf "%a\n" fmt_mutable_flag ld_mutable;
+  line (i+1) ppf "%a\n" fmt_mutable_mode_flag ld_mutable;
   line (i+1) ppf "%a" fmt_ident ld_id;
   core_type (i+1) ppf ld_type
 
