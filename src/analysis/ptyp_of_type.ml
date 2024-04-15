@@ -141,7 +141,9 @@ and constructor_argument (type_expr, (_ : Mode.Global_flag.t)) =
 and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
   Ast_helper.Type.field
     ~attrs:ld_attributes
-    ~mut:ld_mutable
+    ~mut:(match ld_mutable with
+         | Mutable _ -> Mutable
+         | Immutable -> Immutable)
     (var_of_id ld_id)
     (core_type ld_type)
 and constructor_arguments = function

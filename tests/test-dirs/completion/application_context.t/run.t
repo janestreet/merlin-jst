@@ -4,11 +4,19 @@
   [
     "application",
     {
-      "argument_type": "'_weak1",
+      "argument_type": "'_weak2",
       "labels": [
         {
           "name": "~j",
           "type": "int"
+        },
+        {
+          "name": "?k",
+          "type": "'_weak1 option"
+        },
+        {
+          "name": "~l",
+          "type": "[%call_pos]"
         }
       ]
     }
