@@ -251,8 +251,8 @@ how to produce valid json.
   
   let poly4 (type (a : immediate) (b : value)) (f : a -> b -> _) = f
       ^
-  With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c) (* 'a : immediate, 'c : any *)"
+  With verbosity 0: "('a -> 'b -> 'c) -> 'a -> 'b -> 'c"
+  With verbosity 1: "('a -> 'b -> 'c) -> 'a -> 'b -> 'c (* 'a : immediate, 'c : any *)"
   
 
 -parameter
@@ -323,8 +323,8 @@ how to produce valid json.
   
   let poly_client4 x = poly4 x
       ^
-  With verbosity 0: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c)"
-  With verbosity 1: "('a -> ('b -> 'c)) -> 'a -> ('b -> 'c) (* 'a : immediate, 'c : any *)"
+  With verbosity 0: "('a -> 'b -> 'c) -> 'a -> 'b -> 'c"
+  With verbosity 1: "('a -> 'b -> 'c) -> 'a -> 'b -> 'c (* 'a : immediate, 'c : any *)"
   
 
 -parameter
@@ -349,8 +349,8 @@ how to produce valid json.
   
   let poly_client4 x = poly4 x
                    ^
-  With verbosity 0: "'a -> ('b -> 'c)"
-  With verbosity 1: "'a -> ('b -> 'c) (* 'a : immediate, 'c : any *)"
+  With verbosity 0: "'a -> 'b -> 'c"
+  With verbosity 1: "'a -> 'b -> 'c (* 'a : immediate, 'c : any *)"
   
 (V) Parameterized type
 - definition
