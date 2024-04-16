@@ -16,7 +16,7 @@
         },
         {
           "name": "~l",
-          "type": "[%call_pos]"
+          "type": "lexing_position"
         }
       ]
     }
