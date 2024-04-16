@@ -1,16 +1,16 @@
 Simple module construction
-  $ $MERLIN single construct -position 40:16 \
+  $ $MERLIN single construct -position 41:16 \
   > -filename module.ml <module.ml
   {
     "class": "return",
     "value": [
       {
         "start": {
-          "line": 40,
+          "line": 41,
           "col": 15
         },
         "end": {
-          "line": 40,
+          "line": 41,
           "col": 16
         }
       },
@@ -37,6 +37,8 @@ Simple module construction
     type t_ext +=  
       | A 
     type v = [ `A of t_ext ]
+    type t_function =
+      (int) -> foo:(string) -> ?bar:(bool option) -> here:[%call_pos ] -> char
     let i = _
     let f = _
     module Sub = struct let y = _ end
@@ -70,18 +72,18 @@ Simple module construction
 
 First class modules
 
-  $ $MERLIN single construct -position 42:26 \
+  $ $MERLIN single construct -position 43:26 \
   > -filename module.ml <module.ml
   {
     "class": "return",
     "value": [
       {
         "start": {
-          "line": 42,
+          "line": 43,
           "col": 25
         },
         "end": {
-          "line": 42,
+          "line": 43,
           "col": 26
         }
       },
@@ -92,18 +94,18 @@ First class modules
     "notifications": []
   }
 
-  $ $MERLIN single construct -position 44:17 \
+  $ $MERLIN single construct -position 45:17 \
   > -filename module.ml <module.ml
   {
     "class": "return",
     "value": [
       {
         "start": {
-          "line": 44,
+          "line": 45,
           "col": 16
         },
         "end": {
-          "line": 44,
+          "line": 45,
           "col": 17
         }
       },
