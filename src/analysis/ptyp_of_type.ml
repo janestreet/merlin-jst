@@ -40,8 +40,14 @@ and core_type type_expr =
   | Tvar { name = None; _ } | Tunivar { name = None; _ } -> Typ.any ()
   | Tvar { name = Some s; _ } | Tunivar { name = Some s; _ } -> Typ.var s
   | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
+     let (label : Asttypes.arg_label), type_expr = match label with
+       | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
+       | Nolabel -> Nolabel, core_type type_expr
+       | Labelled l -> Labelled l, core_type type_expr
+       | Optional l -> Optional l, core_type type_expr
+     in
     Typ.arrow label
-      (core_type type_expr)
+      type_expr
       (core_type type_expr_out)
   | Ttuple type_exprs ->
       let labeled_type_exprs =
@@ -141,7 +147,9 @@ and constructor_argument (type_expr, (_ : Mode.Global_flag.t)) =
 and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
   Ast_helper.Type.field
     ~attrs:ld_attributes
-    ~mut:ld_mutable
+    ~mut:(match ld_mutable with
+         | Mutable _ -> Mutable
+         | Immutable -> Immutable)
     (var_of_id ld_id)
     (core_type ld_type)
 and constructor_arguments = function

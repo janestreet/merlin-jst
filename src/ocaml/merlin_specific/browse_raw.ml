@@ -355,7 +355,7 @@ let of_function_param (param : Typedtree.function_param) =
 
 let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
-  | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
+  | Texp_variant (_,None) | Texp_new _ | Texp_src_pos | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { params; body; _ } ->
@@ -392,7 +392,7 @@ let of_expression_desc loc = function
         of_exp_record_field e lid_loc desc ** of_expression e
     in
     array_fold fold_field fields
-  | Texp_field (e,lid_loc,lbl,_,_) ->
+  | Texp_field (e,lid_loc,lbl,_) ->
     of_expression e ** of_exp_record_field e lid_loc lbl
   | Texp_setfield (e1,_,lid_loc,lbl,e2) ->
     of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
@@ -585,7 +585,7 @@ and of_signature_item_desc = function
     id_fold
 
 and of_core_type_desc = function
-  | Ttyp_var _ -> id_fold
+  | Ttyp_var _ | Ttyp_call_pos -> id_fold
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts ->

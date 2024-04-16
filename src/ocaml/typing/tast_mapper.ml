@@ -484,8 +484,8 @@ let expr sub x =
           extended_expression = Option.map (sub.expr sub) extended_expression;
           alloc_mode
         }
-    | Texp_field (exp, lid, ld, mode, am) ->
-        Texp_field (sub.expr sub exp, map_loc sub lid, ld, mode, am)
+    | Texp_field (exp, lid, ld, float) ->
+        Texp_field (sub.expr sub exp, map_loc sub lid, ld, float)
     | Texp_setfield (exp1, am, lid, ld, exp2) ->
         Texp_setfield (
           sub.expr sub exp1,
@@ -595,6 +595,7 @@ let expr sub x =
     | Texp_probe_is_enabled _ as e -> e
     | Texp_exclave exp ->
         Texp_exclave (sub.expr sub exp)
+    | Texp_src_pos -> Texp_src_pos
     | Texp_hole ->
         Texp_hole
   in
@@ -876,7 +877,7 @@ let typ sub x =
   let ctyp_env = sub.env sub x.ctyp_env in
   let ctyp_desc =
     match x.ctyp_desc with
-    | Ttyp_var (_,None) as d -> d
+    | (Ttyp_var (_,None) | Ttyp_call_pos) as d -> d
     | Ttyp_var (s, Some jkind) ->
         Ttyp_var (s, Some (sub.jkind_annotation sub jkind))
     | Ttyp_arrow (label, ct1, ct2) ->

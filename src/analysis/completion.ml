@@ -165,7 +165,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | `Cons c  -> (`Constructor, `Constructor c)
     | `Label label_descr ->
       let desc =
-        Types.(Tarrow ((Ast_helper.no_label,
+        Types.(Tarrow ((Nolabel,
                         Mode.Alloc.legacy,
                         Mode.Alloc.legacy),
                        label_descr.lbl_res, label_descr.lbl_arg, commu_ok))
@@ -173,7 +173,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Label_decl (ty,label_decl) ->
       let desc =
-        Types.(Tarrow ((Ast_helper.no_label,
+        Types.(Tarrow ((Nolabel,
                         Mode.Alloc.legacy,
                         Mode.Alloc.legacy),
                        ty, label_decl.ld_type, commu_ok))
@@ -766,10 +766,10 @@ let labels_of_application ~prefix = function
     in
     List.filter_map ~f:(fun (label, ty) ->
         match label with
-        | Asttypes.Nolabel -> None
+        | Nolabel -> None
         | label when List.exists ~f:(is_application_of label) args -> None
-        | Asttypes.Labelled str -> Some ("~" ^ str, ty)
-        | Asttypes.Optional str ->
+        | Labelled str | Position str -> Some ("~" ^ str, ty)
+        | Optional str ->
           let ty = match Types.get_desc ty with
             | Types.Tconstr (path, [ty], _)
               when Path.same path Predef.path_option -> ty

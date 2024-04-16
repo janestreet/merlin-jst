@@ -75,8 +75,10 @@ let from_nodes ~pos ~path =
           | None, Record_unboxed -> ret_no_alloc "unboxed record"
           | None, (Record_boxed _ | Record_float | Record_ufloat) ->
             ret Unexpected_no_alloc)
-       | Texp_field (_, _, _, _, maybe_alloc_mode) ->
-         Option.bind maybe_alloc_mode ~f:ret_alloc
+       | Texp_field (_, _, _, boxed_or_unboxed) ->
+         (match boxed_or_unboxed with
+          | Boxing (alloc_mode, _) -> ret_alloc alloc_mode
+          | Non_boxing _ -> None)
        | Texp_variant (_, maybe_exp_and_alloc_mode) ->
          maybe_exp_and_alloc_mode
          |> Option.map ~f:snd

@@ -72,6 +72,14 @@ type unique_barrier = Mode.Uniqueness.r option
 
 type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
+type texp_field_boxing =
+  | Boxing of Mode.Alloc.r * unique_use
+  (** Projection requires boxing. [unique_use] describes the usage of the
+      unboxed field as argument to boxing. *)
+  | Non_boxing of unique_use
+  (** Projection does not require boxing. [unique_use] describes the usage of
+      the field as the result of direct projection. *)
+
 val shared_many_use : unique_use
 
 type pattern = value general_pattern
@@ -155,7 +163,7 @@ and 'k pattern_desc =
             Invariant: n > 0
          *)
   | Tpat_array :
-      mutable_flag * Jkind.sort * value general_pattern list -> value pattern_desc
+      Types.mutability * Jkind.sort * value general_pattern list -> value pattern_desc
         (** [| P1; ...; Pn |]    (flag = Mutable)
             [: P1; ...; Pn :]    (flag = Immutable) *)
   | Tpat_lazy : value general_pattern -> value pattern_desc
@@ -215,6 +223,12 @@ and exp_extra =
 (* CR modes: Consider fusing [Texp_mode_coerce] and [Texp_constraint] when
    the syntax changes.
 *)
+
+and arg_label = Types.arg_label =
+  | Nolabel
+  | Labelled of string
+  | Optional of string
+  | Position of string
 
 (** Jkinds in the typed tree: Compilation of the typed tree to lambda
     sometimes requires jkind information.  Our approach is to
@@ -333,17 +347,16 @@ and expression_desc =
             in which case it does not need allocation.
           *)
   | Texp_field of expression * Longident.t loc * Types.label_description *
-      unique_use * Mode.Alloc.r option
-    (** [alloc_mode] is the allocation mode of the result; available ONLY
-        only when getting a (float) field from a [Record_float] record
-      *)
+      texp_field_boxing
+    (** [texp_field_boxing] provides extra information depending on if the
+        projection requires boxing. *)
   | Texp_setfield of
       expression * Mode.Locality.l * Longident.t loc *
       Types.label_description * expression
     (** [alloc_mode] translates to the [modify_mode] of the record *)
-  | Texp_array of mutable_flag * Jkind.Sort.t * expression list * Mode.Alloc.r
+  | Texp_array of Types.mutability * Jkind.Sort.t * expression list * Mode.Alloc.r
   | Texp_list_comprehension of comprehension
-  | Texp_array_comprehension of mutable_flag * Jkind.sort * comprehension
+  | Texp_array_comprehension of Types.mutability * Jkind.sort * comprehension
   | Texp_ifthenelse of expression * expression * expression option
   | Texp_sequence of expression * Jkind.sort * expression
   | Texp_while of {
@@ -390,6 +403,10 @@ and expression_desc =
   | Texp_probe of { name:string; handler:expression; enabled_at_init:bool }
   | Texp_probe_is_enabled of { name:string }
   | Texp_exclave of expression
+  | Texp_src_pos
+    (* A source position value which has been automatically inferred, either
+       as a result of [%call_pos] occuring in an expression, or omission of a
+       Position argument in function application *)
 
 and function_curry =
   | More_args of { partial_mode : Mode.Alloc.l }
@@ -503,7 +520,7 @@ and 'k case =
     }
 
 and record_label_definition =
-  | Kept of Types.type_expr * mutable_flag * unique_use
+  | Kept of Types.type_expr * Types.mutability * unique_use
   | Overridden of Longident.t loc * expression
 
 and binding_op =
@@ -829,6 +846,9 @@ and core_type_desc =
   | Ttyp_variant of row_field list * closed_flag * label list option
   | Ttyp_poly of (string * Jkind.annotation option) list * core_type
   | Ttyp_package of package_type
+  | Ttyp_call_pos
+      (** [Ttyp_call_pos] represents the type of the value of a Position
+          argument ([lbl:[%call_pos] -> ...]). *)
 
 and package_type = {
   pack_path : Path.t;
@@ -892,7 +912,7 @@ and label_declaration =
     {
      ld_id: Ident.t;
      ld_name: string loc;
-     ld_mutable: mutable_flag;
+     ld_mutable: Types.mutability;
      ld_global: Mode.Global_flag.t;
      ld_type: core_type;
      ld_loc: Location.t;

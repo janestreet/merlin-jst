@@ -719,7 +719,8 @@ module Jkind_desc = struct
 
   let float64 =
     { layout = Layout.float64;
-      modes_upper_bounds = Modes.max;
+      modes_upper_bounds =
+        { locality = Global; linearity = Many; uniqueness = Unique };
       externality_upper_bound = External
     }
 
@@ -1222,8 +1223,10 @@ end = struct
     | Record_assignment ->
       fprintf ppf "it's the record type used in an assignment"
     | Let_binding -> fprintf ppf "it's the type of a variable bound by a `let`"
-    | Function_argument -> fprintf ppf "it's the type of a function argument"
-    | Function_result -> fprintf ppf "it's the type of a function result"
+    | Function_argument ->
+      fprintf ppf "we must know concretely how to pass a function argument"
+    | Function_result ->
+      fprintf ppf "we must know concretely how to return a function result"
     | Structure_item_expression ->
       fprintf ppf "it's the type of an expression in a structure"
     | External_argument ->

@@ -480,6 +480,7 @@ let ocaml_ignored_flags = [
   "-no-symbol-visibility-protected";
   "-flambda2-basic-meet";
   "-flambda2-advanced-meet";
+  "-directory";
 
   (* Jane Street specific *)
   "-disable-poll-insertion";
@@ -504,8 +505,6 @@ let ocaml_ignored_flags = [
   "-fno-sse42";
   "-fsimd-regalloc";
   "-fno-simd-regalloc";
-  "-farch-check";
-  "-fno-arch-check";
   "-fclmul";
   "-fno-clmul";
   "-no-auto-include-otherlibs";
@@ -522,6 +521,7 @@ let ocaml_ignored_flags = [
   "-fpopcnt";
   "-fno-popcnt";
   "-disable-checkmach";
+  "-disable-precise-checkmach";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -536,6 +536,7 @@ let ocaml_ignored_parametrized_flags = [
 
   (* flambda-backend specific *)
   "-extension";
+  "-extension-universe";
   "-drawfexpr-to";
   "-dfexpr-to";
   "-dflexpect-to";

@@ -7,6 +7,7 @@ module type S = sig
   type t_ext = ..
   type t_ext += Str of string | A
   type v = [`A of t_ext]
+  type t_function = int -> foo:string -> ?bar:bool -> here:[%call_pos] -> char
 
   val i : int
   val f : t -> int

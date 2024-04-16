@@ -44,7 +44,7 @@ let print_constructor c =
     let labeled_args_without_modalities =
       List.map ~f:(fun arg -> None, arg) args_without_modalities
     in
-    let desc = Tarrow ((Ast_helper.no_label,
+    let desc = Tarrow ((Nolabel,
                         Mode.Alloc.legacy,
                         Mode.Alloc.legacy),
                        dummy_type_scheme (Ttuple labeled_args_without_modalities),

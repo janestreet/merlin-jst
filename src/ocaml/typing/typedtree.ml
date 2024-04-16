@@ -53,6 +53,10 @@ type unique_barrier = Mode.Uniqueness.r option
 
 type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
+type texp_field_boxing =
+  | Boxing of Mode.Alloc.r * unique_use
+  | Non_boxing of unique_use
+
 let shared_many_use =
   ( Mode.Uniqueness.disallow_left Mode.Uniqueness.shared,
     Mode.Linearity.disallow_right Mode.Linearity.many )
@@ -95,7 +99,7 @@ and 'k pattern_desc =
         closed_flag ->
       value pattern_desc
   | Tpat_array :
-      mutable_flag * Jkind.sort * value general_pattern list -> value pattern_desc
+      mutability * Jkind.sort * value general_pattern list -> value pattern_desc
   | Tpat_lazy : value general_pattern -> value pattern_desc
   (* computation patterns *)
   | Tpat_value : tpat_value_argument -> computation pattern_desc
@@ -123,6 +127,12 @@ and exp_extra =
   | Texp_newtype of string * Jkind.annotation option
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option
   | Texp_mode_coerce of Jane_syntax.Mode_expr.t
+
+and arg_label = Types.arg_label =
+  | Nolabel
+  | Labelled of string
+  | Optional of string
+  | Position of string
 
 and expression_desc =
     Texp_ident of
@@ -153,12 +163,12 @@ and expression_desc =
       alloc_mode : Mode.Alloc.r option
     }
   | Texp_field of
-      expression * Longident.t loc * label_description * unique_use * Mode.Alloc.r option
+      expression * Longident.t loc * label_description * texp_field_boxing
   | Texp_setfield of
       expression * Mode.Locality.l * Longident.t loc * label_description * expression
-  | Texp_array of mutable_flag * Jkind.Sort.t * expression list * Mode.Alloc.r
+  | Texp_array of mutability * Jkind.Sort.t * expression list * Mode.Alloc.r
   | Texp_list_comprehension of comprehension
-  | Texp_array_comprehension of mutable_flag * Jkind.sort * comprehension
+  | Texp_array_comprehension of mutability * Jkind.sort * comprehension
   | Texp_ifthenelse of expression * expression * expression option
   | Texp_sequence of expression * Jkind.sort * expression
   | Texp_while of {
@@ -204,6 +214,7 @@ and expression_desc =
   | Texp_probe of { name:string; handler:expression; enabled_at_init:bool; }
   | Texp_probe_is_enabled of { name:string }
   | Texp_exclave of expression
+  | Texp_src_pos
   | Texp_hole
 
 and function_curry =
@@ -290,7 +301,7 @@ and 'k case =
     }
 
 and record_label_definition =
-  | Kept of Types.type_expr * mutable_flag * unique_use
+  | Kept of Types.type_expr * mutability * unique_use
   | Overridden of Longident.t loc * expression
 
 and binding_op =
@@ -607,6 +618,7 @@ and core_type_desc =
   | Ttyp_variant of row_field list * closed_flag * label list option
   | Ttyp_poly of (string * Jkind.annotation option) list * core_type
   | Ttyp_package of package_type
+  | Ttyp_call_pos
 
 and package_type = {
   pack_path : Path.t;
@@ -669,7 +681,7 @@ and label_declaration =
     {
      ld_id: Ident.t;
      ld_name: string loc;
-     ld_mutable: mutable_flag;
+     ld_mutable: mutability;
      ld_global: Global_flag.t;
      ld_type: core_type;
      ld_loc: Location.t;
@@ -1095,7 +1107,7 @@ let rec exp_is_nominal exp =
   | Texp_variant (_, None)
   | Texp_construct (_, _, [], _) ->
       true
-  | Texp_field (parent, _, _, _, _) | Texp_send (parent, _, _) ->
+  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
       exp_is_nominal parent
   | _ -> false
 
