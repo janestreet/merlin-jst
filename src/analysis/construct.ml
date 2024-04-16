@@ -204,8 +204,12 @@ module Gen = struct
     let open Ast_helper in
     let env_check = Env.find_value_by_name in
     let lid = Location.mknoloc (Util.prefix env ~env_check path name) in
-    let params = List.map params
-      ~f:(fun label -> label, Exp.hole ())
+    let params = List.filter_map params
+      ~f:(fun l : (Asttypes.arg_label * _) option -> match l with
+        | Nolabel -> Some (Nolabel, Exp.hole ())
+        | Labelled s -> Some (Labelled s, Exp.hole ())
+        | Optional s -> Some (Optional s, Exp.hole ())
+        | Position _ -> None)
     in
     if List.length params > 0 then
       Exp.(apply (ident lid) params)
@@ -323,19 +327,28 @@ module Gen = struct
             make_i n 0
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
-      fun env label ty ->
+      fun env label ty : (Asttypes.arg_label * _ * _) ->
+        let open Ast_helper in
         match label with
-        | Labelled s | Optional s | Position s ->
-            (* Pun for labelled arguments *)
-            Ast_helper.Pat.var ( Location.mknoloc s), s
+        (* Pun for labelled arguments *)
+        | Position s ->
+            Labelled s,
+            Pat.constraint_
+              (Pat.var (Location.mknoloc s))
+              (Typ.extension (Location.mknoloc "call_pos", PStr [])),
+            s
+        | Labelled s ->
+            Labelled s, Pat.var (Location.mknoloc s), s
+        | Optional s ->
+            Optional s, Pat.var (Location.mknoloc s), s
         | Nolabel -> begin match get_desc ty with
           | Tpoly (poly, []) ->
               begin match get_desc poly with
                 | Tconstr (path, _, _) ->
                     let name = uniq_name env (Path.last path) in
-                    Ast_helper.Pat.var (Location.mknoloc name), name
-                | _ -> Ast_helper.Pat.any (), "_" end
-          | _ -> Ast_helper.Pat.any (), "_" end
+                    Nolabel, Pat.var (Location.mknoloc name), name
+                | _ -> Nolabel, Pat.any (), "_" end
+          | _ -> Nolabel, Pat.any (), "_" end
     in
 
     let constructor env type_expr path constrs =
@@ -482,7 +495,13 @@ module Gen = struct
             | Type_abstract _ | Type_open -> []
           end
         | Tarrow ((label,_,_), tyleft, tyright, _) ->
-          let argument, name = make_arg env label tyleft in
+          let label, argument, name = make_arg env label tyleft in
+          let param =
+            { Jane_syntax.N_ary_functions.pparam_desc =
+                Pparam_val (label, None, argument);
+              pparam_loc = Location.none;
+            }
+          in
           let value_description = {
               val_type = tyleft;
               val_kind = Val_reg;
@@ -494,12 +513,6 @@ module Gen = struct
           let env = Env.add_value (Ident.create_local name) value_description env in
           let exps = arrow_rhs env tyright in
           List.map exps ~f:(fun expr ->
-              let param =
-                { Jane_syntax.N_ary_functions.pparam_desc =
-                    Pparam_val (label, None, argument);
-                  pparam_loc = Location.none;
-                }
-              in
               match Jane_syntax.Expression.of_ast expr with
               | Some (Jexp_n_ary_function (params, constraint_, body), []) ->
                   Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
