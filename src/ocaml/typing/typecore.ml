@@ -6946,7 +6946,7 @@ and type_function_
                   | None -> Alloc.newvar ()
                 in
                 Texp_function
-                  { params; body; ret_mode; ret_sort; alloc_mode;
+                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Default_check;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -7125,7 +7125,7 @@ and type_function_
                 in
                 Texp_function
                   { params; body; ret_mode; ret_sort;
-                    alloc_mode = Alloc.disallow_left alloc_mode;
+                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Default_check;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -8018,7 +8018,13 @@ and type_application env app_loc expected_mode position_and_mode
         with exn ->
           record_exp_and_reraise ~exn
             { exp_desc =
-                Texp_apply (funct, args, position_and_mode.apply_position, ap_mode);
+                Texp_apply (
+                  funct,
+                  args,
+                  position_and_mode.apply_position,
+                  ap_mode,
+                  Zero_alloc_utils.Assume_info.none
+                );
               exp_loc = app_loc;
               exp_extra = [];
               exp_type = ty_ret;
@@ -8584,6 +8590,7 @@ and type_function_cases_expect
                   ret_mode = Alloc.disallow_right ret_mode;
                   ret_sort;
                   alloc_mode = Alloc.disallow_left alloc_mode;
+                  zero_alloc = Default_check;
                   region = in_function.region_locked;
                 };
             exp_loc = loc;
