@@ -365,7 +365,7 @@ let of_expression_desc loc = function
       | Tfunction_cases {fc_cases; _} -> list_fold of_case fc_cases
     in
     list_fold of_function_param params ** body
-  | Texp_apply (e,ls,_,_) ->
+  | Texp_apply (e,ls,_,_, _) ->
     of_expression e **
     list_fold (function
         | (_,Omitted _) -> id_fold
