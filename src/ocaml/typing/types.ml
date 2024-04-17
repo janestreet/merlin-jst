@@ -604,7 +604,7 @@ let equal_record_representation r1 r2 = match r1, r2 with
   | Record_mixed { value_prefix_len = l1; flat_suffix = s1 },
     Record_mixed { value_prefix_len = l2; flat_suffix = s2 }
     [@warning "+9"] (* get alerted if we add another field *) ->
-      l1 = l2 && Misc.Stdlib.Array.equal equal_flat_element s1 s2
+      l1 = l2 && array_equal equal_flat_element s1 s2
   | (Record_unboxed | Record_inlined _ | Record_boxed _ | Record_float
     | Record_ufloat | Record_mixed _), _ ->
       false
