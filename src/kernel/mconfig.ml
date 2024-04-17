@@ -522,6 +522,8 @@ let ocaml_ignored_flags = [
   "-fno-popcnt";
   "-disable-checkmach";
   "-disable-precise-checkmach";
+  "-cfg-stack-checks";
+  "-no-cfg-stack-checks";
 ]
 
 let ocaml_ignored_parametrized_flags = [
