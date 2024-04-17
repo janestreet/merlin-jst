@@ -73,7 +73,7 @@ let from_nodes ~pos ~path =
           | _, Record_inlined _ -> None
           | Some alloc_mode, _ -> ret_alloc alloc_mode
           | None, Record_unboxed -> ret_no_alloc "unboxed record"
-          | None, (Record_boxed _ | Record_float | Record_ufloat) ->
+          | None, (Record_boxed _ | Record_float | Record_ufloat | Record_mixed _) ->
             ret Unexpected_no_alloc)
        | Texp_field (_, _, _, boxed_or_unboxed) ->
          (match boxed_or_unboxed with
