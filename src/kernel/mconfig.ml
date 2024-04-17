@@ -561,7 +561,6 @@ let ocaml_ignored_parametrized_flags = [
   "-flambda2-inline-prim-cost";
   "-flambda2-inline-small-function-size";
   "-flambda2-inline-threshold";
-  "-zero-alloc-check";
   "-regalloc";
   "-regalloc-param";
   "-cached-generic-functions-path";
