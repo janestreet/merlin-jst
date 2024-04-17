@@ -22,6 +22,7 @@ type ocaml = {
   warnings             : Warnings.state;
   cmi_file             : string option;
   as_parameter         : bool;
+  zero_alloc_check     : Clflags.Annotations.t;
 }
 
 val dump_ocaml : ocaml -> json

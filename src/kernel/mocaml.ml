@@ -45,6 +45,7 @@ let setup_reader_config config = (
   open_modules         := ocaml.open_modules ;
   cmi_file             := ocaml.cmi_file ;
   as_parameter         := ocaml.as_parameter ;
+  zero_alloc_check     := ocaml.zero_alloc_check ;
 )
 
 let setup_typer_config config = (
