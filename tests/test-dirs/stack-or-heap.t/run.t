@@ -91,7 +91,7 @@ how to produce valid json.
   |  Some (g z)
   |  ^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  exclave_ Some (g z)
   |                 ^
@@ -99,7 +99,7 @@ how to produce valid json.
   |  exclave_ Some (g z)
   |           ^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  let z = Some (g x) in
   |                ^
@@ -107,7 +107,7 @@ how to produce valid json.
   |  let z = Some (g x) in
   |          ^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  None
   |    ^
@@ -131,7 +131,7 @@ how to produce valid json.
   |  f (Some x);
   |    ^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  f (local_ Some x);
   |                 ^
@@ -139,7 +139,7 @@ how to produce valid json.
   |  f (local_ Some x);
   |    ^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  f (Some x)
   |          ^
@@ -147,7 +147,7 @@ how to produce valid json.
   |  f (Some x)
   |    ^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let g x = f (Some x) [@nontail]
   |                  ^
@@ -155,7 +155,7 @@ how to produce valid json.
   |let g x = f (Some x) [@nontail]
   |            ^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  Box (g z)
   |       ^
@@ -174,7 +174,7 @@ how to produce valid json.
   |  `Some (g z)
   |  ^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  exclave_ `Some (g z)
   |                  ^
@@ -182,7 +182,7 @@ how to produce valid json.
   |  exclave_ `Some (g z)
   |           ^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  let z = `Some (g x) in
   |                 ^
@@ -190,7 +190,7 @@ how to produce valid json.
   |  let z = `Some (g x) in
   |          ^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  `None
   |     ^
@@ -218,7 +218,7 @@ how to produce valid json.
   |  { z }
   |  ^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  exclave_ { z }
   |             ^
@@ -226,7 +226,7 @@ how to produce valid json.
   |  exclave_ { z }
   |           ^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  let y = { z = x } in
   |                ^
@@ -234,7 +234,7 @@ how to produce valid json.
   |  let y = { z = x } in
   |          ^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  f { z };
   |      ^
@@ -242,7 +242,7 @@ how to produce valid json.
   |  f { z };
   |    ^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  f (local_ { z });
   |              ^
@@ -250,7 +250,7 @@ how to produce valid json.
   |  f (local_ { z });
   |    ^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  f { z }
   |      ^
@@ -258,7 +258,7 @@ how to produce valid json.
   |  f { z }
   |    ^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let g z = f { z } [@nontail]
   |              ^
@@ -266,7 +266,7 @@ how to produce valid json.
   |let g z = f { z } [@nontail]
   |            ^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  { z }
   |    ^
@@ -294,7 +294,7 @@ how to produce valid json.
   |  fun x -> g x
   |  ^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  exclave_ fun x -> g x
   |                  ^
@@ -302,7 +302,7 @@ how to produce valid json.
   |  exclave_ fun x -> g x
   |           ^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |let f g = (fun x -> g x)
   |                       ^
@@ -310,7 +310,7 @@ how to produce valid json.
   |let f g = (fun x -> g x)
   |          ^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  fun x -> x
   |         ^
@@ -318,7 +318,7 @@ how to produce valid json.
   |  fun x -> x
   |  ^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  function | x -> x
   |         ^
@@ -326,15 +326,7 @@ how to produce valid json.
   |  function | x -> x
   |  ^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
-  
-  |  exclave_ function | x -> x
-  |                  ^
-  
-  |  exclave_ function | x -> x
-  |                  ^
-  
-  "no relevant allocation to show"
+  "heap"
   
   |let f = (function | x -> x)
   |                          ^
@@ -342,7 +334,7 @@ how to produce valid json.
   |let f = (function | x -> x)
   |        ^^^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  function | x -> g x
   |         ^
@@ -352,7 +344,7 @@ how to produce valid json.
   |  function | x -> g x
   |^^^^^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f g x y =
   |          ^
@@ -364,7 +356,7 @@ how to produce valid json.
   |  exclave_ Some (g z)
   |^^^^^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |  let z = x + y in
   |            ^
@@ -408,7 +400,7 @@ how to produce valid json.
   |let f t1 t2 = { t1 with b = t2.b }
   |              ^^^^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f (t : floats_t) = t.a
   |                        ^
@@ -416,7 +408,7 @@ how to produce valid json.
   |let f (t : floats_t) = t.a
   |                       ^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f (t : floats_t) = exclave_ t.a
   |                                 ^
@@ -424,7 +416,7 @@ how to produce valid json.
   |let f (t : floats_t) = exclave_ t.a
   |                                ^^^
   
-  "could be stack or heap"
+  "stack"
   
 
 (VI) Arrays
@@ -436,7 +428,7 @@ how to produce valid json.
   |let x () = [| 1; 2; 3 |]
   |           ^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let x () = exclave_ [| 1; 2; 3 |]
   |                          ^
@@ -444,7 +436,7 @@ how to produce valid json.
   |let x () = exclave_ [| 1; 2; 3 |]
   |                    ^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
 
 (VII) Nested
@@ -456,7 +448,7 @@ how to produce valid json.
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                 ^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                       ^
@@ -464,7 +456,7 @@ how to produce valid json.
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                           ^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                       ^
@@ -472,7 +464,7 @@ how to produce valid json.
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                   ^^^^^^^^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |let f x = exclave_ T { t = Not_t (Some x) }
   |                                       ^
@@ -485,7 +477,7 @@ how to produce valid json.
   |let f x = local_ (Some (Some x))
   |                       ^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |let f x = local_ (Some (Some x))
   |                             ^
@@ -493,7 +485,7 @@ how to produce valid json.
   |let f x = local_ (Some (Some x))
   |          ^^^^^^^^^^^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |let f x = local_ (Some (Some x))
   |                             ^
@@ -538,7 +530,7 @@ how to produce valid json.
   |let f () = { x = "OK" }
   |           ^^^^^^^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f x = A { a = x }
   |                  ^
@@ -554,7 +546,7 @@ how to produce valid json.
   |let f () = A "OK"
   |           ^^^^^^
   
-  "could be stack or heap"
+  "heap"
   
   |let f () = C "OK"
   |               ^
@@ -589,7 +581,7 @@ how to produce valid json.
   |  let t = { x = f x } in
   |          ^^^^^^^^^^^
   
-  "could be stack or heap"
+  "stack"
   
   |  let t = { x = f x } in
   |                  ^

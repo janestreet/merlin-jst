@@ -275,6 +275,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     to_string ()
 
   | Stack_or_heap_enclosing (pos, index) ->
+    (* Optimise allocations only on programs that have type-checked. *)
+    let errors =
+      Mpipeline.reader_lexer_errors pipeline @
+      Mpipeline.reader_parser_errors pipeline @
+      Mpipeline.ppx_errors pipeline @
+      Mpipeline.typer_errors pipeline
+    in
+    if not @@ List.exists errors
+        ~f:(function
+            | Msupport.Warning _ -> false
+            | _ -> true)
+    then Typecore.optimise_allocations ();
+
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let structures = Mbrowse.enclosing pos
@@ -293,15 +306,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           match text, print with
           | Stack_or_heap_enclosing.No_alloc { reason }, true ->
               ret (`String ("not an allocation (" ^ reason ^ ")"))
-          | Stack_or_heap_enclosing.Alloc_mode _, true ->
-              (* TODO: decide correct behavior and implement *)
-              (* let str =
-                match alloc_mode |> Mode.Alloc.locality |> Mode.Locality.check_const with
+          | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
+              let str =
+                match alloc_mode |> Mode.Alloc.proj (Comonadic Areality) |> Mode.Locality.Guts.check_const_conservative with
                 | Some Global -> "heap"
                 | Some Local -> "stack"
                 | None -> "could be stack or heap"
-              in ret (`String str) *)
-              ret (`String "could be stack or heap")
+              in ret (`String str)
           | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
               ret (`String "unknown (does your code contain a type error?)")
           | _, false -> ret (`Index i)
