@@ -307,12 +307,15 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Stack_or_heap_enclosing.No_alloc { reason }, true ->
               ret (`String ("not an allocation (" ^ reason ^ ")"))
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
-              let str =
-                match alloc_mode |> Mode.Alloc.proj (Comonadic Areality) |> Mode.Locality.Guts.check_const_conservative with
-                | Some Global -> "heap"
-                | Some Local -> "stack"
-                | None -> "could be stack or heap"
-              in ret (`String str)
+            let locality = alloc_mode 
+                           |> Mode.Alloc.proj (Comonadic Areality) 
+                           |> Mode.Locality.Guts.check_const_conservative 
+            in
+            let str = match locality with
+              | Some Global -> "heap"
+              | Some Local -> "stack"
+              | None -> "could be stack or heap"
+            in ret (`String str)
           | Stack_or_heap_enclosing.Unexpected_no_alloc, true ->
               ret (`String "unknown (does your code contain a type error?)")
           | _, false -> ret (`Index i)
