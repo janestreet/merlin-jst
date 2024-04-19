@@ -19,7 +19,12 @@ module Server = struct
     Os_ipc.context_setup context;
     let close_with return_code =
       flush_all ();
-      Os_ipc.context_close context ~return_code
+      Os_ipc.context_close context ~return_code;
+      (* The first flush may have failed due to IO errors, so flush again now that we've
+         reset our file descriptors.  This may cause us to send random output to the
+         server's stdout and stderr, but it's better than sending random output to the
+         next client to connect. *)
+      flush_all ()
     in
     match process_request client with
     | code -> close_with code
