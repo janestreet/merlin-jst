@@ -328,6 +328,14 @@ how to produce valid json.
   
   "heap"
   
+  |  exclave_ function | y -> y
+  |                  ^
+  
+  |  exclave_ function | y -> y
+  |           ^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
   |let f = (function | x -> x)
   |                          ^
   
@@ -590,4 +598,36 @@ how to produce valid json.
   |          ^^^^^^^^^^^
   
   "could be stack or heap"
+  
+  |  let z = Some x in
+  |               ^
+  
+  |  let z = Some x in
+  |          ^^^^^^
+  
+  "could be stack or heap"
+  
+  |  let z = Some x in
+  |               ^
+  
+  |  let z = Some x in
+  |          ^^^^^^
+  
+  "stack"
+  
+  |  let z = Some x in
+  |               ^
+  
+  |  let z = Some x in
+  |          ^^^^^^
+  
+  "could be stack or heap"
+  
+  |  let z = Some y in
+  |               ^
+  
+  |  let z = Some y in
+  |          ^^^^^^
+  
+  "heap"
   

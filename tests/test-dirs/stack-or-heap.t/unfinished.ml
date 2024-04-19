@@ -17,3 +17,25 @@ let g x =
                (* ^ *)
   let y =
 ;;
+
+let f x =
+  let z = Some x in
+            (* ^ *)
+;;
+
+let f (local_ x) =
+  let z = Some x in
+            (* ^ *)
+;;
+
+let f x =
+  let z = Some x in
+            (* ^ *)
+  5
+;;
+
+let f x =
+  let z = Some y in
+            (* ^ *)
+  z
+;;
