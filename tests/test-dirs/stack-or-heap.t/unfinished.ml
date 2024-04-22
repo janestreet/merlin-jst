@@ -35,6 +35,9 @@ let f x =
 ;;
 
 let f x =
+  (* TODO: This test returns stack or heap, even though
+     we can confidently say that [Some y] is allocated
+     on the stack. *)
   let z = Some y in
             (* ^ *)
   z
