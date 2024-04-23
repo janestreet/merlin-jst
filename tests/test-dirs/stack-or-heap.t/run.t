@@ -719,3 +719,11 @@ how to produce valid json.
   
   "heap"
   
+  |  let local_ z = Some x in
+  |                      ^
+  
+  |  let local_ z = Some x in
+  |      ^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  

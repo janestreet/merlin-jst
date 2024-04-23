@@ -119,3 +119,8 @@ let g x = 5 + local_function (Some x)
 let global_function x = x
 let g x = global_function (Some x)
                              (* ^ *)
+
+let f x =
+  let local_ z = Some x in
+                   (* ^ *)
+;;
