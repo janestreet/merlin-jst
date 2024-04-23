@@ -94,11 +94,11 @@
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
             Tpat_var \"f/277\"
-            value_mode meet_local,once(0[global,many,global,many]),join_shared(1[shared,unique])
+            value_mode global,many,join_shared(1[shared,unique])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
             region true
-            alloc_mode map_comonadic(regional_to_global)(2[global,many,global,many]),id(3[shared,unique])
+            alloc_mode global,many,id(3[shared,unique])
             [
               Nolabel
               Param_pat
@@ -109,7 +109,7 @@
                       Ttyp_constr \"t/274\"
                       []
                   Tpat_var \"x/279\"
-                  value_mode meet_global,many ∘ map_comonadic(local_to_regional)(4[global,many,local,once]),join_unique(5[shared,unique])
+                  value_mode global,many,unique
             ]
             Tfunction_body
               expression (test.ml[3,31+2]..test.ml[6,69+12])
@@ -255,11 +255,11 @@
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
             Tpat_var \"f/277\"
-            value_mode meet_local,once(0[global,many,global,many]),join_shared(1[shared,unique])
+            value_mode global,many,join_shared(1[shared,unique])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
             region true
-            alloc_mode map_comonadic(regional_to_global)(2[global,many,global,many]),id(3[shared,unique])
+            alloc_mode global,many,id(3[shared,unique])
             [
               Nolabel
               Param_pat
@@ -563,7 +563,7 @@ make sure we also handle that correctly in structures:
                 Ttyp_constr \"int/1!\"
                 []
             Tpat_var \"foo1/274\"
-            value_mode meet_global,many(0[global,many,local,once]),join_unique(1[shared,unique])
+            value_mode global,many,unique
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
@@ -592,7 +592,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/275\"
-            value_mode meet_local,once(2[global,many,global,many]),join_shared(3[shared,unique])
+            value_mode global,many,join_shared(3[shared,unique])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -609,7 +609,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Texp_tuple
-            alloc_mode map_comonadic(regional_to_global)(2[global,many,global,many]),subtract_shared(3[shared,unique])
+            alloc_mode global,many,subtract_shared(3[shared,unique])
             [
               <tuple component>
               Label: None
@@ -641,7 +641,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/276\"
-            value_mode meet_local,once(4[global,many,global,many]),join_shared(5[shared,unique])
+            value_mode global,many,join_shared(5[shared,unique])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
@@ -658,7 +658,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Texp_tuple
-            alloc_mode map_comonadic(regional_to_global)(4[global,many,global,many]),subtract_shared(5[shared,unique])
+            alloc_mode global,many,subtract_shared(5[shared,unique])
             [
               <tuple component>
               Label: None

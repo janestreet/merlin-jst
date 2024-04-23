@@ -2159,7 +2159,8 @@ module Label = NameChoice (struct
     Env.lookup_all_labels_from_type ~loc usage path env
   let in_env lbl =
     match lbl.lbl_repres with
-    | Record_boxed _ | Record_float | Record_ufloat | Record_unboxed -> true
+    | Record_boxed _ | Record_float | Record_ufloat | Record_unboxed
+    | Record_mixed _ -> true
     | Record_inlined _ -> false
 end)
 
@@ -3889,7 +3890,7 @@ let rec is_nonexpansive exp =
   | Texp_let(_rec_flag, pat_exp_list, body) ->
       List.for_all (fun vb -> is_nonexpansive vb.vb_expr) pat_exp_list &&
       is_nonexpansive body
-  | Texp_apply(e, (_,Omitted _)::el, _, _) ->
+  | Texp_apply(e, (_,Omitted _)::el, _, _, _) ->
       is_nonexpansive e && List.for_all is_nonexpansive_arg (List.map snd el)
   | Texp_match(e, _, cases, _) ->
      (* Not sure this is necessary, if [e] is nonexpansive then we shouldn't
@@ -3962,7 +3963,7 @@ let rec is_nonexpansive exp =
              Val_prim {Primitive.prim_name =
                          ("%raise" | "%reraise" | "%raise_notrace")}},
              Id_prim _, _) },
-      [Nolabel, Arg (e, _)], _, _) ->
+      [Nolabel, Arg (e, _)], _, _, _) ->
      is_nonexpansive e
   | Texp_array (_, _, _ :: _, _)
   | Texp_apply _
@@ -5212,6 +5213,40 @@ let create_merlin_type_error_node loc env ty_expected ~attributes =
       exp_attributes = attributes;
     }
 
+let add_check_attribute expr attributes =
+  let open Builtin_attributes in
+  let to_string = function
+    | Zero_alloc -> "zero_alloc"
+  in
+  let to_string : check_attribute -> string = function
+    | Check { property; strict; loc = _} ->
+      Printf.sprintf "assert %s%s"
+        (to_string property)
+        (if strict then " strict" else "")
+    | Assume { property; strict; loc = _} ->
+      Printf.sprintf "assume %s%s"
+        (to_string property)
+        (if strict then " strict" else "")
+    | Ignore_assert_all property ->
+      Printf.sprintf "ignore %s" (to_string property)
+    | Default_check -> assert false
+  in
+  match expr.exp_desc with
+  | Texp_function fn ->
+    begin match get_property_attribute attributes Zero_alloc with
+    | Default_check -> expr
+    | (Ignore_assert_all _ | Check _ | Assume _) as check ->
+      begin match fn.zero_alloc with
+      | Default_check -> ()
+      | Ignore_assert_all _ | Assume _ | Check _ ->
+        Location.prerr_warning expr.exp_loc
+          (Warnings.Duplicated_attribute (to_string fn.zero_alloc));
+      end;
+      let exp_desc = Texp_function { fn with zero_alloc = check } in
+      { expr with exp_desc }
+    end
+  | _ -> expr
+
 let rec type_exp ?recarg env expected_mode sexp =
   (* We now delegate everything to type_expect *)
   type_expect ?recarg env expected_mode sexp
@@ -5541,9 +5576,17 @@ and type_expect_
       let (args, ty_res, ap_mode, pm) =
         type_application env loc expected_mode pm funct funct_mode sargs rt
       in
+      let assume_zero_alloc =
+        let zero_alloc =
+          Builtin_attributes.get_property_attribute sfunct.pexp_attributes
+            Zero_alloc
+        in
+        Builtin_attributes.assume_zero_alloc ~is_check_allowed:false zero_alloc
+      in
 
       rue {
-        exp_desc = Texp_apply(funct, args, pm.apply_position, ap_mode);
+        exp_desc = Texp_apply(funct, args, pm.apply_position, ap_mode,
+                              assume_zero_alloc);
         exp_loc = loc; exp_extra = [];
         exp_type = ty_res;
         exp_attributes = sexp.pexp_attributes;
@@ -5855,14 +5898,25 @@ and type_expect_
       in
       let mode = project_field label.lbl_mut label.lbl_global rmode in
       let boxing : texp_field_boxing =
-        match label.lbl_repres with
-        | Record_float ->
+        let is_float_boxing =
+          match label.lbl_repres with
+          | Record_float -> true
+          | Record_mixed mixed -> begin
+              match Types.get_mixed_record_element mixed label.lbl_num with
+              | Flat_suffix Float -> true
+              | Flat_suffix (Float64 | Imm) -> false
+              | Value_prefix -> false
+            end
+          | _ -> false
+        in
+        match is_float_boxing with
+        | true ->
           let alloc_mode, argument_mode = register_allocation expected_mode in
           let mode = mode_cross_left env Predef.type_unboxed_float mode in
           submode ~loc ~env mode argument_mode;
           let uu = unique_use ~loc ~env mode argument_mode.mode in
           Boxing (alloc_mode, uu)
-        | _ ->
+        | false ->
           let mode = mode_cross_left env ty_arg mode in
           submode ~loc ~env mode expected_mode;
           let uu = unique_use ~loc ~env mode expected_mode.mode in
@@ -6892,7 +6946,7 @@ and type_function_
                   | None -> Alloc.newvar ()
                 in
                 Texp_function
-                  { params; body; ret_mode; ret_sort; alloc_mode;
+                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Default_check;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -7071,7 +7125,7 @@ and type_function_
                 in
                 Texp_function
                   { params; body; ret_mode; ret_sort;
-                    alloc_mode = Alloc.disallow_left alloc_mode;
+                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Default_check;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -7745,7 +7799,8 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
               ret_mode
               |> Value.proj (Comonadic Areality)
               |> regional_to_global
-              |> Locality.disallow_right)}
+              |> Locality.disallow_right,
+              Zero_alloc_utils.Assume_info.none)}
         in
         let cases = [ case eta_pat e ] in
         let cases_loc = { texp.exp_loc with loc_ghost = true } in
@@ -7764,6 +7819,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
               ret_sort;
               alloc_mode;
               region = false;
+              zero_alloc = Default_check
             }
         }
       in
@@ -7962,7 +8018,13 @@ and type_application env app_loc expected_mode position_and_mode
         with exn ->
           record_exp_and_reraise ~exn
             { exp_desc =
-                Texp_apply (funct, args, position_and_mode.apply_position, ap_mode);
+                Texp_apply (
+                  funct,
+                  args,
+                  position_and_mode.apply_position,
+                  ap_mode,
+                  Zero_alloc_utils.Assume_info.none
+                );
               exp_loc = app_loc;
               exp_extra = [];
               exp_type = ty_ret;
@@ -8528,6 +8590,7 @@ and type_function_cases_expect
                   ret_mode = Alloc.disallow_right ret_mode;
                   ret_sort;
                   alloc_mode = Alloc.disallow_left alloc_mode;
+                  zero_alloc = Default_check;
                   region = in_function.region_locked;
                 };
             exp_loc = loc;
@@ -8805,6 +8868,9 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
   let l =
     List.map2
       (fun (s, ((_,p,_), (e, _))) pvb ->
+        (* We check for [zero_alloc] attributes written on the [let] and move
+           them to the function. *)
+        let e = add_check_attribute e pvb.pvb_attributes in
         {vb_pat=p; vb_expr=e; vb_sort = s; vb_attributes=pvb.pvb_attributes;
          vb_loc=pvb.pvb_loc;
         })
@@ -9197,11 +9263,15 @@ and type_n_ary_function
               (filter_ty_ret_exn ret_ty Nolabel ~force_tpoly:true : type_expr)
     end;
     let params = List.map (fun { param } -> param) params in
+    let zero_alloc =
+      Builtin_attributes.get_property_attribute attributes Zero_alloc
+    in
     re
       { exp_desc =
           Texp_function
             { params; body; region = region_locked; ret_sort;
               alloc_mode = Mode.Alloc.disallow_left fun_alloc_mode; ret_mode;
+              zero_alloc
             };
         exp_loc = loc;
         exp_extra =
@@ -9808,7 +9878,7 @@ let escaping_hint (failure_reason : Value.error) submode_reason
         match get_desc ty with
         | Tarrow ((_, _, res_mode), _, res_ty, _) ->
           begin match
-            Locality.check_const (Alloc.proj (Comonadic Areality) res_mode)
+            Locality.Guts.check_const (Alloc.proj (Comonadic Areality) res_mode)
           with
           | Some Global ->
             Some (n+1, true)

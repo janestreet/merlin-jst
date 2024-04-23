@@ -21,6 +21,16 @@ val strict_formats       : bool ref
 val open_modules         : string list ref
 val as_parameter         : bool ref
 
+module Annotations : sig
+  type t = Check_default | Check_all | Check_opt_only | No_check
+  val all : t list
+  val to_string : t -> string
+  val of_string : string -> t option
+  val equal : t -> t -> bool
+  val doc : string
+end
+val zero_alloc_check : Annotations.t ref
+
 (** {1 Dummy values}
     Ignored by merlin but kept for compatibility with upstream code. *)
 val annotations          : bool ref

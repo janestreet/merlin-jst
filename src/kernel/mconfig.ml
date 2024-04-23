@@ -24,6 +24,7 @@ type ocaml = {
   warnings             : Warnings.state;
   cmi_file             : string option;
   as_parameter         : bool;
+  zero_alloc_check     : Clflags.Annotations.t;
 }
 
 let dump_warnings st =
@@ -51,6 +52,7 @@ let dump_ocaml x = `Assoc [
     "warnings"             , dump_warnings x.warnings;
     "cmi_file"             , Json.option Json.string x.cmi_file;
     "as_parameter"         , `Bool x.as_parameter;
+    "zero_alloc_check"     , `String (Clflags.Annotations.to_string x.zero_alloc_check);
   ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -522,6 +524,8 @@ let ocaml_ignored_flags = [
   "-fno-popcnt";
   "-disable-checkmach";
   "-disable-precise-checkmach";
+  "-cfg-stack-checks";
+  "-no-cfg-stack-checks";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -557,7 +561,6 @@ let ocaml_ignored_parametrized_flags = [
   "-flambda2-inline-prim-cost";
   "-flambda2-inline-small-function-size";
   "-flambda2-inline-threshold";
-  "-zero-alloc-check";
   "-regalloc";
   "-regalloc-param";
   "-cached-generic-functions-path";
@@ -730,6 +733,15 @@ let ocaml_flags = [
     Marg.unit (fun ocaml -> {ocaml with as_parameter = true}),
     " Compiles the interface as a parameter for an open module."
   );
+  ( "-zero-alloc-check",
+    Marg.param "string" (fun zero_alloc_str ocaml ->
+      match Clflags.Annotations.of_string zero_alloc_str with
+      | Some zero_alloc_check -> {ocaml with zero_alloc_check}
+      | None ->
+          failwith ("Invalid value for -zero-alloc-check: " ^ zero_alloc_str)),
+    " Check that annotated functions do not allocate \
+    and do not have indirect calls. "^Clflags.Annotations.doc
+  );
 ]
 
 (** {1 Main configuration} *)
@@ -755,6 +767,7 @@ let initial = {
     warnings             = Warnings.backup ();
     cmi_file             = None;
     as_parameter         = false;
+    zero_alloc_check     = Clflags.Annotations.Check_default;
   };
   merlin = {
     build_path  = {visible = []; hidden = []};
