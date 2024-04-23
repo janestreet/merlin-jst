@@ -275,6 +275,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     to_string ()
 
   | Stack_or_heap_enclosing (pos, index) ->
+    let typer = Mpipeline.typer_result pipeline in
+
     (* Optimise allocations only on programs that have type-checked. *)
     let errors =
       Mpipeline.reader_lexer_errors pipeline @
@@ -288,7 +290,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
             | _ -> true)
     then Typecore.optimise_allocations ();
 
-    let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let structures = Mbrowse.enclosing pos
       [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in

@@ -631,3 +631,91 @@ how to produce valid json.
   
   "heap"
   
+  |  let z = [x, Some y] in
+  |                   ^
+  
+  |  let z = [x, Some y] in
+  |              ^^^^^^
+  
+  "stack"
+  
+  |  let z = [x, Some y] in
+  |                   ^
+  
+  |  let z = [x, Some y] in
+  |              ^^^^^^
+  
+  "could be stack or heap"
+  
+  |    | None -> [Some y]
+  |                    ^
+  
+  |    | None -> [Some y]
+  |               ^^^^^^
+  
+  "stack"
+  
+  |    | None -> [Some y]
+  |                    ^
+  
+  |    | None -> [Some y]
+  |               ^^^^^^
+  
+  "could be stack or heap"
+  
+  |    | None -> [Some y]
+  |                    ^
+  
+  |    | None -> [Some y]
+  |               ^^^^^^
+  
+  "heap"
+  
+  |  [x; Some y]
+  |           ^
+  
+  |  [x; Some y]
+  |      ^^^^^^
+  
+  "heap"
+  
+  |  exclave_ [x; Some y]
+  |                    ^
+  
+  |  exclave_ [x; Some y]
+  |               ^^^^^^
+  
+  "stack"
+  
+  |    let z = Some x in
+  |                 ^
+  
+  |    let z = Some x in
+  |            ^^^^^^
+  
+  "could be stack or heap"
+  
+  |  let z = [foo; Some bar] in
+  |                     ^
+  
+  |  let z = [foo; Some bar] in
+  |                ^^^^^^^^
+  
+  "could be stack or heap"
+  
+  |let g x = 5 + local_function (Some x)
+  |                                   ^
+  
+  |let g x = 5 + local_function (Some x)
+  |                             ^^^^^^^^
+  
+  "could be stack or heap"
+  
+  |let g x = global_function (Some x)
+  |                                ^
+  
+  |let g x = global_function (Some x)
+  |                          ^^^^^^^^
+  
+  "heap"
+  
