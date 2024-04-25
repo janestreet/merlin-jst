@@ -372,7 +372,7 @@ We try several places in the identifier to check the result stability
         <def>
           pattern (under.ml[1,0+4]..under.ml[1,0+6])
             Tpat_var \"aa/274\"
-            value_mode Global, uniqueness:?, Many
+            value_mode global,many,join_shared(1[shared,unique])
           expression (under.ml[1,0+9]..under.ml[1,0+12])
             Texp_constant Const_float 4.2
       ]
@@ -382,17 +382,17 @@ We try several places in the identifier to check the result stability
         <def>
           pattern (under.ml[2,13+4]..under.ml[2,13+5])
             Tpat_var \"f/275\"
-            value_mode Global, uniqueness:?, Many
+            value_mode global,many,join_shared(3[shared,unique])
           expression (under.ml[2,13+6]..under.ml[5,70+17]) ghost
             Texp_function
             region true
-            alloc_mode Global, uniqueness:?, Many
+            alloc_mode global,many,id(5[shared,unique])
             [
               Nolabel
               Param_pat
                 pattern (under.ml[2,13+6]..under.ml[2,13+9])
                   Tpat_var \"x/277\"
-                  value_mode locality: r_as_l=? r_as_g=Global, uniqueness:?, linearity:?
+                  value_mode map_comonadic(local_to_regional)(6[global,many,local,once]),join_shared(7[shared,unique])
             ]
             Tfunction_body
               expression (under.ml[2,13+18]..under.ml[5,70+17])

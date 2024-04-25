@@ -109,7 +109,7 @@
                       Ttyp_constr \"t/274\"
                       []
                   Tpat_var \"x/279\"
-                  value_mode Global, Unique, Many
+                  value_mode global,many,unique
             ]
             Tfunction_body
               expression (test.ml[3,31+2]..test.ml[6,69+12])
@@ -563,7 +563,7 @@ make sure we also handle that correctly in structures:
                 Ttyp_constr \"int/1!\"
                 []
             Tpat_var \"foo1/274\"
-            value_mode Global, Unique, Many
+            value_mode global,many,unique
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
@@ -592,7 +592,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/275\"
-            value_mode Global, uniqueness:?, Many
+            value_mode global,many,join_shared(3[shared,unique])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -641,7 +641,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/276\"
-            value_mode Global, uniqueness:?, Many
+            value_mode global,many,join_shared(5[shared,unique])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint

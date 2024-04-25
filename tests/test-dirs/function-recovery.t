@@ -20,7 +20,7 @@
                 <def>
                   pattern (test.ml[2,79+6]..test.ml[2,79+13])
                     Tpat_var \"problem/274\"
-                    value_mode Global, uniqueness:?, Many
+                    value_mode global,many,join_shared(1[shared,unique])
                   expression (test.ml[2,79+16]..test.ml[2,79+24])
                     Texp_variant \"Problem\"
                     None
@@ -36,7 +36,7 @@
                   expression (test.ml[3,104+11]..test.ml[3,104+28])
                     Texp_function
                     region true
-                    alloc_mode locality:?, uniqueness:?, linearity:?
+                    alloc_mode id(c[global,many,local,once]),id(d[shared,unique])
                     []
                     Tfunction_body
                       expression (test.ml[3,104+11]..test.ml[3,104+28]) ghost
@@ -70,13 +70,13 @@
         <def>
           pattern (type.ml[1,0+4]..type.ml[1,0+5])
             Tpat_var \"f/274\"
-            value_mode Global, uniqueness:?, Many
+            value_mode global,many,join_shared(1[shared,unique])
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
               Texp_newtype'  t/276
             Texp_function
             region true
-            alloc_mode Global, uniqueness:?, Many
+            alloc_mode global,many,id(3[shared,unique])
             [
               Nolabel
               Param_pat
@@ -91,7 +91,7 @@
                           []
                       ]
                   Tpat_var \"foo/277\"
-                  value_mode locality: r_as_l=? r_as_g=Global, uniqueness:?, linearity:?
+                  value_mode map_comonadic(local_to_regional)(4[global,many,local,once]),join_shared(5[shared,unique])
             ]
             Tfunction_body
               expression (type.ml[1,0+39]..type.ml[1,0+61])
@@ -195,7 +195,7 @@
                     "attrs": [],
                     "kind": "pattern (test.ml[1,0+4]..test.ml[1,0+5])
     Tpat_var \"f/274\"
-    value_mode Global, uniqueness:?, Many
+    value_mode global,many,join_shared(1[shared,unique])
   ",
                     "children": []
                   },
@@ -227,7 +227,7 @@
                         "attrs": [],
                         "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
     Tpat_var \"x/276\"
-    value_mode locality: r_as_l=? r_as_g=Global, uniqueness:?, linearity:?
+    value_mode map_comonadic(local_to_regional)(4[global,many,local,once]),join_shared(5[shared,unique])
   ",
                         "children": []
                       },
@@ -458,7 +458,7 @@
     [
       pattern (test.ml[4,57+9]..test.ml[4,57+12])
         Tpat_var \"_aa/277\"
-        value_mode Global, Unique, Many
+        value_mode global,many,unique
     ]
     None
   ",
@@ -477,7 +477,7 @@
                                         "attrs": [],
                                         "kind": "pattern (test.ml[4,57+9]..test.ml[4,57+12])
     Tpat_var \"_aa/277\"
-    value_mode Global, Unique, Many
+    value_mode global,many,unique
   ",
                                         "children": []
                                       }
