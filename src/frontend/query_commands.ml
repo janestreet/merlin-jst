@@ -181,8 +181,7 @@ let dump pipeline = function
 
   | [`String "paths"] ->
     let paths = Mconfig.build_path (Mpipeline.final_config pipeline) in
-    `Assoc [ "visible", `List (List.map paths.visible ~f:(fun s -> `String s));
-             "hidden", `List (List.map paths.hidden ~f:(fun s -> `String s)) ]
+    `List (List.map paths ~f:(fun s -> `String s))
 
   | [`String "typedtree"] ->
     let tree =
@@ -798,8 +797,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         try
           find_in_path_uncap (Mconfig.source_path config) x
         with Not_found -> try
-            let Mconfig.{visible; hidden} = Mconfig.build_path config in
-            find_in_path_uncap (visible @ hidden) x
+            find_in_path_uncap (Mconfig.build_path config) x
           with Not_found ->
             aux xs
     in
@@ -827,7 +825,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Path_list `Build ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.build_path.visible @ config.merlin.build_path.hidden)
+    Mconfig.(config.merlin.build_path)
 
   | Path_list `Source ->
     let config = Mpipeline.final_config pipeline in

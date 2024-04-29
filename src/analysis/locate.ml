@@ -423,12 +423,8 @@ module Utils = struct
     find_file_with_path ~config ?with_fallback file @@
         match file with
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
-        | CMT _ | CMTI _         ->
-          let Mconfig.{ visible; hidden } = Mconfig.build_path config in
-          visible @ hidden
-        | CMS _ | CMSI _         ->
-          let Mconfig.{ visible; hidden } = Mconfig.build_path config in
-          visible @ hidden
+        | CMT _ | CMTI _         -> Mconfig.build_path config
+        | CMS _ | CMSI _         -> Mconfig.build_path config
 end
 
 let move_to filename artifact =

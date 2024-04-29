@@ -49,8 +49,8 @@ let setup_reader_config config = (
 
 let setup_typer_config config = (
   setup_reader_config config;
-  let Mconfig.{ visible; hidden } = Mconfig.build_path config in
-  Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
+  (* CR 5.1.1minus-4: is this right? *)
+  Load_path.(init ~auto_include:no_auto_include ~visible:(Mconfig.build_path config) ~hidden:[]);
 )
 
 (** Switchable implementation of Oprint *)

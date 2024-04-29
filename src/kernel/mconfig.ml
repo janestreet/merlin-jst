@@ -6,7 +6,6 @@ let {Logger. log} = Logger.for_section "Mconfig"
 
 type ocaml = {
   include_dirs         : string list;
-  hidden_include_dirs  : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -34,7 +33,6 @@ let dump_warnings st =
 
 let dump_ocaml x = `Assoc [
     "include_dirs"         , `List (List.map ~f:Json.string x.include_dirs);
-    "hidden_include_dirs"  , `List (List.map ~f:Json.string x.hidden_include_dirs);
     "no_std_include"       , `Bool x.no_std_include;
     "unsafe"               , `Bool x.unsafe;
     "classic"              , `Bool x.classic;
@@ -73,12 +71,8 @@ let marg_commandline f =
 
 (** {1 Merlin high-level settings} *)
 
-type include_paths =
-  { visible : string list;
-    hidden : string list }
-
 type merlin = {
-  build_path  : include_paths;
+  build_path  : string list;
   source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
@@ -109,11 +103,7 @@ let dump_merlin x =
     dump_with_workdir (Json.list Json.string) flags
   in
   `Assoc [
-    "build_path"   ,
-      `Assoc [
-        "visible", `List (List.map ~f:Json.string x.build_path.visible);
-        "hidden", `List (List.map ~f:Json.string x.build_path.hidden)
-      ];
+    "build_path"   , `List (List.map ~f:Json.string x.build_path);
     "source_path"  , `List (List.map ~f:Json.string x.source_path);
     "cmi_path"     , `List (List.map ~f:Json.string x.cmi_path);
     "cmt_path"     , `List (List.map ~f:Json.string x.cmt_path);
@@ -242,11 +232,6 @@ let rec normalize t =
   ) else
     normalize (normalize_step t)
 
-let merge_build_paths
-      (dot_bp : Mconfig_dot.include_paths) (merlin_bp : include_paths) =
-  { visible = dot_bp.visible @ merlin_bp.visible;
-    hidden = dot_bp.hidden @ merlin_bp.hidden }
-
 let get_external_config path t =
   let path = Misc.canonicalize_filename path in
   let directory = Filename.dirname path in
@@ -257,7 +242,7 @@ let get_external_config path t =
     let merlin = t.merlin in
     let merlin = {
       merlin with
-      build_path = merge_build_paths dot.build_path merlin.build_path;
+      build_path = dot.build_path @ merlin.build_path;
       source_path = dot.source_path @ merlin.source_path;
       cmi_path = dot.cmi_path @ merlin.cmi_path;
       cmt_path = dot.cmt_path @ merlin.cmt_path;
@@ -280,13 +265,9 @@ let merlin_flags = [
   (
     "-build-path",
     marg_path (fun dir merlin ->
-      let build_path =
-        { merlin.build_path with visible = dir :: merlin.build_path.visible }
-      in
-        {merlin with build_path = build_path}),
+        {merlin with build_path = dir :: merlin.build_path}),
     "<dir> Add <dir> to merlin build path"
   );
-  (* CR ccasinghino: Do we want a similar flag for hidden includes? *)
   (
     "-source-path",
     marg_path (fun dir merlin ->
@@ -591,12 +572,6 @@ let ocaml_flags = [
     "<dir> Add <dir> to the list of include directories"
   );
   (
-    "-H",
-    marg_path (fun dir ocaml ->
-        {ocaml with hidden_include_dirs = dir :: ocaml.hidden_include_dirs}),
-    "<dir> Add <dir> to the list of hidden include directories"
-  );
-  (
     "-nostdlib",
     Marg.unit (fun ocaml -> {ocaml with no_std_include = true}),
     " Do not add default directory to the list of include directories"
@@ -737,7 +712,6 @@ let ocaml_flags = [
 let initial = {
   ocaml = {
     include_dirs         = [];
-    hidden_include_dirs  = [];
     no_std_include       = false;
     unsafe               = false;
     classic              = false;
@@ -757,7 +731,7 @@ let initial = {
     as_parameter         = false;
   };
   merlin = {
-    build_path  = {visible = []; hidden = []};
+    build_path  = [];
     source_path = [];
     cmi_path    = [];
     cmt_path    = [];
@@ -875,45 +849,34 @@ let source_path config =
   |> List.filter_dup
 
 let build_path config = (
-  let visible =
+  let dirs =
     match config.ocaml.threads with
     | `None -> config.ocaml.include_dirs
     | `Threads -> "+threads" :: config.ocaml.include_dirs
     | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
   in
-  let visible =
+  let dirs =
     config.merlin.cmi_path @
-    config.merlin.build_path.visible @
-    visible
-  in
-  let hidden =
-    config.merlin.build_path.hidden @
-    config.ocaml.hidden_include_dirs
+    config.merlin.build_path @
+    dirs
   in
   let stdlib = stdlib config in
-  let visible =
-    List.map ~f:(Misc.expand_directory stdlib) visible
-  in
-  let hidden =
-    List.rev_map ~f:(Misc.expand_directory stdlib) hidden
+  let exp_dirs =
+    List.map ~f:(Misc.expand_directory stdlib) dirs
   in
   let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
-  let visible = List.rev_append visible stdlib in
-  let visible =
+  let dirs = List.rev_append exp_dirs stdlib in
+  let result =
     if config.merlin.exclude_query_dir
-    then visible
-    else config.query.directory :: visible
+    then dirs
+    else config.query.directory :: dirs
   in
-  let visible' = List.filter_dup visible in
-  let hidden' = List.filter_dup hidden in
+  let result' = List.filter_dup result in
   log ~title:"build_path" "%d items in path, %d after deduplication"
-    (List.length visible) (List.length visible');
-  log ~title:"hidden_build_path" "%d items in path, %d after deduplication"
-    (List.length hidden) (List.length hidden');
-  { visible = visible'; hidden = hidden' }
+    (List.length result) (List.length result');
+  result'
 )
 
-(* CR -H: What is `cmt_path` and does it need to consider hidden_includes?  *)
 let cmt_path config = (
   let dirs =
     match config.ocaml.threads with
@@ -923,7 +886,7 @@ let cmt_path config = (
   in
   let dirs =
     config.merlin.cmt_path @
-    config.merlin.build_path.visible @
+    config.merlin.build_path @
     dirs
   in
   let stdlib = stdlib config in
@@ -935,9 +898,7 @@ let cmt_path config = (
 )
 
 let global_modules ?(include_current=false) config = (
-  (* CR -H: I took a look at a couple uses of `global_modules` and the `.visible` below
-     seems fine, but I'm not confident *)
-  let modules = Misc.modules_in_path ~ext:".cmi" (build_path config).visible in
+  let modules = Misc.modules_in_path ~ext:".cmi" (build_path config) in
   if include_current then modules
   else match config.query.filename with
     | "" -> modules
