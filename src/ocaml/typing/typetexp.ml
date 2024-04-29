@@ -644,16 +644,11 @@ let rec transl_type env ~policy ?(aliased=false) ~row_context mode styp =
        try
          transl_type_aux env ~policy ~aliased ~row_context mode styp
        with exn ->
-         let ty = new_global_var () in
+         let ty = new_global_var (Jkind.value ~why:(Unknown "merlin")) in
          Msupport.erroneous_type_register ty;
          Msupport.raise_error exn;
-<<<<<<< HEAD
            { ctyp_desc = Ttyp_var (None, None);
-             ctyp_type = new_global_var (Jkind.value ~why:(Unknown "merlin"));
-=======
-           { ctyp_desc = Ttyp_any;
              ctyp_type = ty;
->>>>>>> c05f3a35... Fix issue #1704 by correctly registering erroneous types
              ctyp_env = env;
              ctyp_loc = styp.ptyp_loc;
              ctyp_attributes = [];
