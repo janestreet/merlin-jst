@@ -46,6 +46,265 @@ type result = {
   approximated: bool;
 }
 
+module File : sig
+  type t = private
+    | ML   of string
+    | MLL  of string
+    | MLI  of string
+    | CMT  of string
+    | CMTI of string
+    | CMS of string
+    | CMSI of string
+
+  val ml : string -> t
+  val mli : string -> t
+  val cmt : string -> t
+  val cmti : string -> t
+  val cms : string -> t
+  val cmsi : string -> t
+
+  val of_filename : string -> t option
+
+  val alternate : t -> t
+
+  val name : t -> string
+
+  val to_legacy : t -> t option
+
+  val with_ext : ?src_suffix_pair:(string * string) -> t -> string
+
+  val explain_not_found :
+    ?doc_from:string -> string -> t -> [> `File_not_found of string ]
+end = struct
+  type t =
+    | ML   of string
+    | MLL  of string
+    | MLI  of string
+    | CMT  of string
+    | CMTI of string
+    | CMS  of string
+    | CMSI of string
+
+  let file_path_to_mod_name f =
+    Misc.unitname (Filename.basename f)
+
+  let ml   s = ML   (file_path_to_mod_name s)
+  let mll  s = MLL  (file_path_to_mod_name s)
+  let mli  s = MLI  (file_path_to_mod_name s)
+  let cmt  s = CMT  (file_path_to_mod_name s)
+  let cmti s = CMTI (file_path_to_mod_name s)
+  let cms  s = CMS  (file_path_to_mod_name s)
+  let cmsi s = CMSI (file_path_to_mod_name s)
+
+  let of_filename fn =
+    match Misc.rev_string_split ~on:'.' fn with
+    | []
+    | [ _ ] -> None
+    | ext :: _ ->
+      let ext = String.lowercase ext in
+      Some (
+        match ext with
+        | "cmti" -> cmti fn
+        | "cmt"  -> cmt fn
+        | "mll"  -> mll fn
+        | "cms" -> cms fn
+        | "cmsi" -> cmsi fn
+        | _ -> if Filename.check_suffix ext "i" then mli fn else ml fn
+      )
+
+  let alternate = function
+    | ML  s
+    | MLL s -> MLI s
+    | MLI s -> ML s
+    | CMT s  -> CMTI s
+    | CMTI s -> CMT s
+    | CMS s -> CMSI s
+    | CMSI s -> CMS s
+
+  let to_legacy = function
+    | ML _ | MLI _ | MLL _ | CMT _ | CMTI _ -> None
+    | CMS s -> Some (CMT s)
+    | CMSI s -> Some (CMTI s)
+
+  let name = function
+    | ML name
+    | MLL name
+    | MLI name
+    | CMT name
+    | CMTI name
+    | CMS name
+    | CMSI name -> name
+
+  let ext src_suffix_pair = function
+    | ML _  -> fst src_suffix_pair
+    | MLI _  -> snd src_suffix_pair
+    | MLL _ -> ".mll"
+    | CMT _ -> ".cmt"
+    | CMTI _ -> ".cmti"
+    | CMS _ -> ".cms"
+    | CMSI _ -> ".cmsi"
+
+  let with_ext ?(src_suffix_pair=(".ml",".mli")) t =
+    name t ^ ext src_suffix_pair t
+
+  let explain_not_found ?(doc_from="") str_ident path =
+    let msg =
+      match path with
+      | ML file ->
+        sprintf "'%s' seems to originate from '%s' whose ML file could not be \
+                 found" str_ident file
+      | MLL file ->
+        sprintf "'%s' seems to originate from '%s' whose MLL file could not be \
+                 found" str_ident file
+      | MLI file ->
+        sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
+                 found" str_ident file
+      | CMT file ->
+        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMTI file when file <> doc_from ->
+        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMTI _ ->
+        sprintf "The documentation for '%s' originates in the current file, \
+                 but no cmt is available" str_ident
+      | CMS file ->
+        sprintf "Needed cms file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMSI file when file <> doc_from ->
+        sprintf "Needed cmsi file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMSI _ ->
+        sprintf "The documentation for '%s' originates in the current file, \
+                 but no cms is available" str_ident
+
+    in
+    `File_not_found msg
+end
+
+module Artifact : sig
+  type t
+  val builddir : t -> string
+  val sourcefile : t -> string option
+  val source_digest : t -> string option
+  val comments : t -> (string * Location.t) list
+  val impl_shape : t -> Shape.t option
+  val uid_to_loc : Shape.Uid.t -> t -> Location.t option
+
+  (** When we look for docstring in external compilation unit we can perform
+      a uid-based search and return the attached comment in the attributes.
+      This is a more sound way to get documentation than resorting on the
+      [Ocamldoc.associate_comment] heuristic *)
+  val uid_to_attributes : Shape.Uid.t -> t -> Parsetree.attributes option
+
+  val read : string -> t
+end = struct
+  type t = Cmt of Cmt_format.cmt_infos
+         | Cms of Cms_format.cms_infos
+
+  let builddir = function
+    | Cmt cmt_infos -> cmt_infos.cmt_builddir
+    | Cms cms_infos -> cms_infos.cms_builddir
+  let sourcefile = function
+    | Cmt cmt_infos -> cmt_infos.cmt_sourcefile
+    | Cms cms_infos -> cms_infos.cms_sourcefile
+  let source_digest = function
+    | Cmt cmt_infos -> cmt_infos.cmt_source_digest
+    | Cms cms_infos -> cms_infos.cms_source_digest
+  let comments = function
+    | Cmt cmt_infos -> cmt_infos.cmt_comments
+    | Cms cms_infos -> cms_infos.cms_comments
+  let impl_shape = function
+    | Cmt cmt_infos -> cmt_infos.cmt_impl_shape
+    | Cms cms_infos -> cms_infos.cms_impl_shape
+
+  let uid_to_loc uid = function
+    | Cmt cmt_infos ->
+      Shape.Uid.Tbl.find_opt cmt_infos.cmt_uid_to_decl uid
+      |> Option.bind ~f:(Misc_utils.loc_of_decl ~uid)
+      |> Option.map ~f:(fun { Location.loc; _ } -> loc)
+    | Cms cms_infos -> Shape.Uid.Tbl.find_opt cms_infos.cms_uid_to_loc uid
+
+  let uid_to_attributes uid = function
+    | Cms cms_infos -> Shape.Uid.Tbl.find_opt cms_infos.cms_uid_to_attributes uid
+    | Cmt cmt_infos ->
+    let exception Found of Typedtree.attributes in
+    let test elt_uid attributes =
+      if Shape.Uid.equal uid elt_uid then raise (Found attributes)
+    in
+    let iterator =
+      let first_item = ref true in
+      let uid_is_comp_unit = match uid with
+        | Shape.Uid.Compilation_unit _ -> true
+        | _ -> false
+      in
+      fun env -> { Tast_iterator.default_iterator with
+
+        (* Needed to return top-level module doc (when the uid is a compunit).
+          The module docstring must be the first signature or structure item *)
+        signature_item = (fun sub ({ sig_desc; _} as si) ->
+          begin match sig_desc, !first_item, uid_is_comp_unit with
+          | Tsig_attribute attr, true, true -> raise (Found [attr])
+          | _, false, true -> raise Not_found
+          | _, _, _ -> first_item := false end;
+          Tast_iterator.default_iterator.signature_item sub si);
+
+        structure_item = (fun sub ({ str_desc; _} as sti) ->
+          begin match str_desc, !first_item, uid_is_comp_unit with
+          | Tstr_attribute attr, true, true -> raise (Found [attr])
+          | _, false, true -> raise Not_found
+          | _, _, _ -> first_item := false end;
+          Tast_iterator.default_iterator.structure_item sub sti);
+
+        value_description = (fun sub ({ val_val; val_attributes; _ } as vd) ->
+          test val_val.val_uid val_attributes;
+          Tast_iterator.default_iterator.value_description sub vd);
+
+        type_declaration = (fun sub ({ typ_type; typ_attributes; _ } as td) ->
+          test typ_type.type_uid typ_attributes;
+          Tast_iterator.default_iterator.type_declaration sub td);
+
+        value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
+          begin match vb_pat.pat_desc with
+          | Tpat_var (id, _, _, _) ->
+              begin try
+                let vd = Env.find_value (Pident id) env in
+                test vd.val_uid vb_attributes
+              with Not_found -> () end
+          | _ -> () end;
+          Tast_iterator.default_iterator.value_binding sub vb)
+      }
+    in
+    let typedtree =
+      match cmt_infos.Cmt_format.cmt_annots with
+      | Interface s -> Some (`Interface { s with
+          sig_final_env = Envaux.env_of_only_summary s.sig_final_env})
+      | Implementation str -> Some (`Implementation { str with
+          str_final_env = Envaux.env_of_only_summary str.str_final_env})
+      | _ -> None
+    in
+    try begin match typedtree with
+      | Some (`Interface s) ->
+          let iterator = iterator s.sig_final_env in
+          iterator.signature iterator s;
+          log ~title:"doc_from_uid" "uid not found in the signature"
+      | Some (`Implementation str) ->
+          let iterator = iterator str.str_final_env in
+          iterator.structure iterator str;
+          log ~title:"doc_from_uid" "uid not found in the implementation"
+      | _ -> () end;
+      None
+    with
+      | Found attrs -> Some attrs
+      | Not_found -> None
+
+  let read file =
+    match File.of_filename file with
+    | Some (CMT _ | CMTI _) -> Cmt (Cmt_cache.read file).cmt_infos
+    | Some (CMS _ | CMSI _) -> Cms (Cms_cache.read file).cms_infos
+    | Some (ML _ | MLL _ | MLI _) | None -> assert false
+end
+
 module Preferences : sig
   val set : [ `ML | `MLI ] -> unit
 
