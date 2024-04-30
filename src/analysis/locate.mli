@@ -26,6 +26,14 @@
 
 )* }}} *)
 
+module Artifact : sig
+  type t
+
+  val read : string -> t
+
+  val impl_shape : t -> Shape.t option
+end
+
 val log : 'a Logger.printf
 
 type config = {

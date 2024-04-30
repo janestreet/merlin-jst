@@ -38,11 +38,11 @@ let index_buffer_ ~scope ~current_buffer_path ~local_defs () =
           log ~title:"read_unit_shape" "inspecting %s" unit_name;
           let read unit_name =
             let cms = Format.sprintf "%s.cms" unit_name in
-            match Artifact.read (Load_path.find_uncap cms) with
+            match Locate.Artifact.read (Load_path.find_uncap cms) with
             | artifact -> Some artifact
             | exception _ ->
               let cmt = Format.sprintf "%s.cmt" unit_name in
-              match Artifact.read (Load_path.find_uncap cmt) with
+              match Locate.Artifact.read (Load_path.find_uncap cmt) with
               | artifact -> Some artifact
               | exception _ ->
                 None
@@ -50,7 +50,7 @@ let index_buffer_ ~scope ~current_buffer_path ~local_defs () =
           match read unit_name with
           | Some artifact ->
             log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
-            Artifact.impl_shape artifact
+            Locate.Artifact.impl_shape artifact
           | None ->
             log ~title:"read_unit_shape" "failed to find %s" unit_name;
             None
