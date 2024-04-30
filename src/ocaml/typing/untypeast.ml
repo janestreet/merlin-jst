@@ -448,9 +448,9 @@ let exp_extra sub (extra, loc, attrs) sexp =
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(add_loc s, jkind, sexp))
         |> add_jane_syntax_attributes
-    | Texp_newtype' (_id, label_loc, None) ->
+    | Texp_newtype' (_id, label_loc, None, _) ->
         Pexp_newtype (label_loc, sexp)
-    | Texp_newtype' (_id, label_loc, Some (_, jkind)) ->
+    | Texp_newtype' (_id, label_loc, Some (_, jkind), _) ->
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(label_loc, jkind, sexp))
         |> add_jane_syntax_attributes
@@ -583,7 +583,7 @@ let expression sub exp =
                let default_arg = Option.map (sub.expr sub) default_arg in
                let newtypes =
                  List.map
-                   (function Newtype (x, annot) | Newtype' (_, x, annot) ->
+                   (function Newtype (x, annot) | Newtype' (_, x, annot, _) ->
                       { pparam_desc = Pparam_newtype (x, Option.map snd annot);
                         pparam_loc = x.loc;
                       })

@@ -49,7 +49,7 @@ Jump to the declaration of an element of an alisaed module `A.|f`:
     "file": "$TESTCASE_ROOT/anothermod.mli",
     "pos": {
       "line": 3,
-      "col": 0
+      "col": 4
     }
   }
 

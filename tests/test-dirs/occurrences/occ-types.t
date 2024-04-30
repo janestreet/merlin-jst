@@ -68,35 +68,4 @@
   > jq '.value'
   > let f = fun (x : int) (type t) (foo : t list) -> let (_ : t) = () in ()
   > EOF
-  [
-    {
-      "start": {
-        "line": 1,
-        "col": 28
-      },
-      "end": {
-        "line": 1,
-        "col": 29
-      }
-    },
-    {
-      "start": {
-        "line": 1,
-        "col": 38
-      },
-      "end": {
-        "line": 1,
-        "col": 39
-      }
-    },
-    {
-      "start": {
-        "line": 1,
-        "col": 58
-      },
-      "end": {
-        "line": 1,
-        "col": 59
-      }
-    }
-  ]
+  []
