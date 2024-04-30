@@ -413,7 +413,7 @@ let of_expression_desc loc = function
   | Texp_letmodule (mb_id, mb_name, mb_presence, mb_expr, e) ->
     let mb =
       {mb_id;mb_name;mb_expr;mb_loc=Location.none;mb_attributes=[]
-      ; mb_presence }
+      ; mb_presence; mb_uid=Shape.Uid.internal_not_actually_unique }
     in
     app (Module_binding mb) ** of_expression e
   | Texp_letexception (ec,e) ->
@@ -896,7 +896,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
       List.concat_map params ~f:(fun { fp_newtypes; _} ->
         List.concat_map fp_newtypes ~f:(function
           | Newtype _ -> []  (* shouldn't happen *)
-          | Newtype' (id, label_loc, _) ->
+          | Newtype' (id, label_loc, _, _) ->
             let path = Path.Pident id in
             let lid = Longident.Lident (label_loc.txt) in
             [mkloc path label_loc.loc, Some lid]))
@@ -905,7 +905,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
   List.fold_left ~init exp_extra
     ~f:(fun acc (extra, _, _) ->
       match extra with
-      | Texp_newtype' (id, label_loc, _) ->
+      | Texp_newtype' (id, label_loc, _, _) ->
         let path = Path.Pident id in
         let lid = Longident.Lident (label_loc.txt) in
         (mkloc path label_loc.loc, Some lid) :: acc

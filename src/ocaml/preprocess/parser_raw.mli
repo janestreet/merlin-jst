@@ -3,7 +3,6 @@
 
 type token = 
   | WITH
-  | WHILE_LWT
   | WHILE
   | WHEN
   | VIRTUAL
@@ -12,7 +11,6 @@ type token =
   | UNDERSCORE
   | UIDENT of (string)
   | TYPE
-  | TRY_LWT
   | TRY
   | TRUE
   | TO
@@ -53,12 +51,10 @@ type token =
   | MINUSDOT
   | MINUS
   | METHOD
-  | MATCH_LWT
   | MATCH
   | LPAREN
   | LOCAL
   | LIDENT of (string)
-  | LET_LWT
   | LETOP of (string)
   | LET
   | LESSMINUS
@@ -103,10 +99,8 @@ type token =
   | FUNCTOR
   | FUNCTION
   | FUN
-  | FOR_LWT
   | FOR
   | FLOAT of (string * char option)
-  | FINALLY_LWT
   | FALSE
   | EXTERNAL
   | EXCLAVE
@@ -198,7 +192,6 @@ module MenhirInterpreter : sig
   type _ terminal = 
     | T_error : unit terminal
     | T_WITH : unit terminal
-    | T_WHILE_LWT : unit terminal
     | T_WHILE : unit terminal
     | T_WHEN : unit terminal
     | T_VIRTUAL : unit terminal
@@ -207,7 +200,6 @@ module MenhirInterpreter : sig
     | T_UNDERSCORE : unit terminal
     | T_UIDENT : (string) terminal
     | T_TYPE : unit terminal
-    | T_TRY_LWT : unit terminal
     | T_TRY : unit terminal
     | T_TRUE : unit terminal
     | T_TO : unit terminal
@@ -248,12 +240,10 @@ module MenhirInterpreter : sig
     | T_MINUSDOT : unit terminal
     | T_MINUS : unit terminal
     | T_METHOD : unit terminal
-    | T_MATCH_LWT : unit terminal
     | T_MATCH : unit terminal
     | T_LPAREN : unit terminal
     | T_LOCAL : unit terminal
     | T_LIDENT : (string) terminal
-    | T_LET_LWT : unit terminal
     | T_LETOP : (string) terminal
     | T_LET : unit terminal
     | T_LESSMINUS : unit terminal
@@ -298,10 +288,8 @@ module MenhirInterpreter : sig
     | T_FUNCTOR : unit terminal
     | T_FUNCTION : unit terminal
     | T_FUN : unit terminal
-    | T_FOR_LWT : unit terminal
     | T_FOR : unit terminal
     | T_FLOAT : (string * char option) terminal
-    | T_FINALLY_LWT : unit terminal
     | T_FALSE : unit terminal
     | T_EXTERNAL : unit terminal
     | T_EXCLAVE : unit terminal
