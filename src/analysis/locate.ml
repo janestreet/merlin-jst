@@ -43,8 +43,6 @@ module File : sig
 
   val ml : string -> t
   val mli : string -> t
-  val cmt : string -> t
-  val cmti : string -> t
   val cms : string -> t
   val cmsi : string -> t
 
@@ -508,7 +506,7 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
       let read_unit_shape ~unit_name =
           log ~title:"read_unit_shape" "inspecting %s" unit_name;
           match load_cmt ~config unit_name `ML with
-          | Ok (filename, artifact) ->
+          | Ok (_filename, artifact) ->
             log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
             Artifact.impl_shape artifact
           | Error () ->
