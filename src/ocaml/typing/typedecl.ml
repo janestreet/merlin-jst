@@ -1988,7 +1988,9 @@ let transl_type_decl env rec_flag sdecl_list =
     (fun sdecl (tdecl, _shape) ->
       let decl = tdecl.typ_type in
        match Ctype.closed_type_decl decl with
-         Some ty -> raise(Error(sdecl.ptype_loc, Unbound_type_var(ty,decl)))
+         Some ty ->
+          if not (Msupport.erroneous_type_check ty) then
+            raise(Error(sdecl.ptype_loc, Unbound_type_var(ty,decl)))
        | None   -> ())
     sdecl_list tdecls;
   (* Check that constraints are enforced *)
