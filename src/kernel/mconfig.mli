@@ -111,6 +111,8 @@ val document_arguments : out_channel -> unit
 
 val source_path : t -> string list
 
+val hidden_source_path : t -> string list
+
 val build_path : t -> string list
 
 val hidden_build_path : t -> string list

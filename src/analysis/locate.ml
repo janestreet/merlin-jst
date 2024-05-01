@@ -389,7 +389,7 @@ module Utils = struct
     let files =
       List.concat_map ~f:(fun synonym_pair ->
         find_all_in_path_uncap ~src_suffix_pair:synonym_pair ~with_fallback
-          (Mconfig.source_path config) file
+          (Mconfig.source_path config @ Mconfig.hidden_source_path config) file
       ) Mconfig.(config.merlin.suffixes)
     in
     List.dedup_adjacent files ~cmp:String.compare
@@ -422,9 +422,9 @@ module Utils = struct
   let find_file ~config ?with_fallback (file : File.t) =
     find_file_with_path ~config ?with_fallback file @@
         match file with
-        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
-        | CMT _ | CMTI _         -> Mconfig.build_path config
-        | CMS _ | CMSI _         -> Mconfig.build_path config
+        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config @ Mconfig.hidden_source_path config
+        | CMT _ | CMTI _         -> Mconfig.build_path config @ Mconfig.hidden_build_path config
+        | CMS _ | CMSI _         -> Mconfig.build_path config @ Mconfig.hidden_build_path config
 end
 
 let move_to filename artifact =

@@ -183,6 +183,10 @@ let dump pipeline = function
     let paths = Mconfig.build_path (Mpipeline.final_config pipeline) in
     `List (List.map paths ~f:(fun s -> `String s))
 
+  | [`String "hidden-paths"] ->
+    let paths = Mconfig.hidden_build_path (Mpipeline.final_config pipeline) in
+    `List (List.map paths ~f:(fun s -> `String s))
+
   | [`String "typedtree"] ->
     let tree =
       Mpipeline.typer_result pipeline
@@ -795,9 +799,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
-          find_in_path_uncap (Mconfig.source_path config) x
+          find_in_path_uncap (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
         with Not_found -> try
-            find_in_path_uncap (Mconfig.build_path config) x
+            find_in_path_uncap (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
           with Not_found ->
             aux xs
     in

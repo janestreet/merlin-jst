@@ -878,6 +878,9 @@ let source_path config =
      config.merlin.source_path]
   |> List.filter_dup
 
+let hidden_source_path config =
+  config.merlin.hidden_source_path @ config.ocaml.hidden_dirs
+
 let build_path config = (
   let dirs =
     match config.ocaml.threads with

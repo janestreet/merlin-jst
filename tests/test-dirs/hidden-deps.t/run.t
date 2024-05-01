@@ -64,6 +64,13 @@ Merlin can locate a value in an implementation from a direct dependency
 Merlin can locate a value in an implementation from a hidden dependency
 
   $ $MERLIN single locate -position 1:11 -look-for implementation -filename c/correct.ml < c/correct.ml | jq ".value"
+  {
+    "file": "$TESTCASE_ROOT/a/a.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
 Merlin reports an error when a hidden dependency is directly used
 
