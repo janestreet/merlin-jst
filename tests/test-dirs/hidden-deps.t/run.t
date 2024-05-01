@@ -23,6 +23,15 @@ it via B.
   $ $OCAMLC -c -bin-annot -I ../a b.ml -o b.cmo
   $ cd ../..
 
+Create a .merlin file
+
+  $ cat >c/.merlin <<EOF
+  > BH ../_build/a
+  > SH ../a
+  > B ../_build/b
+  > S ../b
+  > EOF
+
 Merlin does not report errors when there are none
 
   $ $MERLIN single errors -filename c/correct.ml < c/correct.ml | jq ".value"
