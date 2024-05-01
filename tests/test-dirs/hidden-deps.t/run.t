@@ -11,17 +11,17 @@ it via B.
 
   $ mkdir -p _build/a
   $ cp a/*.ml* _build/a
-  $ pushd _build/a > /dev/null
+  $ cd _build/a
   $ $OCAMLC -c -bin-annot a.mli -o a.cmi
   $ $OCAMLC -c -bin-annot a.ml -o a.cmo
-  $ popd > /dev/null
+  $ cd ../..
 
   $ mkdir -p _build/b
   $ cp b/*.ml* _build/b
-  $ pushd _build/b > /dev/null
+  $ cd _build/b
   $ $OCAMLC -c -bin-annot b.mli -o b.cmi
   $ $OCAMLC -c -bin-annot -I ../a b.ml -o b.cmo
-  $ popd > /dev/null
+  $ cd ../..
 
 Merlin does not report errors when there are none
 
