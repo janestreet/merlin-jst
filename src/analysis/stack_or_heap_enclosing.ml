@@ -1,7 +1,7 @@
 open Std
 
 let log_section = "stack-or-heap-enclosing"
-let { Logger.log } = Logger.for_section log_section
+let { Logger.log = _ } = Logger.for_section log_section
 
 type stack_or_heap =
   | Alloc_mode of Mode.Alloc.r
@@ -11,7 +11,7 @@ type stack_or_heap =
 type stack_or_heap_enclosings = (Location.t * stack_or_heap) list
 
 let from_nodes ~pos ~path =
-  let aux (env, node, tail) =
+  let aux (_env, node, _tail) =
     let open Browse_raw in
     let ret mode_result = Some (Mbrowse.node_loc node, mode_result) in
     let ret_alloc alloc_mode = ret (Alloc_mode alloc_mode) in

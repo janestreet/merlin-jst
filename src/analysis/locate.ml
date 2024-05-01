@@ -58,8 +58,6 @@ module File : sig
 
   val ml : string -> t
   val mli : string -> t
-  val cmt : string -> t
-  val cmti : string -> t
   val cms : string -> t
   val cmsi : string -> t
 
@@ -473,7 +471,7 @@ let move_to filename artifact =
   File_switching.move_to ~digest filename
 
 
-let load_cmt ~config ?(with_fallback = true) comp_unit =
+let load_cmt ~config ?with_fallback:(_ = true) comp_unit =
   Preferences.set config.ml_or_mli;
   let file = Preferences.build comp_unit in
   match Utils.find_file ~config:config.mconfig ~with_fallback:true file with
