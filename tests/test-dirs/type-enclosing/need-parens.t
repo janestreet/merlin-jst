@@ -31,7 +31,7 @@ FIXME: locate on `M.(| * )` should work:
     "file": "test.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 7
     }
   }
 
