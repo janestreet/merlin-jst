@@ -2,11 +2,15 @@ open Mconfig
 
 let {Logger. log} = Logger.for_section "Mppx"
 
-(* CR -H: do we need to do something for hidden includes here? *)
-let with_include_dir path f =
-  let saved = !Clflags.include_dirs in
-  let restore () = Clflags.include_dirs := saved in
-  Clflags.include_dirs := path;
+let with_include_dir ~visible_path ~hidden_path f =
+  let saved_visible = !Clflags.include_dirs in
+  let saved_hidden = !Clflags.hidden_include_dirs in
+  let restore () =
+    Clflags.include_dirs := saved_visible;
+    Clflags.hidden_include_dirs := saved_hidden
+  in
+  Clflags.include_dirs := visible_path;
+  Clflags.hidden_include_dirs := hidden_path;
   let result =
     begin
       try
@@ -20,11 +24,13 @@ let with_include_dir path f =
   restore ();
   result
 
-(* CR -H: do we need to do something for hidden includes here? *)
 let rewrite parsetree cfg =
   let ppx = cfg.ocaml.ppx in
   (* add include path attribute to the parsetree *)
-  with_include_dir (Mconfig.build_path cfg).visible @@ fun () ->
+  with_include_dir
+    ~visible_path:(Mconfig.build_path cfg)
+    ~hidden_path:(Mconfig.hidden_build_path cfg)
+  @@ fun () ->
   match
     Pparse.apply_rewriters ~restore:false ~ppx ~tool_name:"merlin" parsetree
   with

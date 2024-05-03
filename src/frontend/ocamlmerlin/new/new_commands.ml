@@ -701,7 +701,7 @@ The return value has the shape:
   command "dump"
     ~spec:[
       arg "-what" "<source|parsetree|ppxed-source|ppxed-parsetree|typedtree\
-                   |env|fullenv|browse|tokens|flags|warnings|exn|paths> \
+                   |env|fullenv|browse|tokens|flags|warnings|exn|paths|hidden-paths> \
                    Information to dump ()"
         (Marg.param "string" (fun what _ -> what));
     ]
