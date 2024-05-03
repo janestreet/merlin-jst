@@ -202,8 +202,8 @@ let dump pipeline = function
     `String (to_string ())
 
   | _ -> failwith "known dump commands: \
-                   paths, exn, warnings, flags, tokens, browse, source, \
-                   parsetree, ppxed-source, ppxed-parsetree, typedtree, \
+                   paths, hidden-paths, exn, warnings, flags, tokens, browse, \
+                   source, parsetree, ppxed-source, ppxed-parsetree, typedtree, \
                    env/fullenv (at {col:, line:})"
 
 let reconstruct_identifier pipeline pos = function
