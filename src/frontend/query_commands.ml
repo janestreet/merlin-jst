@@ -181,8 +181,11 @@ let dump pipeline = function
 
   | [`String "paths"] ->
     let paths = Mconfig.build_path (Mpipeline.final_config pipeline) in
-    `Assoc [ "visible", `List (List.map paths.visible ~f:(fun s -> `String s));
-             "hidden", `List (List.map paths.hidden ~f:(fun s -> `String s)) ]
+    `List (List.map paths ~f:(fun s -> `String s))
+
+  | [`String "hidden-paths"] ->
+    let paths = Mconfig.hidden_build_path (Mpipeline.final_config pipeline) in
+    `List (List.map paths ~f:(fun s -> `String s))
 
   | [`String "typedtree"] ->
     let tree =
@@ -199,8 +202,8 @@ let dump pipeline = function
     `String (to_string ())
 
   | _ -> failwith "known dump commands: \
-                   paths, exn, warnings, flags, tokens, browse, source, \
-                   parsetree, ppxed-source, ppxed-parsetree, typedtree, \
+                   paths, hidden-paths, exn, warnings, flags, tokens, browse, \
+                   source, parsetree, ppxed-source, ppxed-parsetree, typedtree, \
                    env/fullenv (at {col:, line:})"
 
 let reconstruct_identifier pipeline pos = function
@@ -809,10 +812,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
-          find_in_path_uncap (Mconfig.source_path config) x
+          find_in_path_uncap (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
         with Not_found -> try
-            let Mconfig.{visible; hidden} = Mconfig.build_path config in
-            find_in_path_uncap (visible @ hidden) x
+            find_in_path_uncap (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
           with Not_found ->
             aux xs
     in
@@ -840,11 +842,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Path_list `Build ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.build_path.visible @ config.merlin.build_path.hidden)
+    Mconfig.(config.merlin.build_path @ config.merlin.hidden_build_path)
 
   | Path_list `Source ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.source_path)
+    Mconfig.(config.merlin.source_path @ config.merlin.hidden_source_path)
 
   | Occurrences (`Ident_at pos, scope) ->
     let config = Mpipeline.final_config pipeline in

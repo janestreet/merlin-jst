@@ -59,9 +59,7 @@ let customize config =
     let merlin = config.merlin in
     let merlin =
       match var with
-      | `Build -> {merlin with build_path =
-                                 { visible = f merlin.build_path.visible;
-                                   hidden = f merlin.build_path.hidden }}
+      | `Build -> {merlin with build_path = f merlin.build_path}
       | `Source -> {merlin with source_path = f merlin.source_path}
     in
     {config with merlin}

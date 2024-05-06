@@ -31,7 +31,13 @@ open Merlin_utils.Std.Result
 
 module Directive = struct
   type include_path =
-    [ `B of string | `S of string | `CMI of string | `CMT of string | `INDEX of string ]
+    [ `B of string
+    | `S of string
+    | `BH of string
+    | `SH of string
+    | `CMI of string
+    | `CMT of string
+    | `INDEX of string ]
 
   type no_processing_required =
     [ `EXT of string list
@@ -82,6 +88,8 @@ module Sexp = struct
       begin match tag with
         | "S" -> `S value
         | "B" -> `B value
+        | "SH" -> `SH value
+        | "BH" -> `BH value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
         | "INDEX" -> `INDEX value
@@ -113,6 +121,8 @@ module Sexp = struct
         match t with
         | `B s -> ("B", single s)
         | `S s -> ("S", single s)
+        | `BH s -> ("BH", single s)
+        | `SH s -> ("SH", single s)
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
         | `INDEX s -> ("INDEX", single s)

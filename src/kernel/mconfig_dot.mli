@@ -28,13 +28,11 @@
 
 open Std
 
-type include_paths =
-  { visible : string list;
-    hidden : string list }
-
 type config = {
-  build_path   : include_paths;
+  build_path   : string list;
   source_path  : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path     : string list;
   cmt_path     : string list;
   index_files  : string list;
