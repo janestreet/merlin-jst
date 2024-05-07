@@ -5182,6 +5182,7 @@ let create_merlin_type_error_node loc env ty_expected ~attributes =
               val_loc = loc;
               val_attributes = [];
               val_uid = Uid.internal_not_actually_unique;
+              val_zero_alloc = Builtin_attributes.Default_check;
             },
             Id_value,
             (Uniqueness.disallow_left Uniqueness.legacy,
