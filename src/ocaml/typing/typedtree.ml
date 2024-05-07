@@ -1144,6 +1144,13 @@ let rec exp_is_nominal exp =
       exp_is_nominal parent
   | _ -> false
 
+let function_arity params body =
+  List.length params +
+  match body with
+  | Tfunction_body _ -> 0
+  | Tfunction_cases _ -> 1
+
+
 (* Merlin specific *)
 
 let unpack_functor_me me =
@@ -1152,22 +1159,6 @@ let unpack_functor_me me =
   | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
 
 let unpack_functor_mty mty =
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
   match mty.mty_desc with
   | Tmty_functor (fp, mty) -> fp, mty
   | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
-=======
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
-
-let function_arity params body =
-  List.length params +
-  match body with
-  | Tfunction_body _ -> 0
-  | Tfunction_cases _ -> 1
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd

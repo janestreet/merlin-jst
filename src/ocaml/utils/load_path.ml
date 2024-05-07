@@ -14,11 +14,6 @@
 
 open Local_store
 
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-module STbl = Misc.String.Tbl
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-module STbl = Misc.Stdlib.String.Tbl
-=======
 module Dir : sig
   type entry = {
     basename : string;
@@ -26,7 +21,6 @@ module Dir : sig
   }
 
   type t
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
 
   val path : t -> string
   val files : t -> entry list
@@ -72,19 +66,11 @@ end = struct
     in
     List.find_map search t.files
 
-  let create ~hidden path =
-    { path; files = Array.to_list (Directory_content_cache.read path); hidden }
-
   let check ~hidden t =
     hidden = t.hidden && Directory_content_cache.check t.path
 
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
   let create ~hidden path =
-    { path; files = Array.to_list (readdir_compat path); hidden }
-=======
-  let create ~hidden path =
-    let files = Array.to_list (readdir_compat path)
+    let files = Array.to_list (Directory_content_cache.read path)
       |> List.map (fun basename -> { basename; path = Filename.concat path basename }) in
     { path; files; hidden }
 
@@ -95,7 +81,7 @@ end = struct
         let rec loop acc =
           try
             let line = input_line ic in
-            let (basename, path) = Misc.Stdlib.String.split_first_exn ~split_on:' ' line in
+            let (basename, path) = Misc.String.split_first_exn ~split_on:' ' line in
             loop ({ basename; path } :: acc)
           with End_of_file -> acc
         in
@@ -136,7 +122,7 @@ module Path_cache : sig
   (* Search for a basename in cache. Ignore case if [uncap] is true *)
   val find : uncap:bool -> string -> string * visibility
 end = struct
-  module STbl = Misc.Stdlib.String.Tbl
+  module STbl = Misc.String.Tbl
 
   (* Mapping from basenames to full filenames *)
   type registry = string STbl.t
@@ -187,7 +173,6 @@ end = struct
       find (String.uncapitalize_ascii fn) visible_files_uncap hidden_files_uncap
     else
       find fn visible_files hidden_files
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
 end
 
 type auto_include_callback =
@@ -222,30 +207,6 @@ let get_visible_path_list () = List.rev_map Dir.path !visible_dirs
 let get_hidden_path_list () = List.rev_map Dir.path !hidden_dirs
 
 let init ~auto_include ~visible ~hidden =
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-  reset ();
-  visible_dirs := List.rev_map (Dir.create ~hidden:false) visible;
-  hidden_dirs := List.rev_map (Dir.create ~hidden:true) hidden;
-  List.iter prepend_add !hidden_dirs;
-  List.iter prepend_add !visible_dirs;
-  auto_include_callback := auto_include
-
-let remove_dir dir =
-=======
-  reset ();
-  visible_dirs := List.rev_map (Dir.create ~hidden:false) visible;
-  hidden_dirs := List.rev_map (Dir.create ~hidden:true) hidden;
-  List.iter (fun (libloc : Clflags.Libloc.t) ->
-    visible_dirs := Misc.rev_map_end (fun lib -> Dir.create_libloc ~hidden:false ~libloc:libloc.path lib) libloc.libs !visible_dirs;
-    hidden_dirs := Misc.rev_map_end (fun lib -> Dir.create_libloc ~hidden:true ~libloc:libloc.path lib) libloc.hidden_libs !hidden_dirs
-  ) !Clflags.libloc;
-  List.iter Path_cache.prepend_add !hidden_dirs;
-  List.iter Path_cache.prepend_add !visible_dirs;
-  auto_include_callback := auto_include
-
-let remove_dir dir =
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
   assert (not Config.merlin || Local_store.is_bound ());
   let rec loop_changed ~hidden acc = function
     | [] -> Some acc
@@ -285,12 +246,32 @@ let remove_dir dir =
   match update with
   | None -> ()
   | Some (new_visible, new_hidden) ->
+<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
     reset ();
     visible_dirs := new_visible;
     hidden_dirs := new_hidden;
-    List.iter prepend_add new_hidden;
-    List.iter prepend_add new_visible;
+    List.iter Path_cache.prepend_add new_hidden;
+    List.iter Path_cache.prepend_add new_visible;
     auto_include_callback := auto_include
+||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
+  reset ();
+  visible_dirs := List.rev_map (Dir.create ~hidden:false) visible;
+  hidden_dirs := List.rev_map (Dir.create ~hidden:true) hidden;
+  List.iter prepend_add !hidden_dirs;
+  List.iter prepend_add !visible_dirs;
+  auto_include_callback := auto_include
+=======
+  reset ();
+  visible_dirs := List.rev_map (Dir.create ~hidden:false) visible;
+  hidden_dirs := List.rev_map (Dir.create ~hidden:true) hidden;
+  List.iter (fun (libloc : Clflags.Libloc.t) ->
+    visible_dirs := Misc.rev_map_end (fun lib -> Dir.create_libloc ~hidden:false ~libloc:libloc.path lib) libloc.libs !visible_dirs;
+    hidden_dirs := Misc.rev_map_end (fun lib -> Dir.create_libloc ~hidden:true ~libloc:libloc.path lib) libloc.hidden_libs !hidden_dirs
+  ) !Clflags.libloc;
+  List.iter Path_cache.prepend_add !hidden_dirs;
+  List.iter Path_cache.prepend_add !visible_dirs;
+  auto_include_callback := auto_include
+>>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
 
 let remove_dir dir =
   assert (not Config.merlin || Local_store.is_bound ());

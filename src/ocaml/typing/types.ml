@@ -612,7 +612,7 @@ let equal_mixed_product_shape r1 r2 = r1 == r2 ||
   let[@warning "+9"] { value_prefix_len = l1; flat_suffix = s1 } = r1
   and                { value_prefix_len = l2; flat_suffix = s2 } = r2
   in
-  l1 = l2 && Misc.Stdlib.Array.equal equal_flat_element s1 s2
+  l1 = l2 && array_equal equal_flat_element s1 s2
 
 let equal_constructor_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Constructor_uniform_value, Constructor_uniform_value -> true
@@ -623,20 +623,12 @@ let equal_constructor_representation r1 r2 = r1 == r2 || match r1, r2 with
 let equal_variant_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Variant_unboxed, Variant_unboxed ->
       true
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-  | Variant_boxed lays1, Variant_boxed lays2 ->
-      array_equal (array_equal Jkind.equal) lays1 lays2
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-  | Variant_boxed lays1, Variant_boxed lays2 ->
-      Misc.Stdlib.Array.equal (Misc.Stdlib.Array.equal Jkind.equal) lays1 lays2
-=======
   | Variant_boxed cstrs_and_jkinds1, Variant_boxed cstrs_and_jkinds2 ->
-      Misc.Stdlib.Array.equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
+      array_equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
           equal_constructor_representation cstr1 cstr2
-          && Misc.Stdlib.Array.equal Jkind.equal jkinds1 jkinds2)
+          && array_equal Jkind.equal jkinds1 jkinds2)
         cstrs_and_jkinds1
         cstrs_and_jkinds2
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
   | Variant_extensible, Variant_extensible ->
       true
   | (Variant_unboxed | Variant_boxed _ | Variant_extensible), _ ->
@@ -653,19 +645,7 @@ let equal_record_representation r1 r2 = match r1, r2 with
       true
   | Record_ufloat, Record_ufloat ->
       true
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-  | Record_mixed { value_prefix_len = l1; flat_suffix = s1 },
-    Record_mixed { value_prefix_len = l2; flat_suffix = s2 }
-    [@warning "+9"] (* get alerted if we add another field *) ->
-      l1 = l2 && array_equal equal_flat_element s1 s2
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-  | Record_mixed { value_prefix_len = l1; flat_suffix = s1 },
-    Record_mixed { value_prefix_len = l2; flat_suffix = s2 }
-    [@warning "+9"] (* get alerted if we add another field *) ->
-      l1 = l2 && Misc.Stdlib.Array.equal equal_flat_element s1 s2
-=======
   | Record_mixed mx1, Record_mixed mx2 -> equal_mixed_product_shape mx1 mx2
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
   | (Record_unboxed | Record_inlined _ | Record_boxed _ | Record_float
     | Record_ufloat | Record_mixed _), _ ->
       false

@@ -1168,15 +1168,11 @@ val split_pattern:
 (** Whether an expression looks nice as the subject of a sentence in a error
     message. *)
 val exp_is_nominal : expression -> bool
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
+
+(** Calculates the syntactic arity of a function based on its parameters and body. *)
+val function_arity : function_param list -> function_body -> int
 
 (* Merlin specific *)
 
 val unpack_functor_me : module_expr -> functor_parameter * module_expr
 val unpack_functor_mty : module_type -> functor_parameter * module_type
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-=======
-
-(** Calculates the syntactic arity of a function based on its parameters and body. *)
-val function_arity : function_param list -> function_body -> int
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
