@@ -737,6 +737,7 @@ let wrap_printing_env_error env f =
   { Location.kind = err.kind;
     main = wrap err.main;
     sub = List.map wrap err.sub;
+    source = err.source
   }
 
 type type_result = Short_paths.type_result =
