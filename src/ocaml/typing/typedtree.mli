@@ -33,7 +33,7 @@ type constant =
   | Const_string of string * Location.t * string option
   | Const_float of string
   | Const_float32 of string
-  (* CR mslater: (float32) unboxed float32 *)
+  (* CR mslater: (float32) unboxed *)
   | Const_unboxed_float of string
   | Const_int32 of int32
   | Const_int64 of int64
@@ -486,8 +486,13 @@ and function_body =
 
 and function_cases =
   { fc_cases: value case list;
+    fc_env : Env.t;
+    (** [fc_env] contains entries from all parameters except
+        for the last one being matched by the cases.
+    *)
     fc_arg_mode: Mode.Alloc.l;
     fc_arg_sort: Jkind.sort;
+    fc_ret_type : Types.type_expr;
     fc_partial: partial;
     fc_param: Ident.t;
     fc_loc: Location.t;
@@ -1124,9 +1129,23 @@ val exists_pattern: (pattern -> bool) -> pattern -> bool
 val let_bound_idents: value_binding list -> Ident.t list
 val let_bound_idents_full:
     value_binding list -> (Ident.t * string loc * Types.type_expr * Uid.t) list
-val let_bound_idents_with_modes_and_sorts:
+
+(* [let_bound_idents_with_modes_sorts_and_checks] finds all the idents in the
+   let bindings and computes their modes, sorts, and whether they have any check
+   attributes (zero_alloc).
+
+   Note that:
+   * The list associated with each ident can only have more than one element in
+     the case of or pattern, where the ident is bound on both sides.
+   * We return just one check_attribute per identifier, because this attribute
+     can only be something other than [Default_check] in the case of a simple
+     variable pattern bound to a function (in which case the list will also
+     have just one element).
+*)
+val let_bound_idents_with_modes_sorts_and_checks:
   value_binding list
-  -> (Ident.t * (Location.t * Mode.Value.l * Jkind.sort) list) list
+  -> (Ident.t * (Location.t * Mode.Value.l * Jkind.sort) list
+              * Builtin_attributes.check_attribute) list
 
 (** Alpha conversion of patterns *)
 val alpha_pat:
@@ -1149,8 +1168,15 @@ val split_pattern:
 (** Whether an expression looks nice as the subject of a sentence in a error
     message. *)
 val exp_is_nominal : expression -> bool
+<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
 
 (* Merlin specific *)
 
 val unpack_functor_me : module_expr -> functor_parameter * module_expr
 val unpack_functor_mty : module_type -> functor_parameter * module_type
+||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
+=======
+
+(** Calculates the syntactic arity of a function based on its parameters and body. *)
+val function_arity : function_param list -> function_body -> int
+>>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd

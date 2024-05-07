@@ -249,8 +249,10 @@ and function_body =
 
 and function_cases =
   { fc_cases: value case list;
+    fc_env : Env.t;
     fc_arg_mode: Mode.Alloc.l;
     fc_arg_sort: Jkind.sort;
+    fc_ret_type : Types.type_expr;
     fc_partial: partial;
     fc_param: Ident.t;
     fc_loc: Location.t;
@@ -1043,16 +1045,27 @@ let rev_let_bound_idents_full bindings =
   List.iter (fun vb -> iter_bound_idents add vb.vb_pat) bindings;
   !idents_full
 
-let let_bound_idents_with_modes_and_sorts bindings =
+let let_bound_idents_with_modes_sorts_and_checks bindings =
   let modes_and_sorts = Ident.Tbl.create 3 in
   let f id sloc _ _uid mode sort =
     Ident.Tbl.add modes_and_sorts id (sloc.loc, mode, sort)
   in
-  List.iter (fun vb ->
-    iter_pattern_full ~both_sides_of_or:true f vb.vb_sort vb.vb_pat)
-    bindings;
+  let checks =
+    List.fold_left (fun checks vb ->
+      iter_pattern_full ~both_sides_of_or:true f vb.vb_sort vb.vb_pat;
+       match vb.vb_pat.pat_desc, vb.vb_expr.exp_desc with
+       | Tpat_var (id, _, _, _), Texp_function fn ->
+         Ident.Map.add id fn.zero_alloc checks
+       | _ -> checks
+    ) Ident.Map.empty bindings
+  in
   List.rev_map
-    (fun (id, _, _, _) -> id, List.rev (Ident.Tbl.find_all modes_and_sorts id))
+    (fun (id, _, _, _) ->
+       let zero_alloc =
+         Option.value (Ident.Map.find_opt id checks)
+           ~default:Builtin_attributes.Default_check
+       in
+       id, List.rev (Ident.Tbl.find_all modes_and_sorts id), zero_alloc)
     (rev_let_bound_idents_full bindings)
 
 let let_bound_idents_full bindings =
@@ -1139,6 +1152,22 @@ let unpack_functor_me me =
   | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
 
 let unpack_functor_mty mty =
+<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
   match mty.mty_desc with
   | Tmty_functor (fp, mty) -> fp, mty
   | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"
+||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
+  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
+      exp_is_nominal parent
+  | _ -> false
+=======
+  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
+      exp_is_nominal parent
+  | _ -> false
+
+let function_arity params body =
+  List.length params +
+  match body with
+  | Tfunction_body _ -> 0
+  | Tfunction_cases _ -> 1
+>>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd

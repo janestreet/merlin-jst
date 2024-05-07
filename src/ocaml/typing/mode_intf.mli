@@ -261,17 +261,6 @@ module type S = sig
       include Common with type error := error and module Const := Const
     end
 
-    type ('a, 'b, 'c) modes =
-      { regionality : 'a;
-        linearity : 'b;
-        uniqueness : 'c
-      }
-
-    module Const :
-      Lattice
-        with type t =
-          (Regionality.Const.t, Linearity.Const.t, Uniqueness.Const.t) modes
-
     (** Represents a mode axis in this product whose constant is ['a], and
         whose variable is ['m] given the allowness ['d]. *)
     type ('m, 'a, 'd) axis =
@@ -281,6 +270,22 @@ module type S = sig
       | Comonadic :
           (Comonadic.Const.t, 'a) Axis.t
           -> (('a, 'd) mode_comonadic, 'a, 'd) axis
+
+    type ('a, 'b, 'c) modes =
+      { regionality : 'a;
+        linearity : 'b;
+        uniqueness : 'c
+      }
+
+    module Const : sig
+      include
+        Lattice
+          with type t =
+            (Regionality.Const.t, Linearity.Const.t, Uniqueness.Const.t) modes
+
+      (** Prints a constant on any axis. *)
+      val print_axis : ('m, 'a, 'd) axis -> Format.formatter -> 'a -> unit
+    end
 
     type error = Error : ('m, 'a, 'd) axis * 'a Solver.error -> error
 
@@ -303,13 +308,13 @@ module type S = sig
 
     val min_with : ('m, 'a, 'l * 'r) axis -> 'm -> ('l * disallowed) t
 
-    val meet_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> ('l * disallowed) t
+    val meet_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> ('l * 'r) t
 
-    val join_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> (disallowed * 'r) t
+    val join_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> ('l * 'r) t
 
     val comonadic_to_monadic : ('l * 'r) Comonadic.t -> ('r * 'l) Monadic.t
 
-    val meet_const : Const.t -> ('l * 'r) t -> ('l * disallowed) t
+    val meet_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
 
     val imply : Const.t -> ('l * 'r) t -> (disallowed * 'r) t
   end
@@ -335,8 +340,18 @@ module type S = sig
 
       include Common with module Const := Const
 
-      val meet_const : Const.t -> ('l * 'r) t -> ('l * disallowed) t
+      val meet_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
     end
+
+    (** Represents a mode axis in this product whose constant is ['a], and
+        whose variable is ['m] given the allowness ['d]. *)
+    type ('m, 'a, 'd) axis =
+      | Monadic :
+          (Monadic.Const.t, 'a) Axis.t
+          -> (('a, 'd) mode_monadic, 'a, 'd) axis
+      | Comonadic :
+          (Comonadic.Const.t, 'a) Axis.t
+          -> (('a, 'd) mode_comonadic, 'a, 'd) axis
 
     type ('loc, 'lin, 'uni) modes =
       { locality : 'loc;
@@ -377,17 +392,10 @@ module type S = sig
 
       (** Similar to [Alloc.partial_apply] but for constants *)
       val partial_apply : t -> t
-    end
 
-    (** Represents a mode axis in this product whose constant is ['a], and
-        whose variable is ['m] given the allowness ['d]. *)
-    type ('m, 'a, 'd) axis =
-      | Monadic :
-          (Monadic.Const.t, 'a) Axis.t
-          -> (('a, 'd) mode_monadic, 'a, 'd) axis
-      | Comonadic :
-          (Comonadic.Const.t, 'a) Axis.t
-          -> (('a, 'd) mode_comonadic, 'a, 'd) axis
+      (** Prints a constant on any axis. *)
+      val print_axis : ('m, 'a, 'd) axis -> Format.formatter -> 'a -> unit
+    end
 
     type error = Error : ('m, 'a, 'd) axis * 'a Solver.error -> error
 
@@ -405,15 +413,15 @@ module type S = sig
 
     val min_with : ('m, 'a, 'l * 'r) axis -> 'm -> ('l * disallowed) t
 
-    val meet_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> ('l * disallowed) t
+    val meet_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> ('l * 'r) t
 
-    val join_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> (disallowed * 'r) t
+    val join_with : (_, 'a, _) axis -> 'a -> ('l * 'r) t -> ('l * 'r) t
 
     val zap_to_legacy : lr -> Const.t
 
     val zap_to_ceil : ('l * allowed) t -> Const.t
 
-    val meet_const : Const.t -> ('l * 'r) t -> ('l * disallowed) t
+    val meet_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
 
     val imply : Const.t -> ('l * 'r) t -> (disallowed * 'r) t
 

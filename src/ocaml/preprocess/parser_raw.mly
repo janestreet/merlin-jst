@@ -879,6 +879,20 @@ let unboxed_literals_extension = Language_extension.Layouts
 module Constant : sig
   type loc := Lexing.position * Lexing.position
 
+<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
+||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
+  val value : Parsetree.constant -> t
+  val unboxed : loc:loc -> Jane_syntax.Layouts.constant -> t
+  val to_expression : loc:loc -> t -> expression
+  val to_pattern : loc:loc -> t -> pattern
+end = struct
+=======
+  val value : Parsetree.constant -> t
+  val unboxed : Jane_syntax.Layouts.constant -> t
+  val to_expression : loc:loc -> t -> expression
+  val to_pattern : loc:loc -> t -> pattern
+end = struct
+>>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
   val value : Parsetree.constant -> Jane_syntax.jane_constant
   val unboxed : loc:loc -> Jane_syntax.Layouts.constant -> Jane_syntax.jane_constant
   val to_expression : loc:loc -> Jane_syntax.jane_constant -> expression
@@ -886,6 +900,7 @@ module Constant : sig
 end = struct
   let value x = Jane_syntax.Value x
 
+<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
   let assert_unboxed_literals ~loc =
     Language_extension.(
       Jane_syntax_parsing.assert_extension_enabled ~loc Layouts Stable)
@@ -893,6 +908,17 @@ end = struct
   let unboxed ~loc x =
     assert_unboxed_literals ~loc:(make_loc loc);
     Jane_syntax.Unboxed x
+||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
+  let assert_unboxed_literals ~loc =
+    Language_extension.(
+      Jane_syntax_parsing.assert_extension_enabled ~loc Layouts Stable)
+
+  let unboxed ~loc x =
+    assert_unboxed_literals ~loc:(make_loc loc);
+    Unboxed x
+=======
+  let unboxed x = Unboxed x
+>>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
 
   let to_expression ~loc : Jane_syntax.jane_constant -> expression = function
     | Value const_value ->
@@ -919,7 +945,7 @@ let with_sign sign num =
 let unboxed_int sloc int_loc sign (n, m) =
   match m with
   | Some m ->
-      Constant.unboxed ~loc:int_loc (Integer (with_sign sign n, m))
+      Constant.unboxed (Integer (with_sign sign n, m))
   | None ->
       if Language_extension.is_enabled unboxed_literals_extension then
         (raise_error Syntaxerr.(Error(Missing_unboxed_literal_suffix (make_loc int_loc)));
@@ -928,19 +954,12 @@ let unboxed_int sloc int_loc sign (n, m) =
         (not_expecting sloc "line number directive";
          Constant.unboxed ~loc:int_loc (Integer (with_sign sign n, 'l')))
 
-let unboxed_float sloc sign (f, m) =
-  Constant.unboxed ~loc:sloc (Float (with_sign sign f, m))
-
-(* Unboxed float type *)
-
-let assert_unboxed_type ~loc =
-    Language_extension.(
-      Jane_syntax_parsing.assert_extension_enabled ~loc Layouts Stable)
+let unboxed_float sign (f, m) =
+  Constant.unboxed (Float (with_sign sign f, m))
 
 (* Invariant: [lident] must end with an [Lident] that ends with a ["#"]. *)
 let unboxed_type sloc lident tys =
   let loc = make_loc sloc in
-  assert_unboxed_type ~loc;
   Ptyp_constr (mkloc lident loc, tys)
 
 let merloc startpos ?endpos x =
@@ -4777,7 +4796,7 @@ value_constant:
 ;
 unboxed_constant:
   | HASH_INT          { unboxed_int $sloc $sloc Positive $1 }
-  | HASH_FLOAT        { unboxed_float $sloc Positive $1 }
+  | HASH_FLOAT        { unboxed_float Positive $1 }
 ;
 constant:
     value_constant    { Constant.value $1 }
@@ -4794,9 +4813,9 @@ signed_constant:
     signed_value_constant { Constant.value $1 }
   | unboxed_constant      { $1 }
   | MINUS HASH_INT        { unboxed_int $sloc $loc($2) Negative $2 }
-  | MINUS HASH_FLOAT      { unboxed_float $sloc Negative $2 }
+  | MINUS HASH_FLOAT      { unboxed_float Negative $2 }
   | PLUS HASH_INT         { unboxed_int $sloc $loc($2) Positive $2 }
-  | PLUS HASH_FLOAT       { unboxed_float $sloc Positive $2 }
+  | PLUS HASH_FLOAT       { unboxed_float Positive $2 }
 ;
 
 /* Identifiers and long identifiers */

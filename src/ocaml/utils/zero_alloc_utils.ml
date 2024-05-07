@@ -30,6 +30,8 @@
 module type WS = sig
   type t
 
+  val empty : t
+
   val join : t -> t -> t
 
   val meet : t -> t -> t
@@ -135,6 +137,11 @@ module Make (Witnesses : WS) = struct
 
     let relaxed w = { nor = V.Safe; exn = V.Top w; div = V.Top w }
 
+    let of_annotation ~strict ~never_returns_normally ~never_raises =
+      let res = if strict then safe else relaxed Witnesses.empty in
+      let res = if never_raises then { res with exn = V.Bot } else res in
+      if never_returns_normally then { res with nor = V.Bot } else res
+
     let print ~witnesses ppf { nor; exn; div } =
       let pp = V.print ~witnesses in
       Format.fprintf ppf "{ nor=%a; exn=%a; div=%a }" pp nor pp exn pp div
@@ -205,12 +212,8 @@ module Assume_info = struct
 
   let none = No_assume
 
-  let create ~strict ~never_returns_normally =
-    let res = if strict then Value.safe else Value.relaxed Witnesses.empty in
-    let res =
-      if never_returns_normally then { res with nor = V.Bot } else res
-    in
-    Assume res
+  let create ~strict ~never_returns_normally ~never_raises =
+    Assume (Value.of_annotation ~strict ~never_returns_normally ~never_raises)
 
   let get_value t = match t with No_assume -> None | Assume v -> Some v
 
