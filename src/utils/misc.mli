@@ -351,9 +351,6 @@ module String : sig
   module Map : Map.S with type key = t
   module Set : Set.S with type elt = t
   module Tbl : Hashtbl.S with type key = t
-
-  (** Splits on the first occurence of the given character. *)
-  val split_first_exn : string -> split_on:char -> string * string
 end
 
 val normalise_eol : string -> string
