@@ -881,6 +881,14 @@ module String = struct
       let equal (x : string) (y : string) : bool = (x = y)
       let hash = Hashtbl.hash
     end)
+
+  let split_once str ~idx =
+    let n = length str in
+    sub str 0 idx, sub str (idx + 1) (n - idx - 1)
+
+  let split_first_exn str ~split_on =
+    let idx = String.index str split_on in
+    split_once str ~idx
 end
 
 
