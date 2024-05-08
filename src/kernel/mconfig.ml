@@ -536,6 +536,10 @@ let ocaml_ignored_flags = [
   "-disable-precise-checkmach";
   "-cfg-stack-checks";
   "-no-cfg-stack-checks";
+  "-gdwarf-inlined-frames";
+  "-gno-dwarf-inlined-frames";
+  "-cfg-stack-checks";
+  "-no-cfg-stack-checks";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -546,7 +550,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style"; "-dump-dir" ;
+  "-error-style"; "-dump-dir"; "-libloc";
 
   (* flambda-backend specific *)
   "-extension";
