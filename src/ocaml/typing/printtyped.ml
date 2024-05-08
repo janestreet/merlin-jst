@@ -201,15 +201,15 @@ let tag ppf = let open Types in function
 let variant_representation i ppf = let open Types in function
   | Variant_unboxed ->
     line i ppf "Variant_unboxed\n"
-  | Variant_boxed jkinds ->
+  | Variant_boxed cstrs ->
     line i ppf "Variant_boxed %a\n"
-      (array (i+1) (fun _ ppf -> jkind_array (i+1) ppf)) jkinds
+      (array (i+1) (fun _ ppf (_cstr, jkinds) ->
+         jkind_array (i+1) ppf jkinds))
+      cstrs
   | Variant_extensible -> line i ppf "Variant_inlined\n"
 
-let flat_element i ppf = let open Types in function
-  | Imm -> line i ppf "Immediate\n"
-  | Float -> line i ppf "Float\n"
-  | Float64 -> line i ppf "Float64\n"
+let flat_element i ppf flat_element =
+  line i ppf "%s\n" (Types.flat_element_to_string flat_element)
 
 let record_representation i ppf = let open Types in function
   | Record_unboxed ->
@@ -382,7 +382,7 @@ and function_body i ppf (body : function_body) =
       expression (i+1) ppf e
   | Tfunction_cases
       { fc_cases; fc_loc; fc_exp_extra; fc_attributes; fc_arg_mode;
-        fc_arg_sort; fc_param = _; fc_partial = _; }
+        fc_arg_sort; fc_param = _; fc_partial = _; fc_env = _; fc_ret_type = _ }
     ->
       line i ppf "Tfunction_cases %a\n" fmt_location fc_loc;
       alloc_mode i ppf fc_arg_mode;

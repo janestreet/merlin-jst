@@ -6,6 +6,8 @@
 module type WS = sig
   type t
 
+  val empty : t
+
   val join : t -> t -> t
 
   val meet : t -> t -> t
@@ -80,6 +82,10 @@ module Make (Witnesses : WS) : sig
         (i.e., [nor] component is Safe, others are Top.  *)
     val relaxed : Witnesses.t -> t
 
+    (** Constructs a value from a user annotation. The witness will be empty. *)
+    val of_annotation :
+      strict:bool -> never_returns_normally:bool -> never_raises:bool -> t
+
     val print : witnesses:bool -> Format.formatter -> t -> unit
 
     (** Use [compare] for structural comparison of terms, for example
@@ -108,7 +114,8 @@ module Assume_info : sig
 
   val none : t
 
-  val create : strict:bool -> never_returns_normally:bool -> t
+  val create :
+    strict:bool -> never_returns_normally:bool -> never_raises:bool -> t
 
   val compare : t -> t -> int
 
@@ -126,6 +133,8 @@ module Assume_info : sig
 
   module Witnesses : sig
     type t = unit
+
+    val empty : t
 
     val join : t -> t -> t
 

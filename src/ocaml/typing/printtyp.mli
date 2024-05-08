@@ -46,9 +46,18 @@ val raw_field : formatter -> row_field -> unit
 val string_of_label: Types.arg_label -> string
 
 val wrap_printing_env: ?error:bool -> Env.t -> (unit -> 'a) -> 'a
-    (* Call the function using the environment for type path shortening *)
-    (* This affects all the printing functions below *)
-    (* Also, if [~error:true], then disable the loading of cmis *)
+
+(** [wrap_printing_env_error env f] ensures that all printing functions in a
+    [Location.error] report are evaluated within the [wrap_printing_env
+    ~error:true env] context. (The original call to [f] is also evaluated
+    within that context.)
+*)
+val wrap_printing_env_error :
+  Env.t -> (unit -> Location.error) -> Location.error
+
+(* Call the function using the environment for type path shortening *)
+(* This affects all the printing functions below *)
+(* Also, if [~error:true], then disable the loading of cmis *)
 val shorten_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_path: Env.t -> Path.t -> Path.t
