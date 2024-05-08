@@ -24,8 +24,8 @@ let f =
       (* ^ *)
 ;;
 
-let f =
-  exclave_ function | x -> x
+let f x =
+  exclave_ function | y -> y
                (* ^ *)
 ;;
 
