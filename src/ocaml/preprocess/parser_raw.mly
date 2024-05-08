@@ -879,46 +879,14 @@ let unboxed_literals_extension = Language_extension.Layouts
 module Constant : sig
   type loc := Lexing.position * Lexing.position
 
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-  val value : Parsetree.constant -> t
-  val unboxed : loc:loc -> Jane_syntax.Layouts.constant -> t
-  val to_expression : loc:loc -> t -> expression
-  val to_pattern : loc:loc -> t -> pattern
-end = struct
-=======
-  val value : Parsetree.constant -> t
-  val unboxed : Jane_syntax.Layouts.constant -> t
-  val to_expression : loc:loc -> t -> expression
-  val to_pattern : loc:loc -> t -> pattern
-end = struct
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
   val value : Parsetree.constant -> Jane_syntax.jane_constant
-  val unboxed : loc:loc -> Jane_syntax.Layouts.constant -> Jane_syntax.jane_constant
+  val unboxed : Jane_syntax.Layouts.constant -> Jane_syntax.jane_constant
   val to_expression : loc:loc -> Jane_syntax.jane_constant -> expression
   val to_pattern : loc:loc -> Jane_syntax.jane_constant -> pattern
 end = struct
   let value x = Jane_syntax.Value x
 
-<<<<<<< janestreet/merlin-jst:update-for-5.1.1minus-14
-  let assert_unboxed_literals ~loc =
-    Language_extension.(
-      Jane_syntax_parsing.assert_extension_enabled ~loc Layouts Stable)
-
-  let unboxed ~loc x =
-    assert_unboxed_literals ~loc:(make_loc loc);
-    Jane_syntax.Unboxed x
-||||||| ocaml-flambda/flambda-backend:a3e4acbd589389bafcec050539caec2385be1043
-  let assert_unboxed_literals ~loc =
-    Language_extension.(
-      Jane_syntax_parsing.assert_extension_enabled ~loc Layouts Stable)
-
-  let unboxed ~loc x =
-    assert_unboxed_literals ~loc:(make_loc loc);
-    Unboxed x
-=======
-  let unboxed x = Unboxed x
->>>>>>> ocaml-flambda/flambda-backend:519ca9a8e555953fae5a83de7b164ed15c525cbd
+  let unboxed x = Jane_syntax.Unboxed x
 
   let to_expression ~loc : Jane_syntax.jane_constant -> expression = function
     | Value const_value ->
@@ -949,10 +917,10 @@ let unboxed_int sloc int_loc sign (n, m) =
   | None ->
       if Language_extension.is_enabled unboxed_literals_extension then
         (raise_error Syntaxerr.(Error(Missing_unboxed_literal_suffix (make_loc int_loc)));
-         Constant.unboxed ~loc:int_loc (Integer (with_sign sign n, 'l')))
+         Constant.unboxed (Integer (with_sign sign n, 'l')))
       else
         (not_expecting sloc "line number directive";
-         Constant.unboxed ~loc:int_loc (Integer (with_sign sign n, 'l')))
+         Constant.unboxed (Integer (with_sign sign n, 'l')))
 
 let unboxed_float sign (f, m) =
   Constant.unboxed (Float (with_sign sign f, m))
