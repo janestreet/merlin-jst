@@ -58,6 +58,17 @@ let parenthesize_name name =
       "(" ^ name ^ ")"
   )
 
+let parse_identifier (config, source) pos =
+  let path = Mreader.reconstruct_identifier config source pos in
+  let path = Mreader_lexer.identifier_suffix path in
+  Logger.log
+    ~section:Type_enclosing.log_section
+    ~title:"reconstruct-identifier"
+    "paths: [%s]"
+    (String.concat ~sep:";" (List.map path
+      ~f:(fun l -> l.Location.txt)));
+  path
+
 let loc_of_decl ~uid =
   let of_option name =
     match name.Location.txt with
