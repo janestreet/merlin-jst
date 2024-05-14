@@ -310,7 +310,7 @@ let rec get_every_pattern loc = function
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _, _, _) ; _}
       when Ident.name id = "*type-error*" ->
       raise (Ill_typed)
-    | Expression { exp_desc = Typedtree.Texp_function (params, _body); _ } ->
+    | Expression { exp_desc = Typedtree.Texp_function {params; _}; _ } ->
       (* So we need to deal with the case where we're either in the body of a
          function, or in a function parameter. *)
       begin
