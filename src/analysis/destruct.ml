@@ -260,7 +260,7 @@ let collect_every_pattern_for_expression parent =
   let patterns =
     Mbrowse.fold_node (fun env node acc ->
       match node with
-      | Pattern _ -> raise (Not_allowed ("pattern in function argument"))
+      | Pattern _ -> (* Not expected here *) raise Nothing_to_do
       | Case _ ->
         Mbrowse.fold_node (fun _env node acc ->
           match node with
