@@ -540,6 +540,7 @@ let ocaml_ignored_flags = [
   "-gno-dwarf-inlined-frames";
   "-cfg-stack-checks";
   "-no-cfg-stack-checks";
+  "-gno-upstream-dwarf";
 ]
 
 let ocaml_ignored_parametrized_flags = [
