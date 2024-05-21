@@ -505,7 +505,7 @@ module Gen = struct
               val_kind = Val_reg;
               val_loc = Location.none;
               val_attributes = [];
-              val_zero_alloc = Builtin_attributes.Default_check;
+              val_zero_alloc = Builtin_attributes.Default_zero_alloc;
               val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
             }
           in

@@ -5193,7 +5193,7 @@ let create_merlin_type_error_node loc env ty_expected ~attributes =
               val_loc = loc;
               val_attributes = [];
               val_uid = Uid.internal_not_actually_unique;
-              val_zero_alloc = Builtin_attributes.Default_check;
+              val_zero_alloc = Builtin_attributes.Default_zero_alloc;
             },
             Id_value,
             (Uniqueness.disallow_left Uniqueness.legacy,
@@ -6977,7 +6977,7 @@ and type_function_
                   | None -> Alloc.newvar ()
                 in
                 Texp_function
-                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Default_check;
+                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Default_zero_alloc;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -7156,7 +7156,7 @@ and type_function_
                 in
                 Texp_function
                   { params; body; ret_mode; ret_sort;
-                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Default_check;
+                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Default_zero_alloc;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -8626,7 +8626,7 @@ and type_function_cases_expect
                   ret_mode = Alloc.disallow_right ret_mode;
                   ret_sort;
                   alloc_mode = Alloc.disallow_left alloc_mode;
-                  zero_alloc = Default_check;
+                  zero_alloc = Default_zero_alloc;
                   region = in_function.region_locked;
                 };
             exp_loc = loc;

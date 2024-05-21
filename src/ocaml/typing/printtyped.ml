@@ -166,9 +166,10 @@ let typevar_jkind ~print_quote ppf (v, l) =
   in
   match l with
   | None -> fprintf ppf " %a" pptv v
-  | Some (_, lay) -> fprintf ppf " (%a : %a)"
-                    pptv v
-                    Jane_syntax.Layouts.Pprint.const_jkind lay.txt
+  | Some (_, jkind) ->
+      fprintf ppf " (%a : %a)"
+        pptv v
+        Pprintast.jkind jkind.txt
 
 (* merlin-jst: a copy of the above for [Texp_newtype'], which has an id rather than a
    string. *)
