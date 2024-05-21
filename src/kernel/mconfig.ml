@@ -484,7 +484,6 @@ let ocaml_ignored_flags = [
   "-no-ocamlcfg";
   "-regalloc-validate";
   "-no-regalloc-validate";
-  "-checkmach-details-cutoff";
   "-use-cached-generic-functions";
   "-flambda2-expert-shorten-symbol-names";
   "-no-flambda2-expert-shorten-symbol-names";
@@ -532,8 +531,8 @@ let ocaml_ignored_flags = [
   "-fno-prefetchw";
   "-fpopcnt";
   "-fno-popcnt";
-  "-disable-checkmach";
-  "-disable-precise-checkmach";
+  "-disable-zero-alloc-checker";
+  "-disable-precise-zero-alloc-checker";
   "-cfg-stack-checks";
   "-no-cfg-stack-checks";
   "-gdwarf-inlined-frames";
@@ -541,6 +540,8 @@ let ocaml_ignored_flags = [
   "-cfg-stack-checks";
   "-no-cfg-stack-checks";
   "-gno-upstream-dwarf";
+  "-dzero-alloc";
+  "-dletreclambda";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -581,6 +582,9 @@ let ocaml_ignored_parametrized_flags = [
   "-cached-generic-functions-path";
   "-gdwarf-max-function-complexity";
   "-function-layout";
+  "-cfg-stack-checks-threshold";
+  "-zero-alloc-checker-details-cutoff";
+  "-zero-alloc-checker-join";
 ]
 
 let ocaml_warnings_spec ~error =
