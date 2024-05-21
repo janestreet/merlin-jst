@@ -141,6 +141,7 @@ end
 
 module History = struct
   type concrete_jkind_reason =
+    | Merlin
     | Match
     | Constructor_declaration of int
     | Label_declaration of Ident.t

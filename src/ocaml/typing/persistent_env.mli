@@ -85,33 +85,17 @@ type 'a sig_reader =
 
 (* If [add_binding] is false, reads the signature from the .cmi but does not
    bind the module name in the environment. *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-val read : 'a t -> (Persistent_signature.t -> 'a)
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> 'a
-val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-val read : 'a t -> (Persistent_signature.t -> 'a)
-  -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> 'a
-val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
-=======
 val read : 'a t -> 'a sig_reader
+  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> Subst.Lazy.signature
 val find : allow_hidden:bool -> 'a t -> 'a sig_reader
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> 'a
 
 val find_in_cache : 'a t -> Compilation_unit.Name.t -> 'a option
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
-=======
 val check : allow_hidden:bool -> 'a t -> 'a sig_reader
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> Compilation_unit.Name.t -> unit
 
 (* Lets it be known that the given module is a parameter and thus is expected
@@ -164,16 +148,9 @@ val import_crcs : 'a t -> source:filepath ->
 val imports : 'a t -> Import_info.t list
 
 (* Return the CRC of the interface of the given compilation unit *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a)
+val crc_of_unit: 'a t
   -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> Digest.t
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a)
-  -> Compilation_unit.Name.t -> Digest.t
-=======
-val crc_of_unit: 'a t -> Compilation_unit.Name.t -> Digest.t
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
 (* Forward declaration to break mutual recursion with Typecore. *)
 val add_delayed_check_forward: ((unit -> unit) -> unit) ref

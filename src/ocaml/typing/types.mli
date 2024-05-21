@@ -555,14 +555,8 @@ and ('lbl, 'cstr) type_kind =
    case of normal projections from boxes. *)
 and tag = Ordinary of {src_index: int;  (* Unique name (per type) *)
                        runtime_tag: int}    (* The runtime tag *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-        | Extension of Path.t * Jkind.t array
-                      (* The argument is the path of the extension *)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-        | Extension of Path.t * Jkind.t array
-=======
         | Extension of Path.t * jkind array
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+                      (* The argument is the path of the extension *)
 
 and abstract_reason =
     Abstract_def

@@ -3577,18 +3577,8 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
               Cmi_format.Normal { cmi_impl = modulename }
             in
             let cmi =
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
               Env.save_signature ~alerts
-                simple_sg modulename kind (outputprefix ^ ".cmi")
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg modulename kind (outputprefix ^ ".cmi"))
-=======
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg name kind (outputprefix ^ ".cmi"))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+                simple_sg name kind (outputprefix ^ ".cmi")
             in
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -3738,18 +3728,9 @@ let package_units initial_env objfiles cmifile modulename =
       let name = Compilation_unit.name modulename in
       let kind = Cmi_format.Normal { cmi_impl = modulename } in
       let cmi =
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
-          sg modulename kind
+          sg name kind
           (prefix ^ ".cmi") (Array.of_list imports)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
-          sg modulename kind
-          (prefix ^ ".cmi") (Array.of_list imports)
-=======
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
-          sg name kind (prefix ^ ".cmi") (Array.of_list imports)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
       Cmt_format.save_cmt (prefix ^ ".cmt")  modulename

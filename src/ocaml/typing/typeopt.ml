@@ -21,21 +21,6 @@ open Typedtree
 (* Expand a type, looking through ordinary synonyms, private synonyms, links,
    and [@@unboxed] types. The returned type will be therefore be none of these
    cases (except in case of missing cmis).
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-  | Sort_without_extension of
-      Jkind.Sort.t * Language_extension.maturity * type_expr option
-  | Non_value_sort_unknown_ty of Jkind.Sort.t
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.const
-=======
-  | Sort_without_extension of
-      Jkind.Sort.t * Language_extension.maturity * type_expr option
-  | Non_value_sort_unknown_ty of Jkind.Sort.t
-  | Small_number_sort_without_extension of Jkind.Sort.t * type_expr option
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.const
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
    If we fail to fully scrape the type due to missing a missing cmi file, we
    return the original, rather than a partially expanded one.  The original may
@@ -146,20 +131,8 @@ let classify env (* loc *) ty sort : classification =
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ ->
       assert false
   end
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-  | Float64 -> Unboxed_float Pfloat64
-  | Bits32 -> Unboxed_int Pint32
-  | Bits64 -> Unboxed_int Pint64
-  | Word -> Unboxed_int Pnativeint
-=======
-  | Float64 -> Unboxed_float Pfloat64
-  | Float32 -> Unboxed_float Pfloat32
-  | Bits32 -> Unboxed_int Pint32
-  | Bits64 -> Unboxed_int Pint64
-  | Word -> Unboxed_int Pnativeint
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
   | Float64 -> Unboxed_float (* Pfloat64 *)
+  | Float32 -> Unboxed_float (* Pfloat32 *)
   | Bits32 -> Unboxed_int (* Pint32 *)
   | Bits64 -> Unboxed_int (* Pint64 *)
   | Word -> Unboxed_int (* Pnativeint *)
@@ -795,39 +768,3 @@ let rec layout_union l1 l2 =
     _ ->
       Ptop
 *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-         build file.@ \
-         Otherwise, please report this error to the Jane Street compilers team."
-        (Language_extension.to_command_line_string Layouts maturity)
-  | Not_a_sort (ty, err) ->
-      fprintf ppf "A representable layout is required here.@ %a"
-        (Jkind.Violation.report_with_offender
-=======
-         build file.@ \
-         Otherwise, please report this error to the Jane Street compilers team."
-        (Language_extension.to_command_line_string Layouts maturity)
-  | Small_number_sort_without_extension (sort, ty) ->
-      fprintf ppf "Non-value layout %a detected" Jkind.Sort.format sort;
-      begin match ty with
-      | None -> ()
-      | Some ty -> fprintf ppf " as sort for type@ %a" Printtyp.type_expr ty
-      end;
-      let extension, verb, flags =
-        match Language_extension.(is_at_least Layouts Stable),
-              Language_extension.(is_enabled Small_numbers) with
-        | false, true -> " layouts", "is", "this flag"
-        | true, false -> " small_numbers", "is", "this flag"
-        | false, false -> "s layouts and small numbers", "are", "these flags"
-        | true, true -> assert false
-      in
-      fprintf ppf
-        ",@ but this requires the extension%s, which %s not enabled.@ \
-         If you intended to use this layout, please add %s to your \
-         build file.@ \
-         Otherwise, please report this error to the Jane Street compilers team."
-        extension verb flags
-  | Not_a_sort (ty, err) ->
-      fprintf ppf "A representable layout is required here.@ %a"
-        (Jkind.Violation.report_with_offender
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16

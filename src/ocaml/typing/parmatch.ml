@@ -2466,6 +2466,14 @@ let check_ambiguous_bindings =
       in
       ignore (List.fold_left check_case [] cases)
 
+let report_error ppf = function
+  | Float32_match -> Format.pp_print_string ppf "float32 literal patterns are not supported."
+    
+let () =
+  Location.register_error_of_exn (function
+    | Error err -> Some (Location.error_of_printer_file report_error err)
+    | _ -> None)
+
 let do_complete_partial ~(pred : pattern -> pattern option) pss =
   (* c/p of [do_check_partial] without the parts concerning the generation of
      the error message or the warning emiting. *)
@@ -2500,24 +2508,6 @@ let return_unused casel =
       in
       (* FIXME: we need to know whether there is a guard here, because if there
          is, we dont want to add [[q]] to [pref]. *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
       do_rec acc ([q]::pref) rem
   in
   do_rec [] [] casel
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-            ns
-      in
-      ignore (List.fold_left check_case [] cases)
-=======
-            ns
-      in
-      ignore (List.fold_left check_case [] cases)
-
-let report_error ppf = function
-  | Float32_match -> Format.pp_print_string ppf "float32 literal patterns are not supported."
-
-let () =
-  Location.register_error_of_exn (function
-    | Error err -> Some (Location.error_of_printer_file report_error err)
-    | _ -> None)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16

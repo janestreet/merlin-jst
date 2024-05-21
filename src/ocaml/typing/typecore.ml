@@ -802,17 +802,11 @@ let constant_or_raise env loc cst =
 let unboxed_constant : Jane_syntax.Layouts.constant -> (Typedtree.constant, error) result
   = function
   | Float (f, None) -> Ok (Const_unboxed_float f)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-  | Float (x, Some c) -> Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal x, c))
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-  | Float (x, Some c) -> Error (Unknown_literal (Misc.format_as_unboxed_literal x, c))
-=======
   | Float (f, Some 's') ->
     if Language_extension.is_enabled Small_numbers then Ok (Const_unboxed_float32 f)
-    else Error (Float32_literal (Misc.format_as_unboxed_literal f))
+    else Error (Float32_literal (Misc_stdlib.format_as_unboxed_literal f))
   | Float (x, Some c) ->
-    Error (Unknown_literal (Misc.format_as_unboxed_literal x, c))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+    Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal x, c))
   | Integer (i, suffix) ->
     begin match constant_integer i ~suffix with
       | Ok (Int32 v) -> Ok (Const_unboxed_int32 v)
@@ -4025,42 +4019,20 @@ let maybe_expansive e = not (is_nonexpansive e)
 
 let annotate_recursive_bindings env valbinds =
   let ids = let_bound_idents valbinds in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-  List.iter
-    (fun {vb_expr} ->
-       if not (Rec_check.is_valid_recursive_expression ids vb_expr) then
-         raise(error(vb_expr.exp_loc, env, Illegal_letrec_expr))
-    )
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-  List.iter
-    (fun {vb_expr} ->
-       if not (Rec_check.is_valid_recursive_expression ids vb_expr) then
-         raise(Error(vb_expr.exp_loc, env, Illegal_letrec_expr))
-    )
-=======
   List.map
     (fun {vb_pat; vb_expr; vb_rec_kind = _; vb_sort; vb_attributes; vb_loc} ->
        match (Value_rec_check.is_valid_recursive_expression ids vb_expr) with
        | None ->
-         raise(Error(vb_expr.exp_loc, env, Illegal_letrec_expr))
+         raise(error(vb_expr.exp_loc, env, Illegal_letrec_expr))
        | Some vb_rec_kind ->
          { vb_pat; vb_expr; vb_rec_kind; vb_sort; vb_attributes; vb_loc})
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
     valbinds
 
 let check_recursive_class_bindings env ids exprs =
   List.iter
     (fun expr ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-       if not (Rec_check.is_valid_class_expr ids expr) then
-         raise(error(expr.cl_loc, env, Illegal_class_expr)))
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-       if not (Rec_check.is_valid_class_expr ids expr) then
-         raise(Error(expr.cl_loc, env, Illegal_class_expr)))
-=======
        if not (Value_rec_check.is_valid_class_expr ids expr) then
-         raise(Error(expr.cl_loc, env, Illegal_class_expr)))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+         raise(error(expr.cl_loc, env, Illegal_class_expr)))
     exprs
 
 module Is_local_returning : sig

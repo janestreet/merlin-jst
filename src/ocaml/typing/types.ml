@@ -644,13 +644,7 @@ let equal_variant_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Variant_boxed cstrs_and_jkinds1, Variant_boxed cstrs_and_jkinds2 ->
       array_equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
           equal_constructor_representation cstr1 cstr2
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-          && array_equal Jkind.equal jkinds1 jkinds2)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-          && Misc.Stdlib.Array.equal Jkind.equal jkinds1 jkinds2)
-=======
-          && Misc.Stdlib.Array.equal !jkind_equal jkinds1 jkinds2)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+          && array_equal !jkind_equal jkinds1 jkinds2)
         cstrs_and_jkinds1
         cstrs_and_jkinds2
   | Variant_extensible, Variant_extensible ->
@@ -664,13 +658,7 @@ let equal_record_representation r1 r2 = match r1, r2 with
   | Record_inlined (tag1, vr1), Record_inlined (tag2, vr2) ->
       equal_tag tag1 tag2 && equal_variant_representation vr1 vr2
   | Record_boxed lays1, Record_boxed lays2 ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-      array_equal Jkind.equal lays1 lays2
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-      Misc.Stdlib.Array.equal Jkind.equal lays1 lays2
-=======
-      Misc.Stdlib.Array.equal !jkind_equal lays1 lays2
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+      array_equal !jkind_equal lays1 lays2
   | Record_float, Record_float ->
       true
   | Record_ufloat, Record_ufloat ->
@@ -794,14 +782,8 @@ type change =
   | Ccommu : [`var] commutable_gen -> change
   | Cuniv : type_expr option ref * type_expr option -> change
   | Cmodes : Mode.changes -> change
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
   | Cfun of (unit -> unit)
-  | Csort : Jkind.Sort.change -> change
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-  | Csort : Jkind.Sort.change -> change
-=======
   | Csort : Jkind_types.Sort.change -> change
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
 type changes =
     Change of change * changes ref
@@ -1069,17 +1051,9 @@ let undo_change = function
   | Ckind  (FKvar r) -> r.field_kind <- FKprivate
   | Ccommu (Cvar r)  -> r.commu <- Cunknown
   | Cuniv  (r, v)    -> r := v
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
   | Cmodes c -> Mode.undo_changes c
   | Cfun f -> f ()
-  | Csort change -> Jkind.Sort.undo_change change
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-  | Cmodes c          -> Mode.undo_changes c
-  | Csort change -> Jkind.Sort.undo_change change
-=======
-  | Cmodes c          -> Mode.undo_changes c
   | Csort change -> Jkind_types.Sort.undo_change change
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
 type snapshot = changes ref * int
 let last_snapshot = Local_store.s_ref 0

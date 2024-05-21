@@ -2296,6 +2296,7 @@ let signature_item = print_reset_with_maximal_extensions signature_item
 let binding = print_reset_with_maximal_extensions binding
 let payload = print_reset_with_maximal_extensions payload
 let type_declaration = print_reset_with_maximal_extensions type_declaration
+let jkind = print_reset_with_maximal_extensions jkind
 
 (* Added in merlin *)
 let case_list = print_reset_with_maximal_extensions case_list
@@ -2348,17 +2349,6 @@ let prepare_error err =
 let () =
   Location.register_error_of_exn
     (function
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
       | Syntaxerr.Error err -> Some (prepare_error err)
       | _ -> None
     )
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-let binding = print_reset_with_maximal_extensions binding
-let payload = print_reset_with_maximal_extensions payload
-let type_declaration = print_reset_with_maximal_extensions type_declaration
-=======
-let binding = print_reset_with_maximal_extensions binding
-let payload = print_reset_with_maximal_extensions payload
-let type_declaration = print_reset_with_maximal_extensions type_declaration
-let jkind = print_reset_with_maximal_extensions jkind
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
