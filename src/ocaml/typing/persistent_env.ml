@@ -227,7 +227,7 @@ let fold {persistent_structures; _} f x =
   Hashtbl.fold (fun name ps x -> f name ps.ps_val x)
     persistent_structures x
 
-let register_pers_for_short_paths penv ps components =
+let register_pers_for_short_paths penv modname ps components =
   let old_style_crcs =
     ps.ps_import.imp_crcs
     |> Array.to_list
@@ -263,8 +263,8 @@ let register_pers_for_short_paths penv ps components =
     if is_deprecated then Short_paths.Desc.Deprecated
     else Short_paths.Desc.Not_deprecated
   in
-  let ps_name_as_string = Compilation_unit.name_as_string ps.ps_name in
-  Short_paths.Basis.load (short_paths_basis penv) ps_name_as_string
+  let modname_as_string = Compilation_unit.Name.to_string modname  in
+  Short_paths.Basis.load (short_paths_basis penv) modname_as_string
     deps alias_deps desc deprecated
 (* Reading persistent structures from .cmi files *)
 
@@ -428,7 +428,7 @@ let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
     }
   in
   Hashtbl.add persistent_structures modname ps;
-  register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm);
+  register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
   ps
 
 let read_pers_struct penv val_of_pers_sig short_path_comps check modname filename ~add_binding =
@@ -669,5 +669,5 @@ let forall ~found ~missing t =
   Std.Hashtbl.forall t.imports (fun name -> function
       | Missing -> missing name
       | Found import ->
-        found name import.imp_filename import.ps_name
+        found name import.imp_filename name
     )

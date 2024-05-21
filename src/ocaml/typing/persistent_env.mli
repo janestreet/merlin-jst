@@ -86,16 +86,16 @@ type 'a sig_reader =
 (* If [add_binding] is false, reads the signature from the .cmi but does not
    bind the module name in the environment. *)
 val read : 'a t -> 'a sig_reader
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> Subst.Lazy.signature
 val find : allow_hidden:bool -> 'a t -> 'a sig_reader
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> 'a
 
 val find_in_cache : 'a t -> Compilation_unit.Name.t -> 'a option
 
 val check : allow_hidden:bool -> 'a t -> 'a sig_reader
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> Compilation_unit.Name.t -> unit
 
 (* Lets it be known that the given module is a parameter and thus is expected
@@ -149,7 +149,6 @@ val imports : 'a t -> Import_info.t list
 
 (* Return the CRC of the interface of the given compilation unit *)
 val crc_of_unit: 'a t
-  -> (Compilation_unit.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> Digest.t
 
 (* Forward declaration to break mutual recursion with Typecore. *)
