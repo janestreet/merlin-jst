@@ -23,14 +23,28 @@ val is_base_type : Env.t -> Types.type_expr -> Path.t -> bool
 val maybe_pointer_type : Env.t -> Types.type_expr
   -> Lambda.immediate_or_pointer
 val maybe_pointer : Typedtree.expression -> Lambda.immediate_or_pointer
+*)
+
+type unboxed_float =
+  | Pfloat64
+  | Pfloat32
+
+type unboxed_integer =
+    Pnativeint | Pint32 | Pint64
+
+type array_kind =
+    Pgenarray | Paddrarray | Pintarray | Pfloatarray
+  | Punboxedfloatarray of unboxed_float
+  | Punboxedintarray of unboxed_integer
 
 (* Supplying [None] for [elt_sort] should be avoided when possible. It
    will result in a call to [Ctype.type_sort] which can be expensive. *)
 val array_type_kind :
   elt_sort:(Jkind.Sort.t option)
-  -> Env.t -> Location.t -> Types.type_expr -> Lambda.array_kind
+  -> Env.t -> Location.t -> Types.type_expr -> array_kind
 val array_kind :
-  Typedtree.expression -> Jkind.Sort.t -> Lambda.array_kind
+  Typedtree.expression -> Jkind.Sort.t -> array_kind
+(*
 val array_pattern_kind :
   Typedtree.pattern -> Jkind.Sort.t -> Lambda.array_kind
 val bigarray_type_kind_and_layout :

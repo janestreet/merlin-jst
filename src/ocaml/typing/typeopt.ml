@@ -52,7 +52,7 @@ let scrape_ty env ty =
 let scrape env ty =
   get_desc (scrape_ty env ty)
 
-let _scrape_poly env ty =
+let scrape_poly env ty =
   let ty = scrape_ty env ty in
   match get_desc ty with
   | Tpoly (ty, _) -> get_desc ty
@@ -71,24 +71,41 @@ let is_base_type env ty base_ty_path =
 let is_always_gc_ignorable env ty =
   let ext : Jkind.Externality.t =
     (* We check that we're compiling to (64-bit) native code before counting
-       External64 types as gc_ignorable, because bytecode is intended to be
-       platform independent. *)
+        External64 types as gc_ignorable, because bytecode is intended to be
+        platform independent. *)
     if !Clflags.native_code && Sys.word_size = 64
     then External64
     else External
   in
   Ctype.check_type_externality env ty ext
 
+(* CR layouts v2.8: Calling [type_sort] in [typeopt] is not ideal and
+    this function should be removed at some point. To do that, there
+    needs to be a way to store sort vars on [Tconstr]s. That means
+    either introducing a [Tpoly_constr], allow type parameters with
+    sort info, or do something else. *)
+let type_sort ~why env _loc ty =
+  match Ctype.type_sort ~why env ty with
+  | Ok sort -> sort
+  | Error _ -> Misc.fatal_error "merlin-jst: a representable layout is required here"
+
+type unboxed_float =
+  | Pfloat64
+  | Pfloat32
+
+type unboxed_integer =
+    Pnativeint | Pint32 | Pint64
+
+type array_kind =
+    Pgenarray | Paddrarray | Pintarray | Pfloatarray
+  | Punboxedfloatarray of unboxed_float
+  | Punboxedintarray of unboxed_integer
+
 type classification =
   | Int   (* any immediate type *)
   | Float
-  (* | Unboxed_float of unboxed_float
-   * | Unboxed_int of unboxed_integer *)
-  | Unboxed_float
-  | Unboxed_int
-  (* merlin-jst: for the one use of these that remains in merlin, the argument is not
-     needed.  Which is good, because it comes from lambda.mli, which we don't have in
-     merlin. *)
+  | Unboxed_float of unboxed_float
+  | Unboxed_int of unboxed_integer
   | Lazy
   | Addr  (* anything except a float or a lazy *)
   | Any
@@ -131,16 +148,15 @@ let classify env (* loc *) ty sort : classification =
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ ->
       assert false
   end
-  | Float64 -> Unboxed_float (* Pfloat64 *)
-  | Float32 -> Unboxed_float (* Pfloat32 *)
-  | Bits32 -> Unboxed_int (* Pint32 *)
-  | Bits64 -> Unboxed_int (* Pint64 *)
-  | Word -> Unboxed_int (* Pnativeint *)
+  | Float64 -> Unboxed_float Pfloat64
+  | Float32 -> Unboxed_float Pfloat32
+  | Bits32 -> Unboxed_int Pint32
+  | Bits64 -> Unboxed_int Pint64
+  | Word -> Unboxed_int Pnativeint
   | Void ->
     (* raise (Error (loc, Unsupported_sort Void)) *)
     Misc.fatal_error "merlin-jst: void encountered in classify"
 
-(*
 let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
   | Tconstr(p, [elt_ty], _)
@@ -151,7 +167,7 @@ let array_type_kind ~elt_sort env loc ty =
         | None ->
           type_sort ~why:Array_element env loc elt_ty
       in
-      begin match classify env loc elt_ty elt_sort with
+      begin match classify env (* loc *) elt_ty elt_sort with
       | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
       | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
       | Addr | Lazy -> Paddrarray
@@ -170,6 +186,7 @@ let array_kind exp elt_sort =
     ~elt_sort:(Some elt_sort)
     exp.exp_env exp.exp_loc exp.exp_type
 
+(*
 let array_pattern_kind pat elt_sort =
   array_type_kind
     ~elt_sort:(Some elt_sort)
@@ -711,7 +728,7 @@ let lazy_val_requires_forward env (* loc *) ty =
      Blocks with forward_tag can get scanned by the gc thus can't
      store unboxed values. Not boxing is also incorrect since the lazy
      type has layout [value] which is different from these unboxed layouts. *)
-  | Unboxed_float (* _ *) | Unboxed_int (* _ *) ->
+  | Unboxed_float _ | Unboxed_int _ ->
     Misc.fatal_error "Unboxed value encountered inside lazy expression"
   | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false

@@ -248,6 +248,7 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_override _
     | Texp_letop _ ->
         Dynamic
+    | Texp_hole -> Static
   and classify_value_bindings rec_flag env bindings =
     (* We use a non-recursive classification, classifying each
         binding with respect to the old environment
@@ -325,6 +326,7 @@ let classify_expression : Typedtree.expression -> sd =
         end
     | Tmod_unpack (e, _) ->
         classify_expression env e
+    | Tmod_hole -> Static
   in classify_expression Ident.empty
 
 
@@ -587,17 +589,17 @@ let (>>) : bind_judg -> term_judg -> term_judg =
 
 (* Compute the appropriate [mode] for an array expression *)
 let array_mode exp elt_sort = match Typeopt.array_kind exp elt_sort with
-  | Lambda.Pfloatarray ->
+  | Pfloatarray ->
     (* (flat) float arrays unbox their elements *)
     Dereference
-  | Lambda.Pgenarray ->
+  | Pgenarray ->
     (* This is counted as a use, because constructing a generic array
        involves inspecting to decide whether to unbox (PR#6939). *)
     Dereference
-  | Lambda.Paddrarray | Lambda.Pintarray ->
+  | Paddrarray | Pintarray ->
     (* non-generic, non-float arrays act as constructors *)
     Guard
-  | Lambda.Punboxedfloatarray _ | Lambda.Punboxedintarray _ ->
+  | Punboxedfloatarray _ | Punboxedintarray _ ->
     Dereference
 
 (* Expression judgment:
@@ -962,6 +964,7 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_probe_is_enabled _ -> empty
     | Texp_exclave e -> expression e
     | Texp_src_pos -> empty
+    | Texp_hole -> empty
 
 (* Function bodies.
     G |-{body} b : m
@@ -1073,6 +1076,7 @@ and modexp : Typedtree.module_expr -> term_judg =
       coercion coe (fun m -> modexp mexp << m)
     | Tmod_unpack (e, _) ->
       expression e
+    | Tmod_hole -> empty
 
 
 (* G |- pth : m *)
