@@ -17,8 +17,6 @@
 
 open Asttypes
 
-type jkind = Jkind.t
-
 type mutability =
   | Immutable
   | Mutable of Mode.Alloc.Comonadic.Const.t
@@ -38,7 +36,7 @@ type transient_expr =
 and type_expr = transient_expr
 
 and type_desc =
-  | Tvar of { name : string option; jkind : Jkind.t }
+  | Tvar of { name : string option; jkind : jkind }
   | Tarrow of arrow_desc * type_expr * type_expr * commutable
   | Ttuple of (string option * type_expr) list
   | Tconstr of Path.t * type_expr list * abbrev_memo ref
@@ -48,7 +46,7 @@ and type_desc =
   | Tlink of type_expr
   | Tsubst of type_expr * type_expr option
   | Tvariant of row_desc
-  | Tunivar of { name : string option; jkind : Jkind.t }
+  | Tunivar of { name : string option; jkind : jkind }
   | Tpoly of type_expr * type_expr list
   | Tpackage of Path.t * (Longident.t * type_expr) list
 
@@ -98,6 +96,16 @@ and _ commutable_gen =
     Cok      : [> `some] commutable_gen
   | Cunknown : [> `none] commutable_gen
   | Cvar : {mutable commu: any commutable_gen} -> [> `var] commutable_gen
+
+and jkind = type_expr Jkind_types.t
+
+(* jkind depends on types defined in this file, but Jkind.equal is required
+   here. When jkind.ml is loaded, it calls set_jkind_equal to fill a ref to the
+   function. *)
+(** Corresponds to [Jkind.equal] *)
+let jkind_equal = ref (fun _ _ ->
+    failwith "jkind_equal should be set by jkind.ml")
+let set_jkind_equal f = jkind_equal := f
 
 module TransientTypeOps = struct
   type t = type_expr
@@ -244,8 +252,8 @@ type type_declaration =
   { type_params: type_expr list;
     type_arity: int;
     type_kind: type_decl_kind;
-    type_jkind: Jkind.t;
-    type_jkind_annotation: Jkind.annotation option;
+    type_jkind: jkind;
+    type_jkind_annotation: Jkind_types.annotation option;
     type_private: private_flag;
     type_manifest: type_expr option;
     type_variance: Variance.t list;
@@ -268,13 +276,21 @@ and ('lbl, 'cstr) type_kind =
 
 and tag = Ordinary of {src_index: int;     (* Unique name (per type) *)
                        runtime_tag: int}   (* The runtime tag *)
-        | Extension of Path.t * Jkind.t array
+        | Extension of Path.t * jkind array
 
 and abstract_reason =
     Abstract_def
   | Abstract_rec_check_regularity
 
-and flat_element = Imm | Float | Float64 | Bits32 | Bits64 | Word
+and flat_element =
+  | Imm
+  | Float_boxed
+  | Float64
+  | Float32
+  | Bits32
+  | Bits64
+  | Word
+
 and mixed_product_shape =
   { value_prefix_len : int;
     flat_suffix : flat_element array;
@@ -283,14 +299,14 @@ and mixed_product_shape =
 and record_representation =
   | Record_unboxed
   | Record_inlined of tag * variant_representation
-  | Record_boxed of Jkind.t array
+  | Record_boxed of jkind array
   | Record_float
   | Record_ufloat
   | Record_mixed of mixed_product_shape
 
 and variant_representation =
   | Variant_unboxed
-  | Variant_boxed of (constructor_representation * Jkind.t array) array
+  | Variant_boxed of (constructor_representation * jkind array) array
   | Variant_extensible
 
 and constructor_representation =
@@ -303,7 +319,7 @@ and label_declaration =
     ld_mutable: mutability;
     ld_global: Mode.Global_flag.t;
     ld_type: type_expr;
-    ld_jkind : Jkind.t;
+    ld_jkind : jkind;
     ld_loc: Location.t;
     ld_attributes: Parsetree.attributes;
     ld_uid: Uid.t;
@@ -327,7 +343,7 @@ type extension_constructor =
   { ext_type_path: Path.t;
     ext_type_params: type_expr list;
     ext_args: constructor_arguments;
-    ext_arg_jkinds: Jkind.t array;
+    ext_arg_jkinds: jkind array;
     ext_shape: constructor_representation;
     ext_constant: bool;
     ext_ret_type: type_expr option;
@@ -416,7 +432,7 @@ module type Wrapped = sig
     { val_type: type_expr wrapped;                (* Type of the value *)
       val_kind: value_kind;
       val_loc: Location.t;
-      val_zero_alloc: Builtin_attributes.check_attribute;
+      val_zero_alloc: Builtin_attributes.zero_alloc_attribute;
       val_attributes: Parsetree.attributes;
       val_uid: Uid.t;
     }
@@ -547,7 +563,7 @@ type constructor_description =
     cstr_res: type_expr;                (* Type of the result *)
     cstr_existentials: type_expr list;  (* list of existentials *)
     cstr_args: (type_expr * Mode.Global_flag.t) list;          (* Type of the arguments *)
-    cstr_arg_jkinds: Jkind.t array;     (* Jkinds of the arguments *)
+    cstr_arg_jkinds: jkind array;     (* Jkinds of the arguments *)
     cstr_arity: int;                    (* Number of arguments *)
     cstr_tag: tag;                      (* Tag for heap blocks *)
     cstr_repr: variant_representation;  (* Repr of the outer variant *)
@@ -586,22 +602,24 @@ let equal_tag t1 t2 =
 
 let equal_flat_element e1 e2 =
   match e1, e2 with
-  | Imm, Imm | Float64, Float64 | Float, Float
+  | Imm, Imm | Float64, Float64 | Float32, Float32 | Float_boxed, Float_boxed
   | Word, Word | Bits32, Bits32 | Bits64, Bits64
     -> true
-  | (Imm | Float64 | Float | Word | Bits32 | Bits64), _ -> false
+  | (Imm | Float64 | Float32 | Float_boxed | Word | Bits32 | Bits64), _ -> false
 
 let compare_flat_element e1 e2 =
   match e1, e2 with
-  | Imm, Imm | Float, Float | Float64, Float64
+  | Imm, Imm | Float_boxed, Float_boxed | Float64, Float64 | Float32, Float32
   | Word, Word | Bits32, Bits32 | Bits64, Bits64
     -> 0
   | Imm, _ -> -1
   | _, Imm -> 1
-  | Float, _ -> -1
-  | _, Float -> 1
+  | Float_boxed, _ -> -1
+  | _, Float_boxed -> 1
   | Float64, _ -> -1
   | _, Float64 -> 1
+  | Float32, _ -> -1
+  | _, Float32 -> 1
   | Word, _ -> -1
   | _, Word -> 1
   | Bits32, _ -> -1
@@ -626,7 +644,13 @@ let equal_variant_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Variant_boxed cstrs_and_jkinds1, Variant_boxed cstrs_and_jkinds2 ->
       array_equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
           equal_constructor_representation cstr1 cstr2
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
           && array_equal Jkind.equal jkinds1 jkinds2)
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+          && Misc.Stdlib.Array.equal Jkind.equal jkinds1 jkinds2)
+=======
+          && Misc.Stdlib.Array.equal !jkind_equal jkinds1 jkinds2)
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
         cstrs_and_jkinds1
         cstrs_and_jkinds2
   | Variant_extensible, Variant_extensible ->
@@ -640,7 +664,13 @@ let equal_record_representation r1 r2 = match r1, r2 with
   | Record_inlined (tag1, vr1), Record_inlined (tag2, vr2) ->
       equal_tag tag1 tag2 && equal_variant_representation vr1 vr2
   | Record_boxed lays1, Record_boxed lays2 ->
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
       array_equal Jkind.equal lays1 lays2
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+      Misc.Stdlib.Array.equal Jkind.equal lays1 lays2
+=======
+      Misc.Stdlib.Array.equal !jkind_equal lays1 lays2
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
   | Record_float, Record_float ->
       true
   | Record_ufloat, Record_ufloat ->
@@ -690,7 +720,7 @@ type label_description =
     lbl_arg: type_expr;                 (* Type of the argument *)
     lbl_mut: mutability;                (* Is this a mutable field? *)
     lbl_global: Mode.Global_flag.t;        (* Is this a global field? *)
-    lbl_jkind : Jkind.t;                (* Jkind of the argument *)
+    lbl_jkind : jkind;                (* Jkind of the argument *)
     lbl_pos: int;                       (* Position in block *)
     lbl_num: int;                       (* Position in type *)
     lbl_all: label_description array;   (* All the labels in this type *)
@@ -734,7 +764,8 @@ let get_mixed_product_element { value_prefix_len; flat_suffix } i =
 
 let flat_element_to_string = function
   | Imm -> "Imm"
-  | Float -> "Float"
+  | Float_boxed -> "Float_boxed"
+  | Float32 -> "Float32"
   | Float64 -> "Float64"
   | Bits32 -> "Bits32"
   | Bits64 -> "Bits64"
@@ -742,7 +773,8 @@ let flat_element_to_string = function
 
 let flat_element_to_lowercase_string = function
   | Imm -> "imm"
-  | Float -> "float"
+  | Float_boxed -> "float"
+  | Float32 -> "float32"
   | Float64 -> "float64"
   | Bits32 -> "bits32"
   | Bits64 -> "bits64"
@@ -762,8 +794,14 @@ type change =
   | Ccommu : [`var] commutable_gen -> change
   | Cuniv : type_expr option ref * type_expr option -> change
   | Cmodes : Mode.changes -> change
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
   | Cfun of (unit -> unit)
   | Csort : Jkind.Sort.change -> change
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+  | Csort : Jkind.Sort.change -> change
+=======
+  | Csort : Jkind_types.Sort.change -> change
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
 type changes =
     Change of change * changes ref
@@ -781,7 +819,7 @@ let log_change ch =
 
 let () =
   Mode.set_append_changes (fun changes -> log_change (Cmodes !changes));
-  Jkind.Sort.change_log := (fun change -> log_change (Csort change))
+  Jkind_types.Sort.set_change_log (fun change -> log_change (Csort change))
 
 (* constructor and accessors for [field_kind] *)
 
@@ -1031,9 +1069,17 @@ let undo_change = function
   | Ckind  (FKvar r) -> r.field_kind <- FKprivate
   | Ccommu (Cvar r)  -> r.commu <- Cunknown
   | Cuniv  (r, v)    -> r := v
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
   | Cmodes c -> Mode.undo_changes c
   | Cfun f -> f ()
   | Csort change -> Jkind.Sort.undo_change change
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+  | Cmodes c          -> Mode.undo_changes c
+  | Csort change -> Jkind.Sort.undo_change change
+=======
+  | Cmodes c          -> Mode.undo_changes c
+  | Csort change -> Jkind_types.Sort.undo_change change
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
 type snapshot = changes ref * int
 let last_snapshot = Local_store.s_ref 0

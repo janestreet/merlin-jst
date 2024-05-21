@@ -145,5 +145,16 @@ val complete_partial :
   pattern list list ->
   (pattern) list
 
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
 val return_unused: pattern list ->
   [ `Unused of pattern | `Unused_subs of pattern * pattern list ] list
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+(* The tag used for open polymorphic variant types with an abstract row *)
+val some_private_tag : label
+=======
+(* The tag used for open polymorphic variant types with an abstract row *)
+val some_private_tag : label
+
+(* Raise an error due to matching on a float32. *)
+val raise_matched_float32 : unit -> 'a
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16

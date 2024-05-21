@@ -204,6 +204,7 @@ type error =
   | Extension_not_enabled : _ Language_extension.t -> error
   | Literal_overflow of string
   | Unknown_literal of string * char
+  | Float32_literal of string
   | Illegal_letrec_pat
   | Illegal_letrec_expr
   | Illegal_class_expr
@@ -729,6 +730,7 @@ let type_constant: Typedtree.constant -> type_expr = function
   | Const_float _ -> instance Predef.type_float
   | Const_float32 _ -> instance Predef.type_float32
   | Const_unboxed_float _ -> instance Predef.type_unboxed_float
+  | Const_unboxed_float32 _ -> instance Predef.type_unboxed_float32
   | Const_int32 _ -> instance Predef.type_int32
   | Const_int64 _ -> instance Predef.type_int64
   | Const_nativeint _ -> instance Predef.type_nativeint
@@ -787,6 +789,9 @@ let constant : Parsetree.constant -> (Typedtree.constant, error) result =
   | Pconst_char c -> Ok (Const_char c)
   | Pconst_string (s,loc,d) -> Ok (Const_string (s,loc,d))
   | Pconst_float (f,None)-> Ok (Const_float f)
+  | Pconst_float (f,Some 's') ->
+    if Language_extension.is_enabled Small_numbers then Ok (Const_float32 f)
+    else Error (Float32_literal f)
   | Pconst_float (f,Some c) -> Error (Unknown_literal (f, c))
 
 let constant_or_raise env loc cst =
@@ -797,7 +802,17 @@ let constant_or_raise env loc cst =
 let unboxed_constant : Jane_syntax.Layouts.constant -> (Typedtree.constant, error) result
   = function
   | Float (f, None) -> Ok (Const_unboxed_float f)
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
   | Float (x, Some c) -> Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal x, c))
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+  | Float (x, Some c) -> Error (Unknown_literal (Misc.format_as_unboxed_literal x, c))
+=======
+  | Float (f, Some 's') ->
+    if Language_extension.is_enabled Small_numbers then Ok (Const_unboxed_float32 f)
+    else Error (Float32_literal (Misc.format_as_unboxed_literal f))
+  | Float (x, Some c) ->
+    Error (Unknown_literal (Misc.format_as_unboxed_literal x, c))
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
   | Integer (i, suffix) ->
     begin match constant_integer i ~suffix with
       | Ok (Int32 v) -> Ok (Const_unboxed_int32 v)
@@ -1194,7 +1209,7 @@ let add_pattern_variables ?check ?check_as env pv =
        Env.add_value ?check ~mode:pv_mode pv_id
          {val_type = pv_type; val_kind = Val_reg; Types.val_loc = pv_loc;
           val_attributes = pv_attributes;
-          val_zero_alloc = Builtin_attributes.Default_check;
+          val_zero_alloc = Builtin_attributes.Default_zero_alloc;
           val_uid = pv_uid
          } env
     )
@@ -2999,7 +3014,7 @@ let type_class_arg_pattern cl_num val_env met_env l spat =
             { val_type = pv_type
             ; val_kind = Val_reg
             ; val_attributes = pv_attributes
-            ; val_zero_alloc = Builtin_attributes.Default_check
+            ; val_zero_alloc = Builtin_attributes.Default_zero_alloc
             ; val_loc = pv_loc
             ; val_uid = pv_uid
             }
@@ -3010,7 +3025,7 @@ let type_class_arg_pattern cl_num val_env met_env l spat =
             { val_type = pv_type
             ; val_kind = Val_ivar (Immutable, cl_num)
             ; val_attributes = pv_attributes
-            ; val_zero_alloc = Builtin_attributes.Default_check
+            ; val_zero_alloc = Builtin_attributes.Default_zero_alloc
             ; val_loc = pv_loc
             ; val_uid = pv_uid
             }
@@ -4008,20 +4023,44 @@ and is_nonexpansive_arg = function
 
 let maybe_expansive e = not (is_nonexpansive e)
 
-let check_recursive_bindings env valbinds =
+let annotate_recursive_bindings env valbinds =
   let ids = let_bound_idents valbinds in
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
   List.iter
     (fun {vb_expr} ->
        if not (Rec_check.is_valid_recursive_expression ids vb_expr) then
          raise(error(vb_expr.exp_loc, env, Illegal_letrec_expr))
     )
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+  List.iter
+    (fun {vb_expr} ->
+       if not (Rec_check.is_valid_recursive_expression ids vb_expr) then
+         raise(Error(vb_expr.exp_loc, env, Illegal_letrec_expr))
+    )
+=======
+  List.map
+    (fun {vb_pat; vb_expr; vb_rec_kind = _; vb_sort; vb_attributes; vb_loc} ->
+       match (Value_rec_check.is_valid_recursive_expression ids vb_expr) with
+       | None ->
+         raise(Error(vb_expr.exp_loc, env, Illegal_letrec_expr))
+       | Some vb_rec_kind ->
+         { vb_pat; vb_expr; vb_rec_kind; vb_sort; vb_attributes; vb_loc})
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
     valbinds
 
 let check_recursive_class_bindings env ids exprs =
   List.iter
     (fun expr ->
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
        if not (Rec_check.is_valid_class_expr ids expr) then
          raise(error(expr.cl_loc, env, Illegal_class_expr)))
+||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
+       if not (Rec_check.is_valid_class_expr ids expr) then
+         raise(Error(expr.cl_loc, env, Illegal_class_expr)))
+=======
+       if not (Value_rec_check.is_valid_class_expr ids expr) then
+         raise(Error(expr.cl_loc, env, Illegal_class_expr)))
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
     exprs
 
 module Is_local_returning : sig
@@ -5196,35 +5235,29 @@ let create_merlin_type_error_node loc env ty_expected ~attributes =
 
 let add_check_attribute expr attributes =
   let open Builtin_attributes in
-  let to_string = function
-    | Zero_alloc -> "zero_alloc"
-  in
-  let to_string : check_attribute -> string = function
-    | Check { property; strict; loc = _} ->
-      Printf.sprintf "assert %s%s"
-        (to_string property)
+  let to_string : zero_alloc_attribute -> string = function
+    | Check { strict; loc = _} ->
+      Printf.sprintf "assert_zero_alloc%s"
         (if strict then " strict" else "")
-    | Assume { property; strict; loc = _} ->
-      Printf.sprintf "assume %s%s"
-        (to_string property)
+    | Assume { strict; loc = _} ->
+      Printf.sprintf "assume_zero_alloc%s"
         (if strict then " strict" else "")
-    | Ignore_assert_all property ->
-      Printf.sprintf "ignore %s" (to_string property)
-    | Default_check -> assert false
+    | Ignore_assert_all ->
+      "ignore_zero_alloc"
+    | Default_zero_alloc -> assert false
   in
   match expr.exp_desc with
   | Texp_function fn ->
     let default_arity = function_arity fn.params fn.body in
     let za =
-      get_property_attribute ~in_signature:false ~default_arity attributes
-        Zero_alloc
+      get_zero_alloc_attribute ~in_signature:false ~default_arity attributes
     in
     begin match za with
-    | Default_check -> expr
-    | (Ignore_assert_all _ | Check _ | Assume _) as check ->
+    | Default_zero_alloc -> expr
+    | (Ignore_assert_all | Check _ | Assume _) as check ->
       begin match fn.zero_alloc with
-      | Default_check -> ()
-      | Ignore_assert_all _ | Assume _ | Check _ ->
+      | Default_zero_alloc -> ()
+      | Ignore_assert_all | Assume _ | Check _ ->
         Location.prerr_warning expr.exp_loc
           (Warnings.Duplicated_attribute (to_string fn.zero_alloc));
       end;
@@ -5235,18 +5268,18 @@ let add_check_attribute expr attributes =
 
 let zero_alloc_of_application ~num_args attrs funct =
   let zero_alloc =
-    Builtin_attributes.get_property_attribute ~in_signature:false
-      ~default_arity:num_args attrs Zero_alloc
+    Builtin_attributes.get_zero_alloc_attribute ~in_signature:false
+      ~default_arity:num_args attrs
   in
   let zero_alloc =
     match zero_alloc with
-    | Assume _ | Ignore_assert_all _ | Check _ ->
+    | Assume _ | Ignore_assert_all | Check _ ->
       (* The user wrote a zero_alloc attribute on the application - keep it.
          (Note that `ignore` and `check` aren't really allowed here, and will be
          rejected by the call to `Builtin_attributes.assume_zero_alloc` below.)
        *)
       zero_alloc
-    | Default_check ->
+    | Default_zero_alloc ->
       (* We assume the call is zero_alloc if the function is known to be
          zero_alloc. If the function is zero_alloc opt, then we need to be sure
          that the opt checks were run to license this assumption. We judge
@@ -5261,14 +5294,13 @@ let zero_alloc_of_application ~num_args attrs funct =
       | Texp_ident (_, _, { val_zero_alloc = (Check c); _ }, _, _)
         when c.arity = num_args && (use_opt || not c.opt) ->
         Builtin_attributes.Assume {
-          property = Zero_alloc;
           strict = c.strict;
           never_returns_normally = false;
           never_raises = false;
           arity = c.arity;
           loc = c.loc
         }
-      | _ -> Builtin_attributes.Default_check
+      | _ -> Builtin_attributes.Default_zero_alloc
   in
   Builtin_attributes.assume_zero_alloc ~is_check_allowed:false zero_alloc
 
@@ -5435,9 +5467,9 @@ and type_expect_
             type_expect
               new_env expected_mode sbody ty_expected_explained
           in
-          let () =
-            if rec_flag = Recursive then
-              check_recursive_bindings env pat_exp_list
+          let pat_exp_list = match rec_flag with
+            | Recursive -> annotate_recursive_bindings env pat_exp_list
+            | Nonrecursive -> pat_exp_list
           in
           (* The "bound expressions" component of the scope escape check.
 
@@ -5929,8 +5961,8 @@ and type_expect_
           | Record_float -> true
           | Record_mixed mixed -> begin
               match Types.get_mixed_product_element mixed label.lbl_num with
-              | Flat_suffix Float -> true
-              | Flat_suffix (Float64 | Imm | Bits32 | Bits64 | Word) -> false
+              | Flat_suffix Float_boxed -> true
+              | Flat_suffix (Float64 | Float32 | Imm | Bits32 | Bits64 | Word) -> false
               | Value_prefix -> false
             end
           | _ -> false
@@ -7783,7 +7815,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
         let desc =
           { val_type = ty; val_kind = Val_reg;
             val_attributes = [];
-            val_zero_alloc = Builtin_attributes.Default_check;
+            val_zero_alloc = Builtin_attributes.Default_zero_alloc;
             val_loc = Location.none;
             val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
           }
@@ -7848,7 +7880,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
               ret_sort;
               alloc_mode;
               region = false;
-              zero_alloc = Default_check
+              zero_alloc = Default_zero_alloc
             }
         }
       in
@@ -7864,6 +7896,7 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
                Texp_let (Nonrecursive,
                          [{vb_pat=let_pat; vb_expr=texp; vb_sort=arg_sort;
                            vb_attributes=[]; vb_loc=Location.none;
+                           vb_rec_kind = Dynamic;
                           }],
                          func let_var) }
       end
@@ -8903,8 +8936,9 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
         (* We check for [zero_alloc] attributes written on the [let] and move
            them to the function. *)
         let e = add_check_attribute e pvb.pvb_attributes in
+        (* vb_rec_kind will be computed later for recursive bindings *)
         {vb_pat=p; vb_expr=e; vb_sort = s; vb_attributes=pvb.pvb_attributes;
-         vb_loc=pvb.pvb_loc;
+         vb_loc=pvb.pvb_loc; vb_rec_kind = Dynamic;
         })
       l spat_sexp_list
   in
@@ -9292,8 +9326,8 @@ and type_n_ary_function
               (filter_ty_ret_exn ret_ty Nolabel ~force_tpoly:true : type_expr)
     end;
     let zero_alloc =
-      Builtin_attributes.get_property_attribute ~in_signature:false
-        ~default_arity:syntactic_arity attributes Zero_alloc
+      Builtin_attributes.get_zero_alloc_attribute ~in_signature:false
+        ~default_arity:syntactic_arity attributes
     in
     re
       { exp_desc =
@@ -10471,6 +10505,9 @@ let report_error ~loc env = function
         ty
   | Unknown_literal (n, m) ->
       Location.errorf ~loc "Unknown modifier '%c' for literal %s%c" m n m
+  | Float32_literal f ->
+      Location.errorf ~loc "Found 32-bit float literal %ss, but float32 is not enabled. \
+                            You must enable -extension small_numbers to use this feature." f
   | Illegal_letrec_pat ->
       Location.errorf ~loc
         "Only variables are allowed as left-hand side of `let rec'"

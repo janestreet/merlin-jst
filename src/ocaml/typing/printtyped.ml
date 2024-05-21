@@ -72,6 +72,7 @@ let fmt_constant f x =
   | Const_float (s) -> fprintf f "Const_float %s" s
   | Const_float32 (s) -> fprintf f "Const_float32 %s" s;
   | Const_unboxed_float (s) -> fprintf f "Const_unboxed_float %s" s
+  | Const_unboxed_float32 (s) -> fprintf f "Const_unboxed_float32 %s" s
   | Const_int32 (i) -> fprintf f "Const_int32 %ld" i
   | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i
   | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i
@@ -175,10 +176,10 @@ let typevar_layout' ppf (v, l) =
   let pptv = fmt_ident in
   match l with
   | None -> fprintf ppf " %a" pptv v
-  | Some (_, lay) ->
+  | Some (_, jkind) ->
       fprintf ppf " (%a : %a)"
         pptv v
-        Jane_syntax.Layouts.Pprint.const_jkind lay.txt
+        Pprintast.jkind jkind.txt
 
 let tuple_component_label i ppf = function
   | None -> line i ppf "Label: None\n"
@@ -452,7 +453,7 @@ and expression i ppf x =
   | Texp_constant (c) -> line i ppf "Texp_constant %a\n" fmt_constant c;
   | Texp_let (rf, l, e) ->
       line i ppf "Texp_let %a\n" fmt_rec_flag rf;
-      list i value_binding ppf l;
+      list i (value_binding rf) ppf l;
       expression i ppf e;
   | Texp_function { params; body; region; alloc_mode = am } ->
       line i ppf "Texp_function\n";
@@ -795,7 +796,7 @@ and class_expr i ppf x =
       list i label_x_apply_arg ppf l;
   | Tcl_let (rf, l1, l2, ce) ->
       line i ppf "Tcl_let %a\n" fmt_rec_flag rf;
-      list i value_binding ppf l1;
+      list i (value_binding rf) ppf l1;
       list i ident_x_expression_def ppf l2;
       class_expr i ppf ce;
   | Tcl_constraint (ce, Some ct, _, _, _) ->
@@ -1021,7 +1022,7 @@ and structure_item i ppf x =
       expression i ppf e;
   | Tstr_value (rf, l) ->
       line i ppf "Tstr_value %a\n" fmt_rec_flag rf;
-      list i value_binding ppf l;
+      list i (value_binding rf) ppf l;
   | Tstr_primitive vd ->
       line i ppf "Tstr_primitive\n";
       value_description i ppf vd;
@@ -1141,8 +1142,12 @@ and case
   end;
   expression (i+1) ppf c_rhs;
 
-and value_binding i ppf x =
-  line i ppf "<def>\n";
+and value_binding rec_flag i ppf x =
+  begin match rec_flag, x.vb_rec_kind with
+  | Nonrecursive, _ -> line i ppf "<def>\n"
+  | Recursive, Static -> line i ppf "<def_rec>\n"
+  | Recursive, Dynamic -> line i ppf "<def_rec_dynamic>\n"
+  end;
   attributes (i+1) ppf x.vb_attributes;
   pattern (i+1) ppf x.vb_pat;
   expression (i+1) ppf x.vb_expr
