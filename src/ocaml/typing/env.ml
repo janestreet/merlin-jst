@@ -4151,7 +4151,7 @@ let check_state_consistency () =
     match Load_path.find_uncap (modname_as_string ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
-  and found _modname filename ps_name _md =
+  and found _modname filename ps_name =
     match Cmi_cache.get_cached_entry filename with
     | cmi_infos -> ps_name == cmi_infos.Cmi_format.cmi_name
     | exception Not_found -> false

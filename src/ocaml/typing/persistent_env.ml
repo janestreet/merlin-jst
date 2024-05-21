@@ -229,13 +229,13 @@ let fold {persistent_structures; _} f x =
 
 let register_pers_for_short_paths penv ps components =
   let old_style_crcs =
-    ps.ps_crcs
+    ps.ps_import.imp_crcs
     |> Array.to_list
     |> List.map
          (fun import ->
             let name = Import_info.name import in
-            let crc_with_unit = Import_info.crc_with_unit import in
-            name, crc_with_unit)
+            let crc = Import_info.crc import in
+            name, crc)
   in
   let deps, alias_deps =
     List.fold_left
@@ -257,7 +257,7 @@ let register_pers_for_short_paths penv ps components =
           String.Map.mem "deprecated" alerts ||
           String.Map.mem "ocaml.deprecated" alerts
         | _ -> false)
-      ps.ps_flags
+      ps.ps_import.imp_flags
   in
   let deprecated =
     if is_deprecated then Short_paths.Desc.Deprecated
@@ -351,16 +351,6 @@ let acknowledge_import penv ~check modname pers_sig =
   Hashtbl.add imports modname (Found import);
   import
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-let bind_pers_struct penv short_path_comps modname ps pm =
-  let {persistent_structures; _} = penv in
-  Hashtbl.add persistent_structures modname (Found (ps, pm));
-  register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-let bind_pers_struct penv modname ps pm =
-  let {persistent_structures; _} = penv in
-  Hashtbl.add persistent_structures modname (Found (ps, pm))
-=======
 let read_import penv ~check modname filename =
   add_import penv modname;
   let cmi = read_cmi_lazy filename in
@@ -369,17 +359,7 @@ let read_import penv ~check modname filename =
 
 let check_visibility ~allow_hidden imp =
   if not allow_hidden && imp.imp_visibility = Load_path.Hidden then raise Not_found
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
-  let ps = process_pers_struct penv check modname pers_sig in
-  bind_pers_struct penv short_path_comps modname ps pm;
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-let acknowledge_pers_struct penv check modname pers_sig pm =
-  let ps = process_pers_struct penv check modname pers_sig in
-  bind_pers_struct penv modname ps pm;
-=======
 let find_import ~allow_hidden penv ~check modname =
   let {imports; _} = penv in
   if CU.Name.equal modname CU.Name.predef_exn then raise Not_found;
@@ -423,7 +403,7 @@ type 'a sig_reader =
   -> flags:Cmi_format.pers_flags list
   -> 'a
 
-let acknowledge_pers_struct penv modname import val_of_pers_sig =
+let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig =
   let {persistent_structures; _} = penv in
   let impl = import.imp_impl in
   let sign = import.imp_sign in
@@ -448,77 +428,24 @@ let acknowledge_pers_struct penv modname import val_of_pers_sig =
     }
   in
   Hashtbl.add persistent_structures modname ps;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+  register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm);
   ps
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-let read_pers_struct penv val_of_pers_sig short_path_comps check modname
-      filename ~add_binding =
-  add_import penv modname;
-  let cmi = Cmi_cache.read filename in
-  let pers_sig = { Persistent_signature.filename; cmi; visibility = Visible } in
-  let pm = val_of_pers_sig pers_sig in
-  let ps = process_pers_struct penv check modname pers_sig in
-  if add_binding then bind_pers_struct penv short_path_comps modname ps pm;
-  (ps, pm)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-let read_pers_struct penv val_of_pers_sig check modname filename ~add_binding =
-  add_import penv modname;
-  let cmi = read_cmi_lazy filename in
-  let pers_sig = { Persistent_signature.filename; cmi; visibility = Visible } in
-  let pm = val_of_pers_sig pers_sig in
-  let ps = process_pers_struct penv check modname pers_sig in
-  if add_binding then bind_pers_struct penv modname ps pm;
-  (ps, pm)
-=======
-let read_pers_struct penv val_of_pers_sig check modname filename ~add_binding =
+let read_pers_struct penv val_of_pers_sig short_path_comps check modname filename ~add_binding =
   let import = read_import penv ~check modname filename in
   if add_binding then
     ignore
-      (acknowledge_pers_struct penv modname import val_of_pers_sig
+      (acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
        : _ pers_struct_info);
   import.imp_sign
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 
 let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check name =
   let {persistent_structures; _} = penv in
   match Hashtbl.find persistent_structures name with
   | ps -> check_visibility ~allow_hidden ps.ps_import; ps
   | exception Not_found ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-    match can_load_cmis penv with
-    | Cannot_load_cmis _ -> raise Not_found
-    | Can_load_cmis ->
-        let psig =
-          match !Persistent_signature.load ~allow_hidden ~unit_name:name with
-          | Some psig -> psig
-          | None ->
-            if allow_hidden then Hashtbl.add persistent_structures name Missing;
-            raise Not_found
-        in
-        add_import penv name;
-        let pm = val_of_pers_sig psig in
-        let ps = acknowledge_pers_struct penv short_path_comps check name psig pm in
-        (ps, pm)
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-    match can_load_cmis penv with
-    | Cannot_load_cmis _ -> raise Not_found
-    | Can_load_cmis ->
-        let psig =
-          match !Persistent_signature.load ~allow_hidden ~unit_name:name with
-          | Some psig -> psig
-          | None ->
-            if allow_hidden then Hashtbl.add persistent_structures name Missing;
-            raise Not_found
-        in
-        add_import penv name;
-        let pm = val_of_pers_sig psig in
-        let ps = acknowledge_pers_struct penv check name psig pm in
-        (ps, pm)
-=======
       let import = find_import ~allow_hidden penv ~check name in
-      acknowledge_pers_struct penv name import val_of_pers_sig
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+      acknowledge_pers_struct penv short_path_comps name import val_of_pers_sig
 
 let describe_prefix ppf prefix =
   if CU.Prefix.is_empty prefix then
@@ -566,31 +493,11 @@ let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
       let warn = Warnings.No_cmi_file(name_as_string, Some msg) in
         Location.prerr_warning loc warn
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-let read penv f modname filename ~add_binding =
-  snd (read_pers_struct penv f true modname filename ~add_binding)
-
-let find ~allow_hidden penv f name =
-  snd (find_pers_struct ~allow_hidden penv f true name)
-
-let check ~allow_hidden penv f ~loc name =
-  let {persistent_structures; _} = penv in
-=======
-let read penv f modname filename ~add_binding =
-  read_pers_struct penv f true modname filename ~add_binding
-
-let find ~allow_hidden penv f name =
-  (find_pers_struct ~allow_hidden penv f true name).ps_val
-
-let check ~allow_hidden penv f ~loc name =
-  let {persistent_structures; _} = penv in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
 let read penv f1 f2 modname filename ~add_binding =
-  snd (read_pers_struct penv f1 f2 true modname filename ~add_binding)
+  read_pers_struct penv f1 f2 true modname filename ~add_binding
 
 let find ~allow_hidden penv f1 f2 name =
-  snd (find_pers_struct ~allow_hidden penv f1 f2 true name)
+  (find_pers_struct ~allow_hidden penv f1 f2 true name).ps_val
 
 let check ~allow_hidden penv f1 f2 ~loc name =
   let {persistent_structures; _} = penv in
@@ -621,26 +528,12 @@ module Array = struct
     loop 0
 end
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-let crc_of_unit penv f1 f2 name =
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-let crc_of_unit penv f name =
-=======
 let crc_of_unit penv name =
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
   match Consistbl.find penv.crc_units name with
   | Some (_impl, crc) -> crc
   | None ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
-    let (ps, _pm) = find_pers_struct ~allow_hidden:true penv f1 f2 true name in
-    match Array.find_opt (Import_info.has_name ~name) ps.ps_crcs with
-||||||| ocaml-flambda/flambda-backend:e9cc205a9bdcf17ed3cc988c0eb8b4cc94eab3eb
-    let (ps, _pm) = find_pers_struct ~allow_hidden:true penv f true name in
-    match Array.find_opt (Import_info.has_name ~name) ps.ps_crcs with
-=======
     let import = find_import ~allow_hidden:true penv ~check:true name in
     match Array.find_opt (Import_info.Intf.has_name ~name) import.imp_crcs with
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
     | None -> assert false
     | Some import_info ->
       match Import_info.crc import_info with
@@ -773,8 +666,8 @@ let with_cmis penv f x =
           (fun () -> f x))
 
 let forall ~found ~missing t =
-  Std.Hashtbl.forall t.persistent_structures (fun name -> function
+  Std.Hashtbl.forall t.imports (fun name -> function
       | Missing -> missing name
-      | Found (pers_struct, a) ->
-        found name pers_struct.ps_filename pers_struct.ps_name a
+      | Found import ->
+        found name import.imp_filename import.ps_name
     )

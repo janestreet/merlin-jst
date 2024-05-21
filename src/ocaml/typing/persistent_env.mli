@@ -159,6 +159,6 @@ val add_delayed_check_forward: ((unit -> unit) -> unit) ref
 val with_cmis : 'a t -> ('b -> 'c) -> 'b -> 'c
 
 val forall :
-  found:(Compilation_unit.Name.t -> filepath -> Compilation_unit.t -> 'a -> bool) ->
+  found:(Compilation_unit.Name.t -> filepath -> Compilation_unit.Name.t -> bool) ->
   missing:(Compilation_unit.Name.t -> bool) ->
   'a t -> bool
