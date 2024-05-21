@@ -15,8 +15,10 @@
 
 (* Auxiliaries for type-based optimizations, e.g. array kinds *)
 
+(* open Path *)
 open Types
 open Typedtree
+open Lambda
 
 (* Expand a type, looking through ordinary synonyms, private synonyms, links,
    and [@@unboxed] types. The returned type will be therefore be none of these
@@ -79,6 +81,13 @@ let is_always_gc_ignorable env ty =
   in
   Ctype.check_type_externality env ty ext
 
+
+  let maybe_pointer_type env ty =
+    let ty = scrape_ty env ty in
+    if is_always_gc_ignorable env ty then Immediate else Pointer
+
+  let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
+
 (* CR layouts v2.8: Calling [type_sort] in [typeopt] is not ideal and
     this function should be removed at some point. To do that, there
     needs to be a way to store sort vars on [Tconstr]s. That means
@@ -88,18 +97,6 @@ let type_sort ~why env _loc ty =
   match Ctype.type_sort ~why env ty with
   | Ok sort -> sort
   | Error _ -> Misc.fatal_error "merlin-jst: a representable layout is required here"
-
-type unboxed_float =
-  | Pfloat64
-  | Pfloat32
-
-type unboxed_integer =
-    Pnativeint | Pint32 | Pint64
-
-type array_kind =
-    Pgenarray | Paddrarray | Pintarray | Pfloatarray
-  | Punboxedfloatarray of unboxed_float
-  | Punboxedintarray of unboxed_integer
 
 type classification =
   | Int   (* any immediate type *)
@@ -112,7 +109,7 @@ type classification =
 
 (* Classify a ty into a [classification]. Looks through synonyms, using [scrape_ty].
    Returning [Any] is safe, though may skip some optimizations. *)
-let classify env (* loc *) ty sort : classification =
+let classify env ty sort : classification =
   let ty = scrape_ty env ty in
   match Jkind.(Sort.get_default_value sort) with
   | Value -> begin
@@ -167,7 +164,7 @@ let array_type_kind ~elt_sort env loc ty =
         | None ->
           type_sort ~why:Array_element env loc elt_ty
       in
-      begin match classify env (* loc *) elt_ty elt_sort with
+      begin match classify env elt_ty elt_sort with
       | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
       | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
       | Addr | Lazy -> Paddrarray
@@ -722,7 +719,7 @@ let function_arg_layout env loc sort ty =
     if the value can be represented as a float/forward/lazy *)
 let lazy_val_requires_forward env (* loc *) ty =
   let sort = Jkind.Sort.for_lazy_body in
-  match classify env (* loc *) ty sort with
+  match classify env ty sort with
   | Any | Lazy -> true
   (* CR layouts: Fix this when supporting lazy unboxed values.
      Blocks with forward_tag can get scanned by the gc thus can't
