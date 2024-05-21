@@ -102,7 +102,7 @@ open Asttypes
 open Typedtree
 open Types
 
-exception Illegal_expr
+(* exception Illegal_expr *)
 
 (** {1 Static or dynamic size} *)
 
@@ -1343,7 +1343,7 @@ and is_destructuring_pattern : type k . k general_pattern -> bool =
     | Tpat_or (l,r,_) ->
         is_destructuring_pattern l || is_destructuring_pattern r
 
-let is_valid_recursive_expression idlist expr =
+let _is_valid_recursive_expression idlist expr =
   match expr.exp_desc with
   | Texp_function _ ->
      (* Fast path: functions can never have invalid recursive references *)
@@ -1369,7 +1369,7 @@ let is_valid_recursive_expression idlist expr =
    {|class a = let x () = new a in object ... end|}
    is allowed.
 *)
-let is_valid_class_expr idlist ce =
+let _is_valid_class_expr idlist ce =
   let rec class_expr : mode -> Typedtree.class_expr -> Env.t =
     fun mode ce -> match ce.cl_desc with
       | Tcl_ident (_, _, _) ->
