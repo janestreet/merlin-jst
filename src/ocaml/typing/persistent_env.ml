@@ -67,6 +67,7 @@ type pers_struct = {
   ps_is_param: bool;
   ps_crcs: Import_info.t array;
   ps_filename: string;
+  ps_flags: pers_flags list;
   ps_visibility: Load_path.visibility;
 }
 
@@ -205,15 +206,15 @@ let fold {persistent_structures; _} f x =
       | Found (_, pm) -> f modname pm x)
     persistent_structures x
 
-let register_pers_for_short_paths penv ps components =
+let register_pers_for_short_paths penv modname ps components =
   let old_style_crcs =
     ps.ps_crcs
     |> Array.to_list
     |> List.map
          (fun import ->
             let name = Import_info.name import in
-            let crc_with_unit = Import_info.crc_with_unit import in
-            name, crc_with_unit)
+            let crc = Import_info.crc import in
+            name, crc)
   in
   let deps, alias_deps =
     List.fold_left
@@ -241,7 +242,7 @@ let register_pers_for_short_paths penv ps components =
     if is_deprecated then Short_paths.Desc.Deprecated
     else Short_paths.Desc.Not_deprecated
   in
-  let ps_name_as_string = Compilation_unit.name_as_string ps.ps_name in
+  let ps_name_as_string = Compilation_unit.Name.to_string modname in
   Short_paths.Basis.load (short_paths_basis penv) ps_name_as_string
     deps alias_deps desc deprecated
 (* Reading persistent structures from .cmi files *)
@@ -271,6 +272,7 @@ let process_pers_struct penv check modname pers_sig =
   let ps = { ps_is_param = is_param;
              ps_crcs = crcs;
              ps_filename = filename;
+             ps_flags = flags;
              ps_visibility = visibility;
            } in
   if not (CU.Name.equal modname found_name) then
@@ -312,7 +314,7 @@ let process_pers_struct penv check modname pers_sig =
 let bind_pers_struct penv short_path_comps modname ps pm =
   let {persistent_structures; _} = penv in
   Hashtbl.add persistent_structures modname (Found (ps, pm));
-  register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm)
+  register_pers_for_short_paths penv modname ps (short_path_comps modname pm)
 
 let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
   let ps = process_pers_struct penv check modname pers_sig in
@@ -575,5 +577,5 @@ let forall ~found ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
       | Missing -> missing name
       | Found (pers_struct, a) ->
-        found name pers_struct.ps_filename pers_struct.ps_name a
+        found name pers_struct.ps_filename name a
     )
