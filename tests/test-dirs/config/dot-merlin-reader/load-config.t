@@ -45,6 +45,7 @@ but we want to observe the stdlib being configured via the STDLIB directive.
     "stdlib": "/stdlib",
     "unit_name": null,
     "wrapping_prefix": null,
+    "source_root": null,
     "reader": [],
     "protocol": "json",
     "log_file": null,

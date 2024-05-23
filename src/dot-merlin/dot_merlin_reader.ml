@@ -102,6 +102,8 @@ module Cache = File_cache.Make (struct
             tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
             tell (`WRAPPING_PREFIX (String.drop 16 line))
+          else if String.is_prefixed ~by:"SOURCE_ROOT " line then
+            tell (`SOURCE_ROOT (String.drop 12 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -315,6 +317,7 @@ type config = {
   pass_forward : Merlin_dot_protocol.Directive.no_processing_required list;
   to_canonicalize : (string * Merlin_dot_protocol.Directive.include_path) list;
   stdlib : string option;
+  source_root : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -325,6 +328,7 @@ let empty_config = {
   pass_forward      = [];
   to_canonicalize   = [];
   stdlib            = None;
+  source_root       = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -353,6 +357,9 @@ let prepend_config ~cwd ~cfg =
         log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
       end;
       { cfg with stdlib = Some canon_path }
+    | `SOURCE_ROOT path ->
+      let canon_path = canonicalize_filename ~cwd path in
+      { cfg with source_root = Some canon_path }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with
@@ -377,6 +384,10 @@ let process_one ~cfg {path;directives; _ } =
   let cwd = Filename.dirname path in
   prepend_config ~cwd ~cfg (List.rev directives)
 
+(** [expand ~stdlib dir path] does 3 things:
+    - Re-root paths starting with [+] into [stdlib]
+    - Canonicalize [path] relatively to [dir]
+    - Expand glob patterns *)
 let expand =
   let filter path =
     let name = Filename.basename path in
