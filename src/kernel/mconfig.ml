@@ -91,6 +91,7 @@ type merlin = {
   stdlib      : string option;
   unit_name   : string option;
   wrapping_prefix : string option;
+  source_root : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -133,6 +134,7 @@ let dump_merlin x =
     "stdlib"       , Json.option Json.string x.stdlib;
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
+    "source_root"  , Json.option Json.string x.source_root;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -268,6 +270,8 @@ let merge_merlin_config dot merlin ~failures ~config_path =
       if dot.wrapping_prefix = None
       then merlin.wrapping_prefix
       else dot.wrapping_prefix;
+    source_root =
+      (if dot.source_root = None then merlin.source_root else dot.source_root);
     reader =
       if dot.reader = []
       then merlin.reader
@@ -836,6 +840,7 @@ let initial = {
     stdlib      = None;
     unit_name   = None;
     wrapping_prefix = None;
+    source_root = None;
     reader      = [];
     protocol    = `Json;
     log_file    = None;
