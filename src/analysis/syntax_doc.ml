@@ -190,7 +190,6 @@ let get_syntax_doc cursor_loc node : syntax_info =
         }
   | (_, Expression _)
     :: (_, Expression _)
-    :: (_, Case _)
     :: (_, Expression _)
     :: ( _,
          Value_binding
