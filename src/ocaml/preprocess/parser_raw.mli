@@ -396,7 +396,8 @@ module MenhirInterpreter : sig
     | N_reversed_separated_nonempty_llist_AND_comprehension_clause_binding_ : (Jane_syntax.Comprehensions.clause_binding list) nonterminal
     | N_reversed_separated_nonempty_llist_AMPERSAND_core_type_no_attr_ : (Parsetree.core_type list) nonterminal
     | N_reversed_preceded_or_separated_nonempty_llist_BAR_match_case_ : (Parsetree.case list) nonterminal
-    | N_reversed_nonempty_llist_typevar_ : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
+    | N_reversed_nonempty_llist_typevar_ : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
+  list) nonterminal
     | N_reversed_nonempty_llist_name_tag_ : (string list) nonterminal
     | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Parsetree.arg_label * Parsetree.expression) list) nonterminal
     | N_reversed_nonempty_llist_functor_arg_ : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
@@ -445,7 +446,7 @@ module MenhirInterpreter : sig
     | N_option_preceded_COLON_core_type__ : (Parsetree.core_type option) nonterminal
     | N_option_preceded_COLON_atomic_type__ : (Parsetree.core_type option) nonterminal
     | N_option_preceded_AS_mkrhs_LIDENT___ : (string Location.loc option) nonterminal
-    | N_option_jkind_constraint_ : (Jane_asttypes.jkind_annotation option) nonterminal
+    | N_option_jkind_constraint_ : (Ocaml_parsing.Jane_syntax.Jkind.annotation option) nonterminal
     | N_option_SEMI_ : (unit option) nonterminal
     | N_option_BAR_ : (unit option) nonterminal
     | N_opt_ampersand : (bool) nonterminal
@@ -454,12 +455,14 @@ module MenhirInterpreter : sig
     | N_open_declaration : (Parsetree.module_expr Parsetree.open_infos * string Location.loc option) nonterminal
     | N_nonempty_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
     | N_nonempty_list_raw_string_ : (string list) nonterminal
-    | N_nonempty_list_newtype_ : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
+    | N_nonempty_list_newtype_ : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
+  list) nonterminal
     | N_nonempty_list_mode_legacy_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
     | N_nonempty_list_mode_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
-    | N_newtypes : ((string Location.loc * Jane_asttypes.jkind_annotation option) list) nonterminal
-    | N_newtype : (string Location.loc * Jane_asttypes.jkind_annotation option) nonterminal
+    | N_newtypes : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
+  list) nonterminal
+    | N_newtype : (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option) nonterminal
     | N_name_tag : (string) nonterminal
     | N_mutable_virtual_flags : (Asttypes.mutable_flag * Asttypes.virtual_flag) nonterminal
     | N_mutable_or_global_flag : (Asttypes.mutable_flag * Jane_syntax.Mode_expr.t) nonterminal
@@ -523,10 +526,10 @@ module MenhirInterpreter : sig
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal
     | N_label_declaration_semi : (Parsetree.label_declaration) nonterminal
     | N_label_declaration : (Parsetree.label_declaration) nonterminal
-    | N_kind_abbreviation_decl : (string Location.loc * Jane_asttypes.jkind_annotation) nonterminal
-    | N_jkind_constraint : (Jane_asttypes.jkind_annotation) nonterminal
-    | N_jkind_annotation : (Jane_asttypes.jkind_annotation) nonterminal
-    | N_jkind : (Jane_asttypes.const_jkind) nonterminal
+    | N_kind_abbreviation_decl : (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation) nonterminal
+    | N_jkind_constraint : (Ocaml_parsing.Jane_syntax.Jkind.annotation) nonterminal
+    | N_jkind_annotation : (Ocaml_parsing.Jane_syntax.Jkind.annotation) nonterminal
+    | N_jkind : (Jane_syntax.Jkind.t) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
     | N_index_mod : (string) nonterminal
@@ -538,15 +541,15 @@ module MenhirInterpreter : sig
     | N_generic_type_declaration_no_nonrec_flag_type_subst_kind_ : ((Asttypes.rec_flag * string Location.loc option) *
   Parsetree.type_declaration) nonterminal
     | N_generic_constructor_declaration_epsilon_ : (Ocaml_parsing.Ast_helper.str *
-  (string Location.loc * Jane_asttypes.jkind_annotation option) list *
-  Parsetree.constructor_arguments * Parsetree.core_type option *
+  (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
+  list * Parsetree.constructor_arguments * Parsetree.core_type option *
   Parsetree.attributes * Location.t * Ocaml_parsing.Docstrings.info) nonterminal
     | N_generic_constructor_declaration_BAR_ : (Ocaml_parsing.Ast_helper.str *
-  (string Location.loc * Jane_asttypes.jkind_annotation option) list *
-  Parsetree.constructor_arguments * Parsetree.core_type option *
+  (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
+  list * Parsetree.constructor_arguments * Parsetree.core_type option *
   Parsetree.attributes * Location.t * Ocaml_parsing.Docstrings.info) nonterminal
-    | N_generalized_constructor_arguments : ((string Location.loc * Jane_asttypes.jkind_annotation option) list *
-  Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
+    | N_generalized_constructor_arguments : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
+  list * Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
     | N_functor_args : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_functor_arg : (Lexing.position * Parsetree.functor_parameter) nonterminal
     | N_function_type : (Parsetree.core_type) nonterminal

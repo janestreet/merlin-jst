@@ -4,6 +4,9 @@
 (rule
  (copy# ../ocaml/driver/pparse.mli pparse.mli))
 
+(rule
+ (copy# ../runtime/float32.c float32.c))
+
 (library
  (name merlin_kernel)
  (public_name merlin-lib.kernel)
@@ -36,7 +39,8 @@
   merlin_dot_protocol
   merlin_index_format
   unix
-  str))
+  str)
+ (foreign_stubs (language c) (names float32)))
 
 (rule
  (targets standard_library.ml)

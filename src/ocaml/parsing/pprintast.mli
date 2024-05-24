@@ -58,6 +58,8 @@ val tyvar: Format.formatter -> string -> unit
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
+val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
+
 (* merlin *)
 val case_list : Format.formatter -> Parsetree.case list -> unit
 val protect_ident : Format.formatter -> string -> unit
