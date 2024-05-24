@@ -204,15 +204,15 @@ let fold {persistent_structures; _} f x =
       | Found (_, pm) -> f modname pm x)
     persistent_structures x
 
-let register_pers_for_short_paths penv modname ps components =
+let register_pers_for_short_paths penv ps components =
   let old_style_crcs =
     ps.ps_crcs
     |> Array.to_list
     |> List.map
          (fun import ->
             let name = Import_info.name import in
-            let crc = Import_info.crc import in
-            name, crc)
+            let crc_with_unit = Import_info.crc_with_unit import in
+            name, crc_with_unit)
   in
   let deps, alias_deps =
     List.fold_left
@@ -240,7 +240,7 @@ let register_pers_for_short_paths penv modname ps components =
     if is_deprecated then Short_paths.Desc.Deprecated
     else Short_paths.Desc.Not_deprecated
   in
-  let ps_name_as_string = Compilation_unit.Name.to_string modname in
+  let ps_name_as_string = Compilation_unit.name_as_string ps.ps_name in
   Short_paths.Basis.load (short_paths_basis penv) ps_name_as_string
     deps alias_deps desc deprecated
 (* Reading persistent structures from .cmi files *)
@@ -274,35 +274,35 @@ let process_pers_struct penv check modname pers_sig =
              ps_filename = filename;
              ps_flags = flags;
              ps_visibility = visibility;
-  let found_name = CU.name name in
            } in
+  let found_name = CU.name name in
   if not (CU.Name.equal modname found_name) then
     error (Illegal_renaming(modname, found_name, filename));
   List.iter
     (function
         | Rectypes ->
+            if not !Clflags.recursive_types then
               error (Need_recursive_types(ps.ps_name))
-              error (Need_recursive_types(modname))
         | Alerts _ -> ()
+        | Opaque -> register_import_as_opaque penv modname)
     ps.ps_flags;
-    flags;
+  if check then check_consistency penv ps;
   begin match CU.get_current () with
   | Some current_unit ->
-  | Normal { cmi_impl = imported_unit }, Some current_unit ->
+      let access_allowed =
         CU.can_access_by_name name ~accessed_by:current_unit
-        CU.can_access_by_name imported_unit ~accessed_by:current_unit
       in
       if not access_allowed then
+        let prefix = CU.for_pack_prefix current_unit in
         error (Direct_reference_from_wrong_package (name, filename, prefix));
   | None -> ()
-  | _, _ -> ()
   end;
   begin match is_param, is_registered_parameter_import penv modname with
+  | true, false ->
       if CU.is_current name then
         error (Cannot_implement_parameter (modname, filename))
       else
         error (Illegal_import_of_parameter(modname, filename))
-      end
   | false, true ->
       error (Not_compiled_as_parameter(modname, filename))
   | true, true
@@ -313,7 +313,7 @@ let process_pers_struct penv check modname pers_sig =
 let bind_pers_struct penv short_path_comps modname ps pm =
   let {persistent_structures; _} = penv in
   Hashtbl.add persistent_structures modname (Found (ps, pm));
-  register_pers_for_short_paths penv modname ps (short_path_comps modname pm)
+  register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm)
 
 let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
   let ps = process_pers_struct penv check modname pers_sig in
@@ -577,5 +577,5 @@ let forall ~found ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
       | Missing -> missing name
       | Found (pers_struct, a) ->
-        found name pers_struct.ps_filename name a
+        found name pers_struct.ps_filename pers_struct.ps_name a
     )
