@@ -3573,18 +3573,8 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
             let alerts = Builtin_attributes.alerts_of_str ast in
             let kind = Cmi_format.Normal in
             let cmi =
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
               Env.save_signature ~alerts
-                simple_sg name kind (outputprefix ^ ".cmi")
-||||||| ocaml-flambda/flambda-backend:882efe121b7a356fb4dccb24585a54320d556494
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg name kind (outputprefix ^ ".cmi"))
-=======
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg modulename kind (outputprefix ^ ".cmi"))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
+                simple_sg modulename kind (outputprefix ^ ".cmi")
             in
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -3732,18 +3722,9 @@ let package_units initial_env objfiles cmifile modulename =
     if not !Clflags.dont_write_files then begin
       let kind = Cmi_format.Normal in
       let cmi =
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-16
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
-          sg name kind
-          (prefix ^ ".cmi") (Array.of_list imports)
-||||||| ocaml-flambda/flambda-backend:882efe121b7a356fb4dccb24585a54320d556494
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
-          sg name kind (prefix ^ ".cmi") (Array.of_list imports)
-=======
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
           sg modulename kind
           (prefix ^ ".cmi") (Array.of_list imports)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-16
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
       Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
