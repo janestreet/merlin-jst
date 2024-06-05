@@ -281,8 +281,9 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       log ~title:"occurrences" "Found %i locs" (LidSet.cardinal locs);
       LidSet.elements locs
       |> List.filter_map ~f:(fun {Location.txt; loc} ->
+        let lid = try Longident.head txt with _ -> "not flat lid" in
         log ~title:"occurrences" "Found occ: %s %a"
-          (Longident.head txt) Logger.fmt (Fun.flip Location.print_loc loc);
+          lid Logger.fmt (Fun.flip Location.print_loc loc);
         let loc = last_loc loc txt in
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         if Filename.is_relative fname then begin
