@@ -955,7 +955,7 @@ let find_name_module ~mark name tbl =
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
 let short_paths_components name pm =
-  let name_as_string = Compilation_unit.name_as_string name in
+  let name_as_string = Compilation_unit.Name.to_string name in
   let path = Pident (Ident.create_persistent name_as_string) in
   lazy (!short_paths_module_components_desc' empty path pm.mda_components)
 
@@ -1059,7 +1059,7 @@ let check_pers_mod ~loc name =
     read_sign_of_cmi short_paths_components ~loc name
 
 let crc_of_unit name =
-  Persistent_env.crc_of_unit !persistent_env short_paths_components name
+  Persistent_env.crc_of_unit !persistent_env name
 
 let is_imported_opaque modname =
   Persistent_env.is_imported_opaque !persistent_env modname
@@ -4151,9 +4151,9 @@ let check_state_consistency () =
     match Load_path.find_uncap (modname_as_string ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
-  and found _modname filename ps_name _md =
+  and found _modname filename ps_name =
     match Cmi_cache.get_cached_entry filename with
-    | cmi_infos -> ps_name == cmi_infos.Cmi_format.cmi_name
+    | cmi_infos -> Compilation_unit.Name.equal ps_name cmi_infos.Cmi_format.cmi_name
     | exception Not_found -> false
   in
   Persistent_env.forall ~found ~missing !persistent_env
