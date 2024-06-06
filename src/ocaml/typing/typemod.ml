@@ -3528,8 +3528,9 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
                       Interface_not_compiled sourceintf)))
             | Some cmi_file -> cmi_file
           in
+          let import = Compilation_unit.name modulename in
           let dclsig =
-            Env.read_signature modulename intf_file ~add_binding:false
+            Env.read_signature import intf_file ~add_binding:false
           in
           let coercion, shape =
             Includemod.compunit initial_env ~mark:Mark_positive
@@ -3571,10 +3572,23 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
           let shape = Shape_reduce.local_reduce Env.empty shape in
           if not !Clflags.dont_write_files then begin
             let alerts = Builtin_attributes.alerts_of_str ast in
-            let kind = Cmi_format.Normal in
+            let name = Compilation_unit.name modulename in
+            let kind =
+              Cmi_format.Normal { cmi_impl = modulename }
+            in
             let cmi =
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-17
               Env.save_signature ~alerts
                 simple_sg modulename kind (outputprefix ^ ".cmi")
+||||||| ocaml-flambda/flambda-backend:ded89359f2164a058cab9408c3a5eeb4333faa5e
+              Profile.record_call "save_cmi" (fun () ->
+                Env.save_signature ~alerts
+                  simple_sg modulename kind (outputprefix ^ ".cmi"))
+=======
+              Profile.record_call "save_cmi" (fun () ->
+                Env.save_signature ~alerts
+                  simple_sg name kind (outputprefix ^ ".cmi"))
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-17
             in
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -3671,13 +3685,13 @@ let package_units initial_env objfiles cmifile modulename =
          in
          let modname = Compilation_unit.create_child modulename unit in
          let sg =
-           Env.read_signature modname (pref ^ ".cmi") ~add_binding:false in
+           Env.read_signature unit (pref ^ ".cmi") ~add_binding:false in
          if Filename.check_suffix f ".cmi" &&
             not(Mtype.no_code_needed_sig (Lazy.force Env.initial) sg)
          then raise(Error(Location.none, Env.empty,
                           Implementation_is_required f));
          Compilation_unit.name modname,
-         Env.read_signature modname (pref ^ ".cmi") ~add_binding:false)
+         Env.read_signature unit (pref ^ ".cmi") ~add_binding:false)
       objfiles in
   (* Compute signature of packaged unit *)
   Ident.reinit();
@@ -3700,7 +3714,8 @@ let package_units initial_env objfiles cmifile modulename =
       raise(Error(Location.in_file mlifile, Env.empty,
                   Interface_not_compiled mlifile))
     end;
-    let dclsig = Env.read_signature modulename cmifile ~add_binding:false in
+    let name = Compilation_unit.name modulename in
+    let dclsig = Env.read_signature name cmifile ~add_binding:false in
     let cc, _shape =
       Includemod.compunit initial_env ~mark:Mark_both
         "(obtained by packing)" sg mlifile dclsig shape
@@ -3720,11 +3735,21 @@ let package_units initial_env objfiles cmifile modulename =
         (Env.imports()) in
     (* Write packaged signature *)
     if not !Clflags.dont_write_files then begin
-      let kind = Cmi_format.Normal in
+      let name = Compilation_unit.name modulename in
+      let kind = Cmi_format.Normal { cmi_impl = modulename } in
       let cmi =
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-17
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
           sg modulename kind
           (prefix ^ ".cmi") (Array.of_list imports)
+||||||| ocaml-flambda/flambda-backend:ded89359f2164a058cab9408c3a5eeb4333faa5e
+        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
+          sg modulename kind
+          (prefix ^ ".cmi") (Array.of_list imports)
+=======
+        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
+          sg name kind (prefix ^ ".cmi") (Array.of_list imports)
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-17
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
       Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
