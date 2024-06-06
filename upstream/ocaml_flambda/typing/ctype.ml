@@ -2302,23 +2302,6 @@ let unification_jkind_check env ty jkind =
   | Delay_checks r -> r := (ty,jkind) :: !r
   | Skip_checks -> ()
 
-exception Incompatible_with_erasability_requirements of
-  Ident.t option * Location.t
-
-let () =
-  Location.register_error_of_exn (function
-  | Incompatible_with_erasability_requirements (id, loc) ->
-    let format_id ppf = function
-      | Some id -> Format.fprintf ppf " in %s" (Ident.name id)
-      | None -> ()
-    in
-    Some (Location.errorf ~loc
-      "@[Usage of layout immediate/immediate64%a can't be erased \
-      for compatibility with upstream OCaml.@; This error is produced due to \
-      the use of -extension-universe (no_extensions|upstream_compatible).@]"
-      format_id id)
-  | _ -> None)
-
 let check_and_update_generalized_ty_jkind ?name ~loc ty =
   let immediacy_check jkind =
     let is_immediate jkind =
@@ -2331,26 +2314,34 @@ let check_and_update_generalized_ty_jkind ?name ~loc ty =
                | _ -> false)
     in
     if Language_extension.erasable_extensions_only ()
-      && is_immediate jkind
+      && is_immediate jkind && not (Jkind.has_warned jkind)
     then
-      raise (Incompatible_with_erasability_requirements (name, loc))
-    else ()
+      let id =
+        match name with
+        | Some id -> Ident.name id
+        | None -> "<unknown>"
+      in
+      Location.prerr_warning loc (Warnings.Incompatible_with_upstream
+        (Warnings.Immediate_erasure id));
+      Jkind.with_warning jkind
+    else jkind
+  in
+  let generalization_check level jkind =
+    if level = generic_level then
+      Jkind.(update_reason jkind (Generalized (name, loc)))
+    else jkind
   in
   let rec inner ty =
     let level = get_level ty in
-    if level = generic_level && try_mark_node ty then begin
+    if try_mark_node ty then begin
       begin match get_desc ty with
       | Tvar ({ jkind; _ } as r) ->
-        immediacy_check jkind;
-        let new_jkind =
-          Jkind.(update_reason jkind (Generalized (name, loc)))
-        in
+        let new_jkind = immediacy_check jkind in
+        let new_jkind = generalization_check level new_jkind in
         set_type_desc ty (Tvar {r with jkind = new_jkind})
       | Tunivar ({ jkind; _ } as r) ->
-        immediacy_check jkind;
-        let new_jkind =
-          Jkind.(update_reason jkind (Generalized (name, loc)))
-        in
+        let new_jkind = immediacy_check jkind in
+        let new_jkind = generalization_check level new_jkind in
         set_type_desc ty (Tunivar {r with jkind = new_jkind})
       | _ -> ()
       end;
