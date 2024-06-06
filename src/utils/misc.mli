@@ -424,3 +424,9 @@ end
 
 val print_see_manual : Format.formatter -> int list -> unit
 (** See manual section *)
+
+val output_of_print :
+  (Format.formatter -> 'a -> unit) -> out_channel -> 'a -> unit
+(** [output_of_print print] produces an output function from a pretty printer.
+    Note that naively using [Format.formatter_of_out_channel] typechecks but
+    doesn't work because it fails to flush the formatter. *)
