@@ -55,6 +55,7 @@ end
 
 type mixed_product_violation =
   | Runtime_support_not_enabled of Mixed_product_kind.t
+  | Extension_constructor
   | Value_prefix_too_long of
       { value_prefix_len : int;
         max_value_prefix_len : int;
@@ -133,8 +134,6 @@ type error =
   | Unexpected_jkind_any_in_primitive of string
   | Useless_layout_poly
   | Modalities_on_value_description
-  | Missing_unboxed_attribute_on_non_value_sort of Jkind.Sort.const
-  | Non_value_sort_not_upstream_compatible of Jkind.Sort.const
   | Zero_alloc_attr_unsupported of Builtin_attributes.zero_alloc_attribute
   | Zero_alloc_attr_non_function
   | Zero_alloc_attr_bad_user_arity
@@ -1185,7 +1184,7 @@ let assert_mixed_product_support =
      the all-0 pattern, and we must subtract 2 instead. *)
   let max_value_prefix_len = (1 lsl required_reserved_header_bits) - 2 in
   fun loc mixed_product_kind ~value_prefix_len ->
-    let required_layouts_level = Language_extension.Beta in
+    let required_layouts_level = Language_extension.Stable in
     if not (Language_extension.is_at_least Layouts required_layouts_level) then
       raise (Error (loc, Illegal_mixed_product
                       (Insufficient_level { required_layouts_level;
@@ -1243,7 +1242,7 @@ module Element_repr = struct
          flambda2 to unbox for 32 bit platforms.
       *)
       | Immediate64 -> Value_element
-      | Value | Non_null_value -> Value_element
+      | Value -> Value_element
       | Immediate -> Imm_element
       | Float64 -> Unboxed_element Float64
       | Float32 -> Unboxed_element Float32
@@ -1321,6 +1320,7 @@ end
 
 let update_constructor_representation
     env (cd_args : Types.constructor_arguments) arg_jkinds ~loc
+    ~is_extension_constructor
   =
   let flat_suffix =
     let arg_jkinds = Array.to_list arg_jkinds in
@@ -1368,6 +1368,11 @@ let update_constructor_representation
       let value_prefix_len =
         Array.length arg_jkinds - Array.length flat_suffix
       in
+      (* CR layouts v5.9: Enable extension constructors in the flambda2
+         middle-end so that we can permit them in the source language.
+      *)
+      if is_extension_constructor then
+        raise (Error (loc, Illegal_mixed_product Extension_constructor));
       assert_mixed_product_support loc Cstr_tuple ~value_prefix_len;
       Constructor_mixed { value_prefix_len; flat_suffix }
 
@@ -1550,6 +1555,7 @@ let update_decl_jkind env dpath decl =
           in
           let cstr_repr =
             update_constructor_representation env cd_args arg_jkinds
+              ~is_extension_constructor:false
               ~loc:cstr.Types.cd_loc
           in
           let () =
@@ -2231,6 +2237,7 @@ let transl_extension_constructor_decl
   in
   let constructor_shape =
     update_constructor_representation env args jkinds ~loc
+      ~is_extension_constructor:true
   in
   args, jkinds, constructor_shape, constant, ret_type,
   Text_decl(tvars, targs, tret_type)
@@ -2671,13 +2678,14 @@ let make_native_repr env core_type ty ~global_repr ~is_layout_poly ~why =
   | Native_repr_attr_absent, Sort (Value as sort) ->
     Same_as_ocaml_repr sort
   | Native_repr_attr_absent, (Sort sort) ->
-    if Language_extension.erasable_extensions_only ()
+    (if Language_extension.erasable_extensions_only ()
     then
       (* Non-value sorts without [@unboxed] are not erasable. *)
-      raise (Error (core_type.ptyp_loc,
-              Missing_unboxed_attribute_on_non_value_sort sort))
-    else
-      Same_as_ocaml_repr sort
+      let layout = Jkind_types.Sort.to_string (Const sort) in
+      Location.prerr_warning core_type.ptyp_loc
+        (Warnings.Incompatible_with_upstream
+              (Warnings.Unboxed_attribute layout)));
+    Same_as_ocaml_repr sort
   | Native_repr_attr_present kind, (Poly | Sort Value)
   | Native_repr_attr_present (Untagged as kind), Sort _ ->
     begin match native_repr_of_type env kind ty with
@@ -2705,15 +2713,16 @@ let make_native_repr env core_type ty ~global_repr ~is_layout_poly ~why =
 
        2. We need [is_upstream_compatible_non_value_unbox] to further
           limit the cases that can work with upstream. *)
-    if Language_extension.erasable_extensions_only ()
+    (if Language_extension.erasable_extensions_only ()
        && not (is_upstream_compatible_non_value_unbox env ty)
     then
       (* There are additional requirements if we are operating in
          upstream compatible mode. *)
-      raise (Error (core_type.ptyp_loc,
-             Non_value_sort_not_upstream_compatible sort))
-    else
-      Same_as_ocaml_repr sort
+      let layout = Jkind_types.Sort.to_string (Const sort) in
+      Location.prerr_warning core_type.ptyp_loc
+        (Warnings.Incompatible_with_upstream
+              (Warnings.Non_value_sort layout)));
+    Same_as_ocaml_repr sort
 
 let prim_const_mode m =
   match Mode.Locality.Guts.check_const m with
@@ -3624,6 +3633,10 @@ let report_error ppf = function
           fprintf ppf
             "@[This OCaml runtime doesn't support mixed %s.@]"
             (Mixed_product_kind.to_plural_string mixed_product_kind)
+      | Extension_constructor ->
+          fprintf ppf
+            "@[Extensible types can't have fields of unboxed type. Consider \
+             wrapping the unboxed fields in a record.@]"
       | Value_prefix_too_long
           { value_prefix_len; max_value_prefix_len; mixed_product_kind } ->
           fprintf ppf
@@ -3691,22 +3704,6 @@ let report_error ppf = function
   | Modalities_on_value_description ->
       fprintf ppf
         "@[Modalities on value descriptions are not supported yet.@]"
-  | Missing_unboxed_attribute_on_non_value_sort sort ->
-    fprintf ppf
-      "@[[%@unboxed] attribute must be added to external declaration@ \
-          argument type with layout %a for upstream compatibility. \
-          This error is produced@ due to the use of -extension-universe \
-          (no_extensions|upstream_compatible).@]"
-      Jkind.Sort.format_const sort
-  | Non_value_sort_not_upstream_compatible sort ->
-    fprintf ppf
-      "@[External declaration here is not upstream compatible.@ \
-         The only types with non-value layouts allowed are float#,@ \
-         int32#, int64#, and nativeint#. Unknown type with layout@ \
-         %a encountered. This error is produced due to@ \
-         the use of -extension-universe (no_extensions|\
-         upstream_compatible).@]"
-      Jkind.Sort.format_const sort
   | Zero_alloc_attr_unsupported ca ->
       let variety = match ca with
         | Default_zero_alloc  | Check _ -> assert false

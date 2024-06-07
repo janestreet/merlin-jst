@@ -173,7 +173,7 @@ let map_summary f = function
   | Env_value_unbound (s, u, r) -> Env_value_unbound (f s, u, r)
   | Env_module_unbound (s, u, r) -> Env_module_unbound (f s, u, r)
 
-type address =
+type address = Persistent_env.address =
   | Aunit of Compilation_unit.t
   | Alocal of Ident.t
   | Adot of address * int
@@ -955,7 +955,7 @@ let find_name_module ~mark name tbl =
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
 let short_paths_components name pm =
-  let name_as_string = Compilation_unit.name_as_string name in
+  let name_as_string = Compilation_unit.Name.to_string name in
   let path = Pident (Ident.create_persistent name_as_string) in
   lazy (!short_paths_module_components_desc' empty path pm.mda_components)
 
@@ -1004,30 +1004,24 @@ let components_of_module ~alerts ~uid env ps path addr mty shape =
     }
   }
 
-let read_sign_of_cmi { Persistent_env.Persistent_signature.cmi; _ } =
-  let name = cmi.cmi_name in
-  let sign = cmi.cmi_sign in
-  let flags = cmi.cmi_flags in
-  let id = Ident.create_persistent (Compilation_unit.name_as_string name) in
+let read_sign_of_cmi sign name uid ~shape ~address:addr ~flags =
+  let id = Ident.create_persistent (Compilation_unit.Name.to_string name) in
   let path = Pident id in
   let alerts =
     List.fold_left (fun acc -> function Alerts s -> s | _ -> acc)
       Misc.String.Map.empty
       flags
   in
-  let sign = Subst.Lazy.signature Make_local Subst.identity sign in
   let md =
     { Subst.Lazy.md_type = Mty_signature sign;
       md_loc = Location.none;
       md_attributes = [];
-      md_uid = Uid.of_compilation_unit_id name;
+      md_uid = uid;
     }
   in
-  let mda_address = Lazy_backtrack.create_forced (Aunit name) in
+  let mda_address = Lazy_backtrack.create_forced addr in
   let mda_declaration = md in
-  let mda_shape =
-    Shape.for_persistent_unit (name |> Compilation_unit.full_path_as_string)
-  in
+  let mda_shape = shape in
   let mda_components =
     let mty = md.md_type in
     components_of_module ~alerts ~uid:md.md_uid
@@ -1065,8 +1059,7 @@ let check_pers_mod ~loc name =
     read_sign_of_cmi short_paths_components ~loc name
 
 let crc_of_unit name =
-  Persistent_env.crc_of_unit !persistent_env
-    read_sign_of_cmi short_paths_components name
+  Persistent_env.crc_of_unit !persistent_env name
 
 let is_imported_opaque modname =
   Persistent_env.is_imported_opaque !persistent_env modname
@@ -2779,13 +2772,8 @@ let open_signature
 
 (* Read a signature from a file *)
 let read_signature modname filename ~add_binding =
-  let mda =
-    read_pers_mod (Compilation_unit.name modname) filename ~add_binding
-  in
-  let md = Subst.Lazy.force_module_decl mda.mda_declaration in
-  match md.md_type with
-  | Mty_signature sg -> sg
-  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_strengthen _ | Mty_for_hole -> assert false
+  let mty = read_pers_mod modname filename ~add_binding in
+  Subst.Lazy.force_signature mty
 
 let is_identchar_latin1 = function
   | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
@@ -4163,9 +4151,9 @@ let check_state_consistency () =
     match Load_path.find_uncap (modname_as_string ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
-  and found _modname filename ps_name _md =
+  and found _modname filename ps_name =
     match Cmi_cache.get_cached_entry filename with
-    | cmi_infos -> ps_name == cmi_infos.Cmi_format.cmi_name
+    | cmi_infos -> Compilation_unit.Name.equal ps_name cmi_infos.Cmi_format.cmi_name
     | exception Not_found -> false
   in
   Persistent_env.forall ~found ~missing !persistent_env

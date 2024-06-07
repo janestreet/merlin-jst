@@ -542,6 +542,8 @@ let ocaml_ignored_flags = [
   "-gno-upstream-dwarf";
   "-dzero-alloc";
   "-dletreclambda";
+  "-cfg-zero-alloc-checker";
+  "-no-cfg-zero-alloc-checker";
 ]
 
 let ocaml_ignored_parametrized_flags = [
