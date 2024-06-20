@@ -98,6 +98,10 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
+          else if String.is_prefixed ~by:"UNIT_NAME " line then
+            tell (`UNIT_NAME (String.drop 10 line))
+          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
+            tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -333,7 +337,11 @@ let prepend_config ~cwd ~cfg =
     | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _ as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
-    | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
+    | (`EXCLUDE_QUERY_DIR
+      | `USE_PPX_CACHE
+      | `UNIT_NAME _
+      | `WRAPPING_PREFIX _
+      | `UNKNOWN_TAG _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }
