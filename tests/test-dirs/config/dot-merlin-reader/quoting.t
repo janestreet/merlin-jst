@@ -54,6 +54,7 @@
       }
     ],
     "stdlib": "lib/ocaml",
+    "unit_name": null,
     "reader": [],
     "protocol": "json",
     "log_file": null,

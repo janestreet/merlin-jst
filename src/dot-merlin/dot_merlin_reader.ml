@@ -98,6 +98,8 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
+          else if String.is_prefixed ~by:"UNIT_NAME " line then
+            tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -311,6 +313,7 @@ type config = {
   pass_forward : Merlin_dot_protocol.Directive.no_processing_required list;
   to_canonicalize : (string * Merlin_dot_protocol.Directive.include_path) list;
   stdlib : string option;
+  unit_name   : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -321,6 +324,7 @@ let empty_config = {
   pass_forward      = [];
   to_canonicalize   = [];
   stdlib            = None;
+  unit_name         = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -345,6 +349,8 @@ let prepend_config ~cwd ~cfg =
         log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
       end;
       { cfg with stdlib = Some canon_path }
+    | `UNIT_NAME name ->
+      { cfg with unit_name = Some name }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with
