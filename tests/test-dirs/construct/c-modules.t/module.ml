@@ -26,7 +26,7 @@ module type S = sig
 
   module type Sig = sig
     type t and b
-    val f : int -> float @@ portable
+    val f : int -> float
     module type STyp = sig end
     module D : Another
   end
