@@ -1,8 +1,6 @@
 [run <file> <pos>] queries <file> at position <pos>. The multiline
 json that merlin produces can't be parsed by jq, as they include
-escape characters in string literals, so we do a tremendous hack to
-rewrite \n in string literals to \\n. Really we should teach merlin
-how to produce valid json.
+escape characters in string literals, so we use the revert-newlines script.
 
   $ rep () {
   >   printf '%*s' "$1" '' | tr ' ' "$2"
@@ -50,10 +48,7 @@ how to produce valid json.
   >   highlight_range "$file" $line $(expr $col - 1) $line $col
   >   merlin=$(
   >     $MERLIN single stack-or-heap-enclosing -position "$position" -verbosity "$verbosity" \
-  >       -filename "$file" < "$file" |
-  >       tr '\n' '\a'  |
-  >       sed ':a;s/\(^[^\"]*\"\([^\"]*\"[^\"]*\"\)*[^\"]*\)\a/\1\\n/;ta' |
-  >       sed 's/\a/\n/g'
+  >       -filename "$file" < "$file" | revert-newlines
   >   )
   >   echo
   >   if [ "$(echo "$merlin" | jq ".value[$index]")" != null ]
