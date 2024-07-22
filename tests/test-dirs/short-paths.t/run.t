@@ -149,11 +149,10 @@ ocaml 5.1. Is that expected ?
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Modules do not match:
-  sig type t = int val foo : ('a : value_or_null). 'a -> string end
+        "message": "Modules do not match: sig type t = int val foo : 'a -> string end
   is not included in S
   Values do not match:
-  val foo : ('a : value_or_null). 'a -> string
+  val foo : 'a -> string
   is not included in
   val foo : int -> t
   The type int -> string is not compatible with the type int -> t
@@ -326,13 +325,9 @@ ocaml 5.1. Is that expected ?
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Modules do not match:
-  sig type t = int val foo : ('a : value_or_null). 'a -> string end
+        "message": "Modules do not match: sig type t = int val foo : 'a -> string end
   is not included in S
-  Values do not match:
-  val foo : ('a : value_or_null). 'a -> string
-  is not included in
-  val foo : t -> t
+  Values do not match: val foo : 'a -> string is not included in val foo : t -> t
   The type t -> string is not compatible with the type t -> t
   Type string is not compatible with type t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
