@@ -13,7 +13,7 @@
   > -log-file log -log-section index \
   > -filename test.ml <test.ml >/dev/null
   $ cat log | grep index_cache -A1 | tail -n 1
-  Reusing cached value for path $TESTCASE_ROOT/test.ml and stamp 276.
+  Reusing cached value for path $TESTCASE_ROOT/test.ml and stamp 277.
   $ cat >>test.ml <<'EOF'
   > let z = y + y
   > EOF

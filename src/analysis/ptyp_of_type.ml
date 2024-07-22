@@ -132,17 +132,27 @@ and extension_constructor id {
     ~args:(constructor_arguments ext_args)
     ?res:(Option.map ~f:core_type ext_ret_type)
     (var_of_id id)
-and value_description id { val_type; val_kind=_; val_loc; val_attributes; _ } =
+and const_modalities modalities =
+  Typemode.untransl_modalities ~loc:Location.none modalities
+and value_description id { val_type; val_kind=_; val_loc; val_attributes; val_modalities; _ } =
   let type_ = core_type val_type in
+  let snap = Btype.snapshot () in
+  let modalities = Mode.Modality.Value.zap_to_id val_modalities in
+  Btype.backtrack snap;
   {
     Parsetree.pval_name = var_of_id id;
     pval_type = type_;
     pval_prim = [];
     pval_attributes = val_attributes;
+    pval_modalities = const_modalities modalities;
     pval_loc = val_loc
   }
-and constructor_argument (type_expr, (_ : Mode.Global_flag.t)) =
-  core_type type_expr
+and constructor_argument {ca_type; ca_loc; ca_modalities} =
+  {
+    Parsetree.pca_type = core_type ca_type;
+    pca_loc = ca_loc;
+    pca_modalities = const_modalities ca_modalities
+  }
 and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
   Ast_helper.Type.field
     ~attrs:ld_attributes

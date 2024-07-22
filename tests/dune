@@ -1,5 +1,5 @@
 (env (_
- (binaries merlin-wrapper ocamlc-wrapper)
+ (binaries merlin-wrapper ocamlc-wrapper revert-newlines)
  (env-vars
   (MERLIN merlin-wrapper)
   (OCAMLC ocamlc-wrapper))))
@@ -12,7 +12,8 @@
   %{bin:ocamlc-wrapper}
   %{bin:ocamlmerlin-server}
   %{bin:ocamlmerlin}
-  %{bin:dot-merlin-reader}))
+  %{bin:dot-merlin-reader}
+  %{bin:revert-newlines}))
 
 (cram
  (applies_to with-ppx)

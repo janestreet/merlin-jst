@@ -1,3 +1,5 @@
+type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
+
 (** {0 OCaml compiler compatible command-line parameters} *)
 let cmi_file = ref None
 let include_dirs        = ref []
@@ -13,41 +15,12 @@ let applicative_functors = ref true
 let nopervasives        = ref false
 let strict_formats      = ref true
 let open_modules        = ref []
+let parameters          = ref ([] : string list)
 let as_parameter        = ref false
-
-module Annotations = struct
-  type t = Check_default | Check_all | Check_opt_only | No_check
-
-  let all = [ Check_default; Check_all; Check_opt_only; No_check ]
-
-  let to_string = function
-    | Check_default -> "default"
-    | Check_all -> "all"
-    | Check_opt_only -> "opt"
-    | No_check -> "none"
-
-  let equal t1 t2 =
-    match t1, t2 with
-    | Check_default, Check_default -> true
-    | Check_all, Check_all -> true
-    | No_check, No_check -> true
-    | Check_opt_only, Check_opt_only -> true
-    | (Check_default | Check_all | Check_opt_only | No_check), _ -> false
-
-  let of_string v =
-    let f t =
-      if String.equal (to_string t) v then Some t else None
-    in
-    List.find_map f all
-
-  let doc =
-    "\n\    The argument specifies which annotations to check: \n\
-     \      \"opt\" means attributes with \"opt\" payload and is intended for debugging;\n\
-     \      \"default\" means attributes without \"opt\" payload; \n\
-     \      \"all\" covers both \"opt\" and \"default\" and is intended for optimized builds."
-end
-
-let zero_alloc_check = ref Annotations.Check_default
+let as_argument_for     = ref None
+let zero_alloc_check    = ref Zero_alloc_annotations.Check_default
+let zero_alloc_check_assert_all = ref false
+let allow_illegal_crossing = ref false
 
 let annotations         = ref false
 let binary_annotations  = ref true
@@ -64,6 +37,7 @@ let for_package         = ref None
 let debug               = ref false
 let opaque              = ref false
 let unboxed_types       = ref false
+let profile_columns     = ref []
 
 let locations = ref true
 let all_ppx = ref []

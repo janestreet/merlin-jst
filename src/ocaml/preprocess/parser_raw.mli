@@ -385,9 +385,9 @@ module MenhirInterpreter : sig
     | N_separated_or_terminated_nonempty_list_SEMI_object_expr_field_ : ((string Location.loc * Parsetree.expression) list) nonterminal
     | N_separated_or_terminated_nonempty_list_SEMI_expr_ : (Parsetree.expression list) nonterminal
     | N_row_field : (Parsetree.row_field) nonterminal
-    | N_reversed_separated_nontrivial_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
+    | N_reversed_separated_nontrivial_llist_COMMA_one_type_parameter_of_several_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_ : ((string option * Parsetree.core_type) list) nonterminal
-    | N_reversed_separated_nonempty_llist_STAR_atomic_type_with_modality_ : (Parsetree.core_type list) nonterminal
+    | N_reversed_separated_nonempty_llist_STAR_constructor_argument_ : (Parsetree.constructor_argument list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
@@ -438,6 +438,7 @@ module MenhirInterpreter : sig
     | N_parenthesized_type_parameter : (Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) nonterminal
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
+    | N_optional_atat_modalities_expr : (Parsetree.modality Location.loc list) nonterminal
     | N_option_type_constraint_ : (Jane_syntax.N_ary_functions.type_constraint option) nonterminal
     | N_option_preceded_EQUAL_seq_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_pattern__ : (Parsetree.pattern option) nonterminal
@@ -459,13 +460,14 @@ module MenhirInterpreter : sig
   list) nonterminal
     | N_nonempty_list_mode_legacy_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
     | N_nonempty_list_mode_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
+    | N_nonempty_list_modality_ : (Parsetree.modality Location.loc list) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
     | N_newtypes : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
   list) nonterminal
     | N_newtype : (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option) nonterminal
     | N_name_tag : (string) nonterminal
     | N_mutable_virtual_flags : (Asttypes.mutable_flag * Asttypes.virtual_flag) nonterminal
-    | N_mutable_or_global_flag : (Asttypes.mutable_flag * Jane_syntax.Mode_expr.t) nonterminal
+    | N_mutable_or_global_flag : (Asttypes.mutable_flag * Parsetree.modality Location.loc list) nonterminal
     | N_mutable_flag : (Asttypes.mutable_flag) nonterminal
     | N_mty_longident : (Longident.t) nonterminal
     | N_module_type_subst : (Parsetree.module_type_declaration * string Location.loc option) nonterminal

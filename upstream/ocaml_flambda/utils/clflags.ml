@@ -52,6 +52,9 @@ module Libloc = struct
   }
 end
 
+type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
+type profile_granularity_level = File_level | Function_level
+
 let compile_only = ref false            (* -c *)
 and output_name = ref (None : string option) (* -o *)
 and include_dirs = ref ([] : string list) (* -I *)
@@ -110,12 +113,14 @@ and no_auto_link = ref false            (* -noautolink *)
 and dllpaths = ref ([] : string list)   (* -dllpath *)
 and make_package = ref false            (* -pack *)
 and for_package = ref (None: string option) (* -for-pack *)
-and error_size = ref 500                (* -error-size *)
+and error_size = ref 256                (* -error-size *)
 and float_const_prop = ref true         (* -no-float-const-prop *)
 and transparent_modules = ref false     (* -trans-mod *)
 let unique_ids = ref true               (* -d(no-)unique-ds *)
 let locations = ref true                (* -d(no-)locations *)
+let parameters = ref ([] : string list) (* -parameter *)
 let as_parameter = ref false            (* -as-parameter *)
+let as_argument_for = ref None          (* -as-argument-for *)
 let dump_source = ref false             (* -dsource *)
 let dump_parsetree = ref false          (* -dparsetree *)
 and dump_typedtree = ref false          (* -dtypedtree *)
@@ -154,7 +159,14 @@ let dump_combine = ref false            (* -dcombine *)
 let debug_ocaml = ref false             (* -debug-ocaml *)
 let default_timings_precision  = 3
 let timings_precision = ref default_timings_precision (* -dtimings-precision *)
-let profile_columns : Profile.column list ref = ref [] (* -dprofile/-dtimings *)
+let profile_columns : profile_column list ref = ref [] (* -dprofile/-dtimings/-dcounters *)
+let profile_granularity : profile_granularity_level ref = ref File_level (* -dgranularity *)
+
+let set_profile_granularity v =
+  profile_granularity := match v with
+  | "file" -> File_level
+  | "func" -> Function_level
+  | _ -> raise (Invalid_argument (Format.sprintf "profile granularity: %s" v))
 
 let native_code = ref false             (* set to true under ocamlopt *)
 
@@ -200,6 +212,7 @@ let afl_inst_ratio = ref 100           (* -afl-inst-ratio *)
 
 let function_sections = ref false      (* -function-sections *)
 let probes = ref Config.probes         (* -probes *)
+let allow_illegal_crossing = ref false (* -allow_illegal_crossing *)
 let simplify_rounds = ref None        (* -rounds *)
 let default_simplify_rounds = ref 1        (* -rounds *)
 let rounds () =

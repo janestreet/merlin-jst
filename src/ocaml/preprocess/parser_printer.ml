@@ -208,9 +208,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_separated_or_terminated_nonempty_list_SEMI_object_expr_field_) -> "separated_or_terminated_nonempty_list_SEMI_object_expr_field_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_separated_or_terminated_nonempty_list_SEMI_expr_) -> "separated_or_terminated_nonempty_list_SEMI_expr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_row_field) -> "row_field"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_core_type_) -> "reversed_separated_nontrivial_llist_COMMA_core_type_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_one_type_parameter_of_several_) -> "reversed_separated_nontrivial_llist_COMMA_one_type_parameter_of_several_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_) -> "reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_with_modality_) -> "reversed_separated_nonempty_llist_STAR_atomic_type_with_modality_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_constructor_argument_) -> "reversed_separated_nonempty_llist_STAR_constructor_argument_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_type_parameter_) -> "reversed_separated_nonempty_llist_COMMA_type_parameter_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_) -> "reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_) -> "reversed_separated_nonempty_llist_COMMA_core_type_"
@@ -259,6 +259,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parenthesized_type_parameter) -> "parenthesized_type_parameter"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_paren_module_expr) -> "paren_module_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optlabel) -> "optlabel"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_atat_modalities_expr) -> "optional_atat_modalities_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_type_constraint_) -> "option_type_constraint_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_EQUAL_seq_expr__) -> "option_preceded_EQUAL_seq_expr__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_preceded_EQUAL_pattern__) -> "option_preceded_EQUAL_pattern__"
@@ -279,6 +280,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_) -> "nonempty_list_newtype_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_legacy_) -> "nonempty_list_mode_legacy_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_) -> "nonempty_list_mode_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_modality_) -> "nonempty_list_modality_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mkrhs_LIDENT__) -> "nonempty_list_mkrhs_LIDENT__"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_newtypes) -> "newtypes"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_newtype) -> "newtype"
@@ -597,9 +599,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_separated_or_terminated_nonempty_list_SEMI_object_expr_field_ -> (fun _ -> "separated_or_terminated_nonempty_list_SEMI_object_expr_field_")
   | MenhirInterpreter.N MenhirInterpreter.N_separated_or_terminated_nonempty_list_SEMI_expr_ -> (fun _ -> "separated_or_terminated_nonempty_list_SEMI_expr_")
   | MenhirInterpreter.N MenhirInterpreter.N_row_field -> (fun _ -> "row_field")
-  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nontrivial_llist_COMMA_core_type_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nontrivial_llist_COMMA_one_type_parameter_of_several_ -> (fun _ -> "reversed_separated_nontrivial_llist_COMMA_one_type_parameter_of_several_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_ -> (fun _ -> "reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_")
-  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_atomic_type_with_modality_ -> (fun _ -> "reversed_separated_nonempty_llist_STAR_atomic_type_with_modality_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_STAR_constructor_argument_ -> (fun _ -> "reversed_separated_nonempty_llist_STAR_constructor_argument_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_type_parameter_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_type_parameter_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_parenthesized_type_parameter_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_separated_nonempty_llist_COMMA_core_type_ -> (fun _ -> "reversed_separated_nonempty_llist_COMMA_core_type_")
@@ -648,6 +650,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_parenthesized_type_parameter -> (fun _ -> "parenthesized_type_parameter")
   | MenhirInterpreter.N MenhirInterpreter.N_paren_module_expr -> (fun _ -> "paren_module_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_optlabel -> (fun _ -> "optlabel")
+  | MenhirInterpreter.N MenhirInterpreter.N_optional_atat_modalities_expr -> (fun _ -> "optional_atat_modalities_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_option_type_constraint_ -> (fun _ -> "option_type_constraint_")
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_EQUAL_seq_expr__ -> (fun _ -> "option_preceded_EQUAL_seq_expr__")
   | MenhirInterpreter.N MenhirInterpreter.N_option_preceded_EQUAL_pattern__ -> (fun _ -> "option_preceded_EQUAL_pattern__")
@@ -668,6 +671,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_ -> (fun _ -> "nonempty_list_newtype_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_legacy_ -> (fun _ -> "nonempty_list_mode_legacy_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mode_ -> (fun _ -> "nonempty_list_mode_")
+  | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_modality_ -> (fun _ -> "nonempty_list_modality_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_mkrhs_LIDENT__ -> (fun _ -> "nonempty_list_mkrhs_LIDENT__")
   | MenhirInterpreter.N MenhirInterpreter.N_newtypes -> (fun _ -> "newtypes")
   | MenhirInterpreter.N MenhirInterpreter.N_newtype -> (fun _ -> "newtype")

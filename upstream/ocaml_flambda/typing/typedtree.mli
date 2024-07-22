@@ -266,7 +266,7 @@ and expression_desc =
         ret_sort : Jkind.sort;
         alloc_mode : Mode.Alloc.r;
         (* Mode at which the closure is allocated *)
-        zero_alloc : Builtin_attributes.zero_alloc_attribute
+        zero_alloc : Zero_alloc.t;
         (* zero-alloc attributes *)
       }
       (** fun P0 P1 -> function p1 -> e1 | p2 -> e2  (body = Tfunction_cases _)
@@ -280,7 +280,7 @@ and expression_desc =
       *)
   | Texp_apply of
       expression * (arg_label * apply_arg) list * apply_position *
-        Mode.Locality.l * Zero_alloc_utils.Assume_info.t
+        Mode.Locality.l * Zero_alloc.assume option
         (** E0 ~l1:E1 ... ~ln:En
 
             The expression can be Omitted if the expression is abstracted over
@@ -296,10 +296,8 @@ and expression_desc =
                          (Labelled "y", Some (Texp_constant Const_int 3))
                         ])
 
-            The [Zero_alloc_utils.Assume_info.t] records the optional
-            [@zero_alloc assume] attribute that may appear on applications.  If
-            that attribute is absent, it is [Assume_info.none].
-          *)
+            The [Zero_alloc.assume option] records the optional [@zero_alloc
+            assume] attribute that may appear on applications. *)
   | Texp_match of expression * Jkind.sort * computation case list * partial
         (** match E0 with
             | P1 -> E1
@@ -943,7 +941,7 @@ and label_declaration =
      ld_name: string loc;
      ld_uid: Uid.t;
      ld_mutable: Types.mutability;
-     ld_global: Mode.Global_flag.t;
+     ld_modalities: Mode.Modality.Value.Const.t;
      ld_type: core_type;
      ld_loc: Location.t;
      ld_attributes: attributes;
@@ -961,8 +959,15 @@ and constructor_declaration =
      cd_attributes: attributes;
     }
 
+and constructor_argument =
+  {
+    ca_modalities: Mode.Modality.Value.Const.t;
+    ca_type: core_type;
+    ca_loc: Location.t;
+  }
+
 and constructor_arguments =
-  | Cstr_tuple of (core_type * Mode.Global_flag.t) list
+  | Cstr_tuple of constructor_argument list
   | Cstr_record of label_declaration list
 
 and type_extension =
@@ -1056,10 +1061,20 @@ and 'a class_infos =
     ci_attributes: attributes;
    }
 
+type argument_interface = {
+  ai_signature: Types.signature;
+  ai_coercion_from_primary: module_coercion;
+}
+(** For a module [M] compiled with [-as-argument-for P] for some parameter
+    module [P], the signature of [P] along with the coercion from [M]'s
+    exported signature (the _primary interface_) to [P]'s signature (the
+    _argument interface_). *)
+
 type implementation = {
   structure: structure;
   coercion: module_coercion;
   signature: Types.signature;
+  argument_interface: argument_interface option;
   shape: Shape.t;
 }
 (** A typechecked implementation including its module structure, its exported
@@ -1070,6 +1085,10 @@ type implementation = {
 
     If there isn't one, the signature will be inferred from the module
     structure.
+
+    If the module is compiled with [-as-argument-for] and is thus typechecked
+    against the .mli for a parameter in addition to its own .mli, it has an
+    additional signature stored in [argument_interface].
 *)
 
 type item_declaration =
@@ -1136,7 +1155,7 @@ val let_bound_idents_full:
 val let_bound_idents_with_modes_sorts_and_checks:
   value_binding list
   -> (Ident.t * (Location.t * Mode.Value.l * Jkind.sort) list
-              * Builtin_attributes.zero_alloc_attribute) list
+              * Zero_alloc.t) list
 
 (** Alpha conversion of patterns *)
 val alpha_pat:

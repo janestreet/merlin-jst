@@ -323,9 +323,23 @@ let pr_var = Pprintast.tyvar
 let ty_var ~non_gen ppf s =
   pr_var ppf (if non_gen then "_" ^ s else s)
 
-let print_out_jkind ppf = function
-  | Olay_const jkind -> fprintf ppf "%s" (Jkind.string_of_const jkind)
-  | Olay_var v     -> fprintf ppf "%s" v
+let rec print_out_jkind_const ppf (ojkind : Outcometree.out_jkind_const) =
+  match ojkind with
+  | Ojkind_const_default -> fprintf ppf "_"
+  | Ojkind_const_abbreviation abbrev -> fprintf ppf "%s" abbrev
+  | Ojkind_const_mod (base, modes) ->
+    fprintf ppf "%a mod @[%a@]" print_out_jkind_const base
+      (pp_print_list
+          ~pp_sep:(fun ppf () -> fprintf ppf "@ ")
+          (fun ppf -> fprintf ppf "%s"))
+      modes
+  | Ojkind_const_with _ | Ojkind_const_kind_of _ ->
+    failwith "XXX unimplemented jkind syntax"
+
+let print_out_jkind ppf ojkind =
+  match ojkind with
+  | Ojkind_var v -> fprintf ppf "%s" v
+  | Ojkind_const jkind -> print_out_jkind_const ppf jkind
 
 let print_out_jkind_annot ppf = function
   | None -> ()
@@ -346,17 +360,32 @@ let pr_var_jkinds =
   disallowed in parsing of this file, but non-legacy modes might still pop
   up. For example, the current file might cite values from other files that
   mention non-legacy modes *)
-let print_out_mode ppf = function
+let print_out_mode_legacy ppf = function
   | Omd_local -> fprintf ppf "local_"
   | Omd_unique -> fprintf ppf "unique_"
   | Omd_once -> fprintf ppf "once_"
 
-let print_out_mode_space ppf m =
-  print_out_mode ppf m;
+let print_out_mode_new = pp_print_string
+
+let print_out_mode_legacy_space ppf m =
+  print_out_mode_legacy ppf m;
   pp_print_space ppf ()
 
-let print_out_modes ppf l =
-  pp_print_list print_out_mode_space ppf l
+let print_out_modes_legacy ppf l =
+  pp_print_list print_out_mode_legacy_space ppf l
+
+let print_out_modes_new ppf l =
+  (match l with
+  | [] -> ()
+  | _ -> pp_print_string ppf " @ ");
+  pp_print_list ~pp_sep:pp_print_space print_out_mode_new ppf l
+
+let partition_modes l =
+  List.partition_map
+    (function
+    | Omd_legacy m -> Left m
+    | Omd_new m -> Right m
+    ) l
 
 (* Labeled tuples with the first element labeled sometimes require parens. *)
 let is_initially_labeled_tuple ty =
@@ -364,9 +393,33 @@ let is_initially_labeled_tuple ty =
   | Otyp_tuple ((Some _, _) :: _) -> true
   | _ -> false
 
-let string_of_gbl_space = function
-  | Ogf_global -> "global_ "
-  | Ogf_unrestricted -> ""
+let print_out_modality_legacy ppf = function
+  | Ogf_global -> Format.fprintf ppf "global_"
+
+let print_out_modality ppf = function
+  | Ogf_legacy m -> print_out_modality_legacy ppf m
+  | Ogf_new m -> pp_print_string ppf m
+
+let print_out_modalities_new ppf l =
+  match l with
+  | [] -> ()
+  | _ ->
+    pp_print_space ppf ();
+    pp_print_string ppf "@@";
+    pp_print_space ppf ();
+    pp_print_list ~pp_sep:pp_print_space pp_print_string ppf l
+
+let print_out_modalities_legacy =
+  pp_print_list
+  (fun ppf m ->
+    print_out_modality_legacy ppf m;
+    pp_print_space ppf ())
+
+let partition_modalities l =
+  List.partition_map (function
+  | Ogf_legacy m -> Left m
+  | Ogf_new m -> Right m
+  ) l
 
 let rec print_out_type_0 ppf =
   function
@@ -388,8 +441,9 @@ let rec print_out_type_0 ppf =
    - Or, there is at least one mode to print.
  *)
 and print_out_type_mode ~arg mode ppf ty =
+  let m_legacy, m_new = partition_modes mode in
   let has_modes =
-    match mode with
+    match m_legacy with
     | [] -> false
     | _ -> true
   in
@@ -397,12 +451,13 @@ and print_out_type_mode ~arg mode ppf ty =
     is_initially_labeled_tuple ty
     && (arg || has_modes)
   in
-  print_out_modes ppf mode;
+  print_out_modes_legacy ppf m_legacy;
   if parens then
     pp_print_char ppf '(';
   print_out_type_2 ppf ty;
   if parens then
-    pp_print_char ppf ')'
+    pp_print_char ppf ')';
+  print_out_modes_new ppf m_new
 
 and print_out_type_1 ppf =
   function
@@ -435,10 +490,12 @@ and print_out_ret rm ppf =
     | Orm_no_parens ->
       print_out_type_1 ppf ty
     | Orm_parens rm ->
-      print_out_modes ppf rm;
+      let m_legacy, m_new = partition_modes rm in
+      print_out_modes_legacy ppf m_legacy;
       pp_print_char ppf '(';
       print_out_type_1 ppf ty;
-      pp_print_char ppf ')'
+      pp_print_char ppf ')';
+      print_out_modes_new ppf m_new
     end
   | ty ->
     match rm with
@@ -553,13 +610,21 @@ and print_out_label ppf (name, mut, arg, gbl) =
     | Om_mutable None -> "mutable "
     | Om_mutable (Some s) -> "mutable(" ^ s ^ ") "
   in
-  fprintf ppf "@[<2>%s%s%s :@ %a@];"
+  let m_legacy, m_new = partition_modalities gbl in
+  fprintf ppf "@[<2>%s%a%s :@ %a%a@];"
     mut
-    (string_of_gbl_space gbl)
+    print_out_modalities_legacy m_legacy
     name
     print_out_type arg
+    print_out_modalities_new m_new
 
 let out_label = ref print_out_label
+
+let out_modality = ref print_out_modality
+
+let out_jkind_const = ref print_out_jkind_const
+
+let out_jkind = ref print_out_jkind
 
 let out_type = ref print_out_type
 
@@ -816,7 +881,7 @@ and print_out_sig_item ppf =
            | Orec_first -> "type"
            | Orec_next  -> "and")
           ppf td
-  | Osig_value { oval_name; oval_type;
+  | Osig_value { oval_name; oval_type; oval_modalities;
                  oval_prims; oval_attributes } ->
       let kwd = if oval_prims = [] then "val" else "external" in
       let pr_prims ppf =
@@ -826,8 +891,9 @@ and print_out_sig_item ppf =
             fprintf ppf "@ = \"%s\"" s;
             List.iter (fun s -> fprintf ppf "@ \"%s\"" s) sl
       in
-      fprintf ppf "@[<2>%s %a :@ %a%a%a@]" kwd value_ident oval_name
+      fprintf ppf "@[<2>%s %a :@ %a%a%a%a@]" kwd value_ident oval_name
         !out_type oval_type
+        print_out_modalities_new oval_modalities
         pr_prims oval_prims
         (fun ppf -> List.iter (fun a -> fprintf ppf "@ [@@@@%s]" a.oattr_name))
         oval_attributes
@@ -903,14 +969,10 @@ and print_out_type_decl kwd ppf td =
     print_unboxed
 
 and print_simple_out_gf_type ppf (ty, gf) =
-  match gf with
-  | Ogf_global ->
-      (* See the notes [NON-LEGACY MODES] *)
-      pp_print_string ppf "global_";
-      pp_print_space ppf ();
-      print_simple_out_type ppf ty
-  | Ogf_unrestricted ->
-    print_simple_out_type ppf ty
+  let m_legacy, m_new = partition_modalities gf in
+  print_out_modalities_legacy ppf m_legacy;
+  print_simple_out_type ppf ty;
+  print_out_modalities_new ppf m_new
 
 and print_out_constr_args ppf tyl =
   print_typlist print_simple_out_gf_type " *" ppf tyl
