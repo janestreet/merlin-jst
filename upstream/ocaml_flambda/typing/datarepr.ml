@@ -18,7 +18,6 @@
 
 open Asttypes
 open Types
-open Mode
 open Btype
 
 (* Simplified version of Ctype.free_vars *)
@@ -92,10 +91,17 @@ let constructor_args ~current_unit priv cd_args cd_res path rep =
           type_attributes = [];
           type_unboxed_default = false;
           type_uid = Uid.mk ~current_unit;
+          type_has_illegal_crossings = false;
         }
       in
       existentials,
-      [ newgenconstr path type_params, Global_flag.Unrestricted ],
+      [
+        {
+          ca_type = newgenconstr path type_params;
+          ca_modalities = Mode.Modality.Value.Const.id;
+          ca_loc = Location.none
+        }
+      ],
       Some tdecl
 
 let constructor_descrs ~current_unit ty_path decl cstrs rep =
@@ -134,7 +140,7 @@ let constructor_descrs ~current_unit ty_path decl cstrs rep =
     let cstr_tag = Ordinary {src_index; runtime_tag} in
     let cstr_existentials, cstr_args, cstr_inlined =
       (* This is the representation of the inner record, IF there is one *)
-      let record_repr = Record_inlined (cstr_tag, rep) in
+      let record_repr = Record_inlined (cstr_tag, cstr_shape, rep) in
       constructor_args ~current_unit decl.type_private cd_args cd_res
         Path.(Pextra_ty (ty_path, Pcstr_ty cstr_name)) record_repr
     in
@@ -173,7 +179,7 @@ let extension_descr ~current_unit path_ext ext =
   let existentials, cstr_args, cstr_inlined =
     constructor_args ~current_unit ext.ext_private ext.ext_args ext.ext_ret_type
       Path.(Pextra_ty (path_ext, Pext_ty))
-      (Record_inlined (cstr_tag, Variant_extensible))
+      (Record_inlined (cstr_tag, ext.ext_shape, Variant_extensible))
   in
     { cstr_name = Path.last path_ext;
       cstr_res = ty_res;
@@ -201,8 +207,8 @@ let none =
 
 let dummy_label =
   { lbl_name = ""; lbl_res = none; lbl_arg = none;
-    lbl_mut = Immutable; lbl_global = Unrestricted;
-    lbl_jkind = Jkind.any ~why:Dummy_jkind;
+    lbl_mut = Immutable; lbl_modalities = Mode.Modality.Value.Const.id;
+    lbl_jkind = Jkind.Primitive.any ~why:Dummy_jkind;
     lbl_num = -1; lbl_pos = -1; lbl_all = [||];
     lbl_repres = Record_unboxed;
     lbl_private = Public;
@@ -222,7 +228,7 @@ let label_descrs ty_res lbls repres priv =
             lbl_res = ty_res;
             lbl_arg = l.ld_type;
             lbl_mut = l.ld_mutable;
-            lbl_global = l.ld_global;
+            lbl_modalities = l.ld_modalities;
             lbl_jkind = l.ld_jkind;
             lbl_pos = if is_void then lbl_pos_void else pos;
             lbl_num = num;

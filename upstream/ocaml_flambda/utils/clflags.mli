@@ -59,6 +59,9 @@ module Libloc : sig
   }
 end
 
+type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
+type profile_granularity_level = File_level | Function_level
+
 val objfiles : string list ref
 val ccobjs : string list ref
 val dllibs : string list ref
@@ -126,7 +129,9 @@ val float_const_prop : bool ref
 val transparent_modules : bool ref
 val unique_ids : bool ref
 val locations : bool ref
+val parameters : string list ref
 val as_parameter : bool ref
+val as_argument_for : string option ref
 val dump_source : bool ref
 val dump_parsetree : bool ref
 val dump_typedtree : bool ref
@@ -198,7 +203,9 @@ val keep_locs : bool ref
 val opaque : bool ref
 val default_timings_precision : int
 val timings_precision : int ref
-val profile_columns : Profile.column list ref
+val profile_columns : profile_column list ref
+val profile_granularity : profile_granularity_level ref
+val set_profile_granularity : string -> unit
 val flambda_invariant_checks : bool ref
 val unbox_closures : bool ref
 val unbox_closures_factor : int ref
@@ -216,6 +223,7 @@ val afl_instrument : bool ref
 val afl_inst_ratio : int ref
 val function_sections : bool ref
 val probes : bool ref
+val allow_illegal_crossing : bool ref
 
 val all_passes : string list ref
 val dumped_pass : string -> bool
