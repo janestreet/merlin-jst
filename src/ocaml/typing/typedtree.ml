@@ -147,11 +147,11 @@ and expression_desc =
         ret_mode : Mode.Alloc.l;
         ret_sort : Jkind.sort;
         alloc_mode : Mode.Alloc.r;
-        zero_alloc : Builtin_attributes.zero_alloc_attribute;
+        zero_alloc : Zero_alloc.t;
       }
   | Texp_apply of
       expression * (arg_label * apply_arg) list * apply_position *
-        Mode.Locality.l * Zero_alloc_utils.Assume_info.t
+        Mode.Locality.l * Zero_alloc.assume option
   | Texp_match of expression * Jkind.sort * computation case list * partial
   | Texp_try of expression * value case list
   | Texp_tuple of (string option * expression) list * Mode.Alloc.r
@@ -692,7 +692,7 @@ and label_declaration =
      ld_name: string loc;
      ld_uid: Uid.t;
      ld_mutable: mutability;
-     ld_global: Global_flag.t;
+     ld_modalities: Modality.Value.Const.t;
      ld_type: core_type;
      ld_loc: Location.t;
      ld_attributes: attribute list;
@@ -710,8 +710,15 @@ and constructor_declaration =
      cd_attributes: attribute list;
     }
 
+and constructor_argument =
+  {
+    ca_modalities: Modality.Value.Const.t;
+    ca_type: core_type;
+    ca_loc: Location.t;
+  }
+
 and constructor_arguments =
-  | Cstr_tuple of (core_type * Global_flag.t) list
+  | Cstr_tuple of constructor_argument list
   | Cstr_record of label_declaration list
 
 and type_extension =
@@ -805,10 +812,16 @@ and 'a class_infos =
     ci_attributes: attribute list;
    }
 
+type argument_interface = {
+  ai_signature: Types.signature;
+  ai_coercion_from_primary: module_coercion;
+}
+
 type implementation = {
   structure: structure;
   coercion: module_coercion;
   signature: Types.signature;
+  argument_interface: argument_interface option;
   shape: Shape.t;
 }
 
@@ -837,6 +850,12 @@ let as_computation_pattern (p : pattern) : computation general_pattern =
     pat_env = p.pat_env;
     pat_attributes = [];
   }
+
+let function_arity params body =
+  List.length params +
+  match body with
+  | Tfunction_body _ -> 0
+  | Tfunction_cases _ -> 1
 
 let rec classify_pattern_desc : type k . k pattern_desc -> k pattern_category =
   function
@@ -1057,15 +1076,35 @@ let let_bound_idents_with_modes_sorts_and_checks bindings =
       iter_pattern_full ~both_sides_of_or:true f vb.vb_sort vb.vb_pat;
        match vb.vb_pat.pat_desc, vb.vb_expr.exp_desc with
        | Tpat_var (id, _, _, _), Texp_function fn ->
-         Ident.Map.add id fn.zero_alloc checks
+         let zero_alloc =
+           match Zero_alloc.get fn.zero_alloc with
+           | Default_zero_alloc ->
+             (* We fabricate a "Check" attribute if a top-level annotation
+                specifies that all functions should be checked for zero
+                alloc. There is no need to update the zero_alloc variable on the
+                function - if it remains [Default_zero_alloc], translcore adds
+                the check. *)
+             let arity = function_arity fn.params fn.body in
+             if !Clflags.zero_alloc_check_assert_all && arity > 0 then
+               Zero_alloc.create_const
+                 (Check { strict = false;
+                          arity;
+                          loc = Location.none;
+                          opt = false })
+             else
+               fn.zero_alloc
+           | Ignore_assert_all | Check _ | Assume _ -> fn.zero_alloc
+         in
+         Ident.Map.add id zero_alloc checks
+         (* CR ccasinghino: To keep the zero-alloc annotation info aliases, it
+            may be enough to copy it if the vb_expr is an ident. *)
        | _ -> checks
     ) Ident.Map.empty bindings
   in
   List.rev_map
     (fun (id, _, _, _) ->
        let zero_alloc =
-         Option.value (Ident.Map.find_opt id checks)
-           ~default:Builtin_attributes.Default_zero_alloc
+         Option.value (Ident.Map.find_opt id checks) ~default:Zero_alloc.default
        in
        id, List.rev (Ident.Tbl.find_all modes_and_sorts id), zero_alloc)
     (rev_let_bound_idents_full bindings)
@@ -1142,6 +1181,22 @@ let rec exp_is_nominal exp =
   | Texp_variant (_, None)
   | Texp_construct (_, _, [], _) ->
       true
+<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
+||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
+  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
+      exp_is_nominal parent
+  | _ -> false
+
+let function_arity params body =
+  List.length params +
+  match body with
+  | Tfunction_body _ -> 0
+  | Tfunction_cases _ -> 1
+=======
+  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
+      exp_is_nominal parent
+  | _ -> false
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
       exp_is_nominal parent
   | _ -> false

@@ -1,0 +1,27 @@
+--- typecore.ml
++++ typecore.ml
+@@ -6423,13 +6457,14 @@ and type_expect_
+         exp_env = env;
+       }
+   | Pexp_lazy e ->
+-      let ty = newgenvar (Jkind.value ~why:Lazy_expression) in
++      submode ~loc ~env Value.legacy expected_mode;
++      let ty = newgenvar (Jkind.Primitive.value ~why:Lazy_expression) in
+       let to_unify = Predef.type_lazy_t ty in
+       with_explanation (fun () ->
+         unify_exp_types loc env to_unify (generic_instance ty_expected));
+       let env = Env.add_escape_lock Lazy env in
+       let env = Env.add_share_lock Lazy env in
+-      let arg = type_expect env (mode_lazy expected_mode) e (mk_expected ty) in
++      let arg = type_expect env mode_legacy e (mk_expected ty) in
+       re {
+         exp_desc = Texp_lazy arg;
+         exp_loc = loc; exp_extra = [];
+@@ -6438,6 +6473,7 @@ and type_expect_
+         exp_env = env;
+       }
+   | Pexp_object s ->
++      submode ~loc ~env Value.legacy expected_mode;
+       let desc, meths = !type_object env loc s in
+       rue {
+         exp_desc = Texp_object (desc, meths);
