@@ -128,7 +128,7 @@ val type_let:
 val type_expression:
         Env.t -> Parsetree.expression -> Typedtree.expression
 val type_representable_expression:
-        why:Jkind.concrete_jkind_reason ->
+        why:Jkind.History.concrete_creation_reason ->
         Env.t -> Parsetree.expression -> Typedtree.expression * Jkind.sort
 val type_class_arg_pattern:
         string -> Env.t -> Env.t -> arg_label -> Parsetree.pattern ->
@@ -183,6 +183,10 @@ type submode_reason =
 val escape : loc:Location.t -> env:Env.t -> reason:submode_reason -> (Mode.allowed * 'r) Mode.Value.t -> unit
 
 val self_coercion : (Path.t * Location.t list ref) list ref
+
+type contention_context =
+  | Read_mutable
+  | Write_mutable
 
 type error =
   | Constructor_arity_mismatch of Longident.t * int * int
@@ -283,8 +287,11 @@ type error =
   | Expr_not_a_record_type of type_expr
   | Submode_failed of
       Mode.Value.error * submode_reason *
-      Env.closure_context option * Env.shared_context option
-  | Local_application_complete of arg_label * [`Prefix|`Single_arg|`Entire_apply]
+      Env.closure_context option *
+      contention_context option *
+      Env.shared_context option
+  | Curried_application_complete of
+      arg_label * Mode.Alloc.error * [`Prefix|`Single_arg|`Entire_apply]
   | Param_mode_mismatch of Mode.Alloc.equate_error
   | Uncurried_function_escapes of Mode.Alloc.error
   | Local_return_annotation_mismatch of Location.t
