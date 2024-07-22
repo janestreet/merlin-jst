@@ -82,32 +82,15 @@ let is_always_gc_ignorable env ty =
   Ctype.check_type_externality env ty ext
 
 
-  let maybe_pointer_type env ty =
-    let ty = scrape_ty env ty in
-    if is_always_gc_ignorable env ty then Immediate else Pointer
-
-  let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
+let maybe_pointer_type env ty =
+  let ty = scrape_ty env ty in
+  if is_always_gc_ignorable env ty then Immediate else Pointer
 
 (* CR layouts v2.8: Calling [type_sort] in [typeopt] is not ideal and
     this function should be removed at some point. To do that, there
     needs to be a way to store sort vars on [Tconstr]s. That means
     either introducing a [Tpoly_constr], allow type parameters with
     sort info, or do something else. *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-let type_sort ~why env _loc ty =
-  match Ctype.type_sort ~why env ty with
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-
-let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
-
-(* CR layouts v2.8: Calling [type_sort] in [typeopt] is not ideal and
-   this function should be removed at some point. To do that, there
-   needs to be a way to store sort vars on [Tconstr]s. That means
-   either introducing a [Tpoly_constr], allow type parameters with
-   sort info, or do something else. *)
-let type_sort ~why env loc ty =
-  match Ctype.type_sort ~why env ty with
-=======
 
 let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
 
@@ -118,9 +101,8 @@ let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
    sort info, or do something else. *)
 (* CR layouts v3.0: have a better error message
    for nullable jkinds.*)
-let type_legacy_sort ~why env loc ty =
+let type_legacy_sort ~why env _loc ty =
   match Ctype.type_legacy_sort ~why env ty with
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   | Ok sort -> sort
   | Error _ -> Misc.fatal_error "merlin-jst: a representable layout is required here"
 
@@ -806,19 +788,7 @@ let classify_lazy_argument : Typedtree.expression ->
 (*
 let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   if Lambda.equal_value_kind k1 k2 then k1
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
   else Pgenval
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        (Jkind.Violation.report_with_offender
-           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet." Jkind.Sort.format_const const
-=======
-        (Jkind.Violation.report_with_offender
-           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet." Jkind.Sort.Const.format const
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 
 let rec layout_union l1 l2 =
   match l1, l2 with

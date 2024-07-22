@@ -51,7 +51,7 @@ Simple module construction
       sig
         type t
         and b
-        val f : (int) -> float
+        val f : (int) -> float @@ portable
         module type STyp  = sig  end
         module D : Another
       end

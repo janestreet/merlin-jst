@@ -1118,5 +1118,3 @@ let print_out_phrase ppf =
   | Ophr_exception (exn, outv) -> print_out_exception ppf exn outv
 
 let out_phrase = ref print_out_phrase
-
-let out_jkind = ref print_out_jkind

@@ -1,3 +1,5 @@
+type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
+
 (** {0 OCaml compiler compatible command-line parameters}
 
     For compatibility with typechecker.
@@ -19,17 +21,12 @@ val applicative_functors : bool ref
 val nopervasives         : bool ref
 val strict_formats       : bool ref
 val open_modules         : string list ref
+val parameters           : string list ref
 val as_parameter         : bool ref
-
-module Annotations : sig
-  type t = Check_default | Check_all | Check_opt_only | No_check
-  val all : t list
-  val to_string : t -> string
-  val of_string : string -> t option
-  val equal : t -> t -> bool
-  val doc : string
-end
-val zero_alloc_check : Annotations.t ref
+val as_argument_for      : string option ref
+val zero_alloc_check : Zero_alloc_annotations.t ref
+val zero_alloc_check_assert_all : bool ref
+val allow_illegal_crossing : bool ref
 
 (** {1 Dummy values}
     Ignored by merlin but kept for compatibility with upstream code. *)
@@ -48,6 +45,7 @@ val for_package          : string option ref
 val debug                : bool ref
 val opaque               : bool ref
 val unboxed_types        : bool ref
+val profile_columns : profile_column list ref
 
 val locations            : bool ref
 val all_ppx              : string list ref

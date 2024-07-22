@@ -148,15 +148,9 @@ module type Sort = sig
 end
 
 module History = struct
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-  type concrete_jkind_reason =
-    | Merlin
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-  type concrete_jkind_reason =
-=======
   (* For sort variables that are topmost on the jkind lattice. *)
   type concrete_creation_reason =
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+    | Merlin
     | Match
     | Constructor_declaration of int
     | Label_declaration of Ident.t

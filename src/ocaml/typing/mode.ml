@@ -19,7 +19,10 @@ open Solver
 open Solver_intf
 open Mode_intf
 
-module Misc = Misc_stdlib
+module Misc = struct
+  let fatal_error = Misc.fatal_error
+  include Misc_stdlib
+end
 
 type nonrec allowed = allowed
 

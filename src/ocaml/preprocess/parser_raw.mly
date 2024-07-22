@@ -4194,25 +4194,11 @@ generalized_constructor_arguments:
                                   { ($2,Pcstr_tuple [],Some $4) }
 ;
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-%inline atomic_type_with_modality:
-  gbl = global_flag cty = atomic_type m1 = optional_atat_mode_expr {
-    let m = Jane_syntax.Mode_expr.concat gbl m1 in
-    mktyp_with_modes m cty
-}
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-%inline atomic_type_with_modality:
-  gbl = global_flag cty = atomic_type m1 = optional_atat_mode_expr {
-    let m = Mode.concat gbl m1 in
-    mktyp_with_modes m cty
-}
-=======
 %inline constructor_argument:
   gbl=global_flag cty=atomic_type m1=optional_atat_modalities_expr {
     let modalities = gbl @ m1 in
     Type.constructor_arg cty ~modalities ~loc:(make_loc $sloc)
   }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 ;
 
 constructor_arguments:
@@ -4230,18 +4216,8 @@ label_declaration:
     mutable_or_global_flag mkrhs(label) COLON poly_type_no_attr m1=optional_atat_modalities_expr attrs=attributes
       { let info = symbol_info $endpos in
         let mut, m0 = $1 in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-        let m = Jane_syntax.Mode_expr.concat m0 m1 in
-        let typ = mktyp_with_modes m $4 in
-        Type.field $2 typ ~mut ~attrs ~loc:(make_loc $sloc) ~info}
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        let m = Mode.concat m0 m1 in
-        let typ = mktyp_with_modes m $4 in
-        Type.field $2 typ ~mut ~attrs ~loc:(make_loc $sloc) ~info}
-=======
         let modalities = m0 @ m1 in
         Type.field $2 $4 ~mut ~modalities ~attrs ~loc:(make_loc $sloc) ~info}
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 ;
 label_declaration_semi:
     mutable_or_global_flag mkrhs(label) COLON poly_type_no_attr m1=optional_atat_modalities_expr attrs0=attributes
@@ -4252,18 +4228,8 @@ label_declaration_semi:
           | None -> symbol_info $endpos
        in
        let mut, m0 = $1 in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-       let m = Jane_syntax.Mode_expr.concat m0 m1 in
-       let typ = mktyp_with_modes m $4 in
-       Type.field $2 typ ~mut ~attrs:(attrs0 @ attrs1) ~loc:(make_loc $sloc) ~info}
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-       let m = Mode.concat m0 m1 in
-       let typ = mktyp_with_modes m $4 in
-       Type.field $2 typ ~mut ~attrs:(attrs0 @ attrs1) ~loc:(make_loc $sloc) ~info}
-=======
        let modalities = m0 @ m1 in
        Type.field $2 $4 ~mut ~modalities ~attrs:(attrs0 @ attrs1) ~loc:(make_loc $sloc) ~info}
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 ;
 
 /* Type Extensions */
@@ -4603,7 +4569,7 @@ optional_atat_modalities_expr:
   | %prec below_HASH
     { [] }
   | ATAT modalities { $2 }
-  | ATAT error { expecting $loc($2) "modality expression" }
+  // | ATAT error { expecting $loc($2) "modality expression" }
 ;
 
 %inline param_type:
@@ -5061,41 +5027,15 @@ mutable_flag:
 ;
 mutable_or_global_flag:
     /* empty */
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-    { Immutable, Jane_syntax.Mode_expr.empty }
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-    { Immutable, Mode.empty }
-=======
     { Immutable, [] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   | MUTABLE
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-    { Mutable, Jane_syntax.Mode_expr.empty }
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-    { Mutable, Mode.empty }
-=======
     { Mutable, [] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   | GLOBAL
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-    { Immutable, Jane_syntax.Mode_expr.singleton (Jane_syntax.Mode_expr.Const.mk "global" (make_loc $sloc)) }
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-    { Immutable, Mode.singleton (Mode.Const.mk "global" (make_loc $sloc)) }
-=======
     { Immutable, [ mkloc (Modality "global") (make_loc $sloc)] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 ;
 %inline global_flag:
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-           { Jane_syntax.Mode_expr.empty }
-  | GLOBAL { Jane_syntax.Mode_expr.singleton (Jane_syntax.Mode_expr.Const.mk "global" (make_loc $sloc)) }
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-           { Mode.empty }
-  | GLOBAL { Mode.singleton (Mode.Const.mk "global" (make_loc $sloc)) }
-=======
            { [] }
   | GLOBAL { [ mkloc (Modality "global") (make_loc $sloc)] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 ;
 virtual_flag:
     /* empty */                                 { Concrete }

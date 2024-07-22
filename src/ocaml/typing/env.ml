@@ -2499,20 +2499,11 @@ let enter_value ?check ~mode name desc env =
   let id = Ident.create_local name in
   let desc = Subst.Lazy.of_value_description desc in
   let addr = value_declaration_address env id desc in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-  let env = store_value ?check (Mode.Value.legacy) id addr desc (Shape.leaf desc.val_uid) env in
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-  let env =
-    store_value ?check Mode.Value.legacy id addr desc (Shape.leaf desc.val_uid)
-      env
-  in
-=======
   let mode = Mode.Value.disallow_right mode in
   let env =
     store_value ?check ~mode id addr desc (Shape.leaf desc.val_uid)
       env
   in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   (id, env)
 
 let enter_type ~scope name info env =
@@ -4197,7 +4188,7 @@ let sharedness_hint ppf : shared_context -> _ = function
           because it is defined outside of the lazy expression.@]"
 
 let print_lock_item ppf (item, lid) =
-  match item with
+  match (item : lock_item) with
   | Module -> fprintf ppf "Modules are"
   | Class -> fprintf ppf "Classes are"
   | Value -> fprintf ppf "The value %a is" !print_longident lid

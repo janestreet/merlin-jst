@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# This script is a wrapper around the jq command line utility. It replaces \n occurrences
+# inside string literals with actual newlines for readability. This results in invalid
+# json. In order for jq to properly parse such output (to allow jq commands to be
+# chained), it replaces newlines within string with \n when reading from stdin. jq does
+# not handle 
+
+# This script is on the PATH and named jq, but we want to get the jq that would normally
+# be on the path. We remove this one from the path
+DIR=$(dirname "$0")
+export PATH=$(echo "$PATH" | sed "s#$DIR:##g")
+
+process_input() {
+  # Iterate over the input, tracking if we are currently in a string. If so, replace
+  # newlines with \n. Also track the previous character so we know if we're escaping a "
+  in_string=false
+  last_char=null
+  while IFS= read -r -n1 char; do
+    # Check if the character is a newline
+    if [[ "$char" == "" ]]; then
+      if [[ "$in_string" == true ]]; then
+        # Replace newline with \n 
+        printf '\\n'
+      else
+        # Print actual newline (note that printf "$char" won't work)
+        printf '\n'
+      fi
+      last_char=newline
+    else
+      # Output the character as is, escaping if necessary
+      if [[ "$char" == '\' ]]; then
+        printf '\\'
+      elif [[ "$char" == '%' ]]; then
+        printf '%%'
+      else
+        printf "$char"
+      fi
+
+      # perform logic to track whether we're in a string
+      if [[ "$in_string" == true ]]; then
+        if [[ "$last_char" != '\' && "$char" == '"' ]]; then
+          in_string=false
+          last_char='"'
+        elif [[ "$last_char" == '\' && "$char" == '\' ]]; then
+          in_string=false
+          last_char='real_\'
+        else
+          last_char="$char"
+        fi
+      else
+        # Don't need to worry about escaping outside of strings
+        last_char="$char"
+        if [[ "$char" == '"' ]]; then
+          in_string=true
+        fi
+      fi
+    fi
+  done
+}
+
+process_output() {
+  sed -e 's:\\n:\n:g'
+}
+
+process_input | jq "$@" | process_output

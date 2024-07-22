@@ -663,18 +663,10 @@ let submode ~loc ~env ?(reason = Other) ?shared_context mode expected_mode =
   | Ok () -> ()
   | Error failure_reason ->
       let closure_context = expected_mode.closure_context in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-      let err =
-        Submode_failed(failure_reason, reason, closure_context, shared_context)
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-      let error =
-        Submode_failed(failure_reason, reason, closure_context, shared_context)
-=======
       let contention_context = expected_mode.contention_context in
-      let error =
+      let err =
         Submode_failed(failure_reason, reason, closure_context,
           contention_context, shared_context)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
       in
       raise (error(loc, env, err))
 
@@ -1417,18 +1409,9 @@ and build_as_type_aux ~refine ~mode (env : Env.t ref) p =
         let ty_args, ty_res, _ =
           instance_constructor Keep_existentials_flexible cstr
         in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-        List.iter2 (fun (p,ty) (arg, _) ->
-          unify_pat ~refine env {p with pat_type = ty} arg)
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        List.iter2
-          (fun (p,ty) (arg, _) ->
-             unify_pat ~refine env {p with pat_type = ty} arg)
-=======
         List.iter2
           (fun (p,ty) {Types.ca_type=arg; _} ->
              unify_pat ~refine env {p with pat_type = ty} arg)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
           (List.combine pl tyl) ty_args;
         ty_res
       in
@@ -3664,13 +3647,7 @@ let check_curried_application_complete ~env ~app_loc args =
             | Arg (Eliminated_optional_arg _) | Omitted _ ->
               app_loc, `Entire_apply
           in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-          raise (error(loc, env, Local_application_complete (lbl, loc_kind)))
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-          raise (Error(loc, env, Local_application_complete (lbl, loc_kind)))
-=======
-          raise (Error(loc, env, Curried_application_complete (lbl, e, loc_kind)))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+          raise (error(loc, env, Curried_application_complete (lbl, e, loc_kind)))
       in
       submode (Alloc.partial_apply mode_fun) mode_ret;
       submode (Alloc.close_over mode_arg) mode_ret;
@@ -4934,25 +4911,13 @@ let unique_use ~loc ~env mode_l mode_r  =
     | Ok () -> ()
     | Error e ->
         let e : Mode.Value.error = Error (Monadic Uniqueness, e) in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-        raise (error(loc, env, Submode_failed(e, Other, None, None)))
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        raise (Error(loc, env, Submode_failed(e, Other, None, None)))
-=======
-        raise (Error(loc, env, Submode_failed(e, Other, None, None, None)))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+        raise (error(loc, env, Submode_failed(e, Other, None, None, None)))
     );
     (match Linearity.submode linearity Linearity.many with
     | Ok () -> ()
     | Error e ->
         let e : Mode.Value.error = Error (Comonadic Linearity, e) in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-        raise (error (loc, env, Submode_failed(e, Other, None, None)))
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        raise (Error (loc, env, Submode_failed(e, Other, None, None)))
-=======
-        raise (Error (loc, env, Submode_failed(e, Other, None, None, None)))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+        raise (error (loc, env, Submode_failed(e, Other, None, None, None)))
     );
     (Uniqueness.disallow_left Uniqueness.shared,
      Linearity.disallow_right Linearity.many)
@@ -5060,8 +5025,8 @@ let split_function_ty
         (* Merlin: we recover with an expected type of 'a -> 'b *)
         let level = get_level (instance ty_expected) in
         raise_error (error(loc_fun, env, err));
-        let arg_kind = Jkind.any ~why:Inside_of_Tarrow in
-        let ret_kind = Jkind.any ~why:Inside_of_Tarrow in
+        let arg_kind = Jkind.Primitive.any ~why:Inside_of_Tarrow in
+        let ret_kind = Jkind.Primitive.any ~why:Inside_of_Tarrow in
         { ty_arg = newty (Tpoly (newvar2 level arg_kind, []))
         ; arg_mode = Mode.Alloc.newvar ()
         ; ty_ret = newvar2 level ret_kind
@@ -5287,7 +5252,8 @@ let create_merlin_type_error_node loc env ty_expected ~attributes =
               val_loc = loc;
               val_attributes = [];
               val_uid = Uid.internal_not_actually_unique;
-              val_zero_alloc = Builtin_attributes.Default_zero_alloc;
+              val_zero_alloc = Zero_alloc.default;
+              val_modalities = Modality.Value.id;
             },
             Id_value,
             (Uniqueness.disallow_left Uniqueness.legacy,
@@ -5520,17 +5486,9 @@ and type_expect_
                 let bound_exp = vb.vb_expr in
                 let bound_exp_type = Ctype.instance bound_exp.exp_type in
                 let loc = proper_exp_loc bound_exp in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-                let outer_var = newvar2 outer_level (Jkind.any ~why:Dummy_jkind) in
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-                let outer_var =
-                  newvar2 outer_level (Jkind.any ~why:Dummy_jkind)
-                in
-=======
                 let outer_var =
                   newvar2 outer_level (Jkind.Primitive.any ~why:Dummy_jkind)
                 in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
                 (* Checking unification within an environment extended with the
                    module bindings allows us to correctly accept more programs.
                    This environment allows unification to identify more cases
@@ -5543,13 +5501,7 @@ and type_expect_
         end
         ~post:(fun (_pat_exp_list, body, new_env) ->
           (* The "body" component of the scope escape check. *)
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-            unify_exp new_env body (newvar (Jkind.any ~why:Dummy_jkind)))
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-          unify_exp new_env body (newvar (Jkind.any ~why:Dummy_jkind)))
-=======
           unify_exp new_env body (newvar (Jkind.Primitive.any ~why:Dummy_jkind)))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
       in
       re {
         exp_desc = Texp_let(rec_flag, pat_exp_list, body);
@@ -6203,17 +6155,7 @@ and type_expect_
         exp_extra = (exp_extra, loc, sexp.pexp_attributes) :: arg.exp_extra;
       }
   | Pexp_send (e, {txt=met}) ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-      let pm = position_and_mode env expected_mode sexp in
-      let (obj,meth,typ) =
-        with_local_level_if_principal
-=======
-      submode ~loc ~env Mode.Value.legacy expected_mode;
-      let pm = position_and_mode env expected_mode sexp in
-      let (obj,meth,typ) =
-        with_local_level_if_principal
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+    submode ~loc ~env Mode.Value.legacy expected_mode;    
     let obj = type_exp env mode_legacy e in
     let pm = position_and_mode env expected_mode sexp in
     begin try
@@ -6232,7 +6174,7 @@ and type_expect_
                   (Warnings.Not_principal "this use of a polymorphic method");
               snd (instance_poly false tl ty)
           | Tvar _ ->
-              let ty' = newvar (Jkind.value ~why:Object_field) in
+              let ty' = newvar (Jkind.Primitive.value ~why:Object_field) in
               unify env (instance typ) (newty(Tpoly(ty',[])));
               (* if not !Clflags.nolabels then
                 Location.prerr_warning loc (Warnings.Unknown_method met); *)
@@ -6272,7 +6214,11 @@ and type_expect_
         }
       end
   | Pexp_new cl ->
-      let (cl_path, cl_decl) = Env.lookup_class ~loc:cl.loc cl.txt env in
+      submode ~loc ~env Value.legacy expected_mode;
+      let (cl_path, cl_decl, cl_mode) =
+        Env.lookup_class ~loc:cl.loc cl.txt env
+      in
+      Value.submode_exn cl_mode Value.legacy;
       let pm = position_and_mode env expected_mode sexp in
       begin match cl_decl.cty_new with
           None ->
@@ -6308,6 +6254,7 @@ and type_expect_
           raise(error(loc, env, Instance_variable_not_mutable lab.txt))
     end
   | Pexp_override lst ->
+      submode ~loc ~env Value.legacy expected_mode;
       let _ =
        List.fold_right
         (fun (lab, _) l ->
@@ -6440,13 +6387,14 @@ and type_expect_
         exp_env = env;
       }
   | Pexp_lazy e ->
-      let ty = newgenvar (Jkind.value ~why:Lazy_expression) in
+      submode ~loc ~env Value.legacy expected_mode;
+      let ty = newgenvar (Jkind.Primitive.value ~why:Lazy_expression) in
       let to_unify = Predef.type_lazy_t ty in
       with_explanation (fun () ->
         unify_exp_types loc env to_unify (generic_instance ty_expected));
       let env = Env.add_escape_lock Lazy env in
       let env = Env.add_share_lock Lazy env in
-      let arg = type_expect env (mode_lazy expected_mode) e (mk_expected ty) in
+      let arg = type_expect env mode_legacy e (mk_expected ty) in
       re {
         exp_desc = Texp_lazy arg;
         exp_loc = loc; exp_extra = [];
@@ -6455,6 +6403,7 @@ and type_expect_
         exp_env = env;
       }
   | Pexp_object s ->
+      submode ~loc ~env Value.legacy expected_mode;
       let desc, meths = !type_object env loc s in
       rue {
         exp_desc = Texp_object (desc, meths);
@@ -6504,99 +6453,12 @@ and type_expect_
             in
             { exp with exp_type = instance ty }
         | Tvar _ ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-            let ty' = newvar (Jkind.value ~why:Object_field) in
-            unify env (instance typ) (newty(Tpoly(ty',[])));
-            (* if not !Clflags.nolabels then
-               Location.prerr_warning loc (Warnings.Unknown_method met); *)
-=======
-            let ty' = newvar (Jkind.Primitive.value ~why:Object_field) in
-            unify env (instance typ) (newty(Tpoly(ty',[])));
-            (* if not !Clflags.nolabels then
-               Location.prerr_warning loc (Warnings.Unknown_method met); *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
             let exp = type_exp env expected_mode sbody in
             let exp = {exp with exp_type = newmono exp.exp_type} in
             unify_exp env exp ty;
             exp
         | _ -> assert false
       in
-      re { exp with exp_extra =
-             (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
-  | Pexp_newtype({txt=name} as label_loc, sbody) ->
-    type_newtype_expr ~loc ~env ~expected_mode ~rue ~attributes:sexp.pexp_attributes
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env }
-  | Pexp_new cl ->
-      let (cl_path, cl_decl) = Env.lookup_class ~loc:cl.loc cl.txt env in
-      let pm = position_and_mode env expected_mode sexp in
-      begin match cl_decl.cty_new with
-          None ->
-=======
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env }
-  | Pexp_new cl ->
-      submode ~loc ~env Value.legacy expected_mode;
-      let (cl_path, cl_decl, cl_mode) =
-        Env.lookup_class ~loc:cl.loc cl.txt env
-      in
-      Value.submode_exn cl_mode Value.legacy;
-      let pm = position_and_mode env expected_mode sexp in
-      begin match cl_decl.cty_new with
-          None ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-      name label_loc None sbody
-  | Pexp_pack m ->
-      let (p, fl) =
-        match get_desc (Ctype.expand_head env (instance ty_expected)) with
-          Tpackage (p, fl) ->
-            if !Clflags.principal &&
-              get_level (Ctype.expand_head env
-                           (protect_expansion env ty_expected))
-                < Btype.generic_level
-            then
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-          raise(Error(loc, env, Instance_variable_not_mutable lab.txt))
-    end
-  | Pexp_override lst ->
-      let _ =
-       List.fold_right
-        (fun (lab, _) l ->
-=======
-          raise(Error(loc, env, Instance_variable_not_mutable lab.txt))
-    end
-  | Pexp_override lst ->
-      submode ~loc ~env Value.legacy expected_mode;
-      let _ =
-       List.fold_right
-        (fun (lab, _) l ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
-              Location.prerr_warning loc
-                (Warnings.Not_principal "this module packing");
-            (p, fl)
-        | Tvar _ ->
-            raise (error (loc, env, Cannot_infer_signature))
-        | _ ->
-            raise (error (loc, env, Not_a_packed_module ty_expected))
-      in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-      let (modl, fl') = !type_package env m p fl in
-      rue {
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-      re { exp with exp_extra =
-             (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
-  | Pexp_newtype({txt=name}, sbody) ->
-    type_newtype_expr ~loc ~env ~expected_mode ~rue ~attributes:sexp.pexp_attributes
-      name None sbody
-  | Pexp_pack m ->
-      let (p, fl) =
-        match get_desc (Ctype.expand_head env (instance ty_expected)) with
-          Tpackage (p, fl) ->
-=======
       re { exp with exp_extra =
              (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
   | Pexp_newtype(name, sbody) ->
@@ -6608,26 +6470,28 @@ and type_expect_
       let (p, fl) =
         match get_desc (Ctype.expand_head env (instance ty_expected)) with
           Tpackage (p, fl) ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+            if !Clflags.principal &&
+              get_level (Ctype.expand_head env
+                           (protect_expansion env ty_expected))
+                < Btype.generic_level
+            then
+              Location.prerr_warning loc
+                (Warnings.Not_principal "this module packing");
+            (p, fl)
+        | Tvar _ ->
+            raise (error (loc, env, Cannot_infer_signature))
+        | _ ->
+            raise (error (loc, env, Not_a_packed_module ty_expected))
+      in
+      let (modl, fl') = !type_package env m p fl in
+      rue {
         exp_desc = Texp_pack modl;
         exp_loc = loc; exp_extra = [];
         exp_type = newty (Tpackage (p, fl'));
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_open (od, e) ->
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-      let tv = newvar (Jkind.any ~why:Dummy_jkind) in
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-      let tv = newvar (Jkind.any ~why:Dummy_jkind) in
-      let (od, _, newenv) = !type_open_decl env od in
-      let exp = type_expect newenv expected_mode e ty_expected_explained in
-      (* Force the return type to be well-formed in the original
-=======
       let tv = newvar (Jkind.Primitive.any ~why:Dummy_jkind) in
-      let (od, _, newenv) = !type_open_decl env od in
-      let exp = type_expect newenv expected_mode e ty_expected_explained in
-      (* Force the return type to be well-formed in the original
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
       begin match !type_open_decl env od with
       | (od, _, newenv) ->
         let exp = type_expect newenv expected_mode e ty_expected_explained in
@@ -7092,16 +6956,8 @@ and type_function_
   | { pparam_desc = Pparam_newtype (newtype_var, jkind_annot) } :: rest ->
       (* Check everything else in the scope of (type a). *)
       let (params, body, newtypes, contains_gadt, fun_alloc_mode, ret_info),
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
           exp_type, jkind_annot, id, uid =
-        type_newtype loc env newtype_var.txt jkind_annot (fun env ->
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-          exp_type, jkind_annot =
-        type_newtype loc env newtype_var.txt jkind_annot (fun env ->
-=======
-          exp_type, jkind_annot =
         type_newtype env newtype_var jkind_annot (fun env ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
           let { function_ = exp_type, params, body;
                 newtypes; params_contain_gadt = contains_gadt;
                 fun_alloc_mode; ret_info;
@@ -7137,7 +6993,7 @@ and type_function_
                   | None -> Alloc.newvar ()
                 in
                 Texp_function
-                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Default_zero_alloc;
+                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Zero_alloc.default;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -7316,7 +7172,7 @@ and type_function_
                 in
                 Texp_function
                   { params; body; ret_mode; ret_sort;
-                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Default_zero_alloc;
+                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Zero_alloc.default;
                     region = in_function.region_locked });
               exp_loc = loc;
               exp_extra = [];
@@ -7485,7 +7341,7 @@ and type_label_access env srecord usage lid =
       lbl_res = ty_exp;
       lbl_arg = newvar arg_kind;
       lbl_mut = Mutable Alloc.Comonadic.Const.legacy;
-      lbl_global = Unrestricted;
+      lbl_modalities = Mode.Modality.Value.Const.id;
       lbl_pos = 0;
       lbl_num = 0;
       lbl_all = [||];
@@ -8073,15 +7929,8 @@ and type_apply_arg env ~app_loc ~funct ~index ~position_and_mode ~partial_app (l
             let snap = Btype.snapshot () in
             let really_poly =
               try
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-                unify env (newmono (newvar (Jkind.any ~why:Dummy_jkind))) ty_arg;
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-                unify env (newmono (newvar (Jkind.any ~why:Dummy_jkind)))
-                  ty_arg;
-=======
                 unify env (newmono (newvar (Jkind.Primitive.any ~why:Dummy_jkind)))
                   ty_arg;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
                 false
               with Unify _ -> true
             in
@@ -8226,7 +8075,7 @@ and type_application env app_loc expected_mode position_and_mode
                   args,
                   position_and_mode.apply_position,
                   ap_mode,
-                  Zero_alloc_utils.Assume_info.none
+                  None
                 );
               exp_loc = app_loc;
               exp_extra = [];
@@ -8795,7 +8644,7 @@ and type_function_cases_expect
                   ret_mode = Alloc.disallow_right ret_mode;
                   ret_sort;
                   alloc_mode = Alloc.disallow_left alloc_mode;
-                  zero_alloc = Default_zero_alloc;
+                  zero_alloc = Zero_alloc.default;
                   region = in_function.region_locked;
                 };
             exp_loc = loc;
@@ -8821,20 +8670,10 @@ and type_function_cases_expect
       by the user.
 *)
 and type_newtype
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-  : type a. _ -> _ -> _ -> _ -> (Env.t -> a * type_expr)
-    -> a * type_expr * Jkind.annotation option * _ * Uid.t =
-  fun loc env name jkind_annot_opt type_body  ->
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-  : type a. _ -> _ -> _ -> _ -> (Env.t -> a * type_expr)
-    -> a * type_expr * Jkind.annotation option =
-  fun loc env name jkind_annot_opt type_body  ->
-=======
   : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
-    -> a * type_expr * Jkind.annotation option =
+    -> a * type_expr * Jkind.annotation option * _ * Uid.t =
   fun env name jkind_annot_opt type_body  ->
   let { txt = name; loc = name_loc } : _ Location.loc = name in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   let jkind, jkind_annot =
     Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
       ~default:(Jkind.Primitive.value ~why:Univar) jkind_annot_opt
@@ -8873,20 +8712,9 @@ and type_newtype
 
 (** [type_newtype] where the "body" is just an expression. *)
 and type_newtype_expr
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-    ~loc ~env ~expected_mode ~rue ~attributes name label_loc
-    jkind_annot_opt sbody =
+    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
   let body, ety, jkind_annot, id, uid =
-    type_newtype loc env name jkind_annot_opt (fun env ->
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
-  let body, ety, jkind_annot =
-    type_newtype loc env name jkind_annot_opt (fun env ->
-=======
-    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
-  let body, ety, jkind_annot =
     type_newtype env name jkind_annot_opt (fun env ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
       let expr = type_exp env expected_mode sbody in
       expr, expr.exp_type)
   in
@@ -8894,13 +8722,7 @@ and type_newtype_expr
      any new extra node in the typed AST. *)
   rue { body with exp_loc = loc; exp_type = ety;
         exp_extra =
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-        (Texp_newtype' (id, label_loc, jkind_annot, uid),
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-        (Texp_newtype (name, jkind_annot),
-=======
-        (Texp_newtype (name.txt, jkind_annot),
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+        (Texp_newtype' (id, name, jkind_annot, uid),
          loc, attributes) :: body.exp_extra }
 
 (* Typing of let bindings *)
@@ -9788,15 +9610,9 @@ and type_jkind_expr
       ~loc ~env ~expected_mode ~ty_expected:_ ~explanation:_ ~rue ~attributes
   : Jane_syntax.Layouts.expression -> _ = function
   | Lexp_constant x -> type_unboxed_constant ~loc ~env ~rue ~attributes x
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-  | Lexp_newtype ({txt=name} as label_loc, jkind_annot, sbody) ->
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-  | Lexp_newtype ({txt=name}, jkind_annot, sbody) ->
-=======
   | Lexp_newtype (name, jkind_annot, sbody) ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
     type_newtype_expr ~loc ~env ~expected_mode ~rue ~attributes
-      name label_loc (Some jkind_annot) sbody
+      name (Some jkind_annot) sbody
 
 and type_unboxed_constant ~loc ~env ~rue ~attributes cst =
   let cst = unboxed_constant_or_raise env loc cst in

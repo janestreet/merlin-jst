@@ -1387,15 +1387,8 @@ let instance_constructor existential_treatment cstr =
             let jkind =
               match get_desc existential with
               | Tvar { jkind } -> jkind
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-              | Tvariant _ -> Jkind.value ~why:Row_variable (* Existential row variable *)
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-              | Tvariant _ -> Jkind.value ~why:Row_variable
-                  (* Existential row variable *)
-=======
               | Tvariant _ -> Jkind.Primitive.value ~why:Row_variable
                   (* Existential row variable *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
               | _ -> assert false
             in
             let decl = new_local_type jkind ~jkind_annot:None in
@@ -1412,17 +1405,9 @@ let instance_constructor existential_treatment cstr =
     in
     let ty_ex = List.map copy_existential cstr.cstr_existentials in
     let ty_res = copy copy_scope cstr.cstr_res in
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-    let ty_args = List.map (fun (ty, gf) -> copy copy_scope ty, gf) cstr.cstr_args in
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-    let ty_args =
-      List.map (fun (ty, gf) -> copy copy_scope ty, gf) cstr.cstr_args
-    in
-=======
     let ty_args =
       List.map (fun ca -> {ca with ca_type = copy copy_scope ca.ca_type}) cstr.cstr_args
     in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
     (ty_args, ty_res, ty_ex)
   )
 

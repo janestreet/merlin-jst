@@ -391,7 +391,8 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         result
       | `Values ->
         let type_check {Types. val_type; _} = type_check val_type in
-        Env.fold_values (fun name path v candidates ->
+        (* TODO: Merlin modes *)
+        Env.fold_values (fun name path v _mode candidates ->
           if not (validate `Lident `Value name) then candidates else
           let priority = if is_internal name
             then 0

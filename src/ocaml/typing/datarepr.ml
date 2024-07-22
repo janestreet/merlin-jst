@@ -178,15 +178,8 @@ let extension_descr ~current_unit path_ext ext =
   let cstr_tag = Extension (path_ext, ext.ext_arg_jkinds) in
   let existentials, cstr_args, cstr_inlined =
     constructor_args ~current_unit ext.ext_private ext.ext_args ext.ext_ret_type
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-      Path.(Pextra_ty (path_ext, Pext_ty)) (Record_inlined (cstr_tag, Variant_extensible))
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-      Path.(Pextra_ty (path_ext, Pext_ty))
-      (Record_inlined (cstr_tag, Variant_extensible))
-=======
       Path.(Pextra_ty (path_ext, Pext_ty))
       (Record_inlined (cstr_tag, ext.ext_shape, Variant_extensible))
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
   in
     { cstr_name = Path.last path_ext;
       cstr_res = ty_res;

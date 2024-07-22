@@ -454,7 +454,7 @@ how to produce valid json.
   'd ->
   'e -> 'f -> 'g -> 'a p2 * 'b p2 * 'c p2 * 'd p2 * 'e p2 * 'f p2 * 'g p2 * 'h 
   (* 'a : immediate, 'b : immediate, 'c : immediate, 'd : immediate, 'e : immediate, 
-     'f : immediate, 'g : immediate *)"
+     'f : immediate, 'g : immediate, 'h : value_or_null *)"
   
 
 (VII) Non-constant sort variable

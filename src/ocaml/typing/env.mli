@@ -637,6 +637,8 @@ type address_head =
 
 val address_head : address -> address_head
 
+val sharedness_hint : Format.formatter -> shared_context -> unit
+
 val unbound_class : Path.t
 
 (** merlin: manage internal state *)
@@ -647,14 +649,6 @@ val with_cmis : (unit -> 'a) -> 'a
 
 (* helper for merlin *)
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
 val add_merlin_extension_module: Ident.t -> module_type -> t -> t
 val cleanup_functor_caches : stamp:int -> unit
 val scrape: (t -> module_type -> module_type) ref
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-val address_head : address -> address_head
-=======
-val address_head : address -> address_head
-
-val sharedness_hint : Format.formatter -> shared_context -> unit
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19

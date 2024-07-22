@@ -17,8 +17,7 @@
 
 type file = string
 
-module Int = Misc.Stdlib.Int
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 module Counters = struct
   type t = int String.Map.t
@@ -39,12 +38,6 @@ end
 external time_include_children: bool -> float = "caml_sys_time_include_children"
 let cpu_time () = time_include_children true
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-module Int = Misc_stdlib.Int
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-module Int = Misc.Stdlib.Int
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 
 module Measure = struct
   type t = {

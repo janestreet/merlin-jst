@@ -614,6 +614,7 @@ and remove_modality_and_zero_alloc_variables_mty env ~zap_modality mty =
         ~zap_modality:Mode.Modality.Value.to_const_exn mty
       in
       Mty_strengthen (mty, path, alias)
+  | Mty_for_hole -> mty
 
 type with_info =
   | With_type of Parsetree.type_declaration
@@ -3678,19 +3679,9 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
       Env.reset_probes ();
       if !Clflags.print_types then (* #7656 *)
         ignore @@ Warnings.parse_options false "-32-34-37-38-60";
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-      let (str, sg, names, shape, finalenv) =
-        Profile.record_call "infer" (fun () ->
-          type_structure initial_env ast) in
-=======
       if !Clflags.as_parameter then
         error Cannot_compile_implementation_as_parameter;
       register_params !Clflags.parameters;
-      let (str, sg, names, shape, finalenv) =
-        Profile.record_call "infer" (fun () ->
-          type_structure initial_env ast) in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
       let (str, sg, names, shape, finalenv) = type_structure initial_env ast in
       let uid = Uid.of_compilation_unit_id modulename in
       let shape = Shape.set_uid_if_none shape uid in

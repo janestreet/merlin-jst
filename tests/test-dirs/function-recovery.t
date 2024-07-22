@@ -10,7 +10,7 @@
     "value": "[
     structure_item (test.ml[1,0+0]..test.ml[3,104+28])
       Tstr_module
-      ERROR_locate_from_inside_function_literal_used_as_non_function/276
+      ERROR_locate_from_inside_function_literal_used_as_non_function/277
         module_expr (test.ml[1,0+72]..test.ml[3,104+28])
           Tmod_structure
           [
@@ -19,8 +19,8 @@
               [
                 <def>
                   pattern (test.ml[2,79+6]..test.ml[2,79+13])
-                    Tpat_var \"problem/274\"
-                    value_mode global,many,join_shared(1[shared,unique])
+                    Tpat_var \"problem/275\"
+                    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
                   expression (test.ml[2,79+16]..test.ml[2,79+24])
                     Texp_variant \"Problem\"
                     None
@@ -36,7 +36,7 @@
                   expression (test.ml[3,104+11]..test.ml[3,104+28])
                     Texp_function
                     region true
-                    alloc_mode id(c[global,many,local,once]),id(d[shared,unique])
+                    alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[shared,contended .. unique,uncontended])
                     []
                     Tfunction_body
                       expression (test.ml[3,104+11]..test.ml[3,104+28]) ghost
@@ -49,7 +49,7 @@
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
                                 Pexp_constant PConst_int (1,None)
                           ]
-                        Texp_ident \"*type-error*/275\"
+                        Texp_ident \"*type-error*/276\"
               ]
           ]
   ]
@@ -69,14 +69,14 @@
       [
         <def>
           pattern (type.ml[1,0+4]..type.ml[1,0+5])
-            Tpat_var \"f/274\"
-            value_mode global,many,join_shared(1[shared,unique])
+            Tpat_var \"f/275\"
+            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
-              Texp_newtype'  t/276
+              Texp_newtype'  t/277
             Texp_function
             region true
-            alloc_mode global,many,id(3[shared,unique])
+            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[shared,contended .. unique,uncontended])
             [
               Nolabel
               Param_pat
@@ -87,11 +87,11 @@
                       Ttyp_constr \"list/11!\"
                       [
                         core_type (type.ml[1,0+28]..type.ml[1,0+29])
-                          Ttyp_constr \"t/276\"
+                          Ttyp_constr \"t/277\"
                           []
                       ]
-                  Tpat_var \"foo/277\"
-                  value_mode map_comonadic(local_to_regional)(4[global,many,local,once]),join_shared(5[shared,unique])
+                  Tpat_var \"foo/278\"
+                  value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable .. local,once,nonportable]);join(shared,contended)(modevar#5[shared,contended .. unique,uncontended])
             ]
             Tfunction_body
               expression (type.ml[1,0+39]..type.ml[1,0+61])
@@ -102,7 +102,7 @@
                       extra
                         Tpat_extra_constraint
                         core_type (type.ml[1,0+48]..type.ml[1,0+49])
-                          Ttyp_constr \"t/276\"
+                          Ttyp_constr \"t/277\"
                           []
                       Tpat_any
                     expression (type.ml[1,0+53]..type.ml[1,0+55])
@@ -115,7 +115,7 @@
                             expression (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pexp_constant PConst_int (1,None)
                         ]
-                      Texp_ident \"*type-error*/278\"
+                      Texp_ident \"*type-error*/279\"
                 ]
                 expression (type.ml[1,0+59]..type.ml[1,0+61])
                   attribute \"merlin.loc\"
@@ -194,8 +194,8 @@
                     "ghost": false,
                     "attrs": [],
                     "kind": "pattern (test.ml[1,0+4]..test.ml[1,0+5])
-    Tpat_var \"f/274\"
-    value_mode global,many,join_shared(1[shared,unique])
+    Tpat_var \"f/275\"
+    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
   ",
                     "children": []
                   },
@@ -226,8 +226,8 @@
                         "ghost": false,
                         "attrs": [],
                         "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
-    Tpat_var \"x/276\"
-    value_mode map_comonadic(local_to_regional)(4[global,many,local,once]),join_shared(5[shared,unique])
+    Tpat_var \"x/277\"
+    value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable .. local,once,nonportable]);join(shared,contended)(modevar#5[shared,contended .. unique,uncontended])
   ",
                         "children": []
                       },
@@ -457,8 +457,8 @@
     Tpat_construct \"Some\"
     [
       pattern (test.ml[4,57+9]..test.ml[4,57+12])
-        Tpat_var \"_aa/277\"
-        value_mode global,many,unique
+        Tpat_var \"_aa/278\"
+        value_mode global,many,portable;unique,uncontended
     ]
     None
   ",
@@ -476,8 +476,8 @@
                                         "ghost": false,
                                         "attrs": [],
                                         "kind": "pattern (test.ml[4,57+9]..test.ml[4,57+12])
-    Tpat_var \"_aa/277\"
-    value_mode global,many,unique
+    Tpat_var \"_aa/278\"
+    value_mode global,many,portable;unique,uncontended
   ",
                                         "children": []
                                       }

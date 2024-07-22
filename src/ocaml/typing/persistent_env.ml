@@ -416,16 +416,10 @@ type 'a sig_reader =
   -> flags:Cmi_format.pers_flags list
   -> 'a
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig =
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-let acknowledge_pers_struct penv modname import val_of_pers_sig =
-=======
 (* Add a persistent structure to the hash table and bind it in the [Env].
    Checks that OCaml source is allowed to refer to this module. *)
 
-let acknowledge_pers_struct penv modname import val_of_pers_sig =
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
+let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig =
   let {persistent_structures; _} = penv in
   let is_param = import.imp_is_param in
   let sign = import.imp_sign in

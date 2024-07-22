@@ -21,8 +21,11 @@ type ocaml = {
   pp                   : string with_workdir option;
   warnings             : Warnings.state;
   cmi_file             : string option;
+  parameters           : string list;
   as_parameter         : bool;
-  zero_alloc_check     : Clflags.Annotations.t;
+  as_argument_for      : string option;
+  zero_alloc_check     : Zero_alloc_annotations.t;
+  allow_illegal_crossing : bool;
 }
 
 val dump_ocaml : ocaml -> json

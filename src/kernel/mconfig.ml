@@ -23,8 +23,11 @@ type ocaml = {
   pp                   : string with_workdir option;
   warnings             : Warnings.state;
   cmi_file             : string option;
+  parameters           : string list;
   as_parameter         : bool;
-  zero_alloc_check     : Clflags.Annotations.t;
+  as_argument_for     : string option;
+  zero_alloc_check     : Zero_alloc_annotations.t;
+  allow_illegal_crossing : bool;
 }
 
 let dump_warnings st =
@@ -52,7 +55,7 @@ let dump_ocaml x = `Assoc [
     "warnings"             , dump_warnings x.warnings;
     "cmi_file"             , Json.option Json.string x.cmi_file;
     "as_parameter"         , `Bool x.as_parameter;
-    "zero_alloc_check"     , `String (Clflags.Annotations.to_string x.zero_alloc_check);
+    "zero_alloc_check"     , `String (Zero_alloc_annotations.to_string x.zero_alloc_check);
   ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -439,7 +442,7 @@ let ocaml_ignored_flags = [
   "-dflambda-no-invariants"; "-dflambda-verbose"; "-dinstr"; "-dinterf";
   "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer"; "-dshape";
   "-drawclambda"; "-drawflambda"; "-drawlambda"; "-dreload"; "-dscheduling";
-  "-dsel"; "-dsource"; "-dspill"; "-dsplit"; "-dstartup"; "-dtimings";
+  "-dsel"; "-dsource"; "-dspill"; "-dsplit"; "-dstartup"; "-dtimings"; "-dprofile";
   "-dtypedtree"; "-dtypes"; "-dump-pass"; "-fno-PIC"; "-fPIC"; "-g"; "-i";
   "-inlining-report"; "-keep-docs"; "-keep-docs"; "-keep-locs"; "-linkall";
   "-make_runtime"; "-make-runtime"; "-modern"; "-no-alias-deps"; "-noassert";
@@ -553,6 +556,7 @@ let ocaml_ignored_flags = [
   "-dletreclambda";
   "-cfg-zero-alloc-checker";
   "-no-cfg-zero-alloc-checker";
+  "-dcounters";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -596,6 +600,7 @@ let ocaml_ignored_parametrized_flags = [
   "-cfg-stack-checks-threshold";
   "-zero-alloc-checker-details-cutoff";
   "-zero-alloc-checker-join";
+  "-dgranularity";
 ]
 
 let ocaml_warnings_spec ~error =
@@ -760,18 +765,32 @@ let ocaml_flags = [
         {ocaml with cmi_file = Some cmi_file}),
     "<file>  Use the <file> interface to type-check"
   );
+  ( "-parameter",
+    Marg.param "module name" (fun parameter ocaml ->
+      {ocaml with parameters = parameter :: ocaml.parameters}),
+    "<module name> Compile the module with <module name> as a parameter."
+  );
   ( "-as-parameter",
     Marg.unit (fun ocaml -> {ocaml with as_parameter = true}),
-    " Compiles the interface as a parameter for an open module."
+    " Compile the interface as a parameter module."
+  );
+  ( "-as-argument-for",
+    Marg.param "module name" (fun as_argument_for ocaml ->
+      {ocaml with as_argument_for = Some as_argument_for}),
+    "<module name> Compile the module as an argument for the named parameter."
   );
   ( "-zero-alloc-check",
     Marg.param "string" (fun zero_alloc_str ocaml ->
-      match Clflags.Annotations.of_string zero_alloc_str with
+      match Zero_alloc_annotations.of_string zero_alloc_str with
       | Some zero_alloc_check -> {ocaml with zero_alloc_check}
       | None ->
           failwith ("Invalid value for -zero-alloc-check: " ^ zero_alloc_str)),
     " Check that annotated functions do not allocate \
-    and do not have indirect calls. "^Clflags.Annotations.doc
+    and do not have indirect calls. "^Zero_alloc_annotations.doc
+  );
+  ( "-allow-illegal-crossing",
+    Marg.unit (fun ocaml -> {ocaml with allow_illegal_crossing = true}),
+    "Type declarations will not be checked along the portability or contention axes"
   );
 ]
 
@@ -797,8 +816,11 @@ let initial = {
     pp                   = None;
     warnings             = Warnings.backup ();
     cmi_file             = None;
+    parameters           = [];
     as_parameter         = false;
-    zero_alloc_check     = Clflags.Annotations.Check_default;
+    as_argument_for      = None;
+    zero_alloc_check     = Zero_alloc_annotations.Check_default;
+    allow_illegal_crossing = false;
   };
   merlin = {
     build_path  = [];

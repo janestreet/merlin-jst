@@ -19,160 +19,6 @@ module Le_result = Misc_stdlib.Le_result
 
 [@@@warning "+9"]
 
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-(* CR layouts v2.8: remove this *)
-module Legacy = struct
-  type const = Jkind_types.const =
-    | Any
-    | Value
-    | Void
-    | Immediate64
-    | Immediate
-    | Float64
-    | Float32
-    | Word
-    | Bits32
-    | Bits64
-
-  let const_of_attribute : Builtin_attributes.jkind_attribute -> _ = function
-    | Immediate -> Immediate
-    | Immediate64 -> Immediate64
-
-  (** The function name is suffixed with "unchecked" to suggest that
-    it doesn't check whether the layouts extension is enabled.
-    It should be inverse to [string_of_const].
-  *)
-  let const_of_user_written_annotation_unchecked :
-      Jane_syntax.Jkind.t -> const option = function
-    | Primitive_layout_or_abbreviation const -> (
-      let Location.{ txt = name; _ } =
-        (const : Jane_syntax.Jkind.Const.t :> _ Location.loc)
-      in
-      match name with
-      | "any" -> Some Any
-      | "value" -> Some Value
-      | "void" -> Some Void
-      | "immediate64" -> Some Immediate64
-      | "immediate" -> Some Immediate
-      | "float64" -> Some Float64
-      | "float32" -> Some Float32
-      | "word" -> Some Word
-      | "bits32" -> Some Bits32
-      | "bits64" -> Some Bits64
-      | _ -> None)
-    | Default | Mod _ | With _ | Kind_of _ ->
-      Misc.fatal_error "XXX unimplemented"
-
-  let string_of_const const =
-    match const with
-    | Any -> "any"
-    | Value -> "value"
-    | Void -> "void"
-    | Immediate64 -> "immediate64"
-    | Immediate -> "immediate"
-    | Float64 -> "float64"
-    | Float32 -> "float32"
-    | Word -> "word"
-    | Bits32 -> "bits32"
-    | Bits64 -> "bits64"
-
-  let equal_const c1 c2 =
-    match c1, c2 with
-    | Any, Any
-    | Immediate64, Immediate64
-    | Immediate, Immediate
-    | Void, Void
-    | Value, Value
-    | Float64, Float64
-    | Float32, Float32
-    | Word, Word
-    | Bits32, Bits32
-    | Bits64, Bits64 ->
-      true
-    | ( ( Any | Immediate64 | Immediate | Void | Value | Float64 | Float32
-        | Word | Bits32 | Bits64 ),
-        _ ) ->
-      false
-end
-
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
-(* CR layouts v2.8: remove this *)
-module Legacy = struct
-  type const = Jkind_types.const =
-    | Any
-    | Value
-    | Void
-    | Immediate64
-    | Immediate
-    | Float64
-    | Float32
-    | Word
-    | Bits32
-    | Bits64
-
-  let const_of_attribute : Builtin_attributes.jkind_attribute -> _ = function
-    | Immediate -> Immediate
-    | Immediate64 -> Immediate64
-
-  (** The function name is suffixed with "unchecked" to suggest that
-    it doesn't check whether the layouts extension is enabled.
-    It should be inverse to [string_of_const].
-  *)
-  let const_of_user_written_annotation_unchecked :
-      Jane_syntax.Jkind.t -> const option = function
-    | Primitive_layout_or_abbreviation const -> (
-      let { txt = name; _ } =
-        (const : Jane_syntax.Jkind.Const.t :> _ Location.loc)
-      in
-      match name with
-      | "any" -> Some Any
-      | "value" -> Some Value
-      | "void" -> Some Void
-      | "immediate64" -> Some Immediate64
-      | "immediate" -> Some Immediate
-      | "float64" -> Some Float64
-      | "float32" -> Some Float32
-      | "word" -> Some Word
-      | "bits32" -> Some Bits32
-      | "bits64" -> Some Bits64
-      | _ -> None)
-    | Default | Mod _ | With _ | Kind_of _ ->
-      Misc.fatal_error "XXX unimplemented"
-
-  let string_of_const const =
-    match const with
-    | Any -> "any"
-    | Value -> "value"
-    | Void -> "void"
-    | Immediate64 -> "immediate64"
-    | Immediate -> "immediate"
-    | Float64 -> "float64"
-    | Float32 -> "float32"
-    | Word -> "word"
-    | Bits32 -> "bits32"
-    | Bits64 -> "bits64"
-
-  let equal_const c1 c2 =
-    match c1, c2 with
-    | Any, Any
-    | Immediate64, Immediate64
-    | Immediate, Immediate
-    | Void, Void
-    | Value, Value
-    | Float64, Float64
-    | Float32, Float32
-    | Word, Word
-    | Bits32, Bits32
-    | Bits64, Bits64 ->
-      true
-    | ( ( Any | Immediate64 | Immediate | Void | Value | Float64 | Float32
-        | Word | Bits32 | Bits64 ),
-        _ ) ->
-      false
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
 (* A *sort* is the information the middle/back ends need to be able to
    compile a manipulation (storing, passing, etc) of a runtime value. *)
 module Sort = Jkind_types.Sort
@@ -362,14 +208,14 @@ module Nullability = struct
     | Maybe_null, Maybe_null -> true
     | (Non_null | Maybe_null), _ -> false
 
-  let less_or_equal n1 n2 : Misc.Le_result.t =
+  let less_or_equal n1 n2 : Le_result.t =
     match n1, n2 with
     | Non_null, Non_null -> Equal
     | Non_null, Maybe_null -> Less
     | Maybe_null, Non_null -> Not_le
     | Maybe_null, Maybe_null -> Equal
 
-  let le n1 n2 = Misc.Le_result.is_le (less_or_equal n1 n2)
+  let le n1 n2 = Le_result.is_le (less_or_equal n1 n2)
 
   let meet n1 n2 =
     match n1, n2 with
@@ -829,7 +675,7 @@ module Const = struct
       | Nullability of Nullability.t
 
     let parse_mode unparsed_mode =
-      let { txt = name; loc } =
+      let { txt = name; loc } : _ Location.loc =
         (unparsed_mode : Jane_syntax.Mode_expr.Const.t :> _ Location.loc)
       in
       match name with
@@ -859,7 +705,7 @@ module Const = struct
       (jkind : Jane_syntax.Jkind.t) : t =
     match jkind with
     | Abbreviation const -> (
-      let { txt = name; loc } =
+      let { txt = name; loc } : _ Location.loc =
         (const : Jane_syntax.Jkind.Const.t :> _ Location.loc)
       in
       (* CR layouts 2.8: move this to predef *)
@@ -1547,6 +1393,8 @@ module Format_history = struct
         "it's the layout polymorphic type in an external declaration@ \
          ([@@layout_poly] forces all variables of layout 'any' to be@ \
          representable at call sites)"
+    | Merlin ->
+      fprintf ppf "merlin needed to create a fake AST node"
 
   let format_concrete_legacy_creation_reason ppf :
       History.concrete_legacy_creation_reason -> unit = function
@@ -1556,8 +1404,6 @@ module Format_history = struct
     | Wildcard -> fprintf ppf "it's a _ in the type"
     | Unification_var -> fprintf ppf "it's a fresh unification variable"
     | Array_element -> fprintf ppf "it's the type of an array element"
-    | Merlin ->
-      fprintf ppf "merlin needed to create a fake AST node"
 
   let rec format_annotation_context ppf : History.annotation_context -> unit =
     function
@@ -1844,7 +1690,7 @@ module Violation = struct
     let mismatch_type =
       match t.violation with
       | Not_a_subjkind (k1, k2) ->
-        if Misc.Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
+        if Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
         then Mode
         else Layout
       | No_intersection _ -> Layout
@@ -2044,6 +1890,7 @@ module Debug_printers = struct
     | Statement -> fprintf ppf "Statement"
     | Optional_arg_default -> fprintf ppf "Optional_arg_default"
     | Layout_poly_in_external -> fprintf ppf "Layout_poly_in_external"
+    | Merlin -> fprintf ppf "Merlin"
 
   let concrete_legacy_creation_reason ppf :
       History.concrete_legacy_creation_reason -> unit = function
@@ -2052,7 +1899,6 @@ module Debug_printers = struct
     | Wildcard -> fprintf ppf "Wildcard"
     | Unification_var -> fprintf ppf "Unification_var"
     | Array_element -> fprintf ppf "Array_element"
-    | Merlin -> fprintf ppf "Merlin"
 
   let rec annotation_context ppf : History.annotation_context -> unit = function
     | Type_declaration p -> fprintf ppf "Type_declaration %a" Path.print p

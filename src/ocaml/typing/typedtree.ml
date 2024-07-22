@@ -1181,31 +1181,9 @@ let rec exp_is_nominal exp =
   | Texp_variant (_, None)
   | Texp_construct (_, _, [], _) ->
       true
-<<<<<<< janestreet/merlin-jst:merge-5.1.1minus-19
-||||||| ocaml-flambda/flambda-backend:70ec392f795f68d1ec17c7889a0a6ff6c853e11a
   | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
       exp_is_nominal parent
   | _ -> false
-
-let function_arity params body =
-  List.length params +
-  match body with
-  | Tfunction_body _ -> 0
-  | Tfunction_cases _ -> 1
-=======
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-19
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
-
-let function_arity params body =
-  List.length params +
-  match body with
-  | Tfunction_body _ -> 0
-  | Tfunction_cases _ -> 1
 
 
 (* Merlin specific *)

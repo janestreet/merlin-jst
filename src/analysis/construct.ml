@@ -106,7 +106,8 @@ module Util = struct
   (** [find_values_for_type env typ] searches the environment [env] for
   {i values} with a return type compatible with [typ] *)
   let find_values_for_type env typ =
-    let aux name path value_description acc =
+    (* TODO: Merlin modes *)
+    let aux name path value_description _mode acc =
       let value_description =
         Subst.Lazy.force_value_description value_description
       in
@@ -371,7 +372,7 @@ module Gen = struct
           let args =
             List.map
               ty_args
-              ~f:(fun (typ, (_ : Mode.Global_flag.t)) -> exp_or_hole env typ)
+              ~f:(fun arg -> exp_or_hole env arg.ca_type)
           in
           let args_combinations = Util.combinations args in
           let exps = List.map args_combinations
@@ -505,11 +506,15 @@ module Gen = struct
               val_kind = Val_reg;
               val_loc = Location.none;
               val_attributes = [];
-              val_zero_alloc = Builtin_attributes.Default_zero_alloc;
+              val_zero_alloc = Zero_alloc.default;
+              val_modalities = Mode.Modality.Value.id;
               val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
             }
           in
-          let env = Env.add_value (Ident.create_local name) value_description env in
+          let env =
+            Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
+              value_description env
+          in
           let exps = arrow_rhs env tyright in
           List.map exps ~f:(fun expr ->
               match Jane_syntax.Expression.of_ast expr with
