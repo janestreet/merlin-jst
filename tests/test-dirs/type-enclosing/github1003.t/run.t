@@ -27,7 +27,7 @@
         "line": 5,
         "col": 12
       },
-      "type": "sig val foo : int @@ global many portable end",
+      "type": "sig val foo : int end",
       "tail": "no"
     },
     {

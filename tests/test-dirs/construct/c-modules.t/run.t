@@ -48,18 +48,12 @@ Simple module construction
       \"Construct does not handle classes yet. Please replace this comment by [croom]'s definition.\"]
     module type Another  = sig val i : int end
     module type Sig  =
-      sig
-        type t
-        and b
-        val f : (int) -> float @@ portable
-        module type STyp  = sig  end
-        module D : Another
-      end
+      sig type t
+          and b module type STyp  = sig  end module D : Another end
     module Submod =
       struct
         type t
         and b
-        let f = _
         module type STyp  = sig  end
         module D = struct let i = _ end
       end

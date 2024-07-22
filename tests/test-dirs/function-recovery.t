@@ -20,7 +20,7 @@
                 <def>
                   pattern (test.ml[2,79+6]..test.ml[2,79+13])
                     Tpat_var \"problem/275\"
-                    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
+                    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
                   expression (test.ml[2,79+16]..test.ml[2,79+24])
                     Texp_variant \"Problem\"
                     None
@@ -70,7 +70,7 @@
         <def>
           pattern (type.ml[1,0+4]..type.ml[1,0+5])
             Tpat_var \"f/275\"
-            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
               Texp_newtype'  t/277
@@ -195,7 +195,7 @@
                     "attrs": [],
                     "kind": "pattern (test.ml[1,0+4]..test.ml[1,0+5])
     Tpat_var \"f/275\"
-    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
+    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
   ",
                     "children": []
                   },

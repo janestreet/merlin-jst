@@ -10,7 +10,7 @@
         "line": 5,
         "col": 9
       },
-      "type": "sig val y : int @@ global many portable end",
+      "type": "sig val y : int end",
       "tail": "no"
     },
     {

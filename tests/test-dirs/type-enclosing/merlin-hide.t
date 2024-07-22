@@ -20,7 +20,7 @@ accessible:
           "line": 5,
           "col": 3
         },
-        "type": "sig val x : int @@ global many portable end",
+        "type": "sig val x : int end",
         "tail": "no"
       },
       {
@@ -32,7 +32,7 @@ accessible:
           "line": 5,
           "col": 3
         },
-        "type": "sig val x : int @@ global many portable end",
+        "type": "sig val x : int end",
         "tail": "no"
       }
     ],

@@ -94,7 +94,7 @@
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
             Tpat_var \"f/278\"
-            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
             region true
@@ -255,7 +255,7 @@
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
             Tpat_var \"f/278\"
-            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
             region true
@@ -592,7 +592,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/276\"
-            value_mode meet(local,once,nonportable)(modevar#2[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#3[shared,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#2[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#3[shared,uncontended .. unique,uncontended])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -609,7 +609,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Texp_tuple
-            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);subtract_shared,contended(modevar#3[shared,contended .. unique,uncontended])
+            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);subtract_shared,contended(modevar#3[shared,uncontended .. unique,uncontended])
             [
               <tuple component>
               Label: None
@@ -641,7 +641,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/277\"
-            value_mode meet(local,once,nonportable)(modevar#4[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#5[shared,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#4[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#5[shared,uncontended .. unique,uncontended])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
@@ -658,7 +658,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Texp_tuple
-            alloc_mode map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]);subtract_shared,contended(modevar#5[shared,contended .. unique,uncontended])
+            alloc_mode map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]);subtract_shared,contended(modevar#5[shared,uncontended .. unique,uncontended])
             [
               <tuple component>
               Label: None

@@ -437,5 +437,13 @@ end
 let _ =
   assert Universe.(is maximal);
   (* It's safe to call this here because we've confirmed that we can. *)
-  unconditionally_enable_maximal_without_checks ()
+  unconditionally_enable_maximal_without_checks ();
+  (* For now, we override the mode extension to be in Beta instead of Alpha. At the
+     moment, modes are unnecessarily printed when the mode extension is Alpha. The plan
+     is to leave this behavior until modes increase in maturity or printing changes. *)
+  let lower_mode_extension = function
+  | Pair (Mode, Alpha) -> Pair (Mode, Maturity.Beta)
+  | _ as pair -> pair
+in
+  extensions := List.map lower_mode_extension !extensions
 ;;

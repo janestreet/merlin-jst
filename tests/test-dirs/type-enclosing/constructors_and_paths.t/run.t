@@ -155,7 +155,7 @@ the expression reconstructed from  (M|.A 3).
         "line": 24,
         "col": 15
       },
-      "type": "sig type t = A of int val x : int @@ global many portable end",
+      "type": "sig type t = A of int val x : int end",
       "tail": "no"
     },
     {
@@ -213,7 +213,7 @@ the expression reconstructed from  (M|.A 3).
         "line": 26,
         "col": 9
       },
-      "type": "sig type t = A of int val x : int @@ global many portable end",
+      "type": "sig type t = A of int val x : int end",
       "tail": "no"
     },
     {
