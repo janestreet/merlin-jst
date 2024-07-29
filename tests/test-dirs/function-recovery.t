@@ -39,7 +39,7 @@
                     alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[shared,contended .. unique,uncontended])
                     []
                     Tfunction_body
-                      expression (test.ml[3,104+11]..test.ml[3,104+28]) ghost
+                      expression (test.ml[3,104+11]..test.ml[3,104+28])
                         attribute \"merlin.incorrect\"
                           []
                         attribute \"merlin.saved-parts\"

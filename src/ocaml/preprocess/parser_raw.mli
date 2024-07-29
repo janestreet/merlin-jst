@@ -358,7 +358,7 @@ module MenhirInterpreter : sig
     | N_type_parameter : (Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) nonterminal
     | N_type_longident : (Longident.t) nonterminal
     | N_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
-    | N_type_constraint : (Jane_syntax.N_ary_functions.type_constraint) nonterminal
+    | N_type_constraint : (Parsetree.type_constraint) nonterminal
     | N_tuple_type : (Parsetree.core_type) nonterminal
     | N_toplevel_phrase : (Parsetree.toplevel_phrase) nonterminal
     | N_toplevel_directive : (Parsetree.toplevel_phrase) nonterminal
@@ -367,7 +367,7 @@ module MenhirInterpreter : sig
     | N_structure_item : (Parsetree.structure_item) nonterminal
     | N_structure : (Parsetree.structure) nonterminal
     | N_strict_function_or_labeled_tuple_type : (Parsetree.core_type) nonterminal
-    | N_strict_binding_modes : (Ocaml_parsing.Jane_syntax.Mode_expr.t -> Parsetree.expression) nonterminal
+    | N_strict_binding_modes : (Parsetree.mode_expression -> Parsetree.expression) nonterminal
     | N_str_exception_declaration : (Parsetree.type_exception * string Location.loc option) nonterminal
     | N_single_attr_id : (string) nonterminal
     | N_simple_pattern_not_ident : (Parsetree.pattern) nonterminal
@@ -402,7 +402,7 @@ module MenhirInterpreter : sig
     | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Parsetree.arg_label * Parsetree.expression) list) nonterminal
     | N_reversed_nonempty_llist_functor_arg_ : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_reversed_nonempty_llist_comprehension_clause_ : (Jane_syntax.Comprehensions.clause list) nonterminal
-    | N_reversed_nonempty_concat_fun_param_as_list_ : (Jane_syntax.N_ary_functions.function_param list) nonterminal
+    | N_reversed_nonempty_concat_fun_param_as_list_ : (Parsetree.function_param list) nonterminal
     | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
     | N_reversed_labeled_tuple_pattern_pattern_no_exn_ : (Asttypes.closed_flag * (string option * Parsetree.pattern) list) nonterminal
     | N_reversed_labeled_tuple_pattern_pattern_ : (Asttypes.closed_flag * (string option * Parsetree.pattern) list) nonterminal
@@ -439,7 +439,7 @@ module MenhirInterpreter : sig
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
     | N_optional_atat_modalities_expr : (Parsetree.modality Location.loc list) nonterminal
-    | N_option_type_constraint_ : (Jane_syntax.N_ary_functions.type_constraint option) nonterminal
+    | N_option_type_constraint_ : (Parsetree.type_constraint option) nonterminal
     | N_option_preceded_EQUAL_seq_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_pattern__ : (Parsetree.pattern option) nonterminal
     | N_option_preceded_EQUAL_module_type__ : (Parsetree.module_type option) nonterminal
@@ -456,15 +456,13 @@ module MenhirInterpreter : sig
     | N_open_declaration : (Parsetree.module_expr Parsetree.open_infos * string Location.loc option) nonterminal
     | N_nonempty_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
     | N_nonempty_list_raw_string_ : (string list) nonterminal
-    | N_nonempty_list_newtype_ : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
-  list) nonterminal
-    | N_nonempty_list_mode_legacy_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
-    | N_nonempty_list_mode_ : (Jane_syntax.Mode_expr.Const.t list) nonterminal
+    | N_nonempty_list_newtype_ : ((string Location.loc * Parsetree.jkind_annotation Location.loc option) list) nonterminal
+    | N_nonempty_list_mode_legacy_ : (Parsetree.mode_const_expression list) nonterminal
+    | N_nonempty_list_mode_ : (Parsetree.mode_const_expression list) nonterminal
     | N_nonempty_list_modality_ : (Parsetree.modality Location.loc list) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
-    | N_newtypes : ((string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option)
-  list) nonterminal
-    | N_newtype : (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation option) nonterminal
+    | N_newtypes : ((string Location.loc * Parsetree.jkind_annotation Location.loc option) list) nonterminal
+    | N_newtype : (string Location.loc * Parsetree.jkind_annotation Location.loc option) nonterminal
     | N_name_tag : (string) nonterminal
     | N_mutable_virtual_flags : (Asttypes.mutable_flag * Asttypes.virtual_flag) nonterminal
     | N_mutable_or_global_flag : (Asttypes.mutable_flag * Parsetree.modality Location.loc list) nonterminal
@@ -511,7 +509,7 @@ module MenhirInterpreter : sig
     | N_list_and_class_declaration_ : (Parsetree.class_expr Parsetree.class_infos list) nonterminal
     | N_letop_bindings : (Parsetree.pattern * Parsetree.expression * Parsetree.binding_op list) nonterminal
     | N_letop_binding_body : (Parsetree.pattern * Parsetree.expression) nonterminal
-    | N_let_pattern : (Parsetree.pattern * Jane_syntax.Mode_expr.t) nonterminal
+    | N_let_pattern : (Parsetree.pattern * Parsetree.mode_expression) nonterminal
     | N_let_bindings_no_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression *
@@ -524,14 +522,14 @@ module MenhirInterpreter : sig
     | N_labeled_simple_pattern : (Parsetree.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Parsetree.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal
-    | N_label_let_pattern : (string * Parsetree.pattern * Jane_syntax.Mode_expr.t) nonterminal
+    | N_label_let_pattern : (string * Parsetree.pattern * Parsetree.mode_expression) nonterminal
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal
     | N_label_declaration_semi : (Parsetree.label_declaration) nonterminal
     | N_label_declaration : (Parsetree.label_declaration) nonterminal
     | N_kind_abbreviation_decl : (string Location.loc * Ocaml_parsing.Jane_syntax.Jkind.annotation) nonterminal
     | N_jkind_constraint : (Ocaml_parsing.Jane_syntax.Jkind.annotation) nonterminal
     | N_jkind_annotation : (Ocaml_parsing.Jane_syntax.Jkind.annotation) nonterminal
-    | N_jkind : (Jane_syntax.Jkind.t) nonterminal
+    | N_jkind : (Parsetree.jkind_annotation) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
     | N_index_mod : (string) nonterminal
@@ -556,10 +554,10 @@ module MenhirInterpreter : sig
     | N_functor_arg : (Lexing.position * Parsetree.functor_parameter) nonterminal
     | N_function_type : (Parsetree.core_type) nonterminal
     | N_fun_seq_expr : (Parsetree.expression) nonterminal
-    | N_fun_params : (Jane_syntax.N_ary_functions.function_param list) nonterminal
-    | N_fun_param_as_list : (Jane_syntax.N_ary_functions.function_param list) nonterminal
+    | N_fun_params : (Parsetree.function_param list) nonterminal
+    | N_fun_param_as_list : (Parsetree.function_param list) nonterminal
     | N_fun_expr : (Parsetree.expression) nonterminal
-    | N_fun_body : (Jane_syntax.N_ary_functions.function_body) nonterminal
+    | N_fun_body : (Parsetree.function_body) nonterminal
     | N_formal_class_parameters : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_floating_attribute : (Parsetree.attribute) nonterminal
     | N_extension_constructor_rebind_epsilon_ : (Parsetree.extension_constructor) nonterminal
@@ -595,8 +593,8 @@ module MenhirInterpreter : sig
     | N_attr_payload : (Parsetree.payload) nonterminal
     | N_attr_id : (string Location.loc) nonterminal
     | N_atomic_type : (Parsetree.core_type) nonterminal
-    | N_atat_mode_expr : (Jane_syntax.Mode_expr.t) nonterminal
-    | N_at_mode_expr : (Jane_syntax.Mode_expr.t) nonterminal
+    | N_atat_mode_expr : (Parsetree.mode_expression) nonterminal
+    | N_at_mode_expr : (Parsetree.mode_expression) nonterminal
     | N_any_longident : (Longident.t) nonterminal
     | N_and_let_binding : (Ast_helper.let_binding) nonterminal
     | N_alias_type : (Parsetree.core_type) nonterminal

@@ -496,7 +496,7 @@ module Gen = struct
         | Tarrow ((label,_,_), tyleft, tyright, _) ->
           let label, argument, name = make_arg env label tyleft in
           let param =
-            { Jane_syntax.N_ary_functions.pparam_desc =
+            { Parsetree.pparam_desc =
                 Pparam_val (label, None, argument);
               pparam_loc = Location.none;
             }
@@ -517,13 +517,17 @@ module Gen = struct
           in
           let exps = arrow_rhs env tyright in
           List.map exps ~f:(fun expr ->
-              match Jane_syntax.Expression.of_ast expr with
-              | Some (Jexp_n_ary_function (params, constraint_, body), []) ->
-                  Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
-                    (param :: params, constraint_, body)
+              match expr.Parsetree.pexp_desc with
+              | Pexp_function (params, constraint_, body) ->
+                  { expr
+                    with pexp_desc =
+                           Pexp_function (param :: params, constraint_, body)
+                  }
               | _ ->
-                  Jane_syntax.N_ary_functions.expr_of ~loc:Location.none
-                    ([ param ], None, Pfunction_body expr))
+                  Ast_helper.Exp.function_
+                    [ param ]
+                    None
+                    (Pfunction_body expr))
         | Ttuple types ->
           let choices =
             List.map types ~f:(fun (lbl, ty) ->
@@ -584,7 +588,7 @@ module Gen = struct
 end
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
-  | Pexp_fun _
+  | Pexp_function (_, _, Pfunction_body _)
   | Pexp_lazy _
   | Pexp_apply _
   | Pexp_variant (_, Some _)
