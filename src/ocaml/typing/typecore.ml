@@ -6142,7 +6142,7 @@ and type_expect_
         exp_extra = (exp_extra, loc, sexp.pexp_attributes) :: arg.exp_extra;
       }
   | Pexp_send (e, {txt=met}) ->
-    submode ~loc ~env Mode.Value.legacy expected_mode;    
+    submode ~loc ~env Mode.Value.legacy expected_mode;
     let obj = type_exp env mode_legacy e in
     let pm = position_and_mode env expected_mode sexp in
     begin try
@@ -6869,51 +6869,12 @@ and type_binding_op_ident env s =
 
 and type_function
     env (expected_mode : expected_mode) ty_expected
-    params_suffix body_constraint body ~first ~(in_function : in_function)
-  : type_function_result =
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-  (* The "rest of the function" extends from the start of the first parameter
-     to the end of the overall function. The parser does not construct such
-     a location so we forge one for type errors.
-  *)
-  let loc : Location.t =
-    let open Jane_syntax.N_ary_functions in
-    let { loc_fun; _ } = in_function in
-    match params_suffix, body with
-    | param :: _, _ ->
-        { loc_start = param.pparam_loc.loc_start;
-          loc_end = loc_fun.loc_end;
-          loc_ghost = true;
-        }
-    | [], Pfunction_body pexp -> pexp.pexp_loc
-    | [], Pfunction_cases (_, loc_cases, _) -> loc_cases
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
       params_suffix body_constraint body ~first ~in_function
   : type_function_result
   =
-  let open Jane_syntax.N_ary_functions in
-  let { ty_fun; loc_fun; _ } = in_function in
-  (* The "rest of the function" extends from the start of the first parameter
-     to the end of the overall function. The parser does not construct such
-     a location so we forge one for type errors.
-  *)
-  let loc : Location.t =
-    match params_suffix, body with
-    | param :: _, _ ->
-        { loc_start = param.pparam_loc.loc_start;
-          loc_end = loc_fun.loc_end;
-          loc_ghost = true;
-        }
-    | [], Pfunction_body pexp -> pexp.pexp_loc
-    | [], Pfunction_cases (_, loc_cases, _) -> loc_cases
-=======
-      params_suffix body_constraint body ~first ~in_function
-  : type_function_result
-  =
-  let { ty_fun; loc_fun; _ } = in_function in
+  let { loc_fun; _ } = in_function in
   let loc =
     loc_rest_of_function ~first ~loc_function:loc_fun params_suffix body
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
   in
   Msupport.with_saved_types (fun () ->
     let saved = save_levels () in
@@ -6961,7 +6922,6 @@ and type_function_
       params_suffix body_constraint body ~loc ~first ~in_function
   : type_function_result
   =
-  let open Jane_syntax.N_ary_functions in
   (* Merlin: [loc] is computed in [type_function] and passed through to
      here. (We use it in the error recovery in [type_function].)
   *)

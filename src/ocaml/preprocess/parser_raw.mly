@@ -32,14 +32,7 @@ open Parsetree
 open Ast_helper
 open Docstrings
 open Docstrings.WithMenhir
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
 open Msupport_parsing
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-module N_ary = Jane_syntax.N_ary_functions
-module Mode = Jane_syntax.Mode_expr
-=======
-module Mode = Jane_syntax.Mode_expr
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc
@@ -276,21 +269,7 @@ let mkexp_desc_type_constraint e t =
   | Pcoerce(t1, t2)  -> Pexp_coerce(e, t1, t2)
 
 let mkexp_type_constraint ?(ghost=false) ~loc e t =
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-  let desc =
-    match t with
-  | Jane_syntax.N_ary_functions.Pconstraint t -> Pexp_constraint(e, t)
-  | Jane_syntax.N_ary_functions.Pcoerce(t1, t2)  -> Pexp_coerce(e, t1, t2)
-  in
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-  let desc =
-    match t with
-  | N_ary.Pconstraint t -> Pexp_constraint(e, t)
-  | N_ary.Pcoerce(t1, t2)  -> Pexp_coerce(e, t1, t2)
-  in
-=======
   let desc = mkexp_desc_type_constraint e t in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
   if ghost then ghexp ~loc desc
   else mkexp ~loc desc
 
@@ -784,12 +763,6 @@ let class_of_let_bindings ~loc lbs body =
    parameter.
 *)
 let all_params_as_newtypes =
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-  let open Jane_syntax.N_ary_functions in
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-  let open N_ary in
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
   let is_newtype { pparam_desc; _ } =
     match pparam_desc with
     | Pparam_newtype _ -> true
@@ -813,13 +786,7 @@ let mkghost_newtype_function_body newtypes body_constraint body ~loc =
   let wrapped_body =
     match body_constraint with
     | None -> body
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-    | Some { Jane_syntax.N_ary_functions.type_constraint; mode_annotations } ->
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-    | Some { N_ary.type_constraint; mode_annotations } ->
-=======
     | Some { type_constraint; mode_annotations } ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
         let {Location.loc_start; loc_end} = body.pexp_loc in
         let loc = loc_start, loc_end in
         let body = mkexp_type_constraint ~ghost:true ~loc body type_constraint in
@@ -827,31 +794,11 @@ let mkghost_newtype_function_body newtypes body_constraint body ~loc =
   in
   mk_newtypes ~loc newtypes wrapped_body
 
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-let n_ary_function expr ~attrs ~loc =
-  wrap_exp_attrs ~loc (Jane_syntax.N_ary_functions.expr_of expr ~loc:(make_loc loc)) attrs
-
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-let n_ary_function expr ~attrs ~loc =
-  wrap_exp_attrs ~loc (N_ary.expr_of expr ~loc:(make_loc loc)) attrs
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
 let mkfunction ~loc ~attrs params body_constraint body =
   match body with
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-  | Jane_syntax.N_ary_functions.Pfunction_cases _ ->
-      n_ary_function (params, body_constraint, body) ~loc ~attrs
-  | Jane_syntax.N_ary_functions.Pfunction_body body_exp -> begin
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-  | N_ary.Pfunction_cases _ ->
-      n_ary_function (params, body_constraint, body) ~loc ~attrs
-  | N_ary.Pfunction_body body_exp -> begin
-=======
   | Pfunction_cases _ ->
       mkexp_attrs (Pexp_function (params, body_constraint, body)) attrs ~loc
   | Pfunction_body body_exp -> begin
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
     (* If all the params are newtypes, then we don't create a function node;
        we create nested newtype nodes. *)
       match all_params_as_newtypes params with
@@ -2888,13 +2835,7 @@ let_pattern [@recovery default_pattern_and_mode ()]:
       MINUSGREATER fun_body
       { let body_constraint =
           Option.map
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-            (fun x : Jane_syntax.N_ary_functions.function_constraint ->
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-            (fun x : N_ary.function_constraint ->
-=======
             (fun x ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
               { type_constraint = Pconstraint x
               ; mode_annotations = Jane_syntax.Mode_expr.empty
               })
@@ -3287,21 +3228,9 @@ let_binding_body_no_punning:
         let typ, modes1 = $3 in
         let t =
           Option.map (function
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-          | Jane_syntax.N_ary_functions.Pconstraint t ->
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-          | N_ary.Pconstraint t ->
-=======
           | Pconstraint t ->
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
              Pvc_constraint { locally_abstract_univars = []; typ=t }
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-          | Jane_syntax.N_ary_functions.Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-          | N_ary.Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
-=======
           | Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
           ) typ
         in
         let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
@@ -3438,13 +3367,7 @@ strict_binding_modes:
   (* CR zqian: The above [type_constraint] should be replaced by [constraint_]
     to support mode annotation *)
     { fun mode_annotations ->
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-        let constraint_ : Jane_syntax.N_ary_functions.function_constraint option =
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-        let constraint_ : N_ary.function_constraint option =
-=======
         let constraint_ : function_constraint option =
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
           match $2 with
           | None -> None
           | Some type_constraint -> Some { type_constraint; mode_annotations }
@@ -3462,39 +3385,15 @@ fun_body:
   | FUNCTION ext_attributes match_cases
       { let ext, attrs = $2 in
         match ext with
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-        | None -> Jane_syntax.N_ary_functions.Pfunction_cases ($3, make_loc $sloc, attrs)
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-        | None -> N_ary.Pfunction_cases ($3, make_loc $sloc, attrs)
-=======
         | None -> Pfunction_cases ($3, make_loc $sloc, attrs)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
         | Some _ ->
           (* function%foo extension nodes interrupt the arity *)
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-          let cases = Jane_syntax.N_ary_functions.Pfunction_cases ($3, make_loc $sloc, []) in
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-          let cases = N_ary.Pfunction_cases ($3, make_loc $sloc, []) in
-=======
           let cases = Pfunction_cases ($3, make_loc $sloc, []) in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
           let function_ = mkfunction [] None cases ~loc:$sloc ~attrs:$2 in
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-          Jane_syntax.N_ary_functions.Pfunction_body function_
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-          N_ary.Pfunction_body function_
-=======
           Pfunction_body function_
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
       }
   | fun_seq_expr
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-      { Jane_syntax.N_ary_functions.Pfunction_body $1 }
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-      { N_ary.Pfunction_body $1 }
-=======
       { Pfunction_body $1 }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
 ;
 %inline match_cases:
   xs = preceded_or_separated_nonempty_llist(BAR, match_case)
@@ -3522,38 +3421,20 @@ fun_param_as_list:
         in
         List.map
           (fun (newtype, jkind) ->
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-             { Jane_syntax.N_ary_functions.pparam_loc = loc;
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-             { N_ary.pparam_loc = loc;
-=======
              { pparam_loc = loc;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
                pparam_desc = Pparam_newtype (newtype, jkind)
              })
           ty_params
       }
   | LPAREN TYPE mkrhs(LIDENT) COLON jkind_annotation RPAREN
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-      { [ { Jane_syntax.N_ary_functions.pparam_loc = make_loc $sloc;
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-      { [ { N_ary.pparam_loc = make_loc $sloc;
-=======
       { [ { pparam_loc = make_loc $sloc;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
             pparam_desc = Pparam_newtype ($3, Some $5)
           }
         ]
       }
   | labeled_simple_pattern
       { let a, b, c = $1 in
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-        [ { Jane_syntax.N_ary_functions.pparam_loc = make_loc $sloc;
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-        [ { N_ary.pparam_loc = make_loc $sloc;
-=======
         [ { pparam_loc = make_loc $sloc;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
             pparam_desc = Pparam_val (a, b, c)
           }
         ]
@@ -3683,25 +3564,9 @@ record_expr_content:
     { es }
 ;
 type_constraint:
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-    COLON core_type                             { N_ary.Pconstraint $2 }
-  | COLON core_type COLONGREATER core_type      { N_ary.Pcoerce (Some $2, $4) }
-  | COLONGREATER core_type                      { N_ary.Pcoerce (None, $2) }
-  | COLON error                                 { syntax_error() }
-  | COLONGREATER error                          { syntax_error() }
-;
-=======
     COLON core_type                             { Pconstraint $2 }
   | COLON core_type COLONGREATER core_type      { Pcoerce (Some $2, $4) }
   | COLONGREATER core_type                      { Pcoerce (None, $2) }
-  | COLON error                                 { syntax_error() }
-  | COLONGREATER error                          { syntax_error() }
-;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
-    COLON core_type                             { Jane_syntax.N_ary_functions.Pconstraint $2 }
-  | COLON core_type COLONGREATER core_type      { Jane_syntax.N_ary_functions.Pcoerce (Some $2, $4) }
-  | COLONGREATER core_type                      { Jane_syntax.N_ary_functions.Pcoerce (None, $2) }
   (*| COLON error                                 { syntax_error() } *)
   (*| COLONGREATER error                          { syntax_error() } *)
 ;

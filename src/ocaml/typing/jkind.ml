@@ -675,17 +675,7 @@ module Const = struct
       | Nullability of Nullability.t
 
     let parse_mode unparsed_mode =
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-      let { txt = name; loc } : _ Location.loc =
-        (unparsed_mode : Jane_syntax.Mode_expr.Const.t :> _ Location.loc)
-      in
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-      let { txt = name; loc } =
-        (unparsed_mode : Jane_syntax.Mode_expr.Const.t :> _ Location.loc)
-      in
-=======
       let { Location.txt = name; loc } = unparsed_mode in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
       match name with
       | "global" -> Areality Global
       | "local" -> Areality Local
@@ -712,19 +702,7 @@ module Const = struct
   let rec of_user_written_annotation_unchecked_level
       (jkind : Jane_syntax.Jkind.t) : t =
     match jkind with
-<<<<<<< janestreet/merlin-jst:minus-20-upgrade
-    | Abbreviation const -> (
-      let { txt = name; loc } : _ Location.loc =
-        (const : Jane_syntax.Jkind.Const.t :> _ Location.loc)
-      in
-||||||| ocaml-flambda/flambda-backend:083a3787bfa74aa6341e67d5c95739db8cec8e5d
-    | Abbreviation const -> (
-      let { txt = name; loc } =
-        (const : Jane_syntax.Jkind.Const.t :> _ Location.loc)
-      in
-=======
     | Abbreviation { txt = name; loc } -> (
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-20
       (* CR layouts 2.8: move this to predef *)
       match name with
       (* CR layouts 3.0: remove this hack once non-null jkinds are out of alpha.
