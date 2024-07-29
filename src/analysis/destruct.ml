@@ -611,18 +611,16 @@ let remove_non_applied_optional_args (Parsetree.{ pexp_desc; _} as base_expr) =
      https://github.com/ocaml/merlin/issues/1770 *)
   match pexp_desc with
   | Parsetree.Pexp_apply (expr, args) ->
-    let args = List.concat_map ~f:(fun (label, (expr : Parsetree.expression)) ->
-      match label, expr.pexp_loc.loc_ghost, expr.pexp_desc with
-      | Asttypes.Optional _, true,
-        Pexp_construct ({loc=_; txt = Longident.Lident "None"}, _) ->
-        (* If the argument to an optional parameter is None and its location is ghost,
-           we choose not to generate the parameter under the assumption that the user
-           did not write it. Note that this could be the incorrect thing to do in the
-           presence of ppxes. But because this we check that the argument is None, this
-           is semantics-preserving if None is not shadowed. *)
-        []
-      | Asttypes.Optional str, false, _ ->
-        begin match need_recover_labeled_args expr.pexp_desc with
+    let args = List.concat_map ~f:(fun (label, expr) ->
+      match label with
+      | Asttypes.Optional str ->
+        (* If an optional parameter is not applied, its location is assumed to
+           be ghost, and the parameter should not be generated. *)
+        let loc = expr.Parsetree.pexp_loc in
+        if loc.loc_ghost
+        then []
+        else begin
+          match need_recover_labeled_args expr.pexp_desc with
           | Some e ->  [(Asttypes.Labelled str, e)]
           | None ->  [(label, expr)]
         end
