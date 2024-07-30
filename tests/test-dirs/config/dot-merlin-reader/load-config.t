@@ -11,7 +11,8 @@
   > EOF
   ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:STDLIB?:/stdlib))
 
-Use ocamlmerlin instead of $MERLIN for this test because $MERLIN configures the stdlib
+Use ocamlmerlin instead of $MERLIN for this test because $MERLIN configures the stdlib,
+but we want to observe the stdlib being configured via the STDLIB directive.
   $ echo | ocamlmerlin single dump-configuration -filename test.ml 2> /dev/null | jq '.value.merlin'
   {
     "build_path": [

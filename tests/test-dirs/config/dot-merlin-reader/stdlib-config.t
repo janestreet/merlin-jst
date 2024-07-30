@@ -1,4 +1,6 @@
-This test uses ocamlmerlin instead of $MERLIN because $MERLIN configures the stdlib
+This test uses ocamlmerlin instead of $MERLIN because $MERLIN configures the stdlib.
+Since this test is testing configuration of the stdlib, we want do not want the
+configuration that $MERLIN gives.
 
 The STDLIB directive in .merlin is respected
   $ cat > .merlin <<EOF
