@@ -24,5 +24,6 @@ fi
 
 ocamlmerlin "$@" -ocamllib-path "$MERLIN_TEST_OCAMLLIB_PATH" \
     | jq 'del(.timing)' \
+    | jq 'del(.heap_mbytes)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\n:g'
