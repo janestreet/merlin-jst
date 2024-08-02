@@ -81,7 +81,7 @@ let write ~file index =
       output_string oc magic_number;
       output_value oc (index : index))
 
-type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
+type file_content = Cmt of Cmt_format.cmt_infos | Cms of Cms_format.cms_infos | Index of index | Unknown
 
 let read ~file =
   let ic = open_in_bin file in

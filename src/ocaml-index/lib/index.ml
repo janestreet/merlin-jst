@@ -149,6 +149,24 @@ let index_of_artifact
   in
   { defs; approximated; cu_shape; stats; root_directory = None }
 
+let shape_of_artifact ~impl_shape ~modname =
+  let cu_shape = Hashtbl.create 1 in
+  let modname = Compilation_unit.name_as_string modname in
+  Option.iter (Hashtbl.add cu_shape modname) impl_shape;
+  {
+    defs = Shape.Uid.Map.empty;
+    approximated = Shape.Uid.Map.empty;
+    cu_shape;
+    stats = Stats.empty;
+    root_directory = None;
+  }
+
+let shape_of_cmt { Cmt_format.cmt_impl_shape; cmt_modname; _ }  =
+  shape_of_artifact ~impl_shape:cmt_impl_shape ~modname:cmt_modname
+
+let shape_of_cms { Cms_format.cms_impl_shape; cms_modname; _ }  =
+  shape_of_artifact ~impl_shape:cms_impl_shape ~modname:cms_modname
+
 let index_of_cmt ~root ~build_path cmt_infos =
   let {
     Cmt_format.cmt_loadpath;
@@ -256,6 +274,35 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
                   exit 1)
         in
         merge_index ~store_shapes index ~into)
+      initial_index files
+  in
+  write ~file:output_file final_index
+
+let gather_shapes ~output_file files =
+  let initial_index =
+    {
+      defs = Shape.Uid.Map.empty;
+      approximated = Shape.Uid.Map.empty;
+      cu_shape = Hashtbl.create 64;
+      stats = Stats.empty;
+      root_directory = None;
+    }
+  in
+  let final_index =
+    List.fold_left
+      (fun into file ->
+         let index =
+           match Cache.read file with
+           | Cmt cmt_infos -> Some (shape_of_cmt cmt_infos)
+           | Cms cmt_infos -> Some (shape_of_cms cmt_infos)
+           | Index index -> Some index
+           | Unknown | exception _ ->
+             Log.error "Not a valid file %S" file;
+             None
+         in
+         match index with
+         | None -> into
+         | Some index -> merge_index ~store_shapes:true index ~into)
       initial_index files
   in
   write ~file:output_file final_index

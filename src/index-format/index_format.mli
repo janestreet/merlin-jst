@@ -30,6 +30,7 @@ val add : Lid_set.t Uid_map.t -> Shape.Uid.t -> Lid_set.t -> Lid_set.t Uid_map.t
 
 type file_content =
   | Cmt of Cmt_format.cmt_infos
+  | Cms of Cms_format.cms_infos
   | Index of index
   | Unknown
 
