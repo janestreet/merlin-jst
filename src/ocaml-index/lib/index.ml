@@ -31,7 +31,7 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
     { name with txt = Longident.Lident name.txt }
   in
   let add_loc uid fragment acc =
-    match Misc_utils.loc_of_decl ~uid fragment with
+    match fragment with
     | None -> acc
     | Some lid ->
         let lid = to_located_lid lid in
@@ -83,28 +83,26 @@ let init_load_path_once ~do_not_use_cmt_loadpath =
       Load_path.(init ~auto_include:no_auto_include ~visible ~hidden:cmt_hidden);
       loaded := true)
 
-let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
-    cmt_infos =
-  let {
-    Cmt_format.cmt_loadpath;
-    cmt_impl_shape;
-    cmt_modname;
-    cmt_uid_to_decl;
-    cmt_ident_occurrences;
-    cmt_initial_env;
-    cmt_sourcefile;
-    cmt_source_digest;
-    _;
-  } =
-    cmt_infos
-  in
+let index_of_artifact
+    ~root
+    ~rewrite_root
+    ~build_path
+    ~do_not_use_cmt_loadpath
+    ~cmt_loadpath
+    ~cmt_impl_shape
+    ~cmt_modname
+    ~uid_to_loc
+    ~cmt_ident_occurrences
+    ~cmt_initial_env
+    ~cmt_sourcefile
+    ~cmt_source_digest
+  =
   init_load_path_once ~do_not_use_cmt_loadpath ~dirs:build_path cmt_loadpath;
   let module Reduce = Shape_reduce.Make (Reduce_conf) in
   let defs =
     if Option.is_none cmt_impl_shape then Shape.Uid.Map.empty
     else
-      gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty
-        cmt_uid_to_decl
+      gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty uid_to_loc
   in
   (* The list [cmt_ident_occurrences] associate each ident usage location in the
      module with its (partially) reduced shape. We finish the reduction and
@@ -151,6 +149,71 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
   in
   { defs; approximated; cu_shape; stats; root_directory = None }
 
+let index_of_cmt ~root ~build_path cmt_infos =
+  let {
+    Cmt_format.cmt_loadpath;
+    cmt_impl_shape;
+    cmt_modname;
+    cmt_uid_to_decl;
+    cmt_ident_occurrences;
+    cmt_initial_env;
+    cmt_sourcefile;
+    cmt_source_digest;
+    _;
+  } =
+    cmt_infos
+  in
+  let uid_to_loc =
+    Shape.Uid.Tbl.to_list cmt_uid_to_decl
+    |> List.map (fun (uid, fragment) -> uid, Misc_utils.loc_of_decl ~uid fragment)
+    |> Shape.Uid.Tbl.of_list
+  in
+  index_of_artifact
+    ~root
+    ~build_path
+    ~cmt_loadpath
+    ~cmt_impl_shape
+    ~cmt_modname
+    ~uid_to_loc
+    ~cmt_ident_occurrences
+    ~cmt_initial_env
+    ~cmt_sourcefile
+    ~cmt_source_digest
+
+let index_of_cms ~root ~build_path cms_infos =
+  let {
+    Cms_format.cms_impl_shape;
+    cms_modname;
+    cms_uid_to_loc;
+    cms_ident_occurrences;
+    cms_sourcefile;
+    cms_source_digest;
+    (* cms_load-path; cms_initial_env *)
+    _;
+  } =
+    cms_infos
+  in
+  let uid_to_loc =
+    Shape.Uid.Tbl.to_list cms_uid_to_loc
+    |> List.map (function
+      | (uid, l) -> uid, Some { Location.txt = ""; loc = l })
+    |> Shape.Uid.Tbl.of_list
+  in
+  index_of_artifact
+    ~root
+    ~build_path
+    (* CR: Add [loadpath], [initial_env] and
+       the txt component of locations to cms files. *)
+    (* Is .txt even needed? *)
+    ~cmt_loadpath:({visible=[]; hidden=[]})
+    ~cmt_impl_shape:cms_impl_shape
+    ~cmt_modname:cms_modname
+    ~uid_to_loc
+    ~cmt_ident_occurrences:cms_ident_occurrences
+    ~cmt_initial_env:Env.empty
+    ~cmt_sourcefile:cms_sourcefile
+    ~cmt_source_digest:cms_source_digest
+
 let merge_index ~store_shapes ~into index =
   let defs = merge index.defs into.defs in
   let approximated = merge index.approximated into.approximated in
@@ -177,7 +240,11 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
     List.fold_left
       (fun into file ->
         let index =
-          match Cmt_cache.read file with
+          match Cms_cache.read file with
+          | cms_item ->
+            index_of_cms ~root ~rewrite_root ~build_path
+              ~do_not_use_cmt_loadpath cms_item.cms_infos
+          | exception _ -> match Cmt_cache.read file with
           | cmt_item ->
               index_of_cmt ~root ~rewrite_root ~build_path
                 ~do_not_use_cmt_loadpath cmt_item.cmt_infos
