@@ -15,7 +15,7 @@
   > let equal = String.equal
   > EOF
 
-  $ ocamlc -bin-annot -bin-annot-occurrences -c external.ml main.ml
+  $ $OCAMLC -bin-annot -bin-annot-occurrences -c external.ml main.ml
 
   $ ocaml-index aggregate -o main.uideps main.cmt
 

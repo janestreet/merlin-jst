@@ -2,7 +2,7 @@
   > type t = Float.t
   > EOF
 
-  $ ocamlc -bin-annot -bin-annot-occurrences -c main.mli
+  $ $OCAMLC -bin-annot -bin-annot-occurrences -c main.mli
 
   $ ls
   main.cmi

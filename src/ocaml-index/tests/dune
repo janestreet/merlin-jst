@@ -1,3 +1,8 @@
+(env (_
+ (binaries ocamlc-wrapper)
+ (env-vars
+  (OCAMLC ocamlc-wrapper))))
+
 (alias
  (name ocaml-index-test-deps)
  (deps
@@ -7,4 +12,5 @@
  (package ocaml-index)
  (applies_to :whole_subtree)
  (deps
-  (alias ocaml-index-test-deps)))
+  (alias ocaml-index-test-deps)
+  ocamlc-wrapper))

@@ -22,7 +22,7 @@
   > let z = 42
   > EOF
 
-  $ ocamlc -bin-annot -bin-annot-occurrences -c bar.ml foo.ml main.ml
+  $ $OCAMLC -bin-annot -bin-annot-occurrences -c bar.ml foo.ml main.ml
 
   $ ocaml-index aggregate -o main.uideps main.cmt
   $ ocaml-index aggregate -o foo.uideps foo.cmt
