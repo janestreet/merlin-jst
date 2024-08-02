@@ -44,15 +44,27 @@ module Reduce_conf = struct
   let fuel = 10
 
   let try_load ~unit_name () =
-    let cmt = Format.sprintf "%s.cmt" unit_name in
-    match Cmt_cache.read (Load_path.find_uncap cmt) with
-    | cmt_item ->
-        Log.debug "Loaded CMT %s" cmt;
-        cmt_item.cmt_infos.cmt_impl_shape
+    let artifact =
+    let cms = Format.sprintf "%s.cms" unit_name in
+    match Locate.Artifact.read (Load_path.find_uncap cms) with
+    | artifact ->
+      Log.debug "Loaded CMS %s" cms;
+      Some artifact
     | exception Not_found ->
+      let cmt = Format.sprintf "%s.cmt" unit_name in
+      match Locate.Artifact.read (Load_path.find_uncap cmt) with
+      | artifact ->
+        Log.debug "Loaded CMT %s" cmt;
+        Some artifact
+      | exception Not_found ->
         Log.warn "Failed to load file %S in load_path: @[%s@]\n%!" cmt
         @@ String.concat "; " (Load_path.get_path_list ());
         None
+    in
+    match artifact with
+    | None -> None
+    | Some artifact ->
+      Merlin_analysis.Locate.Artifact.impl_shape artifact
 
   let read_unit_shape ~unit_name =
     Log.debug "Read unit shape: %s\n%!" unit_name;
