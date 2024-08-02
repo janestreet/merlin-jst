@@ -652,3 +652,4 @@ val with_cmis : (unit -> 'a) -> 'a
 val add_merlin_extension_module: Ident.t -> module_type -> t -> t
 val cleanup_functor_caches : stamp:int -> unit
 val scrape: (t -> module_type -> module_type) ref
+val cleanup_usage_tables : stamp:int -> unit
