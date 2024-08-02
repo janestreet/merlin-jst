@@ -15,12 +15,13 @@ let rewrite_root = ref false
 let store_shapes = ref false
 let do_not_use_cmt_loadpath = ref false
 
-type command = Aggregate | Dump | Stats
+type command = Aggregate | Dump | Stats | Gather_shapes
 
 let parse_command = function
   | "aggregate" -> Some Aggregate
   | "dump" -> Some Dump
   | "stats" -> Some Stats
+  | "gather-shapes" -> Some Gather_shapes
   | _ -> None
 
 let command = ref None
@@ -79,6 +80,8 @@ let () =
           Index_format.(
             read_exn ~file |> pp Format.std_formatter))
         !input_files
+  | Some Gather_shapes ->
+      Index.gather_shapes ~output_file:!output_file !input_files
   | Some Stats ->
       List.iter
         (fun file ->
