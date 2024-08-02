@@ -9,7 +9,7 @@
   main.cmti
   main.mli
 
-  $ ocamlobjinfo -quiet -index main.cmti
+  $ $OCAMLOBJINFO -quiet -index main.cmti
   Indexed shapes:
   Unresolved: CU Stdlib . "Float"[module] . "t"[type]  :
     Float.t (File "main.mli", line 1, characters 9-16)
