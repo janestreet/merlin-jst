@@ -91,6 +91,7 @@ type merlin = {
   stdlib      : string option;
   unit_name   : string option;
   wrapping_prefix : string option;
+  source_root : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -133,6 +134,7 @@ let dump_merlin x =
     "stdlib"       , Json.option Json.string x.stdlib;
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
+    "source_root"  , Json.option Json.string x.source_root;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -249,6 +251,36 @@ let rec normalize t =
   ) else
     normalize (normalize_step t)
 
+let merge_merlin_config dot merlin ~failures ~config_path =
+  { merlin with
+    build_path = dot.Mconfig_dot.build_path @ merlin.build_path;
+    source_path = dot.source_path @ merlin.source_path;
+    hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
+    hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
+    cmi_path = dot.cmi_path @ merlin.cmi_path;
+    cmt_path = dot.cmt_path @ merlin.cmt_path;
+    index_files = dot.index_files @ merlin.index_files;
+    exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+    use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
+    extensions = dot.extensions @ merlin.extensions;
+    suffixes = dot.suffixes @ merlin.suffixes;
+    stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+    unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
+    wrapping_prefix =
+      if dot.wrapping_prefix = None
+      then merlin.wrapping_prefix
+      else dot.wrapping_prefix;
+    source_root =
+      (if dot.source_root = None then merlin.source_root else dot.source_root);
+    reader =
+      if dot.reader = []
+      then merlin.reader
+      else dot.reader;
+    flags_to_apply = dot.flags @ merlin.flags_to_apply;
+    failures = failures @ merlin.failures;
+    config_path = Some config_path;
+    }
+
 let get_external_config path t =
   let path = Misc.canonicalize_filename path in
   let directory = Filename.dirname path in
@@ -256,34 +288,7 @@ let get_external_config path t =
   | None -> t
   | Some (ctxt, config_path) ->
     let dot, failures = Mconfig_dot.get_config ctxt path in
-    let merlin = t.merlin in
-    let merlin = {
-      merlin with
-      build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.source_path @ merlin.source_path;
-      hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
-      hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
-      cmi_path = dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.cmt_path @ merlin.cmt_path;
-      index_files = dot.index_files @ merlin.index_files;
-      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-      use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
-      extensions = dot.extensions @ merlin.extensions;
-      suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-      unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
-      wrapping_prefix =
-        if dot.wrapping_prefix = None
-        then merlin.wrapping_prefix
-        else dot.wrapping_prefix;
-      reader =
-        if dot.reader = []
-        then merlin.reader
-        else dot.reader;
-      flags_to_apply = dot.flags @ merlin.flags_to_apply;
-      failures = failures @ merlin.failures;
-      config_path = Some config_path;
-    } in
+    let merlin = merge_merlin_config dot t.merlin ~failures ~config_path in
     normalize { t with merlin }
 
 let merlin_flags = [
@@ -835,6 +840,7 @@ let initial = {
     stdlib      = None;
     unit_name   = None;
     wrapping_prefix = None;
+    source_root = None;
     reader      = [];
     protocol    = `Json;
     log_file    = None;

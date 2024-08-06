@@ -1,3 +1,5 @@
+open Misc
+
 module Path : sig
   (** [to_shortest_lid ~env ~env_check path] will make a [Longident.t] from the
   provided [Path.t] and attempt to use the shortest prefix possible given the
@@ -25,6 +27,11 @@ val parenthesize_name : string -> string
 
 (** Extracts the loc from cmt's cmt_uid_to_decl tables *)
 val loc_of_decl : uid:Shape.Uid.t -> Typedtree.item_declaration -> string Location.loc option
+
+(** [parse_identifier] attempts to re-parse a longident so that we get
+    the location of each of its components. *)
+val parse_identifier :
+  (Mconfig.t * Msource.t) -> Lexing.position -> modname Location.loc list
 
 (* [is_current_unit cu] returns true if [cu] is the current compilation unit *)
 val is_current_unit : string -> bool
