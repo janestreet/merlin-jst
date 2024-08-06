@@ -7,7 +7,7 @@
   > let () = print_string Lib.foo
   > EOF
 
-  $ ocamlc -bin-annot -bin-annot-occurrences -c lib.ml main.ml
+  $ $OCAMLC -bin-annot -bin-annot-occurrences -c lib.ml main.ml
 
   $ ocaml-index aggregate main.cmt lib.cmt
   $ ocaml-index dump project.ocaml-index

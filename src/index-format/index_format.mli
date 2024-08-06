@@ -19,6 +19,7 @@ type index = {
   approximated : Lid_set.t Uid_map.t;
   cu_shape : (string, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
+  root_directory: string option;
 }
 
 val pp : Format.formatter -> index -> unit
@@ -29,6 +30,7 @@ val add : Lid_set.t Uid_map.t -> Shape.Uid.t -> Lid_set.t -> Lid_set.t Uid_map.t
 
 type file_content =
   | Cmt of Cmt_format.cmt_infos
+  | Cms of Cms_format.cms_infos
   | Index of index
   | Unknown
 
