@@ -78,8 +78,8 @@ let index_buffer_ ~scope ~current_buffer_path ~local_defs () =
         let result =  Shape_reduce.reduce_for_uid env path_shape in
         begin match Locate.uid_of_result ~traverse_aliases:false result with
         | Some uid, false ->
-          log ~title:"index_buffer" "Found %s (%a) wiht uid %a"
-            (Longident.head lid.txt)
+          log ~title:"index_buffer" "Found %a (%a) wiht uid %a"
+            Logger.fmt (Fun.flip Pprintast.longident lid.txt)
             Logger.fmt (Fun.flip Location.print_loc lid.loc)
             Logger.fmt (Fun.flip Shape.Uid.print uid);
             Index_format.(add defs uid (LidSet.singleton lid))
@@ -281,8 +281,9 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       log ~title:"occurrences" "Found %i locs" (LidSet.cardinal locs);
       LidSet.elements locs
       |> List.filter_map ~f:(fun {Location.txt; loc} ->
+        let lid = try Longident.head txt with _ -> "not flat lid" in
         log ~title:"occurrences" "Found occ: %s %a"
-          (Longident.head txt) Logger.fmt (Fun.flip Location.print_loc loc);
+          lid Logger.fmt (Fun.flip Location.print_loc loc);
         let loc = last_loc loc txt in
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         if Filename.is_relative fname then begin
