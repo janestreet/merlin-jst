@@ -308,7 +308,6 @@ let mkpat_opt_constraint ~loc p = function
 (*let syntax_error () =
   raise Syntaxerr.Escape_error*)
 
-<<<<<<< HEAD
 let removed_string_set loc =
   raise_error Syntaxerr.(Error(Syntaxerr.Removed_string_set(make_loc loc)))
 
@@ -326,11 +325,6 @@ let pexp_ltuple loc args =
   Jane_syntax.Labeled_tuples.expr_of
     ~loc:(make_loc loc)
     args
-||||||| 7b73c6aa3
-=======
-let removed_string_set loc =
-  raise_error Syntaxerr.(Error(Syntaxerr.Removed_string_set(make_loc loc)))
->>>>>>> upstream/main
 
 (* Using the function [not_expecting] in a semantic action means that this
    syntactic form is recognized by the parser but is in fact incorrect. This
@@ -1251,13 +1245,7 @@ The precedences must be listed from low to high.
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI                          /* below EQUAL ({lbl=...; lbl=...}) */
-<<<<<<< HEAD
 %nonassoc LET FOR               /* above SEMI ( ...; let ... in ...) */
-||||||| 7b73c6aa3
-%nonassoc LET LET_LWT                   /* above SEMI ( ...; let ... in ...) */
-=======
-%nonassoc LET                           /* above SEMI ( ...; let ... in ...) */
->>>>>>> upstream/main
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 /* below BAR  (match ... with ...) */
 %nonassoc AND             /* above WITH (module rec A: SIG with ... and ...) */

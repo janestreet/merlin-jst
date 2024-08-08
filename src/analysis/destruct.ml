@@ -128,21 +128,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         let res =
           try
             ignore (
-<<<<<<< HEAD
-              Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive_equations:true (* really? *)
-                (ref env) type_expr typ
-||||||| 7b73c6aa3
-              Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive:true (* really? *)
-                (ref env) type_expr typ
-=======
               let pattern_env = Ctype.Pattern_env.make env
                 ~equations_scope:0
                 ~allow_recursive_equations:true
               in
               Ctype.unify_gadt pattern_env type_expr typ
->>>>>>> upstream/main
             );
             true
           with Ctype.Unify _trace -> false
@@ -715,7 +705,7 @@ module Conv = struct
       | Tpat_array (mut, _, lst) ->
           let lst = List.map ~f:loop lst in
           begin match mut with
-          | Mutable mode -> 
+          | Mutable mode ->
             assert (
               Mode.Alloc.Comonadic.Const.eq
                 mode

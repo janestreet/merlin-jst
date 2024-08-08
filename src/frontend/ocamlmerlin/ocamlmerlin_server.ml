@@ -64,14 +64,8 @@ module Server = struct
     | None ->
       Logger.log ~section:"server" ~title:"cannot setup listener" ""
     | Some server ->
-<<<<<<< HEAD
-      (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
-      let (_ : Sys.signal_behavior) = Sys.signal Sys.sigpipe Sys.Signal_ignore in
-||||||| 7b73c6aa3
-=======
       (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
       if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
->>>>>>> upstream/main
       loop (File_id.get Sys.executable_name) server;
       Os_ipc.server_close server
 end

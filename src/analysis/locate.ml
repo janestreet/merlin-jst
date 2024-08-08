@@ -426,19 +426,9 @@ module Utils = struct
           try Some (Misc.find_in_path_uncap ?fallback path fname)
           with Not_found ->  None
         in
-<<<<<<< HEAD
         match try_one file with
         | Some _ as f -> f
         | None -> Option.bind ~f:try_one (File.to_legacy file)
-||||||| 7b73c6aa3
-        let fname = File.with_ext ~src_suffix_pair file in
-        try Some (Misc.find_in_path_uncap ?fallback path fname)
-        with Not_found -> None
-=======
-        let fname = File.with_ext ~src_suffix_pair file in
-        try Some (Misc.find_in_path_normalized ?fallback path fname)
-        with Not_found -> None
->>>>>>> upstream/main
       in
       try
         Some (List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search)

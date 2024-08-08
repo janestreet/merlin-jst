@@ -3,10 +3,8 @@
  (locks ../server-tests/merlin_server))
 
 (cram
-<<<<<<< HEAD
- (applies_to issue1660-deriving-compare issue1671-string)
- (enabled_if
-  (= %{env:MERLIN_TESTS=default} all)))
+ (applies_to :whole_subtree)
+ (enabled_if (= %{env:MERLIN_TESTS=default} all)))
 
 ; Jane Street disabled tests -- they use dune.
 ; Revisit when dune can run the flambda-backend compiler.
@@ -19,10 +17,3 @@
   issue1671-string
   parsetree-cache
   typed-holes))
-||||||| 7b73c6aa3
- (applies_to issue1660-deriving-compare issue1671-string)
- (enabled_if (= %{env:MERLIN_TESTS=default} all)))
-=======
- (applies_to :whole_subtree)
- (enabled_if (= %{env:MERLIN_TESTS=default} all)))
->>>>>>> upstream/main

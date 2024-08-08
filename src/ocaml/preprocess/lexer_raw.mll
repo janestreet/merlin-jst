@@ -636,7 +636,8 @@ rule token state = parse
       { oPTLABEL (check_label_name lexbuf name) }
   | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
       { warn_latin1 lexbuf; return (OPTLABEL name) }
-<<<<<<< HEAD
+  | raw_ident_escape (lowercase identchar * as name)
+      { return (LIDENT name) }
   (* Lowercase identifiers are split into 3 cases, and the order matters
      (longest to shortest).
   *)
@@ -652,11 +653,6 @@ rule token state = parse
         return (try Hashtbl.find state.keywords name
               with Not_found ->
               lookup_keyword name) }
-||||||| 7b73c6aa3
-=======
-  | raw_ident_escape (lowercase identchar * as name)
-      { return (LIDENT name) }
->>>>>>> upstream/main
   | lowercase identchar * as name
     { return (try Hashtbl.find state.keywords name
               with Not_found ->

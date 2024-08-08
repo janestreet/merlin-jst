@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-||||||| 7b73c6aa3
-merlin NEXT_VERSION
-===================
-
-  + merlin binary
-    - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
-  + editor modes
-    - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
-
-=======
 unreleased
 ==========
 
@@ -109,7 +98,6 @@ Fri Dec  1 15:00:42 CET 2023
     - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
     - emacs: highlight only first error line by default (#1693, fixes #1663)
 
->>>>>>> upstream/main
 merlin 4.12
 ===========
 Tue Sep 26 17:45:42 CEST 2023
