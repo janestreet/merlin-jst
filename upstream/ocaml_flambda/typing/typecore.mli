@@ -252,7 +252,7 @@ type error =
   | Modules_not_allowed
   | Cannot_infer_signature
   | Not_a_packed_module of type_expr
-  | Unexpected_existential of existential_restriction * string * string list
+  | Unexpected_existential of existential_restriction * string
   | Invalid_interval
   | Invalid_for_loop_index
   | Invalid_comprehension_for_range_iterator_index
@@ -288,8 +288,7 @@ type error =
       Env.closure_context option *
       contention_context option *
       Env.shared_context option
-  | Curried_application_complete of
-      arg_label * Mode.Alloc.error * [`Prefix|`Single_arg|`Entire_apply]
+  | Local_application_complete of arg_label * [`Prefix|`Single_arg|`Entire_apply]
   | Param_mode_mismatch of Mode.Alloc.equate_error
   | Uncurried_function_escapes of Mode.Alloc.error
   | Local_return_annotation_mismatch of Location.t

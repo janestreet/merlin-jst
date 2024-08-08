@@ -52,14 +52,11 @@ module Libloc = struct
   }
 end
 
-type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
-type profile_granularity_level = File_level | Function_level
-
 let compile_only = ref false            (* -c *)
 and output_name = ref (None : string option) (* -o *)
-and include_dirs = ref ([] : string list) (* -I *)
-and hidden_include_dirs = ref ([] : string list) (* -H *)
+and include_dirs = ref ([] : string list)  (* -I *)
 and libloc = ref ([] : Libloc.t list) (* -libloc *)
+and hidden_include_dirs = ref ([] : string list) (* -H *)
 and no_std_include = ref false          (* -nostdlib *)
 and no_cwd = ref false                  (* -nocwd *)
 and print_types = ref false             (* -i *)
@@ -159,14 +156,7 @@ let dump_combine = ref false            (* -dcombine *)
 let debug_ocaml = ref false             (* -debug-ocaml *)
 let default_timings_precision  = 3
 let timings_precision = ref default_timings_precision (* -dtimings-precision *)
-let profile_columns : profile_column list ref = ref [] (* -dprofile/-dtimings/-dcounters *)
-let profile_granularity : profile_granularity_level ref = ref File_level (* -dgranularity *)
-
-let set_profile_granularity v =
-  profile_granularity := match v with
-  | "file" -> File_level
-  | "func" -> Function_level
-  | _ -> raise (Invalid_argument (Format.sprintf "profile granularity: %s" v))
+let profile_columns : Profile.column list ref = ref [] (* -dprofile/-dtimings *)
 
 let native_code = ref false             (* set to true under ocamlopt *)
 

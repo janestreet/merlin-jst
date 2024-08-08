@@ -21,7 +21,7 @@ type result =
   | Resolved_alias of Shape.Uid.t list (** Reduction led to an alias chain *)
   | Unresolved of Shape.t (** Result still contains [Comp_unit] terms *)
   | Approximated of Shape.Uid.t option
-    (** Reduction failed: it can arrive with first-clsss modules for example *)
+    (** Reduction failed: it can arrive with first-class modules for example *)
   | Internal_error_missing_uid
     (** Reduction succeeded but no uid was found, this should never happen *)
 

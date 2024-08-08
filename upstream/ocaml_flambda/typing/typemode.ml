@@ -1,5 +1,6 @@
 open Location
 open Mode
+open Jane_syntax
 
 type error =
   | Duplicated_mode : ('a, 'b) Axis.t -> error
@@ -11,7 +12,8 @@ exception Error of Location.t * error
 let transl_mode_annots modes =
   let rec loop (acc : Alloc.Const.Option.t) = function
     | [] -> acc
-    | { txt; loc } :: rest ->
+    | m :: rest ->
+      let { txt; loc } = (m : Mode_expr.Const.t :> _ Location.loc) in
       Jane_syntax_parsing.assert_extension_enabled ~loc Mode
         Language_extension.Stable;
       let acc : Alloc.Const.Option.t =
@@ -96,9 +98,7 @@ let untransl_modalities ~loc m : Parsetree.modality loc list =
     in
     { txt = Parsetree.Modality s; loc }
   in
-  let is_not_id m = not (Modality.is_id m) in
-  Modality.Value.Const.to_list m
-  |> List.filter is_not_id |> List.map untransl_atom
+  Modality.Value.Const.to_list m |> List.map untransl_atom
 
 let compose_modalities modalities =
   (* The ordering:
