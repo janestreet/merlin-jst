@@ -91,8 +91,15 @@ type 'a sig_reader =
 (* CR-someday lmaurer: [add_binding] is apparently always false, including in the
    [-instantiate] branch. We should remove this parameter. *)
 val read : 'a t -> 'a sig_reader
+<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> Subst.Lazy.signature
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+  -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> Subst.Lazy.signature
+=======
+  -> Compilation_unit.Name.t -> Unit_info.Artifact.t -> add_binding:bool
+  -> Subst.Lazy.signature
+>>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 val find : allow_hidden:bool -> 'a t -> 'a sig_reader
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> 'a

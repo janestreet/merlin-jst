@@ -20,6 +20,9 @@
   (* Ensure that record patterns don't miss any field. *)
 *)
 
+[@@@ocaml.warning "-60"] module Str = Ast_helper.Str (* For ocamldep *)
+[@@@ocaml.warning "+60"]
+
 open Parsetree
 open Ast_helper
 open Location
@@ -45,6 +48,7 @@ type mapper = {
   constant: mapper -> constant -> constant;
   constructor_declaration: mapper -> constructor_declaration
                            -> constructor_declaration;
+  directive_argument: mapper -> directive_argument -> directive_argument;
   expr: mapper -> expression -> expression;
   extension: mapper -> extension -> extension;
   extension_constructor: mapper -> extension_constructor
@@ -70,6 +74,8 @@ type mapper = {
   signature_item: mapper -> signature_item -> signature_item;
   structure: mapper -> structure -> structure;
   structure_item: mapper -> structure_item -> structure_item;
+  toplevel_directive: mapper -> toplevel_directive -> toplevel_directive;
+  toplevel_phrase: mapper -> toplevel_phrase -> toplevel_phrase;
   typ: mapper -> core_type -> core_type;
   type_declaration: mapper -> type_declaration -> type_declaration;
   type_extension: mapper -> type_extension -> type_extension;
@@ -221,7 +227,9 @@ module T = struct
         object_ ~loc ~attrs (List.map (object_field sub) l) o
     | Ptyp_class (lid, tl) ->
         class_ ~loc ~attrs (map_loc sub lid) (List.map (sub.typ sub) tl)
-    | Ptyp_alias (t, s) -> alias ~loc ~attrs (sub.typ sub t) s
+    | Ptyp_alias (t, s) ->
+        let s = map_loc sub s in
+        alias ~loc ~attrs (sub.typ sub t) s
     | Ptyp_variant (rl, b, ll) ->
         variant ~loc ~attrs (List.map (row_field sub) rl) b ll
     | Ptyp_poly (sl, t) -> poly ~loc ~attrs
@@ -229,6 +237,8 @@ module T = struct
     | Ptyp_package (lid, l) ->
         package ~loc ~attrs (map_loc sub lid)
           (List.map (map_tuple (map_loc sub) (sub.typ sub)) l)
+    | Ptyp_open (mod_ident, t) ->
+        open_ ~loc ~attrs (map_loc sub mod_ident) (sub.typ sub t)
     | Ptyp_extension x -> extension ~loc ~attrs (sub.extension sub x)
 
   let map_type_declaration sub
@@ -1118,7 +1128,7 @@ let default_mapper =
       | Default -> Default
       | Abbreviation s ->
         let {txt; loc} =
-          map_loc this s
+          map_loc this (s : Jkind.Const.t :> _ loc)
         in
         Abbreviation (Jkind.Const.mk txt loc)
       | Mod (t, mode_list) ->
@@ -1140,11 +1150,27 @@ let default_mapper =
       let map_const sub : Const.t -> Const.t =
         fun m ->
           let {txt; loc} =
-            map_loc sub m
+            map_loc sub (m : Const.t :> _ Location.loc)
           in
           Const.mk txt loc
       in
       map_loc_txt this (fun sub -> List.map (map_const sub)) m);
+
+    directive_argument =
+      (fun this a ->
+         { pdira_desc= a.pdira_desc
+         ; pdira_loc= this.location this a.pdira_loc} );
+
+    toplevel_directive =
+      (fun this d ->
+         { pdir_name= map_loc this d.pdir_name
+         ; pdir_arg= map_opt (this.directive_argument this) d.pdir_arg
+         ; pdir_loc= this.location this d.pdir_loc } );
+
+    toplevel_phrase =
+      (fun this -> function
+         | Ptop_def s -> Ptop_def (this.structure this s)
+         | Ptop_dir d -> Ptop_dir (this.toplevel_directive this d) );
   }
 
 let extension_of_error {kind; main; sub} =

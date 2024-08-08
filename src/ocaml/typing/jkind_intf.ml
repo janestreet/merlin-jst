@@ -192,17 +192,15 @@ module History = struct
      enough subjkinding for interfaces to accept [value_or_null]
      in [list] or [option]. *)
   type value_or_null_creation_reason =
-    | Primitive of Ident.t
     | Tuple_element
     | Separability_check
     | Polymorphic_variant_field
     | Structure_element
     | V1_safety_check
-    | Probe
-    | Captured_in_object
 
   type value_creation_reason =
     | Class_let_binding
+    | Probe
     | Object
     | Instance_variable
     | Object_field
@@ -232,6 +230,7 @@ module History = struct
     | Class_type_argument
     | Class_term_argument
     | Debug_printer_argument
+    | Captured_in_object
     | Recmod_fun_arg
     | Unknown of string (* CR layouts: get rid of these *)
 

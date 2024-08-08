@@ -131,8 +131,6 @@ module Mode_expr : sig
   module Const : sig
     (** Constant modes *)
 
-    type raw = string
-
     (** Represent a user-written mode constant, containing a string and its
         location *)
     type t = Parsetree.mode_const_expression
@@ -337,7 +335,7 @@ module Layouts : sig
        intervening [type_desc]. *)
     | Ltyp_alias of
         { aliased_type : Parsetree.core_type;
-          name : string option;
+          name : string Location.loc option;
           jkind : Jkind.annotation
         }
 

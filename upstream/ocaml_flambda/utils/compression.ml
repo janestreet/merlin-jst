@@ -2,9 +2,9 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*                  Jeremie Dimino, Jane Street Europe                    *)
+(*        Xavier Leroy, Collège de France and Inria project Cambium       *)
 (*                                                                        *)
-(*   Copyright 2015 Institut National de Recherche en Informatique et     *)
+(*   Copyright 2023 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
@@ -13,26 +13,19 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** Helpers for attributes
+external zstd_initialize: unit -> bool = "caml_zstd_initialize"
 
-  {b Warning:} this module is unstable and part of
-  {{!Compiler_libs}compiler-libs}.
+let compression_supported = zstd_initialize ()
 
-*)
+type [@warning "-unused-constructor"] extern_flags =
+    No_sharing                          (** Don't preserve sharing *)
+  | Closures                            (** Send function closures *)
+  | Compat_32                           (** Ensure 32-bit compatibility *)
+  | Compression                         (** Optional compression *)
 
-open Asttypes
-open Parsetree
+external to_channel: out_channel -> 'a -> extern_flags list -> unit
+                   = "caml_output_value"
 
-type error =
-  | Multiple_attributes of string
-  | No_payload_expected of string
+let output_value ch v = to_channel ch v [Compression]
 
-(** The [string] argument of the following functions is the name of the
-    attribute we are looking for.  If the argument is ["foo"], these functions
-    will find attributes with the name ["foo"] or ["ocaml.foo"] *)
-val get_no_payload_attribute : string -> attributes -> string loc option
-val has_no_payload_attribute : string -> attributes -> bool
-
-exception Error of Location.t * error
-
-val report_error: Format.formatter -> error -> unit
+let input_value = Stdlib.input_value

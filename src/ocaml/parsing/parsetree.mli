@@ -123,7 +123,7 @@ and core_type_desc =
             - [T #tconstr]             when [l=[T]],
             - [(T1, ..., Tn) #tconstr] when [l=[T1 ; ... ; Tn]].
          *)
-  | Ptyp_alias of core_type * string  (** [T as 'a]. *)
+  | Ptyp_alias of core_type * string loc  (** [T as 'a]. *)
   | Ptyp_variant of row_field list * closed_flag * label list option
       (** [Ptyp_variant([`A;`B], flag, labels)] represents:
             - [[ `A|`B ]]
@@ -168,6 +168,7 @@ and core_type_desc =
            {!value_description}.
          *)
   | Ptyp_package of package_type  (** [(module S)]. *)
+  | Ptyp_open of Longident.t loc * core_type (** [M.(T)] *)
   | Ptyp_extension of extension  (** [[%id]]. *)
 
 and arg_label = Asttypes.arg_label =
@@ -325,7 +326,6 @@ and expression_desc =
         when [body = Pfunction_body E]
       - [fun P1 ... Pn -> function p1 -> e1 | ... | pm -> em]
         when [body = Pfunction_cases [ p1 -> e1; ...; pm -> em ]]
-
       [C] represents a type constraint or coercion placed immediately before the
       arrow, e.g. [fun P1 ... Pn : ty -> ...] when [C = Some (Pconstraint ty)].
 
@@ -467,7 +467,6 @@ and function_param_desc =
       - [?l:(P = E0)]
         when [lbl] is {{!Asttypes.arg_label.Optional}[Optional l]}
         and [exp0] is [Some E0]
-
       Note: If [E0] is provided, only
       {{!Asttypes.arg_label.Optional}[Optional]} is allowed.
   *)
@@ -476,16 +475,13 @@ and function_param_desc =
       [x] carries the location of the identifier, whereas the [pparam_loc]
       on the enclosing [function_param] node is the location of the [(type x)]
       as a whole.
-
       Multiple parameters [(type a b c)] are represented as multiple
       [Pparam_newtype] nodes, let's say:
-
       {[ [ { pparam_kind = Pparam_newtype a; pparam_loc = loc1 };
            { pparam_kind = Pparam_newtype b; pparam_loc = loc2 };
            { pparam_kind = Pparam_newtype c; pparam_loc = loc3 };
          ]
       ]}
-
       Here, the first loc [loc1] is the location of [(type a b c)], and the
       subsequent locs [loc2] and [loc3] are the same as [loc1], except marked as
       ghost locations. The locations on [a], [b], [c], correspond to the

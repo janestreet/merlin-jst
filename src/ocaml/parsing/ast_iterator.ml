@@ -41,6 +41,7 @@ type iterator = {
   class_type_declaration: iterator -> class_type_declaration -> unit;
   class_type_field: iterator -> class_type_field -> unit;
   constructor_declaration: iterator -> constructor_declaration -> unit;
+  directive_argument: iterator -> directive_argument -> unit;
   expr: iterator -> expression -> unit;
   expr_jane_syntax: iterator -> Jane_syntax.Expression.t -> unit;
   extension: iterator -> extension -> unit;
@@ -69,6 +70,8 @@ type iterator = {
   structure: iterator -> structure -> unit;
   structure_item: iterator -> structure_item -> unit;
   structure_item_jane_syntax: iterator -> Jane_syntax.Structure_item.t -> unit;
+  toplevel_directive: iterator -> toplevel_directive -> unit;
+  toplevel_phrase: iterator -> toplevel_phrase -> unit;
   typ: iterator -> core_type -> unit;
   typ_jane_syntax: iterator -> Jane_syntax.Core_type.t -> unit;
   typ_mode_syntax : iterator -> Jane_syntax.Mode_expr.t -> core_type -> unit;
@@ -192,6 +195,9 @@ module T = struct
     | Ptyp_package (lid, l) ->
         iter_loc sub lid;
         List.iter (iter_tuple (iter_loc sub) (sub.typ sub)) l
+    | Ptyp_open (mod_ident, t) ->
+        iter_loc sub mod_ident;
+        sub.typ sub t
     | Ptyp_extension x -> sub.extension sub x
 
   let iter_type_declaration sub
@@ -525,6 +531,21 @@ module E = struct
       iter_loc_txt sub sub.jkind_annotation jkind;
       sub.expr sub inner_expr
 
+  let iter_labeled_tuple sub : LT.expression -> _ = function
+    | el -> List.iter (iter_snd (sub.expr sub)) el
+
+  let iter_modes_exp sub : Modes.expression -> _ = function
+    | Coerce (modes, expr) ->
+        sub.modes sub modes;
+        sub.expr sub expr
+
+  let iter_jst sub : Jane_syntax.Expression.t -> _ = function
+    | Jexp_comprehension comp_exp -> iter_comp_exp sub comp_exp
+    | Jexp_immutable_array iarr_exp -> iter_iarr_exp sub iarr_exp
+    | Jexp_layout layout_exp -> iter_layout_exp sub layout_exp
+    | Jexp_tuple lt_exp -> iter_labeled_tuple sub lt_exp
+    | Jexp_modes mode_exp -> iter_modes_exp sub mode_exp
+
   let iter_function_param sub : function_param -> _ =
     fun { pparam_loc = loc; pparam_desc = desc } ->
       sub.location sub loc;
@@ -556,23 +577,8 @@ module E = struct
         sub.location sub loc;
         sub.attributes sub attrs
 
-  let iter_labeled_tuple sub : LT.expression -> _ = function
-    | el -> List.iter (iter_snd (sub.expr sub)) el
-
-  let iter_modes_exp sub : Modes.expression -> _ = function
-    | Coerce (modes, expr) ->
-        sub.modes sub modes;
-        sub.expr sub expr
-
-  let iter_jst sub : Jane_syntax.Expression.t -> _ = function
-    | Jexp_comprehension comp_exp -> iter_comp_exp sub comp_exp
-    | Jexp_immutable_array iarr_exp -> iter_iarr_exp sub iarr_exp
-    | Jexp_layout layout_exp -> iter_layout_exp sub layout_exp
-    | Jexp_tuple lt_exp -> iter_labeled_tuple sub lt_exp
-    | Jexp_modes mode_exp -> iter_modes_exp sub mode_exp
-
   let iter sub
-        ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as expr)=
+      ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as expr)=
     sub.location sub loc;
     match Jane_syntax.Expression.of_ast expr with
     | Some (jexp, attrs) ->
@@ -588,7 +594,7 @@ module E = struct
         sub.expr sub e
     | Pexp_function (params, constraint_, body) ->
         List.iter (iter_function_param sub) params;
-        Option.iter (iter_function_constraint sub) constraint_;
+        iter_opt (iter_function_constraint sub) constraint_;
         iter_function_body sub body
     | Pexp_apply (e, l) ->
         sub.expr sub e; List.iter (iter_snd (sub.expr sub)) l
@@ -982,7 +988,7 @@ let default_iterator =
     modes = (fun this m ->
       let open Jane_syntax.Mode_expr in
       let iter_const sub : Const.t -> _ =
-        fun m -> iter_loc sub m
+        fun m -> iter_loc sub (m : Const.t :> _ Location.loc)
       in
       iter_loc_txt this (fun sub -> List.iter (iter_const sub)) m);
     payload =
@@ -1005,4 +1011,22 @@ let default_iterator =
           this.jkind_annotation this t;
           this.typ this ty
         | Kind_of ty -> this.typ this ty);
+
+    directive_argument =
+      (fun this a ->
+         this.location this a.pdira_loc
+      );
+
+    toplevel_directive =
+      (fun this d ->
+         iter_loc this d.pdir_name;
+         iter_opt (this.directive_argument this) d.pdir_arg;
+         this.location this d.pdir_loc
+      );
+
+    toplevel_phrase =
+      (fun this -> function
+         | Ptop_def s -> this.structure this s
+         | Ptop_dir d -> this.toplevel_directive this d
+      );
   }

@@ -258,9 +258,10 @@ let iter_on_occurrences
       | Ttyp_class (path, lid, _typs) ->
           (* Deprecated syntax to extend a polymorphic variant *)
           f ~namespace:Type ctyp_env path lid
+      | Ttyp_open (path, lid, _ct) ->
+          f ~namespace:Module ctyp_env path lid
       | Ttyp_var _ | Ttyp_arrow _ | Ttyp_tuple _ | Ttyp_object _
-      | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _
-      | Ttyp_call_pos -> ());
+      | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _ | Ttyp_call_pos -> ());
       default_iterator.typ sub ct);
 
   pat =
@@ -400,11 +401,27 @@ let index_occurrences binary_annots =
 
 exception Error of error
 
-let input_cmt ic = (input_value ic : cmt_infos)
+let input_cmt ic = (Compression.input_value ic : cmt_infos)
 
 let output_cmt oc cmt =
   output_string oc Config.cmt_magic_number;
+<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
   output_value oc (cmt : cmt_infos)
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+  (* BACKPORT BEGIN *)
+  (* CR ocaml 5 compressed-marshal mshinwell:
+     upstream uses [Compression] here *)
+  Marshal.(to_channel oc (cmt : cmt_infos) [])
+  (* BACKPORT END *)
+=======
+  (* BACKPORT BEGIN *)
+  (* CR ocaml 5 compressed-marshal mshinwell:
+     upstream uses [Compression] here:
+     Compression.output_value oc (cmt : cmt_infos)
+  *)
+  Marshal.(to_channel oc (cmt : cmt_infos) [])
+  (* BACKPORT END *)
+>>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 let read filename =
 (*  Printf.fprintf stderr "Cmt_format.read %s\n%!" filename; *)
@@ -461,17 +478,32 @@ let set_saved_types l = saved_types := l
 
 let record_value_dependency _vd1 _vd2 = ()
 
-let save_cmt filename modname binary_annots sourcefile initial_env cmi shape =
+let save_cmt target cu binary_annots initial_env cmi shape =
   if !Clflags.binary_annotations && not !Clflags.print_types then begin
     Misc.output_to_file_via_temporary
-       ~mode:[Open_binary] filename
+       ~mode:[Open_binary] (Unit_info.Artifact.filename target)
        (fun temp_file_name oc ->
          let this_crc =
            match cmi with
            | None -> None
            | Some cmi -> Some (output_cmi temp_file_name oc cmi)
          in
+<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
          let source_digest = Option.map ~f:Digest.file sourcefile in
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+         let source_digest = Option.map Digest.file sourcefile in
+=======
+         let sourcefile = Unit_info.Artifact.source_file target in
+         let cmt_ident_occurrences =
+          if !Clflags.store_occurrences then
+            index_occurrences binary_annots
+          else
+            [| |]
+         in
+         let cmt_annots = clear_env binary_annots in
+         let cmt_uid_to_decl = index_declarations cmt_annots in
+         let source_digest = Option.map Digest.file sourcefile in
+>>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
          let compare_imports import1 import2 =
            let modname1 = Import_info.name import1 in
            let modname2 = Import_info.name import2 in
@@ -482,16 +514,8 @@ let save_cmt filename modname binary_annots sourcefile initial_env cmi shape =
            Array.sort compare_imports imports;
            imports
          in
-         let cmt_ident_occurrences =
-          if !Clflags.store_occurrences then
-            index_occurrences binary_annots
-          else
-            Array.of_list []
-         in
-         let cmt_annots = clear_env binary_annots in
-         let cmt_uid_to_decl = index_declarations cmt_annots in
          let cmt = {
-           cmt_modname = modname;
+           cmt_modname = cu;
            cmt_annots;
            cmt_value_dependencies = !value_deps;
            cmt_comments = [];

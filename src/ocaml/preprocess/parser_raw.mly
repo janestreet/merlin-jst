@@ -24,8 +24,15 @@
 
 %{
 
+<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 [@@@ocaml.warning "-9"]
 
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+=======
+[@@@ocaml.warning "-60"] module Str = Ast_helper.Str (* For ocamldep *)
+[@@@ocaml.warning "+60"]
+
+>>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 open Asttypes
 open Longident
 open Parsetree
@@ -150,10 +157,6 @@ let mkuplus ~oploc name arg =
   | _ ->
       Pexp_apply(mkoperator ~loc:oploc ("~" ^ name), [Nolabel, arg]), []
 
-let mk_attr ~loc name payload =
-  Builtin_attributes.(register_attr Parser name);
-  Attr.mk ~loc name payload
-
 let mkexp_with_modes ?(ghost=false) ~loc modes exp =
   let loc =
     if ghost then ghost_loc loc else make_loc loc
@@ -220,6 +223,10 @@ let maybe_curry_typ typ loc =
       if List.exists is_curry_attr typ.ptyp_attributes then typ
       else mktyp_curry typ (make_loc loc)
   | _ -> typ
+
+let mk_attr ~loc name payload =
+  Builtin_attributes.(register_attr Parser name);
+  Attr.mk ~loc name payload
 
 (* TODO define an abstraction boundary between locations-as-pairs
    and locations-as-Location.t; it should be clear when we move from
@@ -803,7 +810,7 @@ let mkfunction ~loc ~attrs params body_constraint body =
        we create nested newtype nodes. *)
       match all_params_as_newtypes params with
       | None ->
-          mkexp_attrs (Pexp_function (params, body_constraint, body)) attrs ~loc
+         mkexp_attrs (Pexp_function (params, body_constraint, body)) attrs ~loc
       | Some newtypes ->
           wrap_exp_attrs
             ~loc
@@ -823,11 +830,11 @@ let package_type_of_module_type pmty =
     | Pwith_type (lid, ptyp) ->
         let loc = ptyp.ptype_loc in
         if ptyp.ptype_params <> [] then
-          err loc "parametrized types are not supported";
+          err loc Syntaxerr.Parameterized_types;
         if ptyp.ptype_cstrs <> [] then
-          err loc "constrained types are not supported";
+          err loc Syntaxerr.Constrained_types;
         if ptyp.ptype_private <> Public then
-          err loc "private types are not supported";
+          err loc Syntaxerr.Private_types;
 
         (* restrictions below are checked by the 'with_constraint' rule *)
         (* assert (ptyp.ptype_kind = Ptype_abstract); *)
@@ -837,17 +844,30 @@ let package_type_of_module_type pmty =
         | None -> None
         end
     | _ ->
+<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
         err pmty.pmty_loc "only 'with type t =' constraints are supported";
         None
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+        err pmty.pmty_loc "only 'with type t =' constraints are supported"
+=======
+        err pmty.pmty_loc Not_with_type
+>>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   in
   match pmty with
   | {pmty_desc = Pmty_ident lid} -> (lid, [], pmty.pmty_attributes)
   | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
       (lid, List.filter_map map_cstr cstrs, pmty.pmty_attributes)
   | _ ->
+<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
       err pmty.pmty_loc
         "only module type identifier and 'with type' constraints are supported"
       ; (Location.mkloc (Lident "_") pmty.pmty_loc, [], [])
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+      err pmty.pmty_loc
+        "only module type identifier and 'with type' constraints are supported"
+=======
+      err pmty.pmty_loc Neither_identifier_nor_with_type
+>>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 let mk_directive_arg ~loc k =
   { pdira_desc = k;
@@ -2674,7 +2694,7 @@ class_type_declarations:
            Pfunction_cases attributes for enabling/disabling warnings in
            typechecking. For standalone function cases, we want the compiler to
            respect, e.g., [@inline] attributes.
-         *)
+        *)
         mkfunction [] None (Pfunction_cases (cases, loc, [])) ~attrs:$2
           ~loc:$sloc
       }
@@ -3374,7 +3394,6 @@ strict_binding_modes:
         in
         let exp = mkfunction $1 constraint_ $4 ~loc:$sloc ~attrs:(None, []) in
         { exp with pexp_loc = { exp.pexp_loc with loc_ghost = true } }
-
     }
 ;
 %inline strict_binding:
@@ -4391,17 +4410,18 @@ alias_type:
     function_type
       { $1 }
   | mktyp(
-      ty = alias_type AS QUOTE tyvar = ident
+      ty = alias_type AS QUOTE tyvar = mkrhs(ident)
         { Ptyp_alias(ty, tyvar) }
    )
    { $1 }
   | aliased_type = alias_type AS
              LPAREN
-             name = tyvar_name_or_underscore
+             name = mkrhs(tyvar_name_or_underscore)
              COLON
              jkind = jkind_annotation
              RPAREN
-        { Jane_syntax.Layouts.type_of ~loc:(make_loc $sloc)
+        { let name = Option.map (fun x -> mkloc x name.loc) name.txt in
+          Jane_syntax.Layouts.type_of ~loc:(make_loc $sloc)
               (Ltyp_alias { aliased_type; name; jkind }) }
 ;
 
@@ -4630,47 +4650,103 @@ tuple_type:
    - applications of type constructors:   int, int list, int option list
    - variant types:                       [`A]
  *)
+
+
+(*
+  Delimited types:
+    - parenthesised type          (type)
+    - first-class module types    (module S)
+    - object types                < x: t; ... >
+    - variant types               [ `A ]
+    - extension                   [%foo ...]
+
+  We support local opens on the following classes of types:
+    - parenthesised
+    - first-class module types
+    - variant types
+
+  Object types are not support for local opens due to a potential
+  conflict with MetaOCaml syntax:
+    M.< x: t, y: t >
+  and quoted expressions:
+    .< e >.
+
+  Extension types are not support for local opens merely as a precaution.
+*)
+delimited_type_supporting_local_open:
+  | LPAREN type_ = core_type RPAREN
+      { type_ }
+  | LPAREN MODULE attrs = ext_attributes package_type = package_type RPAREN
+      { wrap_typ_attrs ~loc:$sloc (reloc_typ ~loc:$sloc package_type) attrs }
+  | mktyp(
+      LBRACKET field = tag_field RBRACKET
+        { Ptyp_variant([ field ], Closed, None) }
+    | LBRACKET BAR fields = row_field_list RBRACKET
+        { Ptyp_variant(fields, Closed, None) }
+    | LBRACKET field = row_field BAR fields = row_field_list RBRACKET
+        { Ptyp_variant(field :: fields, Closed, None) }
+    | LBRACKETGREATER BAR? fields = row_field_list RBRACKET
+        { Ptyp_variant(fields, Open, None) }
+    | LBRACKETGREATER RBRACKET
+        { Ptyp_variant([], Open, None) }
+    | LBRACKETLESS BAR? fields = row_field_list RBRACKET
+        { Ptyp_variant(fields, Closed, Some []) }
+    | LBRACKETLESS BAR? fields = row_field_list
+      GREATER
+      tags = name_tag_list
+      RBRACKET
+        { Ptyp_variant(fields, Closed, Some tags) }
+  )
+  { $1 }
+;
+
+object_type:
+  | mktyp(
+      LESS meth_list = meth_list GREATER
+        { let (f, c) = meth_list in Ptyp_object (f, c) }
+    | LESS GREATER
+        { Ptyp_object ([], Closed) }
+  )
+  { $1 }
+;
+
+extension_type:
+  | mktyp (
+      ext = extension
+        { Ptyp_extension ext }
+  )
+  { $1 }
+;
+
+delimited_type:
+  | object_type
+  | extension_type
+  | delimited_type_supporting_local_open
+    { $1 }
+;
+
 atomic_type:
-  | LPAREN core_type RPAREN
-      { $2 }
-  | LPAREN MODULE ext_attributes package_type RPAREN
-      { wrap_typ_attrs ~loc:$sloc (reloc_typ ~loc:$sloc $4) $3 }
+  | type_ = delimited_type
+      { type_ }
   | mktyp( /* begin mktyp group */
-      QUOTE ident
-        { Ptyp_var $2 }
-    | UNDERSCORE
-        { Ptyp_any }
+      tys = actual_type_parameters
+      tid = mkrhs(type_longident)
+        { Ptyp_constr (tid, tys) }
     | tys = actual_type_parameters
       tid = mkrhs(type_unboxed_longident)
         { unboxed_type $loc(tid) tid.txt tys }
     | tys = actual_type_parameters
-      tid = mkrhs(type_longident)
-        { Ptyp_constr(tid, tys) }
-    | LESS meth_list GREATER
-        { let (f, c) = $2 in Ptyp_object (f, c) }
-    | LESS GREATER
-        { Ptyp_object ([], Closed) }
-    | tys = actual_type_parameters
       HASH
       cid = mkrhs(clty_longident)
-        { Ptyp_class(cid, tys) }
-    | LBRACKET tag_field RBRACKET
-        (* not row_field; see CONFLICTS *)
-        { Ptyp_variant([$2], Closed, None) }
-    | LBRACKET BAR row_field_list RBRACKET
-        { Ptyp_variant($3, Closed, None) }
-    | LBRACKET row_field BAR row_field_list RBRACKET
-        { Ptyp_variant($2 :: $4, Closed, None) }
-    | LBRACKETGREATER BAR? row_field_list RBRACKET
-        { Ptyp_variant($3, Open, None) }
-    | LBRACKETGREATER RBRACKET
-        { Ptyp_variant([], Open, None) }
-    | LBRACKETLESS BAR? row_field_list RBRACKET
-        { Ptyp_variant($3, Closed, Some []) }
-    | LBRACKETLESS BAR? row_field_list GREATER name_tag_list RBRACKET
-        { Ptyp_variant($3, Closed, Some $5) }
-    | extension
-        { Ptyp_extension $1 }
+        { Ptyp_class (cid, tys) }
+    | mod_ident = mkrhs(mod_ext_longident)
+      DOT
+      type_ = delimited_type_supporting_local_open
+        { Ptyp_open (mod_ident, type_) }
+    | QUOTE ident = ident
+        { Ptyp_var ident }
+    | UNDERSCORE
+        { Ptyp_any }
   )
   { $1 } /* end mktyp group */
   | LPAREN QUOTE name=ident COLON jkind=jkind_annotation RPAREN
@@ -4695,7 +4771,7 @@ atomic_type:
   | /* empty */
       { [] }
   | ty = atomic_type
-      { [ty] }
+      { [ ty ] }
   | LPAREN
     tys = separated_nontrivial_llist(COMMA, one_type_parameter_of_several)
     RPAREN
@@ -5185,7 +5261,7 @@ floating_attribute:
     { $1 }
 ;
 ext:
-  | /* empty */     { None }
+  | /* empty */   { None }
   | PERCENT attr_id { Some $2 }
 ;
 %inline no_ext:

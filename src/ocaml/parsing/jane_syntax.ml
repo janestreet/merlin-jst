@@ -41,7 +41,7 @@ end
 module Of_ast (Ext : Extension) : sig
   type unwrapped := string list * payload * attributes
 
-  (* Find and remove a jane-syntax attribute marker, throwing an exception
+  (* Find and remove a jane-syntax attribute marker, throwing an error
      if the attribute name does not have the right format or extension. *)
   val unwrap_jane_syntax_attributes_exn :
     loc:Location.t -> attributes -> unwrapped
@@ -337,8 +337,6 @@ end
 
 module Mode_expr = struct
   module Const : sig
-    type raw = string
-
     type t = Parsetree.mode_const_expression
 
     val mk : string -> Location.t -> t
@@ -380,7 +378,9 @@ module Mode_expr = struct
 
   let empty = Location.mknoloc []
 
-  let singleton (const : _ loc) = Location.mkloc [const] const.loc
+  let singleton const =
+    let const' = (const : Const.t :> _ Location.loc) in
+    Location.mkloc [const] const'.loc
 
   let concat mode0 mode1 =
     let txt = mode0.txt @ mode1.txt in
@@ -1155,7 +1155,7 @@ module Layouts = struct
         }
     | Ltyp_alias of
         { aliased_type : core_type;
-          name : string option;
+          name : string loc option;
           jkind : Jkind.annotation
         }
 
