@@ -77,6 +77,7 @@ module Typ = struct
   let poly ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_poly (a, b))
   let package ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_package (a, b))
   let extension ?loc ?attrs a = mk ?loc ?attrs (Ptyp_extension a)
+  let open_ ?loc ?attrs mod_ident t = mk ?loc ?attrs (Ptyp_open (mod_ident, t))
 
   let force_poly t =
     match t.ptyp_desc with
@@ -113,6 +114,7 @@ module Typ = struct
             Ptyp_object (List.map loop_object_field lst, o)
         | Ptyp_class (longident, lst) ->
             Ptyp_class (longident, List.map loop lst)
+<<<<<<< HEAD
         (* A Ptyp_alias might be a jkind annotation (that is, it might have
            attributes which mean it should be interpreted as a
            [Jane_syntax.Layouts.Ltyp_alias]), but the code here still has the
@@ -120,6 +122,15 @@ module Typ = struct
         | Ptyp_alias(core_type, string) ->
             check_variable var_names t.ptyp_loc string;
             Ptyp_alias(loop core_type, string)
+||||||| 7b73c6aa3
+        | Ptyp_alias(core_type, string) ->
+            check_variable var_names t.ptyp_loc string;
+            Ptyp_alias(loop core_type, string)
+=======
+        | Ptyp_alias(core_type, alias) ->
+            check_variable var_names alias.loc alias.txt;
+            Ptyp_alias(loop core_type, alias)
+>>>>>>> upstream/main
         | Ptyp_variant(row_field_list, flag, lbl_lst_option) ->
             Ptyp_variant(List.map loop_row_field row_field_list,
                          flag, lbl_lst_option)
@@ -129,6 +140,8 @@ module Typ = struct
             Ptyp_poly(string_lst, loop core_type)
         | Ptyp_package(longident,lst) ->
             Ptyp_package(longident,List.map (fun (n,typ) -> (n,loop typ) ) lst)
+        | Ptyp_open (mod_ident, core_type) ->
+            Ptyp_open (mod_ident, loop core_type)
         | Ptyp_extension (s, arg) ->
             Ptyp_extension (s, arg)
       in

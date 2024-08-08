@@ -16,6 +16,14 @@
       "col": 9
     }
   }
+<<<<<<< HEAD
+||||||| 7b73c6aa3
+
+FIXME: this is not a very satisfying answer. 
+We could expect 1:9
+=======
+
+>>>>>>> upstream/main
   $ $MERLIN single locate  -look-for ml -position 2:14 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {

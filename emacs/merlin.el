@@ -153,7 +153,7 @@ If a string list, check only if the extension of the buffer-file-name
   "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-error-on-single-line nil
+(defcustom merlin-error-on-single-line t
   "Only highlight first line of multi-line error messages"
   :group 'merlin :type 'boolean)
 
@@ -193,6 +193,10 @@ a new window or not."
 (defcustom merlin-logfile nil
   "If non-nil, use this file for the log file (should be an absolute path)."
   :group 'merlin :type 'file)
+
+(defcustom merlin-cache-lifespan nil
+  "If non-nil, use this value for cache period (measured in minutes)."
+  :group 'merlin :type 'natnum)
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
@@ -550,6 +554,8 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
                   (cons "-flags" merlin-buffer-flags))
                 (when filename
                   (cons "-filename" filename))
+                (when merlin-cache-lifespan
+                  (cons "-cache-lifespan" (number-to-string merlin-cache-lifespan)))
                 args))
     ;; Log last commands
     (setq merlin-debug-last-commands
@@ -1785,9 +1791,17 @@ Empty string defaults to jumping to all these."
         (dolist (pos positions)
           (let* ((start (assoc 'start pos))
                  (end (assoc 'end pos))
+<<<<<<< HEAD
                  (occ-buff (find-file-noselect (cdr (assoc 'file pos))))
                  (marker (with-current-buffer occ-buff
                           (copy-marker (merlin--point-of-pos start))))
+||||||| 7b73c6aa3
+=======
+                 (file (cdr (assoc 'file pos)))
+                 (occ-buff (if file (find-file-noselect file) src-buff))
+                 (marker (with-current-buffer occ-buff
+                          (copy-marker (merlin--point-of-pos start))))
+>>>>>>> upstream/main
                  (line (cdr (assoc 'line start)))
                  (start-buf-pos (with-current-buffer occ-buff
                                   (merlin--point-of-pos start)))
@@ -1797,14 +1811,21 @@ Empty string defaults to jumping to all these."
                  (start-offset (+ prefix-length
                                   (cdr (assoc 'col start))))
                  (lines-text
-                  (if (equal line pending-line)
-                      pending-lines-text
+                  (if (and (equal line pending-line) occ-buff)
+                    pending-lines-text
                     (merlin--occurrence-text line
                                             marker
                                             start-buf-pos
                                             end-buf-pos
+<<<<<<< HEAD
                                             occ-buff))))
 
+||||||| 7b73c6aa3
+                                            src-buff))))
+
+=======
+                                            occ-buff))))
+>>>>>>> upstream/main
             ;; Insert the critical text properties that occur-mode
             ;; makes use of
             (add-text-properties start-offset
@@ -1821,6 +1842,7 @@ Empty string defaults to jumping to all these."
                        (or (not (equal line pending-line))
                            (not (equal previous-buf occ-buff))))
               (insert pending-lines-text))
+<<<<<<< HEAD
 
             (when (not (equal previous-buf occ-buff))
               (insert (propertize (format "Occurrences in buffer: %s"
@@ -1832,6 +1854,20 @@ Empty string defaults to jumping to all these."
                                   'occur-title occ-buff))
               (insert "\n"))
 
+||||||| 7b73c6aa3
+=======
+
+            (when (not (equal previous-buf occ-buff))
+              (insert (propertize (format "Occurrences in buffer %s:"
+                                          ;(length lst)
+                                          occ-buff)
+                                  'font-lock-face
+                                    list-matching-lines-buffer-name-face
+                                  'read-only t
+                                  'occur-title occ-buff))
+              (insert "\n"))
+
+>>>>>>> upstream/main
             (setq pending-line line)
             (setq previous-buf occ-buff)
             (setq pending-lines-text lines-text)))

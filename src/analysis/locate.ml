@@ -351,7 +351,9 @@ end = struct
   let reset () = state := None
 
   let move_to ~digest file =
-    log ~title:"File_switching.move_to" "%s" file;
+    log ~title:"File_switching.move_to" "file: %s\ndigest: %s" file
+    @@ Digest.to_hex digest;
+
     state := Some { last_file_visited = file ; digest }
 
   let where_am_i () = Option.map !state ~f:last_file_visited
@@ -371,6 +373,8 @@ module Utils = struct
      Note: We do not refine the load path for module path as we used too. *)
   let find_all_in_path_uncap ?src_suffix_pair ~with_fallback path file =
     let name = File.with_ext ?src_suffix_pair file in
+    log ~title:"find_all_in_path_uncap" "Looking for file %S in path:\n%a" name
+      Logger.fmt (fun fmt -> Format.pp_print_list Format.pp_print_string fmt path);
     let uname = String.uncapitalize name in
     let fallback, ufallback =
       let alt = File.alternate file in
@@ -422,9 +426,19 @@ module Utils = struct
           try Some (Misc.find_in_path_uncap ?fallback path fname)
           with Not_found ->  None
         in
+<<<<<<< HEAD
         match try_one file with
         | Some _ as f -> f
         | None -> Option.bind ~f:try_one (File.to_legacy file)
+||||||| 7b73c6aa3
+        let fname = File.with_ext ~src_suffix_pair file in
+        try Some (Misc.find_in_path_uncap ?fallback path fname)
+        with Not_found -> None
+=======
+        let fname = File.with_ext ~src_suffix_pair file in
+        try Some (Misc.find_in_path_normalized ?fallback path fname)
+        with Not_found -> None
+>>>>>>> upstream/main
       in
       try
         Some (List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search)
@@ -434,9 +448,17 @@ module Utils = struct
   let find_file ~config ?with_fallback (file : File.t) =
     find_file_with_path ~config ?with_fallback file @@
         match file with
+<<<<<<< HEAD
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config @ Mconfig.hidden_source_path config
         | CMT _ | CMTI _         -> Mconfig.build_path config @ Mconfig.hidden_build_path config
         | CMS _ | CMSI _         -> Mconfig.build_path config @ Mconfig.hidden_build_path config
+||||||| 7b73c6aa3
+        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
+        | CMT _ | CMTI _         -> Mconfig.build_path config
+=======
+        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
+        | CMT _ | CMTI _         -> Mconfig.cmt_path config
+>>>>>>> upstream/main
 end
 
 let move_to filename artifact =
@@ -466,11 +488,28 @@ let move_to filename artifact =
   in
   File_switching.move_to ~digest filename
 
+<<<<<<< HEAD
 
 let load_cmt ~config ?with_fallback:(_ = true) comp_unit =
   Preferences.set config.ml_or_mli;
   let file = Preferences.build comp_unit in
   match Utils.find_file ~config:config.mconfig ~with_fallback:true file with
+||||||| 7b73c6aa3
+
+let load_cmt ~config comp_unit ml_or_mli =
+  Preferences.set ml_or_mli;
+  let file =
+    Preferences.build comp_unit
+  in
+  match Utils.find_file ~config ~with_fallback:true file with
+=======
+let load_cmt ~config ?(with_fallback = true) comp_unit =
+  Preferences.set config.ml_or_mli;
+  let file =
+    Preferences.build comp_unit
+  in
+  match Utils.find_file ~config:config.mconfig ~with_fallback file with
+>>>>>>> upstream/main
   | Some path ->
     let artifact = Artifact.read path in
     let source_file = Artifact.sourcefile artifact in
@@ -506,11 +545,142 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
   in
   non_alias_declaration_uid ~fallback_uid path
 
+<<<<<<< HEAD
 (* merlin-jst: Supports the addition of [Compilation_unit], replacing
    comparisons of [Env.get_unit_name ()] with [comp_unit]; we don't use
    [Option.equal] because [Std.Option] doesn't have it so the patch would be
    less local in order to add a module alias before [open Std]. *)
 
+||||||| 7b73c6aa3
+let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
+  let module Shape_reduce =
+    Shape.Make_reduce (struct
+      type env = Env.t
+
+      let fuel = 10
+
+      let read_unit_shape ~unit_name =
+          log ~title:"read_unit_shape" "inspecting %s" unit_name;
+          match load_cmt ~config unit_name `ML with
+          | Ok (filename, cmt_infos) ->
+            move_to filename cmt_infos;
+            log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
+            cmt_infos.cmt_impl_shape
+          | Error () ->
+            log ~title:"read_unit_shape" "failed to find %s" unit_name;
+            None
+
+      let find_shape env id = Env.shape_of_path
+        ~namespace:Shape.Sig_component_kind.Module env (Pident id)
+    end)
+  in
+  match ml_or_mli with
+  | `MLI ->
+    let uid = scrape_alias ~fallback_uid:decl_uid ~env ~namespace path in
+    log ~title:"uid_of_path" "Declaration uid: %a"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
+    log ~title:"uid_of_path" "Alias scrapped: %a"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+    Some uid
+  | `ML ->
+    let shape = Env.shape_of_path ~namespace env path in
+    log ~title:"shape_of_path" "initial: %a"
+      Logger.fmt (fun fmt -> Shape.print fmt shape);
+    let r = Shape_reduce.weak_reduce env shape in
+    log ~title:"shape_of_path" "reduced: %a"
+      Logger.fmt (fun fmt -> Shape.print fmt r);
+    r.uid
+
+let from_uid ~config ~ml_or_mli uid loc path =
+  let loc_of_comp_unit comp_unit =
+    match load_cmt ~config comp_unit ml_or_mli with
+    | Ok (pos_fname, _cmt) ->
+      let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
+      let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
+      Some loc
+    | _ -> None
+  in
+  let title = "from_uid" in
+  match uid with
+  | Some (Shape.Uid.Item { comp_unit; _ } as uid) ->
+    let locopt =
+      if Env.get_unit_name () = comp_unit then begin
+        log ~title "We look for %a in the current compilation unit."
+          Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+        let tbl = Env.get_uid_to_loc_tbl () in
+        match Shape.Uid.Tbl.find_opt tbl uid with
+        | Some loc ->
+          log ~title "Found location: %a"
+            Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+          Some (uid, loc)
+        | None ->
+          log ~title
+            "Uid not found in the local table.\
+            Fallbacking to the node's location: %a"
+          Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+          Some (uid, loc)
+      end else begin
+        log ~title "Loading the shapes for unit %S" comp_unit;
+        match load_cmt ~config comp_unit ml_or_mli with
+        | Ok (_pos_fname, cmt) ->
+          log ~title "Shapes successfully loaded, looking for %a"
+            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+          begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
+            | Some loc ->
+              log ~title "Found location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              Some (uid, loc)
+            | None ->
+              log ~title "Uid not found in the cmt table. \
+                Fallbacking to the node's location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              Some (uid, loc)
+          end
+        | _ ->
+          log ~title "Failed to load the shapes";
+          None
+      end
+    in
+    begin match locopt with
+    | Some (uid, loc) -> `Found (Some uid, loc)
+    | None -> `Not_found (Path.name path, None)
+    end
+  | Some (Compilation_unit comp_unit as uid) ->
+    begin
+      log ~title "Got the uid of a compilation unit: %a"
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+      match loc_of_comp_unit comp_unit with
+      | Some loc -> `Found (Some uid, loc)
+      | _ -> log ~title "Failed to load the shapes";
+        `Not_found (Path.name path, None)
+    end
+  | Some (Predef _ | Internal) -> assert false
+  | None -> log ~title "No UID found, fallbacking to lookup location.";
+      `Found (None, loc)
+
+let locate ~config ~env ~ml_or_mli decl_uid loc path ns =
+  let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns in
+  from_uid ~config ~ml_or_mli uid loc path
+
+let path_and_loc_of_cstr desc _ =
+  let open Types in
+  match desc.cstr_tag with
+  | Cstr_extension (path, _) -> path, desc.cstr_loc
+  | _ ->
+    match get_desc desc.cstr_res with
+    | Tconstr (path, _, _) -> path, desc.cstr_loc
+    | _ -> assert false
+
+let path_and_loc_from_label desc env =
+  let open Types in
+  match get_desc desc.lbl_res with
+  | Tconstr (path, _, _) ->
+    let typ_decl = Env.find_type path env in
+    path, typ_decl.Types.type_loc
+  | _ -> assert false
+
+=======
+>>>>>>> upstream/main
 type find_source_result =
   | Found of string
   | Not_found of File.t
@@ -534,6 +704,7 @@ let find_source ~config loc =
     | None -> fname
     | Some s -> s
   in
+  log ~title:"find_source" "initial path: %S" initial_path;
   let dir = Filename.dirname initial_path in
   let dir =
     match config.Mconfig.query.directory with
@@ -650,6 +821,7 @@ let find_source ~config loc path =
                merlin doesn't know which is the right one: %s"
         matches)
 
+<<<<<<< HEAD
 (** [find_loc_of_uid] uid's location are given by tables stored int he cmt files
   for external compilation units or computed by Merlin for the current buffer.
   This function lookups a uid's location in the appropriate table. *)
@@ -676,6 +848,45 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       end
     | _ -> log ~title "Failed to load the cmt file"; `None
   end
+||||||| 7b73c6aa3
+module Namespace = struct
+  type under_type = [ `Constr | `Labels ]
+=======
+(** [find_loc_of_uid] uid's location are given by tables stored int he cmt files
+  for external compilation units or computed by Merlin for the current buffer.
+  This function lookups a uid's location in the appropriate table. *)
+let find_loc_of_uid ~config ~local_defs uid comp_unit =
+  let title = "find_loc_of_uid" in
+  let loc_of_decl ~uid def =
+    match Misc_utils.loc_of_decl ~uid def  with
+    | Some loc ->
+      log ~title "Found location: %a"
+        Logger.fmt (fun fmt -> Location.print_loc fmt loc.loc);
+      `Some (uid, loc.loc)
+    | None -> log ~title "The declaration has no location."; `None
+  in
+  if Env.get_unit_name () = comp_unit then begin
+    log ~title "We look for %a in the current compilation unit."
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+    log ~title "Looking for %a in the uid_to_loc table"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+    let tbl = Ast_iterators.build_uid_to_locs_tbl ~local_defs () in
+    match Shape.Uid.Tbl.find_opt tbl uid with
+    | Some { Location.loc; _ } -> `Some (uid, loc)
+    | None -> log ~title "Uid not found in the local table."; `None
+  end else begin
+    log ~title "Loading the cmt file for unit %S" comp_unit;
+    match load_cmt ~config comp_unit with
+    | Ok (_pos_fname, cmt) ->
+      log ~title "Shapes successfully loaded, looking for %a"
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+      begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
+        | Some decl -> loc_of_decl ~uid decl
+        | None -> log ~title "Uid not found in the cmt's table."; `None
+      end
+    | _ -> log ~title "Failed to load the cmt file"; `None
+  end
+>>>>>>> upstream/main
 
 let find_loc_of_comp_unit ~config uid comp_unit =
   let title = "find_loc_of_comp_unit" in
@@ -687,6 +898,7 @@ let find_loc_of_comp_unit ~config uid comp_unit =
     `Some (uid, loc)
     | _ -> log ~title "Failed to load the CU's cmt"; `None
 
+<<<<<<< HEAD
 let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   let namespace = decl.namespace in
   let module Reduce = Shape_reduce.Make (struct
@@ -726,7 +938,19 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   log ~title:"shape_of_path" "reduced: %a"
     Logger.fmt (fun fmt -> Shape_reduce.print_result fmt reduced);
   reduced
+||||||| 7b73c6aa3
+  type inferred =
+    [ t
+    | `This_label of Types.label_description
+    | `This_cstr of Types.constructor_description ]
+=======
+let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
+  let namespace = decl.namespace in
+  let module Reduce = Shape_reduce.Make (struct
+      let fuel = 10
+>>>>>>> upstream/main
 
+<<<<<<< HEAD
 let rec uid_of_result ~traverse_aliases = function
   | Shape_reduce.Resolved uid ->
       Some uid, false
@@ -743,7 +967,239 @@ let rec uid_of_result ~traverse_aliases = function
       Some uid, approximated
   | Approximated _ | Unresolved _ | Internal_error_missing_uid ->
       None, true
+||||||| 7b73c6aa3
+  let from_context : Context.t -> inferred list = function
+    | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
+    | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Expr | Constant ->
+      [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+    | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+    | Label lbl     -> [ `This_label lbl ]
+    | Module_path   -> [ `Mod ]
+    | Constructor (c, _) -> [ `This_cstr c ]
+end
+=======
+      let read_unit_shape ~unit_name =
+          log ~title:"read_unit_shape" "inspecting %s" unit_name;
+          match
+            load_cmt ~config:({config with ml_or_mli = `ML})
+                     ~with_fallback:false unit_name
+          with
+          | Ok (filename, cmt_infos) ->
+            move_to filename cmt_infos;
+            log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
+            cmt_infos.cmt_impl_shape
+          | Error () ->
+            log ~title:"read_unit_shape" "failed to find %s" unit_name;
+            None
+    end)
+  in
+  let shape = Env.shape_of_path ~namespace env path in
+  log ~title:"shape_of_path" "initial: %a"
+    Logger.fmt (Fun.flip Shape.print shape);
+  let reduced = Reduce.reduce_for_uid env shape
+  in
+  log ~title:"shape_of_path" "reduced: %a"
+    Logger.fmt (fun fmt -> Shape_reduce.print_result fmt reduced);
+  reduced
+>>>>>>> upstream/main
 
+<<<<<<< HEAD
+(** This is the main function here *)
+let from_path ~config ~env ~local_defs ~decl path =
+  let title = "from_path" in
+  let unalias (decl : Env_lookup.item) =
+    if not config.traverse_aliases then decl.uid else
+    let namespace = decl.namespace in
+    let uid = scrape_alias ~fallback_uid:decl.uid ~env ~namespace path in
+    if uid <> decl.uid then
+      log ~title:"uid_of_path" "Unaliased declaration uid: %a -> %a"
+        Logger.fmt (Fun.flip Shape.Uid.print decl.uid)
+        Logger.fmt (Fun.flip Shape.Uid.print uid);
+    uid
+  in
+  (* Step 1:  Path => Uid *)
+  let decl : Env_lookup.item = { decl with uid = (unalias decl) } in
+  let uid, approximated = match config.ml_or_mli with
+    | `MLI -> decl.uid, false
+    | `ML ->
+      let traverse_aliases = config.traverse_aliases in
+      let result = find_definition_uid ~config ~env ~decl path in
+      match uid_of_result ~traverse_aliases result with
+      | Some uid, approx -> uid, approx
+      | None, _approx ->
+          log ~title "No definition uid, falling back to the declaration uid: %a"
+            Logger.fmt (Fun.flip Shape.Uid.print decl.uid);
+          decl.uid, true
+  in
+  (* Step 2:  Uid => Location *)
+  let loc = match uid with
+    | Predef s -> `Builtin (uid, s)
+    | Internal -> `Builtin (uid, "<internal>")
+    | Item {comp_unit; _} -> find_loc_of_uid ~config ~local_defs uid comp_unit
+    | Compilation_unit comp_unit -> find_loc_of_comp_unit ~config uid comp_unit
+  in
+  let loc = match loc with
+    | `None ->
+      log ~title "Falling back to the declaration's location: %a"
+        Logger.fmt (Fun.flip Location.print_loc decl.loc);
+      `Some (decl.uid, decl.loc)
+    | other -> other
+  in
+  (* Step 3:  Location => Source *)
+  match loc with
+  | `None -> assert false
+  | `Builtin _ as err -> err
+  | `Some (uid, loc) ->
+    match find_source ~config:config.mconfig loc (Path.name path) with
+    | `Found (file, location) ->
+      log ~title:"find_source" "Found file: %s (%a)" file
+        Logger.fmt (Fun.flip Location.print_loc location);
+      `Found {
+        uid;
+        decl_uid = decl.uid;
+        file; location; approximated }
+    | `File_not_found _ as otherwise -> otherwise
+||||||| 7b73c6aa3
+module Env_lookup : sig
+=======
+let rec uid_of_result ~traverse_aliases = function
+  | Shape_reduce.Resolved uid ->
+      Some uid, false
+  | Resolved_alias ((Item { comp_unit; _ } | Compilation_unit comp_unit),
+      ((Resolved_alias (Compilation_unit comp_unit', _)
+      | Resolved (Compilation_unit comp_unit') ) as rest))
+      when let by = comp_unit ^ "__" in String.is_prefixed ~by comp_unit' ->
+      (* Always traverse dune-wrapper aliases *)
+      log ~title:"uid_of_result"
+        "Traversing wrapping alias: %s__ %s" comp_unit comp_unit';
+      uid_of_result ~traverse_aliases rest
+  | Resolved_alias (_alias, rest) when traverse_aliases ->
+      uid_of_result ~traverse_aliases rest
+  | Resolved_alias (alias, _rest) ->
+      Some alias, false
+  | Unresolved { uid = Some uid; desc = Comp_unit _; approximated } ->
+      Some uid, approximated
+  | Approximated _ | Unresolved _ | Internal_error_missing_uid ->
+      None, true
+>>>>>>> upstream/main
+
+<<<<<<< HEAD
+let from_longident ~config ~env ~local_defs nss ident =
+||||||| 7b73c6aa3
+  val loc
+    : Path.t
+    -> Namespaced_path.Namespace.t
+    -> Env.t
+    -> (Location.t * Shape.Uid.t * Shape.Sig_component_kind.t) option
+
+  val in_namespaces
+     : Namespace.inferred list
+    -> Longident.t
+    -> Env.t
+    -> (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t) option
+
+end = struct
+
+  let loc path (namespace : Namespaced_path.Namespace.t) env =
+    try
+      Some (
+        match namespace with
+        | `Unknown
+        | `Apply
+        | `Vals ->
+          let vd = Env.find_value path env in
+          vd.val_loc, vd.val_uid, Shape.Sig_component_kind.Value
+        | `Constr
+        | `Labels
+        | `Type ->
+          let td = Env.find_type path env in
+          td.type_loc, td.type_uid, Shape.Sig_component_kind.Type
+        | `Functor
+        | `Mod ->
+          let md = Env.find_module path env in
+          md.md_loc, md.md_uid, Shape.Sig_component_kind.Module
+        | `Modtype ->
+          let mtd = Env.find_modtype path env in
+          mtd.mtd_loc, mtd.mtd_uid, Shape.Sig_component_kind.Module_type
+      )
+    with
+      Not_found -> None
+
+  exception Found of
+    (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t)
+
+  let in_namespaces (nss : Namespace.inferred list) ident env =
+    let open Shape.Sig_component_kind in
+    try
+      List.iter nss ~f:(fun namespace ->
+        try
+          match namespace with
+          | `This_cstr ({ Types.cstr_tag = Cstr_extension _; _ } as cd) ->
+            log ~title:"lookup"
+              "got extension constructor";
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, Extension_constructor, cd.cstr_uid, loc))
+          | `This_cstr cd ->
+            log ~title:"lookup"
+              "got constructor, fetching path and loc in type namespace";
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, Type, cd.cstr_uid,loc))
+          | `Constr ->
+            log ~title:"lookup" "lookup in constructor namespace" ;
+            let cd = Env.find_constructor_by_name ident env in
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, Type,cd.cstr_uid, loc))
+          | `Mod ->
+            log ~title:"lookup" "lookup in module namespace" ;
+            let path, md = Env.find_module_by_name ident env in
+            raise (Found (path, Module, md.md_uid, md.Types.md_loc))
+          | `Modtype ->
+            log ~title:"lookup" "lookup in module type namespace" ;
+            let path, mtd = Env.find_modtype_by_name ident env in
+            raise (Found (path, Module_type, mtd.mtd_uid, mtd.Types.mtd_loc))
+          | `Type ->
+            log ~title:"lookup" "lookup in type namespace" ;
+            let path, typ_decl = Env.find_type_by_name ident env in
+            raise (
+              Found (path, Type, typ_decl.type_uid, typ_decl.Types.type_loc)
+            )
+          | `Vals ->
+            log ~title:"lookup" "lookup in value namespace" ;
+            let path, val_desc = Env.find_value_by_name ident env in
+            raise (
+              Found (path, Value, val_desc.val_uid, val_desc.Types.val_loc)
+            )
+          | `This_label lbl ->
+            log ~title:"lookup"
+              "got label, fetching path and loc in type namespace";
+            let path, loc = path_and_loc_from_label lbl env in
+            (* TODO: Use [`Labels] here instead of [`Type] *)
+            raise (Found (path, Type, lbl.lbl_uid, loc))
+          | `Labels ->
+            log ~title:"lookup" "lookup in label namespace" ;
+            let lbl = Env.find_label_by_name ident env in
+            let path, loc = path_and_loc_from_label lbl env in
+            (* TODO: Use [`Labels] here instead of [`Type] *)
+            raise (Found (path, Type, lbl.lbl_uid, loc))
+        with Not_found -> ()
+      ) ;
+      log ~title:"lookup" "   ... not in the environment" ;
+      None
+    with Found ((path, namespace, decl_uid, _loc) as x) ->
+      log ~title:"env_lookup" "found: '%a' in namespace %s with uid %a"
+        Logger.fmt (fun fmt -> Path.print fmt path)
+        (Shape.Sig_component_kind.to_string namespace)
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
+      Some x
+end
+
+let uid_from_longident ~config ~env nss ml_or_mli ident =
+=======
 (** This is the main function here *)
 let from_path ~config ~env ~local_defs ~decl path =
   let title = "from_path" in
@@ -801,19 +1257,40 @@ let from_path ~config ~env ~local_defs ~decl path =
     | `File_not_found _ as otherwise -> otherwise
 
 let from_longident ~config ~env ~local_defs nss ident =
+>>>>>>> upstream/main
   let str_ident =
     try String.concat ~sep:"." (Longident.flatten ident)
     with _-> "Not a flat longident"
   in
-  match Env_lookup.in_namespaces nss ident env with
+  match Env_lookup.by_longident nss ident env with
   | None -> `Not_in_env str_ident
   | Some (path, decl) -> from_path ~config ~env ~local_defs ~decl path
 
 let from_path ~config ~env ~local_defs ~namespace path =
   File_switching.reset ();
+<<<<<<< HEAD
   match Env_lookup.loc path namespace env with
   | None -> `Not_in_env (Path.name path)
   | Some decl -> from_path ~config ~env ~local_defs ~decl path
+||||||| 7b73c6aa3
+  if Utils.is_builtin_path path then
+    `Builtin
+  else
+    match Env_lookup.loc path namespace env with
+    | None -> `Not_in_env (Path.name path)
+    | Some (loc, uid, namespace) ->
+      match locate ~config ~env ~ml_or_mli uid loc path namespace with
+      | `Not_found _
+      | `File_not_found _ as err -> err
+      | `Found (uid, loc) ->
+        match find_source ~config loc (Path.name path) with
+        | `Found (file, loc) -> `Found (uid, file, loc)
+        | `File_not_found _ as otherwise -> otherwise
+=======
+  match Env_lookup.by_path path namespace env with
+  | None -> `Not_in_env (Path.name path)
+  | Some decl -> from_path ~config ~env ~local_defs ~decl path
+>>>>>>> upstream/main
 
 let infer_namespace ?namespaces ~pos lid browse is_label =
   match namespaces with
@@ -859,6 +1336,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces path =
   in
   Option.value_map ~f:from_lid ~default:(`Not_found (path, None)) lid
 
+<<<<<<< HEAD
 (** When we look for docstring in external compilation unit we can perform
     a uid-based search and return the attached comment in the attributes.
     This is a more sound way to get documentation than resorting on the
@@ -890,9 +1368,195 @@ let find_doc_attributes_in_typedtree ~config ~comp_unit uid =
       | None -> `No_documentation
     end
   | Error _ -> `No_documentation
+||||||| 7b73c6aa3
+(** When we look for docstring in external compilation unit we can perform
+    a uid-based search and return the attached comment in the attributes.
+    This is a more sound way to get documentation than resorting on the
+    [Ocamldoc.associate_comment] heuristic *)
+(* In a future release of OCaml the cmt's uid_to_loc table will contain
+   fragments of the typedtree that might be used to get the docstrings without
+   relying on this iteration *)
+let find_doc_attributes_in_typedtree ~config ~comp_unit uid =
+  let exception Found_attributes of Typedtree.attributes in
+  let test elt_uid attributes =
+    if Shape.Uid.equal uid elt_uid then raise (Found_attributes attributes)
+  in
+  let iterator =
+    let first_item = ref true in
+    let uid_is_comp_unit = match uid with
+      | Shape.Uid.Compilation_unit _ -> true
+      | _ -> false
+    in
+    fun env -> { Tast_iterator.default_iterator with
+
+      (* Needed to return top-level module doc (when the uid is a compunit).
+         The module docstring must be the first signature or structure item *)
+      signature_item = (fun sub ({ sig_desc; _} as si) ->
+        begin match sig_desc, !first_item, uid_is_comp_unit with
+        | Tsig_attribute attr, true, true -> raise (Found_attributes [attr])
+        | _, false, true -> raise Not_found
+        | _, _, _ -> first_item := false end;
+        Tast_iterator.default_iterator.signature_item sub si);
+
+      structure_item = (fun sub ({ str_desc; _} as sti) ->
+        begin match str_desc, !first_item, uid_is_comp_unit with
+        | Tstr_attribute attr, true, true -> raise (Found_attributes [attr])
+        | _, false, true -> raise Not_found
+        | _, _, _ -> first_item := false end;
+        Tast_iterator.default_iterator.structure_item sub sti);
+
+      value_description = (fun sub ({ val_val; val_attributes; _ } as vd) ->
+        test val_val.val_uid val_attributes;
+        Tast_iterator.default_iterator.value_description sub vd);
+
+      type_declaration = (fun sub ({ typ_type; typ_attributes; _ } as td) ->
+        test typ_type.type_uid typ_attributes;
+        Tast_iterator.default_iterator.type_declaration sub td);
+
+      value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
+        let pat_var_iter ~f pat =
+          let rec aux pat =
+            let open Typedtree in
+            match pat.pat_desc with
+            | Tpat_var (id, _) -> f id
+            | Tpat_alias (pat, _, _)
+            | Tpat_variant (_, Some pat, _)
+            | Tpat_lazy pat
+            | Tpat_or (pat, _, _) ->
+                aux pat
+            | Tpat_tuple pats
+            | Tpat_construct (_, _, pats, _)
+            | Tpat_array pats ->
+                List.iter ~f:aux pats
+            | Tpat_record (pats, _) ->
+                List.iter ~f:(fun (_, _, pat) -> aux pat) pats
+            | _ -> ()
+          in
+          aux pat
+        in
+        pat_var_iter vb_pat ~f:(fun id ->
+          try
+            let vd = Env.find_value (Pident id) env in
+            test vd.val_uid vb_attributes
+          with Not_found -> ());
+        Tast_iterator.default_iterator.value_binding sub vb)
+    }
+  in
+  let typedtree =
+    log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
+    match load_cmt ~config comp_unit `MLI with
+    | Ok (_, cmt_infos) ->
+      log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
+      begin match cmt_infos.cmt_annots with
+      | Interface s -> Some (`Interface { s with
+          sig_final_env = Envaux.env_of_only_summary s.sig_final_env})
+      | Implementation str -> Some (`Implementation { str with
+          str_final_env = Envaux.env_of_only_summary str.str_final_env})
+      | _ -> None
+      end
+    | Error _ -> None
+  in
+  try begin match typedtree with
+    | Some (`Interface s) ->
+        let iterator = iterator s.sig_final_env in
+        iterator.signature iterator s;
+        log ~title:"doc_from_uid" "uid not found in the signature"
+    | Some (`Implementation str) ->
+        let iterator = iterator str.str_final_env in
+        iterator.structure iterator str;
+        log ~title:"doc_from_uid" "uid not found in the implementation"
+    | _ -> () end;
+    `No_documentation
+  with
+    | Found_attributes attrs ->
+        log ~title:"doc_from_uid" "Found attributes for this uid";
+        let parse_attributes attrs =
+          let open Parsetree in
+          try Some (List.find_map attrs ~f:(fun attr ->
+            if List.exists ["ocaml.doc"; "ocaml.text"]
+              ~f:(String.equal attr.attr_name.txt)
+            then Ast_helper.extract_str_payload attr.attr_payload
+            else None))
+          with Not_found -> None
+        in
+        begin match parse_attributes attrs with
+        | Some (doc, _) -> `Found (doc |> String.trim)
+        | None -> `No_documentation end
+    | Not_found -> `No_documentation
+=======
+
+let find_doc_attribute attrs =
+  let open Parsetree in
+  try Some (List.find_map attrs ~f:(fun attr ->
+    if List.exists ["ocaml.doc"; "ocaml.text"]
+      ~f:(String.equal attr.attr_name.txt)
+    then Ast_helper.extract_str_payload attr.attr_payload
+    else None))
+  with Not_found -> None
+
+let find_compunit_doc_in_typedtree cmt_infos =
+  let first_item_attribute =
+    log ~title:"doc_from_uid" "Itering on the typedtree";
+    match cmt_infos.Cmt_format.cmt_annots with
+    | Interface
+        { sig_items = { sig_desc = Tsig_attribute attr; _} :: _; _} -> Some attr
+    | Implementation
+        { str_items = { str_desc = Tstr_attribute attr; _} :: _; _} -> Some attr
+    | _ -> None
+  in
+  match first_item_attribute with
+  | None -> `No_documentation
+  | Some attr ->
+    log ~title:"doc_from_uid" "Found attributes for this uid";
+    begin match find_doc_attribute [attr] with
+    | Some (doc, _) -> `Found_doc (doc |> String.trim)
+    | None -> `No_documentation end
+
+let doc_of_item_declaration decl =
+  let attributes = match decl with
+    | Typedtree.Value { val_attributes; _ } -> val_attributes
+    | Value_binding { vb_attributes; _ } -> vb_attributes
+    | Type { typ_attributes; _ } -> typ_attributes
+    | Constructor { cd_attributes; _ } -> cd_attributes
+    | Extension_constructor { ext_attributes; _ }  -> ext_attributes
+    | Label { ld_attributes; _ } -> ld_attributes
+    | Module { md_attributes; _ } -> md_attributes
+    | Module_substitution { ms_attributes; _ } -> ms_attributes
+    | Module_binding { mb_attributes; _ } -> mb_attributes
+    | Module_type { mtd_attributes; _ } -> mtd_attributes
+    | Class { ci_attributes; _ }
+    | Class_type { ci_attributes; _ } -> ci_attributes
+  in
+  match find_doc_attribute attributes with
+  | Some (doc, _) -> `Found_doc (doc |> String.trim)
+  | None -> `No_documentation
+
+(** When we look for docstring in an external compilation unit we can perform a
+    uid-based search and return the attached comment in the attributes. This is
+    a more sound way to get documentation than resorting on the
+    [Ocamldoc.associate_comment] heuristic. *)
+let find_uid_doc_in_cmt cmt_infos uid =
+  match uid with
+  | Shape.Uid.Compilation_unit _ ->
+    (* For module doc we need to look at the first items in the typedtree *)
+    find_compunit_doc_in_typedtree cmt_infos
+  | _ -> begin
+      let decl =
+          Shape.Uid.Tbl.find_opt cmt_infos.Cmt_format.cmt_uid_to_decl uid
+      in
+      match decl with
+      | None -> `No_documentation
+      | Some decl ->
+        begin match doc_of_item_declaration decl with
+        | `Found_doc d -> `Found_doc d
+        | `No_documentation -> `Found_decl (uid, decl, cmt_infos.cmt_comments)
+        end
+    end
+>>>>>>> upstream/main
 
 let doc_from_uid ~config ~loc uid =
   begin match uid with
+<<<<<<< HEAD
   | Shape.Uid.Item { comp_unit; _ }
   | Shape.Uid.Compilation_unit comp_unit
       when not (Misc_utils.is_current_unit comp_unit) ->
@@ -905,13 +1569,41 @@ let doc_from_uid ~config ~loc uid =
             (* We fallback on the legacy heuristic to handle some unproper
                doc placement. See test [unattached-comment.t] *)
             `Found_loc loc)
+||||||| 7b73c6aa3
+  | Some (Shape.Uid.Item { comp_unit; _ } as uid)
+  | Some (Shape.Uid.Compilation_unit comp_unit as uid)
+      when Env.get_unit_name () <> comp_unit ->
+        log ~title:"get_doc" "the doc (%a) you're looking for is in another
+          compilation unit (%s)"
+          Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
+        (match find_doc_attributes_in_typedtree ~config ~comp_unit uid with
+        | `Found doc -> `Found_doc doc
+        | `No_documentation ->
+            (* We fallback on the legacy heuristic to handle some unproper
+               doc placement. See test [unattached-comment.t] *)
+            `Found_loc loc)
+=======
+  | Shape.Uid.Item { comp_unit; _ }
+  | Shape.Uid.Compilation_unit comp_unit
+    when Env.get_unit_name () <> comp_unit ->
+    log ~title:"get_doc" "the doc (%a) you're looking for is in another
+      compilation unit (%s)"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
+      log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
+    begin match load_cmt ~config:({config with ml_or_mli = `MLI}) comp_unit with
+    | Error _ -> `No_documentation
+    | Ok (_, cmt_infos) ->
+      log ~title:"doc_from_uid" "Cmt loaded for %s" (Option.value ~default:"<>" cmt_infos.cmt_sourcefile);
+      find_uid_doc_in_cmt cmt_infos uid
+      end
+>>>>>>> upstream/main
   | _ ->
     (* Uid based search doesn't works in the current CU since Merlin's parser
        does not attach doc comments to the typedtree *)
     `Found_loc loc
   end
 
-let doc_from_comment_list ~local_defs ~buffer_comments loc =
+let doc_from_comment_list ~after_only ~buffer_comments loc =
   (* When the doc we look for is in the current buffer or if search by uid
     has failed we use an alternative heuristic since Merlin's pure parser
     does not poulates doc attributes in the typedtree. *)
@@ -933,24 +1625,27 @@ let doc_from_comment_list ~local_defs ~buffer_comments loc =
             Location.print_loc l);
       Format.fprintf fmt "]\n"
     );
-  let browse = Mbrowse.of_typedtree local_defs in
-  let (_, deepest_before) =
-    Mbrowse.(leaf_node @@ deepest_before loc.Location.loc_start [browse])
-  in
-  (* based on https://v2.ocaml.org/manual/doccomments.html#ss:label-comments: *)
-  let after_only = begin match deepest_before with
-    | Browse_raw.Constructor_declaration _ -> true
-    (* The remaining `true` cases are currently not reachable *)
-    | Label_declaration _ | Record_field _ | Row_field _  -> true
-    | _ -> false
-  end in
   match
     Ocamldoc.associate_comment ~after_only comments loc !last_location
   with
   | None, _     -> `No_documentation
   | Some doc, _ -> `Found doc
 
+<<<<<<< HEAD
 let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
+||||||| 7b73c6aa3
+let get_doc ~config ~env ~local_defs ~comments ~pos =
+=======
+(* Get doc relies on different heuristics depending on the situation:
+  - First it locates the declaration.
+  - If a Uid is found that belongs to another compilation unit:
+    - [doc_from_uid] The cmt file for that compilation unit is loaded
+    - If the Uid is the one of a compilation unit we look in the typetree
+    - else a lookup is performed in the [uid_to_decl] table
+  - If the uid-based search failed we fallback on the [doc_from_comment_list]
+    heuristic that uses location to select comments in a list. *)
+let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
+>>>>>>> upstream/main
   File_switching.reset ();
   fun path ->
   let_ref last_location Location.none @@ fun () ->
@@ -960,9 +1655,16 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
     | `Completion_entry (namespace, path, _loc) ->
       log ~title:"get_doc" "completion: looking for the doc of '%a'"
         Logger.fmt (fun fmt -> Path.print fmt path) ;
+<<<<<<< HEAD
       let from_path =
         from_path ~config ~env ~local_defs ~namespace path
       in
+||||||| 7b73c6aa3
+      let from_path = from_path ~config ~env ~namespace `MLI path in
+=======
+
+      let from_path = from_path ~config ~env ~local_defs ~namespace path in
+>>>>>>> upstream/main
       begin match from_path with
       | `Found { uid; location = loc; _ } ->
         doc_from_uid ~config ~loc uid
@@ -983,9 +1685,37 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
   in
   match doc_from_uid_result with
   | `Found_doc doc -> `Found doc
+  | `Found_decl (uid, decl, comments) ->
+      (match Misc_utils.loc_of_decl ~uid decl with
+      | None -> `No_documentation
+      | Some loc ->
+        let after_only = match decl with
+          | Typedtree.Constructor _ | Label _ -> true
+          | _ -> false
+        in
+        doc_from_comment_list ~after_only ~buffer_comments:comments loc.loc)
   | `Found_loc loc ->
+<<<<<<< HEAD
       doc_from_comment_list ~local_defs ~buffer_comments:comments loc
   | `Builtin _ ->
+||||||| 7b73c6aa3
+      doc_from_comment_list ~local_defs ~buffer_comments:comments loc
+  | `Builtin ->
+=======
+      (* based on https://v2.ocaml.org/manual/doccomments.html#ss:label-comments: *)
+      let browse = Mbrowse.of_typedtree local_defs in
+      let (_, deepest_before) =
+        Mbrowse.(leaf_node @@ deepest_before loc.Location.loc_start [browse])
+      in
+      let after_only = begin match deepest_before with
+        | Browse_raw.Constructor_declaration _ -> true
+        (* The remaining `true` cases are currently not reachable *)
+        | Label_declaration _ | Record_field _ | Row_field _  -> true
+        | _ -> false end
+      in
+      doc_from_comment_list ~after_only ~buffer_comments:comments loc
+  | `Builtin _ ->
+>>>>>>> upstream/main
     begin match path with
     | `User_input path -> `Builtin path
     | `Completion_entry (_, path, _) -> `Builtin (Path.name path)

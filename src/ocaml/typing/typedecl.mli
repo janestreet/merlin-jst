@@ -46,6 +46,7 @@ val transl_with_constraint:
     outer_env:Env.t -> Parsetree.type_declaration ->
     Typedtree.type_declaration
 
+<<<<<<< HEAD
 val transl_package_constraint:
   loc:Location.t -> type_expr -> Types.type_declaration
 
@@ -58,6 +59,14 @@ val abstract_type_decl:
   params:Jkind.t list ->
   type_declaration
 
+||||||| 7b73c6aa3
+val abstract_type_decl: injective:bool -> int -> type_declaration
+=======
+val transl_package_constraint:
+  loc:Location.t -> Env.t -> type_expr -> Types.type_declaration
+
+val abstract_type_decl: injective:bool -> int -> type_declaration
+>>>>>>> upstream/main
 val approx_type_decl:
     Parsetree.type_declaration list -> (Ident.t * type_declaration) list
 val check_recmod_typedecl:
@@ -73,6 +82,7 @@ val is_fixed_type : Parsetree.type_declaration -> bool
 
 type native_repr_kind = Unboxed | Untagged
 
+<<<<<<< HEAD
 (* Records reason for a jkind representability requirement in errors. *)
 type jkind_sort_loc =
   | Cstr_tuple of { unboxed : bool }
@@ -119,6 +129,14 @@ type bad_jkind_inference_location =
   | Check_constraints
   | Delayed_checks
 
+||||||| 7b73c6aa3
+=======
+type reaching_type_path = reaching_type_step list
+and reaching_type_step =
+  | Expands_to of type_expr * type_expr
+  | Contains of type_expr * type_expr
+
+>>>>>>> upstream/main
 type error =
     Repeated_parameter
   | Duplicate_constructor of string

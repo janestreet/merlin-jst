@@ -96,6 +96,7 @@ type error_filter = {
   typing : bool;
 }
 
+<<<<<<< HEAD
 type syntax_doc_result = 
 { 
     name : string; 
@@ -103,9 +104,33 @@ type syntax_doc_result =
     documentation : string 
 }
 
+||||||| 7b73c6aa3
+=======
+type syntax_doc_result =
+{
+    name : string;
+    description : string;
+    documentation : string
+}
+
+type ppxed_source = 
+{
+  code : string;
+  attr_start : Lexing.position;
+  attr_end : Lexing.position;
+}
+
+>>>>>>> upstream/main
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
+
+type occurrences_status = [
+  | `Not_requested
+  | `Out_of_sync of string list
+  | `No_def
+  | `Included
+]
 
 type _ t =
   | Type_expr(* *)
@@ -143,11 +168,25 @@ type _ t =
        | `Not_found of string * string option
        | `No_documentation
        ] t
+<<<<<<< HEAD
   | Syntax_document
     : Msource.position
     -> [ `Found of syntax_doc_result
        | `No_documentation
        ] t
+||||||| 7b73c6aa3
+=======
+  | Syntax_document
+    : Msource.position
+    -> [ `Found of syntax_doc_result
+       | `No_documentation
+       ] t
+  | Expand_ppx
+    : Msource.position
+    -> [ `Found of ppxed_source
+       | `No_ppx
+       ] t
+>>>>>>> upstream/main
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position
@@ -210,6 +249,6 @@ type _ t =
     -> string list t
   | Occurrences(* *)
     : [`Ident_at of Msource.position] * [`Project | `Buffer]
-    -> Location.t list t
+    -> (Location.t list * occurrences_status) t
   | Version
     : string t

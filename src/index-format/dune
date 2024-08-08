@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 (library
  (name merlin_index_format)
  (public_name merlin-lib.index_format)
@@ -12,3 +13,16 @@
   -open
   Merlin_utils)
  (libraries ocaml_parsing ocaml_typing ocaml_utils merlin_utils))
+||||||| 7b73c6aa3
+=======
+(library
+ (name merlin_index_format)
+ (public_name merlin-lib.index_format)
+ (flags
+  :standard
+  -open Ocaml_parsing
+  -open Ocaml_typing
+  -open Ocaml_utils
+  -open Merlin_utils)
+ (libraries ocaml_parsing ocaml_typing ocaml_utils merlin_utils))
+>>>>>>> upstream/main

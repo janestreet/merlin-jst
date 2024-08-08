@@ -29,10 +29,42 @@
 module Artifact : sig
   type t
 
+<<<<<<< HEAD
   val read : string -> t
 
   val impl_shape : t -> Shape.t option
 end
+||||||| 7b73c6aa3
+module Namespace : sig
+  type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
+end
+=======
+type config = {
+  mconfig: Mconfig.t;
+  ml_or_mli: [ `ML | `MLI ];
+  traverse_aliases: bool;
+}
+
+type result = {
+  uid: Shape.Uid.t;
+  decl_uid: Shape.Uid.t;
+  file: string;
+  location: Location.t;
+  approximated: bool;
+}
+
+val uid_of_result
+  : traverse_aliases:bool
+  -> Shape_reduce.result
+  -> Shape.Uid.t option * bool
+
+val find_source
+  : config: Mconfig.t
+  -> Warnings.loc
+  -> string
+  -> [> `File_not_found of string
+      | `Found of string * Location.t ]
+>>>>>>> upstream/main
 
 val log : 'a Logger.printf
 
@@ -96,7 +128,14 @@ val get_doc
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> [ `User_input of string
+<<<<<<< HEAD
       | `Completion_entry of Env_lookup.Namespace.t * Path.t * Location.t ]
+||||||| 7b73c6aa3
+     | `Completion_entry of
+        Namespaced_path.Namespace.t * Path.t * Location.t ]
+=======
+     | `Completion_entry of Env_lookup.Namespace.t * Path.t * Location.t ]
+>>>>>>> upstream/main
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string

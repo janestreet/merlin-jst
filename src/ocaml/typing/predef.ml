@@ -187,6 +187,7 @@ and ident_cons = ident_create "::"
 and ident_none = ident_create "None"
 and ident_some = ident_create "Some"
 
+<<<<<<< HEAD
 and ident_null = ident_create "Null"
 and ident_this = ident_create "This"
 
@@ -224,6 +225,13 @@ let mk_add_type add_type
       *)
       ?jkind_annotation
       env =
+||||||| 7b73c6aa3
+let mk_add_type add_type type_ident
+      ?manifest ?(immediate=Type_immediacy.Unknown) ?(kind=Type_abstract) env =
+=======
+let mk_add_type add_type type_ident ?manifest
+    ?(immediate=Type_immediacy.Unknown) ?(kind=Type_abstract Definition) env =
+>>>>>>> upstream/main
   let decl =
     {type_params = [];
      type_arity = 0;
@@ -245,6 +253,7 @@ let mk_add_type add_type
   in
   add_type type_ident decl env
 
+<<<<<<< HEAD
 let mk_add_type1 add_type type_ident
       ?(kind=fun _ -> Type_abstract Abstract_def)
       ?(jkind=Jkind.Primitive.value ~why:(Primitive type_ident))
@@ -330,9 +339,92 @@ let unrestricted tvar =
 (* CR layouts: Changes will be needed here as we add support for the built-ins
    to work with non-values, and as we relax the mixed block restriction. *)
 let build_initial_env add_type add_extension empty_env =
+||||||| 7b73c6aa3
+let common_initial_env add_type add_extension empty_env =
+=======
+let build_initial_env add_type add_extension empty_env =
+>>>>>>> upstream/main
   let add_type = mk_add_type add_type
+<<<<<<< HEAD
   and add_type1 = mk_add_type1 add_type
   and add_extension = mk_add_extension add_extension in
+||||||| 7b73c6aa3
+  and add_type1 type_ident
+      ~variance ~separability ?(kind=fun _ -> Type_abstract) env =
+    let param = newgenvar () in
+    let decl =
+      {type_params = [param];
+       type_arity = 1;
+       type_kind = kind param;
+       type_loc = Location.none;
+       type_private = Asttypes.Public;
+       type_manifest = None;
+       type_variance = [variance];
+       type_separability = [separability];
+       type_is_newtype = false;
+       type_expansion_scope = lowest_level;
+       type_attributes = [];
+       type_immediate = Unknown;
+       type_unboxed_default = false;
+       type_uid = Uid.of_predef_id type_ident;
+      }
+    in
+    add_type type_ident decl env
+  in
+  let add_extension id l =
+    add_extension id
+      { ext_type_path = path_exn;
+        ext_type_params = [];
+        ext_args = Cstr_tuple l;
+        ext_ret_type = None;
+        ext_private = Asttypes.Public;
+        ext_loc = Location.none;
+        ext_attributes = [Ast_helper.Attr.mk
+                            (Location.mknoloc "ocaml.warn_on_literal_pattern")
+                            (Parsetree.PStr [])];
+        ext_uid = Uid.of_predef_id id;
+      }
+  in
+  let variant constrs = Type_variant (constrs, Variant_regular) in
+=======
+  and add_type1 type_ident
+      ~variance ~separability ?(kind=fun _ -> Type_abstract Definition) env =
+    let param = newgenvar () in
+    let decl =
+      {type_params = [param];
+       type_arity = 1;
+       type_kind = kind param;
+       type_loc = Location.none;
+       type_private = Asttypes.Public;
+       type_manifest = None;
+       type_variance = [variance];
+       type_separability = [separability];
+       type_is_newtype = false;
+       type_expansion_scope = lowest_level;
+       type_attributes = [];
+       type_immediate = Unknown;
+       type_unboxed_default = false;
+       type_uid = Uid.of_predef_id type_ident;
+      }
+    in
+    add_type type_ident decl env
+  in
+  let add_extension id l =
+    add_extension id
+      { ext_type_path = path_exn;
+        ext_type_params = [];
+        ext_args = Cstr_tuple l;
+        ext_ret_type = None;
+        ext_private = Asttypes.Public;
+        ext_loc = Location.none;
+        ext_attributes = [Ast_helper.Attr.mk
+                            (Location.mknoloc "ocaml.warn_on_literal_pattern")
+                            (Parsetree.PStr [])];
+        ext_uid = Uid.of_predef_id id;
+      }
+  in
+  let variant constrs = Type_variant (constrs, Variant_regular) in
+>>>>>>> upstream/main
   empty_env
   (* Predefined types *)
   |> add_type1 ident_array
@@ -415,6 +507,7 @@ let build_initial_env add_type add_extension empty_env =
        )
        ~jkind:(Jkind.Primitive.value ~why:Boxed_record)
   |> add_type ident_string
+<<<<<<< HEAD
   |> add_type ident_unboxed_float
        ~jkind:(Jkind.Primitive.float64 ~why:(Primitive ident_unboxed_float))
        ~jkind_annotation:Jkind.Const.Primitive.float64
@@ -428,6 +521,10 @@ let build_initial_env add_type add_extension empty_env =
        ~jkind:(Jkind.add_mode_crossing (Jkind.Primitive.bits64 ~why:(Primitive ident_unboxed_int64)))
        ~jkind_annotation:Jkind.Const.Primitive.bits64
   |> add_type ident_bytes
+||||||| 7b73c6aa3
+=======
+  |> add_type ident_bytes
+>>>>>>> upstream/main
   |> add_type ident_unit
        ~kind:(variant
                 [cstr ident_void []]
@@ -456,6 +553,7 @@ let build_initial_env add_type add_extension empty_env =
        [newgenty (Ttuple[None, type_string; None, type_int; None, type_int])]
        [| Jkind.Primitive.value ~why:Tuple |]
 
+<<<<<<< HEAD
 let add_simd_extension_types add_type env =
   let add_type = mk_add_type add_type in
   env
@@ -494,6 +592,16 @@ let add_or_null add_type env =
       |])
   ~jkind:(Jkind.Primitive.value_or_null ~why:(Primitive ident_or_null))
 
+||||||| 7b73c6aa3
+let build_initial_env add_type add_exception empty_env =
+  let common = common_initial_env add_type add_exception empty_env in
+  let add_type = mk_add_type add_type in
+  let safe_string = add_type ident_bytes common in
+  let unsafe_string = add_type ident_bytes ~manifest:type_string common in
+  (safe_string, unsafe_string)
+
+=======
+>>>>>>> upstream/main
 let builtin_values =
   List.map (fun id -> (Ident.name id, id)) all_predef_exns
 

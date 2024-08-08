@@ -70,11 +70,21 @@ val reraise_preserving_backtrace : exn -> (unit -> unit) -> 'a
 (** {1 List operations} *)
 
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
+<<<<<<< HEAD
        (** [map_end f l t] is [map f l @ t], just more efficient. *)
 
 val rev_map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
        (** [rev_map_end f l t] is [map f (rev l) @ t], just more efficient. *)
 
+||||||| 7b73c6aa3
+        (* [map_end f l t] is [map f l @ t], just more efficient. *)
+=======
+       (** [map_end f l t] is [map f l @ t], just more efficient. *)
+
+val rev_map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
+       (** [map_end f l t] is [map f (rev l) @ t], just more efficient. *)
+
+>>>>>>> upstream/main
 val map_left_right: ('a -> 'b) -> 'a list -> 'b list
        (** Like [List.map], with guaranteed left-to-right evaluation order *)
 
@@ -112,6 +122,7 @@ val find_in_path: string list -> string -> string
        (** Search a file in a list of directories. *)
 
 val find_in_path_rel: string list -> string -> string
+<<<<<<< HEAD
        (** Search a relative file in a list of directories. *)
 
 val find_in_path_uncap: ?fallback:string -> string list -> string -> string
@@ -119,6 +130,25 @@ val find_in_path_uncap: ?fallback:string -> string list -> string -> string
            if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml]
             to match. *)
 
+||||||| 7b73c6aa3
+        (* Search a relative file in a list of directories. *)
+val find_in_path_uncap: ?fallback:string -> string list -> string -> string
+        (* Same, but search also for uncapitalized name, i.e.
+           if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
+           to match. *)
+=======
+       (** Search a relative file in a list of directories. *)
+
+ (** Normalize file name [Foo.ml] to [foo.ml] *)
+val normalized_unit_filename: string -> string
+
+val find_in_path_normalized: ?fallback:string -> string list -> string -> string
+(** Same as {!find_in_path_rel} , but search also for normalized unit filename,
+    i.e. if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml] to
+    match. *)
+
+
+>>>>>>> upstream/main
 val canonicalize_filename : ?cwd:string -> string -> string
         (* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)
 
@@ -188,6 +218,8 @@ val no_overflow_mul: int -> int -> bool
 val no_overflow_lsl: int -> int -> bool
         (* [no_overflow_lsl n k] returns [true] if the computation of
            [n lsl k] does not overflow. *)
+
+val letter_of_int : int -> string
 
 module Int_literal_converter : sig
   val int : string -> int
@@ -270,21 +302,6 @@ val for4: 'a * 'b * 'c * 'd -> 'd
  * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
  * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
 val modules_in_path : ext:string -> string list -> string list
-
-val file_contents : string -> string
-
-module LongString :
-  sig
-    type t = bytes array
-    val create : int -> t
-    val length : t -> int
-    val get : t -> int -> char
-    val set : t -> int -> char -> unit
-    val blit : t -> int -> t -> int -> int -> unit
-    val output : out_channel -> t -> int -> int -> unit
-    val unsafe_blit_to_bytes : t -> int -> bytes -> int -> int -> unit
-    val input_bytes : in_channel -> int -> t
-  end
 
 val edit_distance : string -> string -> int -> int option
 (** [edit_distance a b cutoff] computes the edit distance between
@@ -375,8 +392,18 @@ val ordinal_suffix : int -> string
     [4] -> ["th"], and so on.  Handles larger numbers (e.g., [42] -> ["nd"]) and
     the numbers 11--13 (which all get ["th"]) correctly. *)
 
-(* Color handling *)
-module Color : sig
+(** {1 Color support detection }*)
+module Color: sig
+  type setting = Auto | Always | Never
+
+  val default_setting : setting
+
+end
+
+
+(** {1 Styling handling for terminal output } *)
+
+module Style : sig
   type color =
     | Black
     | Red
@@ -398,29 +425,49 @@ module Color : sig
   val ansi_of_style_l : style list -> string
   (* ANSI escape sequence for the given style *)
 
+<<<<<<< HEAD
   type styles = {
     error: style list;
     warning: style list;
     loc: style list;
     hint:style list;
+||||||| 7b73c6aa3
+  type styles = {
+    error: style list;
+    warning: style list;
+    loc: style list;
+=======
+  type tag_style ={
+    ansi: style list;
+    text_open:string;
+    text_close:string
+>>>>>>> upstream/main
   }
+
+  type styles = {
+    error: tag_style;
+    warning: tag_style;
+    loc: tag_style;
+    hint: tag_style;
+    inline_code: tag_style;
+  }
+
+  val as_inline_code: (Format.formatter -> 'a -> unit as 'printer) -> 'printer
+  val inline_code: Format.formatter -> string -> unit
 
   val default_styles: styles
   val get_styles: unit -> styles
   val set_styles: styles -> unit
 
-  type setting = Auto | Always | Never
-
-  val default_setting : setting
-
-  val setup : setting option -> unit
+  val setup : Color.setting option -> unit
   (* [setup opt] will enable or disable color handling on standard formatters
      according to the value of color setting [opt].
      Only the first call to this function has an effect. *)
 
-  val set_color_tag_handling : Format.formatter -> unit
+  val set_tag_handling : Format.formatter -> unit
   (* adds functions to support color tags to the given formatter. *)
 end
+<<<<<<< HEAD
 
 val print_see_manual : Format.formatter -> int list -> unit
 (** See manual section *)
@@ -434,3 +481,9 @@ val output_of_print :
 val is_print_longer_than: int -> (Format.formatter -> unit) -> bool
 (** Returns [true] if the printed string is longer than the given integer. Stops
     early if so. Spaces and newlines are counted, but indentation is not. *)
+||||||| 7b73c6aa3
+=======
+
+val print_see_manual : Format.formatter -> int list -> unit
+(** See manual section *)
+>>>>>>> upstream/main

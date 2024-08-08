@@ -61,8 +61,16 @@ let fmt_char_option f = function
 
 let fmt_constant f x =
   match x with
+<<<<<<< HEAD
   | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m
   | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c)
+||||||| 7b73c6aa3
+  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m;
+  | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c);
+=======
+  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m;
+  | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c)
+>>>>>>> upstream/main
   | Pconst_string (s, strloc, None) ->
       fprintf f "PConst_string(%S,%a,None)" s fmt_location strloc
   | Pconst_string (s, strloc, Some delim) ->
@@ -177,7 +185,7 @@ let rec core_type i ppf x =
       line i ppf "Ptyp_class %a\n" fmt_longident_loc li;
       list i core_type ppf l
   | Ptyp_alias (ct, s) ->
-      line i ppf "Ptyp_alias \"%s\"\n" s;
+      line i ppf "Ptyp_alias \"%s\"\n" s.txt;
       core_type i ppf ct;
   | Ptyp_poly (sl, ct) ->
       line i ppf "Ptyp_poly%a\n" typevars sl;
@@ -185,6 +193,9 @@ let rec core_type i ppf x =
   | Ptyp_package (s, l) ->
       line i ppf "Ptyp_package %a\n" fmt_longident_loc s;
       list i package_with ppf l;
+  | Ptyp_open (mod_ident, t) ->
+      line i ppf "Ptyp_open \"%a\"\n" fmt_longident_loc mod_ident;
+      core_type i ppf t
   | Ptyp_extension (s, arg) ->
       line i ppf "Ptyp_extension \"%s\"\n" s.txt;
       payload i ppf arg
@@ -264,9 +275,23 @@ and expression i ppf x =
       expression i ppf e;
   | Pexp_function (params, c, body) ->
       line i ppf "Pexp_function\n";
+<<<<<<< HEAD
       list i function_param ppf params;
       option i function_constraint ppf c;
       function_body i ppf body
+||||||| 7b73c6aa3
+      list i case ppf l;
+  | Pexp_fun (l, eo, p, e) ->
+      line i ppf "Pexp_fun\n";
+      arg_label i ppf l;
+      option i expression ppf eo;
+      pattern i ppf p;
+      expression i ppf e;
+=======
+      list i function_param ppf params;
+      option i type_constraint ppf c;
+      function_body i ppf body
+>>>>>>> upstream/main
   | Pexp_apply (e, l) ->
       line i ppf "Pexp_apply\n";
       expression i ppf e;
@@ -384,6 +409,7 @@ and expression i ppf x =
   | Pexp_unreachable ->
       line i ppf "Pexp_unreachable"
 
+<<<<<<< HEAD
 and jkind_annotation i ppf (jkind : jkind_annotation) =
   match jkind with
   | Default -> line i ppf "Default\n"
@@ -446,6 +472,39 @@ and mode_expression i ppf mode_annotations =
       line i ppf "mode_annotations %a" fmt_location mode_annotations.loc;
       list (i+1) string_loc ppf mode_annotations.txt
 
+||||||| 7b73c6aa3
+=======
+and function_param i ppf { pparam_desc = desc; pparam_loc = loc } =
+  match desc with
+  | Pparam_val (l, eo, p) ->
+      line i ppf "Pparam_val %a\n" fmt_location loc;
+      arg_label (i+1) ppf l;
+      option (i+1) expression ppf eo;
+      pattern (i+1) ppf p
+  | Pparam_newtype ty ->
+      line i ppf "Pparam_newtype \"%s\" %a\n" ty.txt fmt_location loc
+
+and function_body i ppf body =
+  match body with
+  | Pfunction_body e ->
+      line i ppf "Pfunction_body\n";
+      expression (i+1) ppf e
+  | Pfunction_cases (cases, loc, attrs) ->
+      line i ppf "Pfunction_cases %a\n" fmt_location loc;
+      attributes (i+1) ppf attrs;
+      list (i+1) case ppf cases
+
+and type_constraint i ppf constraint_ =
+  match constraint_ with
+  | Pconstraint ty ->
+      line i ppf "Pconstraint\n";
+      core_type (i+1) ppf ty
+  | Pcoerce (ty1, ty2) ->
+      line i ppf "Pcoerce\n";
+      option (i+1) core_type ppf ty1;
+      core_type (i+1) ppf ty2
+
+>>>>>>> upstream/main
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_string_loc
        x.pval_name fmt_location x.pval_loc;
@@ -1055,6 +1114,12 @@ let interface ppf x = list 0 signature_item ppf x
 
 let implementation ppf x = list 0 structure_item ppf x
 
+<<<<<<< HEAD
 let top_phrase ppf x = toplevel_phrase 0 ppf x
 
 let constant = fmt_constant
+||||||| 7b73c6aa3
+let top_phrase ppf x = toplevel_phrase 0 ppf x;;
+=======
+let top_phrase ppf x = toplevel_phrase 0 ppf x
+>>>>>>> upstream/main

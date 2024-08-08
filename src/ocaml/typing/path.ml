@@ -90,9 +90,21 @@ let rec scope = function
 
 let kfalse _ = false
 
+let maybe_escape s =
+  if Lexer.is_keyword s then "\\#" ^ s else s
+
 let rec name ?(paren=kfalse) = function
+<<<<<<< HEAD
     Pident id -> Ident.name id
   | Pdot(p, s) | Pextra_ty (p, Pcstr_ty s) ->
+||||||| 7b73c6aa3
+    Pident id -> Ident.name id
+  | Pdot(p, s) ->
+=======
+    Pident id -> maybe_escape (Ident.name id)
+  | Pdot(p, s) | Pextra_ty (p, Pcstr_ty s) ->
+      let s = maybe_escape s in
+>>>>>>> upstream/main
       name ~paren p ^ if paren s then ".( " ^ s ^ " )" else "." ^ s
   | Papply(p1, p2) -> name ~paren p1 ^ "(" ^ name ~paren p2 ^ ")"
   | Pextra_ty (p, Pext_ty) -> name ~paren p

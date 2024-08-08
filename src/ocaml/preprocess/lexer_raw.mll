@@ -165,6 +165,35 @@ let list_keywords =
   fun keywords ->
     Hashtbl.fold add_kw keywords init
 
+let store_string_char buf c = Buffer.add_char buf c
+let store_substring buf s ~pos ~len = Buffer.add_substring buf s pos len
+
+let store_normalized_newline buf newline =
+  (* #12502: we normalize "\r\n" to "\n" at lexing time,
+     to avoid behavior difference due to OS-specific
+     newline characters in string literals.
+
+     (For example, Git for Windows will translate \n in versioned
+     files into \r\n sequences when checking out files on Windows. If
+     your code contains multiline quoted string literals, the raw
+     content of the string literal would be different between Git for
+     Windows users and all other users. Thanks to newline
+     normalization, the value of the literal as a string constant will
+     be the same no matter which programming tools are used.)
+
+     Many programming languages use the same approach, for example
+     Java, Javascript, Kotlin, Python, Swift and C++.
+  *)
+  (* Our 'newline' regexp accepts \r*\n, but we only wish
+     to normalize \r?\n into \n -- see the discussion in #12502.
+     All carriage returns except for the (optional) last one
+     are reproduced in the output. We implement this by skipping
+     the first carriage return, if any. *)
+  let len = String.length newline in
+  if len = 1
+  then store_string_char buf '\n'
+  else store_substring buf newline ~pos:1 ~len:(len - 1)
+
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
 
@@ -401,10 +430,17 @@ let keyword_or state s default =
       with Not_found -> try Hashtbl.find keyword_table s
   with Not_found -> default
 
+<<<<<<< HEAD
 let is_keyword name =
   match lookup_keyword name with
   | LIDENT _ -> false
   | _ -> true
+||||||| 7b73c6aa3
+let is_keyword name = Hashtbl.mem keyword_table name
+=======
+let is_keyword name = Hashtbl.mem keyword_table name
+let () = Lexer.is_keyword_ref := is_keyword
+>>>>>>> upstream/main
 
 let check_label_name lexbuf name =
   if is_keyword name
@@ -431,6 +467,7 @@ let update_loc lexbuf _file line absolute chars =
 let warn_latin1 lexbuf =
   Location.deprecated (Location.curr lexbuf)
     "ISO-Latin1 characters in identifiers"
+<<<<<<< HEAD
 
 let float ~maybe_hash lit modifier =
   match maybe_hash with
@@ -443,6 +480,10 @@ let int ~maybe_hash lit modifier =
   | "#" -> return (HASH_INT (lit, modifier))
   | "" -> return (INT (lit, modifier))
   | unexpected -> fatal_error ("expected # or empty string: " ^ unexpected)
+||||||| 7b73c6aa3
+;;
+=======
+>>>>>>> upstream/main
 
 (* Error report *)
 
@@ -479,7 +520,7 @@ let prepare_error loc = function
       Location.error ~loc ~sub msg
   | Keyword_as_label kwd ->
       Location.errorf ~loc
-        "`%s' is a keyword, it cannot be used as label name" kwd
+        "%a is a keyword, it cannot be used as label name" Style.inline_code kwd
   | Invalid_literal s ->
       Location.errorf ~loc "Invalid literal %s" s
   | Invalid_directive (dir, explanation) ->
@@ -544,9 +585,11 @@ let hex_float_literal =
   ('.' ['0'-'9' 'A'-'F' 'a'-'f' '_']* )?
   (['p' 'P'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']* )?
 let literal_modifier = ['G'-'Z' 'g'-'z']
+let raw_ident_escape = "\\#"
 
 
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
+
 
 rule token state = parse
   | ("\\" as bs) newline {
@@ -578,6 +621,8 @@ rule token state = parse
       { fail lexbuf
           (Reserved_sequence (".~", Some "is reserved for use in MetaOCaml")) }
       *)
+  | "~" raw_ident_escape (lowercase identchar * as name) ':'
+      { return (LABEL name) }
   | "~" (lowercase identchar * as name) ':'
       { lABEL (check_label_name lexbuf name) }
   | "~" (lowercase_latin1 identchar_latin1 * as name) ':'
@@ -585,10 +630,13 @@ rule token state = parse
         return (LABEL name) }
   | "?"
       { return QUESTION }
+  | "?" raw_ident_escape (lowercase identchar * as name) ':'
+      { return (OPTLABEL name) }
   | "?" (lowercase identchar * as name) ':'
       { oPTLABEL (check_label_name lexbuf name) }
   | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
       { warn_latin1 lexbuf; return (OPTLABEL name) }
+<<<<<<< HEAD
   (* Lowercase identifiers are split into 3 cases, and the order matters
      (longest to shortest).
   *)
@@ -604,6 +652,11 @@ rule token state = parse
         return (try Hashtbl.find state.keywords name
               with Not_found ->
               lookup_keyword name) }
+||||||| 7b73c6aa3
+=======
+  | raw_ident_escape (lowercase identchar * as name)
+      { return (LIDENT name) }
+>>>>>>> upstream/main
   | lowercase identchar * as name
     { return (try Hashtbl.find state.keywords name
               with Not_found ->
@@ -704,7 +757,7 @@ rule token state = parse
     { char_for_decimal_code state lexbuf 2 >>= fun c -> return (CHAR c) }
   | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "\'"
     { return (CHAR (char_for_hexadecimal_code lexbuf 3)) }
-  | "\'" ("\\" _ as esc)
+  | "\'" ("\\" [^ '#'] as esc)
       { fail lexbuf (Illegal_escape (esc, None)) }
   | "(*"
       { let start_loc = Location.curr lexbuf in
@@ -925,22 +978,24 @@ and comment state = parse
         Buffer.add_char state.buffer '}';
         comment state lexbuf }
 
-  | "''"
+  | "\'\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'" newline "'"
+  | "\'" (newline as nl) "\'"
       { update_loc lexbuf None 1 false 1;
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        store_string_char state.buffer '\'';
+        store_normalized_newline state.buffer nl;
+        store_string_char state.buffer '\'';
         comment state lexbuf
       }
-  | "'" [^ '\\' '\'' '\010' '\013' ] "'"
+  | "\'" [^ '\\' '\'' '\010' '\013' ] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
+  | "\'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
+  | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
+  | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | eof
       { match state.comment_start_loc with
@@ -950,9 +1005,9 @@ and comment state = parse
           state.comment_start_loc <- [];
           fail_loc (Unterminated_comment start) loc
       }
-  | newline
+  | newline as nl
       { update_loc lexbuf None 1 false 0;
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        store_normalized_newline state.buffer nl;
         comment state lexbuf
       }
   | (lowercase | uppercase) identchar *
@@ -996,11 +1051,9 @@ and string state = parse
           string state lexbuf
         end
       }
-  | newline
-      { if not (in_comment state) then
-          Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
-        update_loc lexbuf None 1 false 0;
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+  | newline as nl
+      { update_loc lexbuf None 1 false 0;
+        store_normalized_newline state.buffer nl;
         string state lexbuf
       }
   | eof
@@ -1012,9 +1065,9 @@ and string state = parse
         string state lexbuf }
 
 and quoted_string delim state = parse
-  | newline
+  | newline as nl
       { update_loc lexbuf None 1 false 0;
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        store_normalized_newline state.buffer nl;
         quoted_string delim state lexbuf
       }
   | eof

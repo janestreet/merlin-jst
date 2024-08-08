@@ -208,24 +208,15 @@ let dump pipeline = function
 
 let reconstruct_identifier pipeline pos = function
   | None ->
-    let path = Mreader.reconstruct_identifier
-        (Mpipeline.input_config pipeline)
-        (Mpipeline.raw_source pipeline)
-        pos
-    in
-    let path = Mreader_lexer.identifier_suffix path in
-    Logger.log
-      ~section:Type_enclosing.log_section
-      ~title:"reconstruct-identifier"
-      "paths: [%s]"
-      (String.concat ~sep:";" (List.map path
-        ~f:(fun l -> l.Location.txt)));
+    let config = Mpipeline.input_config pipeline in
+    let source = Mpipeline.raw_source pipeline in
+    let path = Misc_utils.parse_identifier (config, source) pos in
     let reify dot =
       if dot = "" ||
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
          (dot.[0] >= 'A' && dot.[0] <= 'Z')
       then dot
-      else "(" ^ dot ^ ")"
+      else "( " ^ dot ^ ")"
     in
     begin match path with
       | [] -> []
@@ -579,6 +570,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Locate.get_doc ~config
         ~env ~local_defs ~comments ~pos (`User_input path)
 
+<<<<<<< HEAD
   | Syntax_document pos ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -588,6 +580,30 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some res -> `Found res 
     | None -> `No_documentation)
 
+||||||| 7b73c6aa3
+=======
+  | Syntax_document pos ->
+    let typer = Mpipeline.typer_result pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let node = Mtyper.node_at typer pos in
+    let res = Syntax_doc.get_syntax_doc pos node in
+    (match res with
+    | Some res -> `Found res
+    | None -> `No_documentation)
+
+  | Expand_ppx pos -> (
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let parsetree = Mpipeline.reader_parsetree pipeline in
+    let ppxed_parsetree = Mpipeline.ppx_parsetree pipeline in
+    let ppx_kind_with_attr = Ppx_expand.check_extension ~parsetree ~pos in
+    match ppx_kind_with_attr with
+    | Some _ ->
+        `Found
+          (Ppx_expand.get_ppxed_source ~ppxed_parsetree ~pos
+              (Option.get ppx_kind_with_attr))
+    | None -> `No_ppx)
+
+>>>>>>> upstream/main
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
@@ -836,9 +852,21 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
+<<<<<<< HEAD
           find_in_path_uncap (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
+||||||| 7b73c6aa3
+          find_in_path_uncap (Mconfig.source_path config) x
+=======
+          find_in_path_normalized (Mconfig.source_path config) x
+>>>>>>> upstream/main
         with Not_found -> try
+<<<<<<< HEAD
             find_in_path_uncap (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
+||||||| 7b73c6aa3
+            find_in_path_uncap (Mconfig.build_path config) x
+=======
+            find_in_path_normalized (Mconfig.build_path config) x
+>>>>>>> upstream/main
           with Not_found ->
             aux xs
     in
@@ -876,6 +904,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let config = Mpipeline.final_config pipeline in
     let typer_result = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
+<<<<<<< HEAD
     let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer_result pos) in
     let path =
       let path = reconstruct_identifier pipeline pos None in
@@ -891,6 +920,74 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | Error _ -> []
     in
     locs
+||||||| 7b73c6aa3
+    let enclosing = Mbrowse.enclosing pos [str] in
+    let curr_node =
+      let is_wildcard_pat = function
+        | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
+        | _ -> false
+      in
+      List.find_some enclosing ~f:(fun (_, node) ->
+        (* it doesn't make sense to find occurrences of a wildcard pattern *)
+        not (is_wildcard_pat node))
+      |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)
+      |> Option.value ~default:Browse_tree.dummy
+    in
+    let str = Browse_tree.of_browse str in
+    let get_loc {Location.txt = _; loc} = loc in
+    let ident_occurrence () =
+      let paths = Browse_raw.node_paths curr_node.Browse_tree.t_node in
+      let under_cursor p = Location_aux.compare_pos pos (get_loc p) = 0 in
+      Logger.log ~section:"occurrences" ~title:"Occurrences paths" "%a"
+        Logger.json (fun () ->
+            let dump_path ({Location.txt; loc} as p) =
+              let ppf, to_string = Format.to_string () in
+              Printtyp.path ppf txt;
+              `Assoc [
+                "start", Lexing.json_of_position loc.Location.loc_start;
+                "end", Lexing.json_of_position loc.Location.loc_end;
+                "under_cursor", `Bool (under_cursor p);
+                "path", `String (to_string ())
+              ]
+            in
+            `List (List.map ~f:dump_path paths));
+      match List.filter paths ~f:under_cursor with
+      | [] -> []
+      | (path :: _) ->
+        let path = path.Location.txt in
+        let ts = Browse_tree.all_occurrences path str in
+        let loc (_t,paths) = List.map ~f:get_loc paths in
+        List.concat_map ~f:loc ts
+
+    in
+    let constructor_occurrence d =
+      let ts = Browse_tree.all_constructor_occurrences (curr_node,d) str in
+      List.map ~f:get_loc ts
+
+    in
+    let locs =
+      match Browse_raw.node_is_constructor curr_node.Browse_tree.t_node with
+      | Some d -> constructor_occurrence d.Location.txt
+      | None -> ident_occurrence ()
+    in
+    let loc_start l = l.Location.loc_start in
+    let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
+    List.sort ~cmp locs
+=======
+    let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer_result pos) in
+    let path =
+      let path = reconstruct_identifier pipeline pos None in
+      let path = Mreader_lexer.identifier_suffix path in
+      let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
+      let path = String.concat ~sep:"." path in
+      Locate.log ~title:"reconstructed identifier" "%s" path;
+      path
+    in
+    let { Occurrences.locs; status } =
+      Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path
+    in
+    locs, status
+>>>>>>> upstream/main
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"

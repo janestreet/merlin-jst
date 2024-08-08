@@ -19,6 +19,7 @@ type pers_flags =
   | Rectypes
   | Alerts of alerts
   | Opaque
+<<<<<<< HEAD
 
 type kind =
   | Normal of {
@@ -47,6 +48,10 @@ type kind =
   expensive. On 32 bits architectures, this imposes a constraint on the size of
   .cmi files. *)
 module Serialized = Types.Make_wrapped(struct type 'a t = int end)
+||||||| 7b73c6aa3
+  | Unsafe_string
+=======
+>>>>>>> upstream/main
 
 (* these type abbreviations are not exported;
    they are used to provide consistency across
@@ -161,8 +166,11 @@ let read_cmi_lazy filename =
       raise (Error e)
 
 let output_cmi filename oc cmi =
+  ignore (filename, oc, cmi); ""
+(*
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
+<<<<<<< HEAD
   let output_int64 oc n =
     let buf = Bytes.create 8 in
     Bytes.set_int64_ne buf 0 n;
@@ -190,6 +198,11 @@ let output_cmi filename oc cmi =
       header_params = cmi.cmi_params;
     };
   (* BACKPORT END *)
+||||||| 7b73c6aa3
+  output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
+=======
+  Marshal.(to_channel oc ((cmi.cmi_name, cmi.cmi_sign) : header) [Compression]);
+>>>>>>> upstream/main
   flush oc;
   let crc = Digest.file filename in
   let my_info =
@@ -203,6 +216,7 @@ let output_cmi filename oc cmi =
   output_value oc (crcs : crcs);
   output_value oc (cmi.cmi_flags : flags);
   crc
+*)
 
 let input_cmi ic = input_cmi_lazy ic |> force_cmi_infos
 let read_cmi filename = read_cmi_lazy filename |> force_cmi_infos

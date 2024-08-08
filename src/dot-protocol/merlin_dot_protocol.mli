@@ -55,8 +55,15 @@ module Directive : sig
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
+<<<<<<< HEAD
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
+||||||| 7b73c6aa3
+=======
+    | `SOURCE_ROOT of string
+    | `UNIT_NAME of string
+    | `WRAPPING_PREFIX of string
+>>>>>>> upstream/main
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR

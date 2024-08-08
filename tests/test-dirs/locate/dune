@@ -15,6 +15,7 @@
 (cram
  (applies_to :whole_subtree)
  (alias all-locate-tests))
+<<<<<<< HEAD
 
 ; Jane Street disabled tests -- they use dune.
 ; Revisit when dune can run the flambda-backend compiler.
@@ -23,3 +24,14 @@
   (applies_to
     in-implicit-trans-dep
     in-generated-file))
+||||||| 7b73c6aa3
+=======
+
+(cram
+ (applies_to in-implicit-trans-dep)
+ (enabled_if (>= %{read:version/dune.txt} "3.16")))
+
+(subdir
+ version
+ (rule (action (with-stdout-to dune.txt (run dune --version)))))
+>>>>>>> upstream/main

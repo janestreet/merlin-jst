@@ -184,6 +184,7 @@ val generic_instance: type_expr -> type_expr
 val instance_list: type_expr list -> type_expr list
         (* Take an instance of a list of type schemes *)
 val new_local_type:
+<<<<<<< HEAD
         ?loc:Location.t -> ?manifest_and_scope:(type_expr * int) ->
         Jkind.t -> jkind_annot:Jkind.annotation option -> type_declaration
 val existential_name: constructor_description -> type_expr -> string
@@ -195,6 +196,38 @@ type existential_treatment =
 val instance_constructor: existential_treatment ->
         constructor_description ->
         Types.constructor_argument list * type_expr * type_expr list
+||||||| 7b73c6aa3
+        ?loc:Location.t ->
+        ?manifest_and_scope:(type_expr * int) -> unit -> type_declaration
+val existential_name: constructor_description -> type_expr -> string
+val instance_constructor:
+        ?in_pattern:Env.t ref * int ->
+        constructor_description -> type_expr list * type_expr * type_expr list
+=======
+        ?loc:Location.t ->
+        ?manifest_and_scope:(type_expr * int) ->
+        type_origin -> type_declaration
+
+module Pattern_env : sig
+  type t = private
+    { mutable env : Env.t;
+      equations_scope : int;
+      (* scope for local type declarations *)
+      allow_recursive_equations : bool;
+      (* true iff checking counter examples *)
+    }
+  val make: Env.t -> equations_scope:int -> allow_recursive_equations:bool -> t
+  val copy: ?equations_scope:int -> t -> t
+  val set_env: t -> Env.t -> unit
+end
+
+type existential_treatment =
+  | Keep_existentials_flexible
+  | Make_existentials_abstract of Pattern_env.t
+
+val instance_constructor: existential_treatment ->
+        constructor_description -> type_expr list * type_expr * type_expr list
+>>>>>>> upstream/main
         (* Same, for a constructor. Also returns existentials. *)
 val instance_parameterized_type:
         ?keep_names:bool ->
@@ -206,12 +239,13 @@ val instance_class:
         type_expr list -> class_type -> type_expr list * class_type
 
 val instance_poly:
-        ?keep_names:bool ->
-        bool -> type_expr list -> type_expr -> type_expr list * type_expr
+        ?keep_names:bool -> fixed:bool ->
+        type_expr list -> type_expr -> type_expr list * type_expr
         (* Take an instance of a type scheme containing free univars *)
 val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * bool
 val instance_label:
-        bool -> label_description -> type_expr list * type_expr * type_expr
+        fixed:bool ->
+        label_description -> type_expr list * type_expr * type_expr
         (* Same, for a label *)
 val prim_mode :
         (Mode.allowed * 'r) Mode.Locality.t option -> (Primitive.mode * Primitive.native_repr)
@@ -275,8 +309,15 @@ val extract_concrete_typedecl:
 val unify: Env.t -> type_expr -> type_expr -> unit
         (* Unify the two types given. Raise [Unify] if not possible. *)
 val unify_gadt:
+<<<<<<< HEAD
         equations_level:int -> allow_recursive_equations:bool ->
         Env.t ref -> type_expr -> type_expr -> Btype.TypePairs.t
+||||||| 7b73c6aa3
+        equations_level:int -> allow_recursive:bool ->
+        Env.t ref -> type_expr -> type_expr -> Btype.TypePairs.t
+=======
+        Pattern_env.t -> type_expr -> type_expr -> Btype.TypePairs.t
+>>>>>>> upstream/main
         (* Unify the two types given and update the environment with the
            local constraints. Raise [Unify] if not possible.
            Returns the pairs of types that have been equated.  *)
@@ -369,9 +410,9 @@ exception Filter_method_failed of filter_method_failure
 type class_match_failure =
     CM_Virtual_class
   | CM_Parameter_arity_mismatch of int * int
-  | CM_Type_parameter_mismatch of Env.t * Errortrace.equality_error
+  | CM_Type_parameter_mismatch of int * Env.t * Errortrace.equality_error
   | CM_Class_type_mismatch of Env.t * class_type * class_type
-  | CM_Parameter_mismatch of Env.t * Errortrace.moregen_error
+  | CM_Parameter_mismatch of int * Env.t * Errortrace.moregen_error
   | CM_Val_type_mismatch of string * Env.t * Errortrace.comparison_error
   | CM_Meth_type_mismatch of string * Env.t * Errortrace.comparison_error
   | CM_Non_mutable_value of string
@@ -476,9 +517,19 @@ val nondep_cltype_declaration:
 val is_contractive: Env.t -> Path.t -> bool
 val normalize_type: type_expr -> unit
 
+<<<<<<< HEAD
 val remove_mode_and_jkind_variables: type_expr -> unit
         (* Ensure mode and jkind variables are fully determined *)
+||||||| 7b73c6aa3
+val nongen_schema: Env.t -> type_expr -> bool
+        (* Check whether the given type scheme contains no non-generic
+           type variables *)
+=======
+val nongen_vars_in_schema: Env.t -> type_expr -> Btype.TypeSet.t option
+        (* Return any non-generic variables in the type scheme *)
+>>>>>>> upstream/main
 
+<<<<<<< HEAD
 val nongen_vars_in_schema: Env.t -> type_expr -> Btype.TypeSet.t option
         (* Return any non-generic variables in the type scheme. Also ensures
            mode variables are fully determined. *)
@@ -493,6 +544,22 @@ type closed_class_failure = {
   meth: string;
   meth_ty: type_expr;
 }
+||||||| 7b73c6aa3
+val nongen_class_declaration: class_declaration -> bool
+        (* Check whether the given class type contains no non-generic
+           type variables. Uses the empty environment.  *)
+=======
+val nongen_vars_in_class_declaration:class_declaration -> Btype.TypeSet.t option
+        (* Return any non-generic variables in the class type.
+           Uses the empty environment.  *)
+
+type variable_kind = Row_variable | Type_variable
+type closed_class_failure = {
+  free_variable: type_expr * variable_kind;
+  meth: string;
+  meth_ty: type_expr;
+}
+>>>>>>> upstream/main
 
 val free_variables: ?env:Env.t -> type_expr -> type_expr list
         (* If env present, then check for incomplete definitions too;
@@ -517,6 +584,15 @@ val collapse_conj_params: Env.t -> type_expr list -> unit
 
 val get_current_level: unit -> int
 val wrap_trace_gadt_instances: Env.t -> ('a -> 'b) -> 'a -> 'b
+<<<<<<< HEAD
+||||||| 7b73c6aa3
+val reset_reified_var_counter: unit -> unit
+
+val immediacy : Env.t -> type_expr -> Type_immediacy.t
+=======
+
+val immediacy : Env.t -> type_expr -> Type_immediacy.t
+>>>>>>> upstream/main
 
 (* Stubs *)
 val package_subtype :
@@ -525,6 +601,7 @@ val package_subtype :
 
 (* Raises [Incompatible] *)
 val mcomp : Env.t -> type_expr -> type_expr -> unit
+<<<<<<< HEAD
 
 val get_unboxed_type_representation :
   Env.t -> type_expr -> (type_expr, type_expr) result
@@ -641,3 +718,7 @@ val is_principal : type_expr -> bool
 type global_state
 val global_state : global_state
 val print_global_state : Format.formatter -> global_state -> unit
+||||||| 7b73c6aa3
+
+=======
+>>>>>>> upstream/main

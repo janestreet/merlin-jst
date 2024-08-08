@@ -53,9 +53,18 @@
         "intf": ".rei"
       }
     ],
+<<<<<<< HEAD
     "stdlib": "lib/ocaml",
     "unit_name": null,
     "wrapping_prefix": null,
+||||||| 7b73c6aa3
+    "stdlib": null,
+=======
+    "stdlib": null,
+    "source_root": null,
+    "unit_name": null,
+    "wrapping_prefix": null,
+>>>>>>> upstream/main
     "reader": [],
     "protocol": "json",
     "log_file": null,
@@ -71,7 +80,8 @@
         "extension": ".rei",
         "reader": "reason"
       }
-    ]
+    ],
+    "cache_lifespan": "5"
   }
 
   $ rm .merlin

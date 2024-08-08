@@ -44,8 +44,15 @@ type config = {
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
+<<<<<<< HEAD
   unit_name    : string option;
   wrapping_prefix : string option;
+||||||| 7b73c6aa3
+=======
+  source_root  : string option;
+  unit_name    : string option;
+  wrapping_prefix : string option;
+>>>>>>> upstream/main
   reader       : string list;
   exclude_query_dir : bool;
   use_ppx_cache : bool;
@@ -63,8 +70,15 @@ let empty_config = {
   suffixes     = [];
   flags        = [];
   stdlib       = None;
+<<<<<<< HEAD
   unit_name    = None;
   wrapping_prefix = None;
+||||||| 7b73c6aa3
+=======
+  source_root  = None;
+  unit_name    = None;
+  wrapping_prefix = None;
+>>>>>>> upstream/main
   reader       = [];
   exclude_query_dir = false;
   use_ppx_cache = false;
@@ -260,10 +274,20 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
       {config with flags = flags :: config.flags}, errors
     | `STDLIB path ->
       {config with stdlib = Some path}, errors
+<<<<<<< HEAD
     | `UNIT_NAME name ->
       {config with unit_name = Some name}, errors
     | `WRAPPING_PREFIX prefix ->
       {config with wrapping_prefix = Some prefix}, errors
+||||||| 7b73c6aa3
+=======
+    | `SOURCE_ROOT path ->
+      {config with source_root = Some path}, errors
+    | `UNIT_NAME name ->
+      {config with unit_name = Some name}, errors
+    | `WRAPPING_PREFIX prefix ->
+      {config with wrapping_prefix = Some prefix}, errors
+>>>>>>> upstream/main
     | `READER reader ->
       {config with reader}, errors
     | `EXCLUDE_QUERY_DIR ->
@@ -295,8 +319,15 @@ let postprocess_config config =
     suffixes     = clean config.suffixes;
     flags        = clean config.flags;
     stdlib      = config.stdlib;
+<<<<<<< HEAD
     unit_name   = config.unit_name;
     wrapping_prefix = config.wrapping_prefix;
+||||||| 7b73c6aa3
+=======
+    source_root = config.source_root;
+    unit_name   = config.unit_name;
+    wrapping_prefix = config.wrapping_prefix;
+>>>>>>> upstream/main
     reader      = config.reader;
     exclude_query_dir = config.exclude_query_dir;
     use_ppx_cache = config.use_ppx_cache;

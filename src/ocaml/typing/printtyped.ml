@@ -68,6 +68,7 @@ let fmt_constant f x =
   | Const_string (s, strloc, None) ->
       fprintf f "Const_string(%S,%a,None)" s fmt_location strloc
   | Const_string (s, strloc, Some delim) ->
+<<<<<<< HEAD
       fprintf f "Const_string (%S,%a,Some %S)" s fmt_location strloc delim
   | Const_float (s) -> fprintf f "Const_float %s" s
   | Const_float32 (s) -> fprintf f "Const_float32 %s" s;
@@ -79,9 +80,24 @@ let fmt_constant f x =
   | Const_unboxed_int32 (i) -> fprintf f "Const_unboxed_int32 %ld" i
   | Const_unboxed_int64 (i) -> fprintf f "Const_unboxed_int64 %Ld" i
   | Const_unboxed_nativeint (i) -> fprintf f "Const_unboxed_nativeint %nd" i
+||||||| 7b73c6aa3
+      fprintf f "Const_string (%S,%a,Some %S)" s fmt_location strloc delim;
+  | Const_float (s) -> fprintf f "Const_float %s" s;
+  | Const_int32 (i) -> fprintf f "Const_int32 %ld" i;
+  | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i;
+  | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i;
+;;
+=======
+      fprintf f "Const_string (%S,%a,Some %S)" s fmt_location strloc delim
+  | Const_float (s) -> fprintf f "Const_float %s" s
+  | Const_int32 (i) -> fprintf f "Const_int32 %ld" i
+  | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i
+  | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i
+>>>>>>> upstream/main
 
 let fmt_mutable_flag f x =
   match x with
+<<<<<<< HEAD
   | Immutable -> fprintf f "Immutable"
   | Mutable -> fprintf f "Mutable"
 
@@ -90,6 +106,14 @@ let fmt_mutable_mode_flag f (x : Types.mutability) =
   | Immutable -> fprintf f "Immutable"
   | Mutable m ->
     fprintf f "Mutable(%a)" Mode.Alloc.Comonadic.Const.print m
+||||||| 7b73c6aa3
+  | Immutable -> fprintf f "Immutable";
+  | Mutable -> fprintf f "Mutable";
+;;
+=======
+  | Immutable -> fprintf f "Immutable"
+  | Mutable -> fprintf f "Mutable"
+>>>>>>> upstream/main
 
 let fmt_virtual_flag f x =
   match x with
@@ -118,8 +142,22 @@ let fmt_direction_flag f x =
 
 let fmt_private_flag f x =
   match x with
+<<<<<<< HEAD
   | Public -> fprintf f "Public"
   | Private -> fprintf f "Private"
+||||||| 7b73c6aa3
+  | Public -> fprintf f "Public";
+  | Private -> fprintf f "Private";
+;;
+=======
+  | Public -> fprintf f "Public"
+  | Private -> fprintf f "Private"
+
+let fmt_partiality f x =
+  match x with
+  | Total -> ()
+  | Partial -> fprintf f " (Partial)"
+>>>>>>> upstream/main
 
 let line i f s (*...*) =
   fprintf f "%s" (String.make (2*i) ' ');
@@ -155,6 +193,7 @@ let arg_label i ppf = function
   | Nolabel -> line i ppf "Nolabel\n"
   | Optional s -> line i ppf "Optional \"%s\"\n" s
   | Labelled s -> line i ppf "Labelled \"%s\"\n" s
+<<<<<<< HEAD
   | Position s -> line i ppf "Position \"%s\"\n" s
 
 
@@ -186,8 +225,14 @@ let tuple_component_label i ppf = function
   | None -> line i ppf "Label: None\n"
   | Some s -> line i ppf "Label: Some \"%s\"\n" s
 ;;
+||||||| 7b73c6aa3
+;;
+=======
+
+>>>>>>> upstream/main
 
 let typevars ppf vs =
+<<<<<<< HEAD
   List.iter (typevar_jkind ~print_quote:true ppf) vs
 
 
@@ -212,6 +257,13 @@ let variant_representation i ppf = let open Types in function
 
 let flat_element i ppf flat_element =
   line i ppf "%s\n" (Types.flat_element_to_string flat_element)
+||||||| 7b73c6aa3
+  List.iter (fun x -> fprintf ppf " %a" Pprintast.tyvar x.txt) vs
+;;
+=======
+  List.iter (fun x -> fprintf ppf " %a" Pprintast.tyvar x.txt) vs
+
+>>>>>>> upstream/main
 
 let record_representation i ppf = let open Types in function
   | Record_unboxed ->
@@ -287,8 +339,16 @@ let rec core_type i ppf x =
   | Ttyp_class (li, _, l) ->
       line i ppf "Ttyp_class %a\n" fmt_path li;
       list i core_type ppf l;
+<<<<<<< HEAD
   | Ttyp_alias (ct, s, jkind) ->
       line i ppf "Ttyp_alias \"%s\"\n" (Option.value s ~default:"_");
+||||||| 7b73c6aa3
+  | Ttyp_alias (ct, s) ->
+      line i ppf "Ttyp_alias \"%s\"\n" s;
+=======
+  | Ttyp_alias (ct, s) ->
+      line i ppf "Ttyp_alias \"%s\"\n" s.txt;
+>>>>>>> upstream/main
       core_type i ppf ct;
       option i jkind_annotation ppf jkind
   | Ttyp_poly (sl, ct) ->
@@ -298,11 +358,18 @@ let rec core_type i ppf x =
   | Ttyp_package { pack_path = s; pack_fields = l } ->
       line i ppf "Ttyp_package %a\n" fmt_path s;
       list i package_with ppf l;
+<<<<<<< HEAD
   | Ttyp_call_pos -> line i ppf "Ttyp_call_pos\n";
 
 and labeled_core_type i ppf (l, t) =
   tuple_component_label i ppf l;
   core_type i ppf t
+||||||| 7b73c6aa3
+=======
+  | Ttyp_open (path, _mod_ident, t) ->
+      line i ppf "Ttyp_open %a\n" fmt_path path;
+      core_type i ppf t
+>>>>>>> upstream/main
 
 and package_with i ppf (s, t) =
   line i ppf "with type %a\n" fmt_longident s;
@@ -320,10 +387,18 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
   end;
   match x.pat_desc with
   | Tpat_any -> line i ppf "Tpat_any\n";
+<<<<<<< HEAD
   | Tpat_var (s,_,_,m) ->
       line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
       value_mode i ppf m
   | Tpat_alias (p, s,_,_,m) ->
+||||||| 7b73c6aa3
+  | Tpat_var (s,_) -> line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
+  | Tpat_alias (p, s,_) ->
+=======
+  | Tpat_var (s,_,_) -> line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
+  | Tpat_alias (p, s,_,_) ->
+>>>>>>> upstream/main
       line i ppf "Tpat_alias \"%a\"\n" fmt_ident s;
       value_mode i ppf m;
       pattern i ppf p;
@@ -385,6 +460,7 @@ and pattern_extra i ppf (extra_pat, _, attrs) =
      line i ppf "Tpat_extra_open %a\n" fmt_path id;
      attributes i ppf attrs;
 
+<<<<<<< HEAD
 and function_body i ppf (body : function_body) =
   match[@warning "+9"] body with
   | Tfunction_body e ->
@@ -402,6 +478,26 @@ and function_body i ppf (body : function_body) =
       list (i+1) case ppf fc_cases
 
 and expression_extra i ppf x attrs =
+||||||| 7b73c6aa3
+and expression_extra i ppf (x,_,attrs) =
+=======
+and function_body i ppf (body : function_body) =
+  match[@warning "+9"] body with
+  | Tfunction_body e ->
+      line i ppf "Tfunction_body\n";
+      expression (i+1) ppf e
+  | Tfunction_cases
+      { cases; loc; exp_extra; attributes = attrs; param = _; partial }
+    ->
+      line i ppf "Tfunction_cases%a %a\n"
+        fmt_partiality partial
+        fmt_location loc;
+      attributes (i+1) ppf attrs;
+      Option.iter (fun e -> expression_extra (i+1) ppf e []) exp_extra;
+      list (i+1) case ppf cases
+
+and expression_extra i ppf x attrs =
+>>>>>>> upstream/main
   match x with
   | Texp_constraint ct ->
       line i ppf "Texp_constraint\n";
@@ -416,10 +512,22 @@ and expression_extra i ppf x attrs =
       line i ppf "Texp_poly\n";
       attributes i ppf attrs;
       option i core_type ppf cto;
+<<<<<<< HEAD
   | Texp_newtype (s, lay) ->
       line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
   | Texp_newtype' (id, _, lay, _) ->
       line i ppf "Texp_newtype' %a\n" typevar_layout' (id, lay);
+||||||| 7b73c6aa3
+  | Texp_newtype s ->
+      line i ppf "Texp_newtype \"%s\"\n" s;
+  | Texp_newtype' (id, _) ->
+      line i ppf "Texp_newtype' \"%a\"\n" fmt_ident id;
+=======
+  | Texp_newtype s ->
+      line i ppf "Texp_newtype \"%s\"\n" s;
+  | Texp_newtype' (id, _, _) ->
+      line i ppf "Texp_newtype' \"%a\"\n" fmt_ident id;
+>>>>>>> upstream/main
       attributes i ppf attrs;
   | Texp_mode_coerce modes ->
       line i ppf "Texp_mode_coerce %s\n"
@@ -463,13 +571,29 @@ and expression i ppf x =
       line i ppf "Texp_let %a\n" fmt_rec_flag rf;
       list i (value_binding rf) ppf l;
       expression i ppf e;
+<<<<<<< HEAD
   | Texp_function { params; body; region; alloc_mode = am } ->
+||||||| 7b73c6aa3
+  | Texp_function { arg_label = p; param = _; cases; partial = _; } ->
+=======
+  | Texp_function (params, body) ->
+>>>>>>> upstream/main
       line i ppf "Texp_function\n";
+<<<<<<< HEAD
       line i ppf "region %b\n" region;
       alloc_mode i ppf am;
       list i function_param ppf params;
       function_body i ppf body;
   | Texp_apply (e, l, m, am, za) ->
+||||||| 7b73c6aa3
+      arg_label i ppf p;
+      list i case ppf cases;
+  | Texp_apply (e, l) ->
+=======
+      list i function_param ppf params;
+      function_body i ppf body;
+  | Texp_apply (e, l) ->
+>>>>>>> upstream/main
       line i ppf "Texp_apply\n";
       line i ppf "apply_mode %s\n"
         (match m with
@@ -479,9 +603,20 @@ and expression i ppf x =
       locality_mode i ppf am;
       Option.iter (zero_alloc_assume i ppf) za;
       expression i ppf e;
+<<<<<<< HEAD
       list i label_x_apply_arg ppf l;
   | Texp_match (e, sort, l, _partial) ->
       line i ppf "Texp_match\n";
+||||||| 7b73c6aa3
+      list i label_x_expression ppf l;
+  | Texp_match (e, l, _partial) ->
+      line i ppf "Texp_match\n";
+=======
+      list i label_x_expression ppf l;
+  | Texp_match (e, l, partial) ->
+      line i ppf "Texp_match%a\n"
+        fmt_partiality partial;
+>>>>>>> upstream/main
       expression i ppf e;
       line i ppf "%a\n" Jkind.Sort.format sort;
       list i case ppf l;
@@ -588,8 +723,9 @@ and expression i ppf x =
   | Texp_pack me ->
       line i ppf "Texp_pack";
       module_expr i ppf me
-  | Texp_letop {let_; ands; param = _; body; partial = _} ->
-      line i ppf "Texp_letop";
+  | Texp_letop {let_; ands; param = _; body; partial } ->
+      line i ppf "Texp_letop%a"
+        fmt_partiality partial;
       binding_op (i+1) ppf let_;
       list (i+1) binding_op ppf ands;
       case i ppf body
@@ -628,6 +764,7 @@ and binding_op i ppf x =
     fmt_location x.bop_loc;
   expression i ppf x.bop_exp
 
+<<<<<<< HEAD
 and function_param i ppf x =
   let p = x.fp_arg_label in
   arg_label i ppf p;
@@ -641,6 +778,23 @@ and function_param i ppf x =
       pattern (i+1) ppf pat;
       expression (i+1) ppf expr
 
+||||||| 7b73c6aa3
+=======
+and function_param i ppf x =
+  let p = x.fp_arg_label in
+  arg_label i ppf p;
+  match x.fp_kind with
+  | Tparam_pat pat ->
+      line i ppf "Param_pat%a\n"
+        fmt_partiality x.fp_partial;
+      pattern (i+1) ppf pat
+  | Tparam_optional_default (pat, expr) ->
+      line i ppf "Param_optional_default%a\n"
+        fmt_partiality x.fp_partial;
+      pattern (i+1) ppf pat;
+      expression (i+1) ppf expr
+
+>>>>>>> upstream/main
 and type_parameter i ppf (x, _variance) = core_type i ppf x
 
 and type_declaration i ppf x =

@@ -121,8 +121,16 @@ let dump (type a) : a t -> json =
         );
       "position", mk_position pos;
     ]
+<<<<<<< HEAD
   | Syntax_document pos ->
     mk "syntax-document" [ ("position", mk_position pos) ]
+||||||| 7b73c6aa3
+=======
+  | Syntax_document pos ->
+    mk "syntax-document" [ ("position", mk_position pos) ]
+  | Expand_ppx pos ->
+    mk "ppx-expand" [ ("position", mk_position pos) ]
+>>>>>>> upstream/main
   | Locate (prefix, look_for, pos) ->
     mk "locate" [
       "prefix", (match prefix with
@@ -400,6 +408,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       | `Found doc ->
         `String doc
     end
+<<<<<<< HEAD
   | Syntax_document _, resp -> 
     (match resp with
     | `Found info ->
@@ -410,6 +419,32 @@ let json_of_response (type a) (query : a t) (response : a) : json =
         ("url", `String info.documentation);
       ]
     | `No_documentation -> `String "No documentation found")
+||||||| 7b73c6aa3
+=======
+  | Syntax_document _, resp -> 
+    (match resp with
+    | `Found info ->
+      `Assoc
+      [
+        ("name", `String info.name);
+        ("description", `String info.description);
+        ("url", `String info.documentation);
+      ]
+    | `No_documentation -> `String "No documentation found")
+  | Expand_ppx _, resp -> 
+    let str = match resp with
+    | `Found ppx_info -> 
+      `Assoc
+      [
+        ("code", `String ppx_info.code);
+        ("deriver", `Assoc [
+          ("start", Lexing.json_of_position ppx_info.attr_start);
+          ("end", Lexing.json_of_position ppx_info.attr_end);
+        ])
+      ]
+    | `No_ppx -> `String "No PPX deriver/extension node found on this position"
+    in str
+>>>>>>> upstream/main
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
   | Jump _, resp ->
@@ -452,7 +487,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Findlib_list, strs -> `List (List.map ~f:Json.string strs)
   | Extension_list _, strs -> `List (List.map ~f:Json.string strs)
   | Path_list _, strs -> `List (List.map ~f:Json.string strs)
-  | Occurrences (_, scope), locations ->
+  | Occurrences (_, scope), (locations, _project) ->
     let with_file = scope = `Project in
     `List (List.map locations
              ~f:(fun loc -> with_location ~with_file loc []))

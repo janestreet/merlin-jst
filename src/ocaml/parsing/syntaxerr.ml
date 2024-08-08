@@ -15,6 +15,13 @@
 
 (* Auxiliary type for reporting syntax errors *)
 
+type invalid_package_type =
+  | Parameterized_types
+  | Constrained_types
+  | Private_types
+  | Not_with_type
+  | Neither_identifier_nor_with_type
+
 type error =
     Unclosed of Location.t * string * Location.t * string
   | Expecting of Location.t * string
@@ -23,9 +30,16 @@ type error =
   | Variable_in_scope of Location.t * string
   | Other of Location.t
   | Ill_formed_ast of Location.t * string
+<<<<<<< HEAD
   | Invalid_package_type of Location.t * string
   | Removed_string_set of Location.t
   | Missing_unboxed_literal_suffix of Location.t
+||||||| 7b73c6aa3
+  | Invalid_package_type of Location.t * string
+=======
+  | Invalid_package_type of Location.t * invalid_package_type
+  | Removed_string_set of Location.t
+>>>>>>> upstream/main
 
 exception Error of error
 exception Escape_error
@@ -38,9 +52,18 @@ let location_of_error = function
   | Not_expecting (l, _)
   | Ill_formed_ast (l, _)
   | Invalid_package_type (l, _)
+<<<<<<< HEAD
   | Expecting (l, _)
   | Removed_string_set l -> l
   | Missing_unboxed_literal_suffix l -> l
+||||||| 7b73c6aa3
+  | Expecting (l, _) -> l
+
+=======
+  | Expecting (l, _)
+  | Removed_string_set l -> l
+
+>>>>>>> upstream/main
 
 let ill_formed_ast loc s =
   raise (Error (Ill_formed_ast (loc, s)))

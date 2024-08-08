@@ -11,9 +11,15 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
+<<<<<<< HEAD
   "ocaml" {>= "5.1" & < "5.2" }
+||||||| 7b73c6aa3
+  "ocaml" {>= "4.08" & < "5.0"}
+=======
+  "ocaml" {>= "5.2" }
+>>>>>>> upstream/main
   "dune" {>= "2.9.0"}
-  "merlin-lib" {>= "4.9"}
+  "merlin-lib" {>= "5.0"}
   "ocamlfind" {>= "1.6.0"}
 ]
 description:

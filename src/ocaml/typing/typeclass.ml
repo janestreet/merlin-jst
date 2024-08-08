@@ -21,6 +21,7 @@ open Typetexp
 open Format
 open Mode
 
+
 type 'a class_info = {
   cls_id : Ident.t;
   cls_id_loc : string loc;
@@ -262,9 +263,21 @@ let unify_delayed_method_type loc env label ty expected_ty=
       raise(Error(loc, env, Field_type_mismatch ("method", label, trace)))
 
 let type_constraint val_env sty sty' loc =
+<<<<<<< HEAD
   let cty  = transl_simple_type ~new_var_jkind:Any val_env ~closed:false Alloc.Const.legacy sty in
+||||||| 7b73c6aa3
+  let cty  = transl_simple_type val_env false sty in
+=======
+  let cty  = transl_simple_type val_env ~closed:false sty in
+>>>>>>> upstream/main
   let ty = cty.ctyp_type in
+<<<<<<< HEAD
   let cty' = transl_simple_type ~new_var_jkind:Sort val_env ~closed:false Alloc.Const.legacy sty' in
+||||||| 7b73c6aa3
+  let cty' = transl_simple_type val_env false sty' in
+=======
+  let cty' = transl_simple_type val_env ~closed:false sty' in
+>>>>>>> upstream/main
   let ty' = cty'.ctyp_type in
   begin
     try Ctype.unify val_env ty ty' with Ctype.Unify err ->
@@ -310,7 +323,13 @@ let rec class_type_field env sign self_scope ctf =
   | Pctf_val ({txt=lab}, mut, virt, sty) ->
       mkctf_with_attrs
         (fun () ->
+<<<<<<< HEAD
           let cty = transl_simple_type ~new_var_jkind:Sort env ~closed:false Alloc.Const.legacy sty in
+||||||| 7b73c6aa3
+          let cty = transl_simple_type env false sty in
+=======
+          let cty = transl_simple_type env ~closed:false sty in
+>>>>>>> upstream/main
           let ty = cty.ctyp_type in
           begin match
             Ctype.constrain_type_jkind
@@ -345,7 +364,13 @@ let rec class_type_field env sign self_scope ctf =
                  ) :: !delayed_meth_specs;
                Tctf_method (lab, priv, virt, returned_cty)
            | _ ->
+<<<<<<< HEAD
                let cty = transl_simple_type ~new_var_jkind:Any env ~closed:false Alloc.Const.legacy sty in
+||||||| 7b73c6aa3
+               let cty = transl_simple_type env false sty in
+=======
+               let cty = transl_simple_type env ~closed:false sty in
+>>>>>>> upstream/main
                let ty = cty.ctyp_type in
                add_method loc env lab priv virt ty sign;
                Tctf_method (lab, priv, virt, cty))
@@ -369,7 +394,13 @@ and class_signature virt env pcsig self_scope loc =
   (* Introduce a dummy method preventing self type from being closed. *)
   Ctype.add_dummy_method env ~scope:self_scope sign;
 
+<<<<<<< HEAD
   let self_cty = transl_simple_type ~new_var_jkind:Any env ~closed:false Alloc.Const.legacy sty in
+||||||| 7b73c6aa3
+  let self_cty = transl_simple_type env false sty in
+=======
+  let self_cty = transl_simple_type env ~closed:false sty in
+>>>>>>> upstream/main
   let self_type = self_cty.ctyp_type in
   begin try
     Ctype.unify env self_type sign.csig_self
@@ -419,7 +450,13 @@ and class_type_aux env virt self_scope scty =
                                                    List.length styl)));
       let ctys = List.map2
         (fun sty ty ->
+<<<<<<< HEAD
           let cty' = transl_simple_type ~new_var_jkind:Any env ~closed:false Alloc.Const.legacy sty in
+||||||| 7b73c6aa3
+          let cty' = transl_simple_type env false sty in
+=======
+          let cty' = transl_simple_type env ~closed:false sty in
+>>>>>>> upstream/main
           let ty' = cty'.ctyp_type in
           begin
            try Ctype.unify env ty' ty with Ctype.Unify err ->
@@ -439,6 +476,7 @@ and class_type_aux env virt self_scope scty =
       cltyp (Tcty_signature clsig) typ
 
   | Pcty_arrow (l, sty, scty) ->
+<<<<<<< HEAD
       let ctyp ctyp_desc ctyp_type =
         { ctyp_desc; ctyp_type; ctyp_env = env;
           ctyp_loc = sty.ptyp_loc; ctyp_attributes = sty.ptyp_attributes }
@@ -450,6 +488,11 @@ and class_type_aux env virt self_scope scty =
         | Optional _ | Labelled _ | Nolabel ->
           transl_simple_type ~new_var_jkind:Any env ~closed:false Alloc.Const.legacy sty
       in
+||||||| 7b73c6aa3
+      let cty = transl_simple_type env false sty in
+=======
+      let cty = transl_simple_type env ~closed:false sty in
+>>>>>>> upstream/main
       let ty = cty.ctyp_type in
       let ty =
         if Btype.is_optional l
@@ -683,6 +726,7 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
   | Pcf_val (label, mut, Cfk_virtual styp) ->
       with_attrs
         (fun () ->
+<<<<<<< HEAD
            let cty =
              Ctype.with_local_level_if_principal
                (fun () -> Typetexp.transl_simple_type ~new_var_jkind:Any val_env
@@ -698,6 +742,22 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
              | Error err -> raise (Error(label.loc, val_env,
                                          Non_value_binding(label.txt, err)))
            end;
+||||||| 7b73c6aa3
+           if !Clflags.principal then Ctype.begin_def ();
+           let cty = Typetexp.transl_simple_type val_env false styp in
+           let ty = cty.ctyp_type in
+           if !Clflags.principal then begin
+             Ctype.end_def ();
+             Ctype.generalize_structure ty
+           end;
+=======
+           let cty =
+             Ctype.with_local_level_if_principal
+               (fun () -> Typetexp.transl_simple_type val_env
+                            ~closed:false styp)
+               ~post:(fun cty -> Ctype.generalize_structure cty.ctyp_type)
+           in
+>>>>>>> upstream/main
            add_instance_variable ~strict:true loc val_env
              label.txt mut Virtual cty.ctyp_type sign;
            let already_declared, val_env, par_env, id, vars =
@@ -732,6 +792,7 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
                raise(Error(loc, val_env,
                            No_overriding ("instance variable", label.txt)))
            end;
+<<<<<<< HEAD
            let definition =
              Ctype.with_local_level_if_principal
                ~post:Typecore.generalize_structure_exp
@@ -747,6 +808,20 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
              | Error err -> raise (Error(label.loc, val_env,
                                          Non_value_binding(label.txt, err)))
            end;
+||||||| 7b73c6aa3
+           if !Clflags.principal then Ctype.begin_def ();
+           let definition = type_exp val_env sdefinition in
+           if !Clflags.principal then begin
+             Ctype.end_def ();
+             Ctype.generalize_structure definition.exp_type
+           end;
+=======
+           let definition =
+             Ctype.with_local_level_if_principal
+               ~post:Typecore.generalize_structure_exp
+               (fun () -> type_exp val_env sdefinition)
+           in
+>>>>>>> upstream/main
            add_instance_variable ~strict:true loc val_env
              label.txt mut Concrete definition.exp_type sign;
            let already_declared, val_env, par_env, id, vars =
@@ -775,7 +850,13 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
       with_attrs
         (fun () ->
            let sty = Ast_helper.Typ.force_poly sty in
+<<<<<<< HEAD
            let cty = transl_simple_type ~new_var_jkind:Any val_env ~closed:false Alloc.Const.legacy sty in
+||||||| 7b73c6aa3
+           let cty = transl_simple_type val_env false sty in
+=======
+           let cty = transl_simple_type val_env ~closed:false sty in
+>>>>>>> upstream/main
            let ty = cty.ctyp_type in
            add_method loc val_env label.txt priv Virtual ty sign;
            let field =
@@ -815,7 +896,13 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
              | Some sty ->
                  let sty = Ast_helper.Typ.force_poly sty in
                  let cty' =
+<<<<<<< HEAD
                    Typetexp.transl_simple_type ~new_var_jkind:Any val_env ~closed:false Alloc.Const.legacy sty
+||||||| 7b73c6aa3
+                   Typetexp.transl_simple_type val_env false sty
+=======
+                   Typetexp.transl_simple_type val_env ~closed:false sty
+>>>>>>> upstream/main
                  in
                  cty'.ctyp_type
            in
@@ -830,8 +917,18 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
                    Ctype.unify val_env (Ctype.newmono ty') ty;
                    Typecore.type_approx val_env sbody ty'
                | Tpoly (ty1, tl) ->
+<<<<<<< HEAD
                    let _, ty1' = Ctype.instance_poly false tl ty1 in
                    Typecore.type_approx val_env sbody ty1'
+||||||| 7b73c6aa3
+                   let _, ty1' = Ctype.instance_poly false tl ty1 in
+                   let ty2 = type_approx val_env sbody in
+                   Ctype.unify val_env ty2 ty1'
+=======
+                   let _, ty1' = Ctype.instance_poly ~fixed:false tl ty1 in
+                   let ty2 = type_approx val_env sbody in
+                   Ctype.unify val_env ty2 ty1'
+>>>>>>> upstream/main
                | _ -> assert false
              with Ctype.Unify err ->
                raise(Error(loc, val_env,
@@ -967,9 +1064,19 @@ and class_field_second_pass cl_num sign met_env field =
              Typecore.mk_expected (Btype.newgenty
                 (Tarrow(arrow_desc, self_param_type, ty, commu_ok)))
            in
+<<<<<<< HEAD
            let texp =
              Ctype.with_raised_nongen_level
                (fun () -> Typecore.type_expect met_env sdefinition meth_type) in
+||||||| 7b73c6aa3
+           Ctype.raise_nongen_level ();
+           let texp = type_expect met_env sdefinition meth_type in
+           Ctype.end_def ();
+=======
+           let texp =
+             Ctype.with_raised_nongen_level
+               (fun () -> type_expect met_env sdefinition meth_type) in
+>>>>>>> upstream/main
            let kind = Tcfk_concrete (override, texp) in
            let desc = Tcf_method(label, priv, kind) in
            met_env, mkcf desc loc attributes)
@@ -986,9 +1093,18 @@ and class_field_second_pass cl_num sign met_env field =
              Typecore.mk_expected (Ctype.newty
                (Tarrow (arrow_desc, self_param_type, unit_type, commu_ok)))
            in
+<<<<<<< HEAD
            let texp =
              Ctype.with_raised_nongen_level
                (fun () -> Typecore.type_expect met_env sexpr meth_type) in
+||||||| 7b73c6aa3
+           let texp = type_expect met_env sexpr meth_type in
+           Ctype.end_def ();
+=======
+           let texp =
+             Ctype.with_raised_nongen_level
+               (fun () -> type_expect met_env sexpr meth_type) in
+>>>>>>> upstream/main
            let desc = Tcf_initializer texp in
            met_env, mkcf desc loc attributes)
   | Attribute { attribute; loc; attributes; } ->
@@ -1141,7 +1257,13 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
       if Path.same decl.cty_path unbound_class then
         raise(Error(scl.pcl_loc, val_env, Unbound_class_2 lid.txt));
       let tyl = List.map
+<<<<<<< HEAD
           (fun sty -> transl_simple_type ~new_var_jkind:Any val_env ~closed:false Alloc.Const.legacy sty)
+||||||| 7b73c6aa3
+          (fun sty -> transl_simple_type val_env false sty)
+=======
+          (fun sty -> transl_simple_type val_env ~closed:false sty)
+>>>>>>> upstream/main
           styl
       in
       let (params, clty) =
@@ -1230,9 +1352,14 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
       in
       class_expr cl_num val_env met_env virt self_scope sfun
   | Pcl_fun (l, None, spat, scl') ->
+<<<<<<< HEAD
       let l, spat = Typetexp.transl_label_from_pat l spat in
       if Typecore.has_poly_constraint spat then
         raise(Error(spat.ppat_loc, val_env, Polymorphic_class_parameter));
+||||||| 7b73c6aa3
+      if !Clflags.principal then Ctype.begin_def ();
+=======
+>>>>>>> upstream/main
       let (pat, pv, val_env', met_env) =
         Ctype.with_local_level_if_principal
           (fun () ->
@@ -1271,6 +1398,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
         Typecore.check_partial val_env pat.pat_type pat.pat_loc
           [{c_lhs = pat; c_guard = None; c_rhs = dummy}]
       in
+<<<<<<< HEAD
       let val_env' = Env.add_escape_lock Class val_env' in
       let val_env' = Env.add_share_lock Class val_env' in
       let cl =
@@ -1286,6 +1414,21 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
           Location.prerr_warning pat.pat_loc
             Warnings.Unerasable_position_argument;
       end;
+||||||| 7b73c6aa3
+      Ctype.raise_nongen_level ();
+      let cl = class_expr cl_num val_env' met_env virt self_scope scl' in
+      Ctype.end_def ();
+      if Btype.is_optional l && not_nolabel_function cl.cl_type then
+        Location.prerr_warning pat.pat_loc
+          Warnings.Unerasable_optional_argument;
+=======
+      let cl =
+        Ctype.with_raised_nongen_level
+          (fun () -> class_expr cl_num val_env' met_env virt self_scope scl') in
+      if Btype.is_optional l && not_nolabel_function cl.cl_type then
+        Location.prerr_warning pat.pat_loc
+          Warnings.Unerasable_optional_argument;
+>>>>>>> upstream/main
       rc {cl_desc = Tcl_fun (l, pat, pv, cl, partial);
           cl_loc = scl.pcl_loc;
           cl_type = Cty_arrow
@@ -1434,6 +1577,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
         Typecore.type_let In_class_def val_env rec_flag sdefs in
       let (vals, met_env) =
         List.fold_right
+<<<<<<< HEAD
           (fun (id, modes_and_sorts, _) (vals, met_env) ->
              List.iter
                (fun (loc, mode, sort) ->
@@ -1444,8 +1588,14 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                                  Non_value_let_binding (Ident.name id, sort)))
                )
                modes_and_sorts;
+||||||| 7b73c6aa3
+          (fun (id, _id_loc, _typ) (vals, met_env) ->
+=======
+          (fun (id, _id_loc, _typ, _uid) (vals, met_env) ->
+>>>>>>> upstream/main
              let path = Pident id in
              (* do not mark the value as used *)
+<<<<<<< HEAD
              let vd = Env.find_value path val_env
                |> Subst.Lazy.force_value_description
              in
@@ -1453,6 +1603,16 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                Ctype.with_local_level ~post:Ctype.generalize
                  (fun () -> Ctype.instance vd.val_type)
              in
+||||||| 7b73c6aa3
+             let vd = Env.find_value path val_env in
+             Ctype.begin_def ();
+=======
+             let vd = Env.find_value path val_env in
+             let ty =
+               Ctype.with_local_level ~post:Ctype.generalize
+                 (fun () -> Ctype.instance vd.val_type)
+             in
+>>>>>>> upstream/main
              let expr =
                {exp_desc =
                 Texp_ident(path, mknoloc(Longident.Lident (Ident.name id)),vd,
@@ -1464,9 +1624,17 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                }
              in
              let desc =
+<<<<<<< HEAD
                {val_type = expr.exp_type;
                 val_modalities = Modality.Value.id;
                 val_kind = Val_ivar (Immutable, cl_num);
+||||||| 7b73c6aa3
+               {val_type = expr.exp_type; val_kind = Val_ivar (Immutable,
+                                                               cl_num);
+=======
+               {val_type = expr.exp_type;
+                val_kind = Val_ivar (Immutable, cl_num);
+>>>>>>> upstream/main
                 val_attributes = [];
                 val_zero_alloc = Zero_alloc.default;
                 Types.val_loc = vd.val_loc;
@@ -1481,9 +1649,18 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
           ([], met_env)
       in
       let cl = class_expr cl_num val_env met_env virt self_scope scl' in
+<<<<<<< HEAD
       let defs = match rec_flag with
         | Recursive -> Typecore.annotate_recursive_bindings val_env defs
         | Nonrecursive -> defs
+||||||| 7b73c6aa3
+      let () = if rec_flag = Recursive then
+        check_recursive_bindings val_env defs
+=======
+      let defs = match rec_flag with
+        | Recursive -> annotate_recursive_bindings val_env defs
+        | Nonrecursive -> defs
+>>>>>>> upstream/main
       in
       rc {cl_desc = Tcl_let (rec_flag, defs, vals, cl);
           cl_loc = scl.pcl_loc;
@@ -1596,20 +1773,41 @@ let rec approx_description ct =
 
 (*******************************)
 
+<<<<<<< HEAD
 let temp_abbrev loc id arity uid =
+||||||| 7b73c6aa3
+let temp_abbrev loc env id arity uid =
+=======
+let temp_abbrev loc arity uid =
+>>>>>>> upstream/main
   let params = ref [] in
   for i = 1 to arity do
     params := Ctype.newvar (Jkind.Primitive.value ~why:(
       Type_argument {parent_path = Path.Pident id; position = i; arity})
     ) :: !params
   done;
+<<<<<<< HEAD
   let ty = Ctype.newobj (Ctype.newvar (Jkind.Primitive.value ~why:Object)) in
   let ty_td =
+||||||| 7b73c6aa3
+  let ty = Ctype.newobj (Ctype.newvar ()) in
+  let env =
+    Env.add_type ~check:true id
+=======
+  let ty = Ctype.newobj (Ctype.newvar ()) in
+  let ty_td =
+>>>>>>> upstream/main
       {type_params = !params;
        type_arity = arity;
+<<<<<<< HEAD
        type_kind = Type_abstract Abstract_def;
        type_jkind = Jkind.Primitive.value ~why:Object;
        type_jkind_annotation = None;
+||||||| 7b73c6aa3
+       type_kind = Type_abstract;
+=======
+       type_kind = Type_abstract Definition;
+>>>>>>> upstream/main
        type_private = Public;
        type_manifest = Some ty;
        type_variance = Variance.unknown_signature ~injective:false ~arity;
@@ -1629,9 +1827,18 @@ let initial_env define_class approx
     (res, env) (cl, id, ty_id, obj_id, uid) =
   (* Temporary abbreviations *)
   let arity = List.length cl.pci_params in
+<<<<<<< HEAD
   let (obj_params, obj_ty, obj_td) = temp_abbrev cl.pci_loc obj_id arity uid in
   let env = Env.add_type ~check:true obj_id obj_td env in
   let (cl_params, cl_ty, cl_td) = temp_abbrev cl.pci_loc ty_id arity uid in
+||||||| 7b73c6aa3
+  let (obj_params, obj_ty, env) = temp_abbrev cl.pci_loc env obj_id arity uid in
+  let (cl_params, cl_ty, env) = temp_abbrev cl.pci_loc env cl_id arity uid in
+=======
+  let (obj_params, obj_ty, obj_td) = temp_abbrev cl.pci_loc arity uid in
+  let env = Env.add_type ~check:true obj_id obj_td env in
+  let (cl_params, cl_ty, cl_td) = temp_abbrev cl.pci_loc arity uid in
+>>>>>>> upstream/main
 
   (* Temporary type for the class constructor *)
   let constr_type =
@@ -1687,6 +1894,7 @@ let class_infos define_class kind
      dummy_class)
     (res, env) =
 
+<<<<<<< HEAD
   let ci_params, params, coercion_locs, expr, typ, sign =
     Ctype.with_local_level_for_class begin fun () ->
       TyVarEnv.reset ();
@@ -1707,6 +1915,25 @@ let class_infos define_class kind
         List.map make_param cl.pci_params
       in
       let params = List.map (fun (cty, _) -> cty.ctyp_type) ci_params in
+||||||| 7b73c6aa3
+  reset_type_variables ();
+  Ctype.begin_class_def ();
+=======
+  let ci_params, params, coercion_locs, expr, typ, sign =
+    Ctype.with_local_level_for_class begin fun () ->
+      TyVarEnv.reset ();
+      (* Introduce class parameters *)
+      let ci_params =
+        let make_param (sty, v) =
+          try
+            (transl_type_param env sty, v)
+          with Already_bound ->
+            raise(Error(sty.ptyp_loc, env, Repeated_parameter))
+        in
+        List.map make_param cl.pci_params
+      in
+      let params = List.map (fun (cty, _) -> cty.ctyp_type) ci_params in
+>>>>>>> upstream/main
 
       (* Allow self coercions (only for class declarations) *)
       let coercion_locs = ref [] in
@@ -1839,9 +2066,15 @@ let class_infos define_class kind
     {
      type_params = obj_params;
      type_arity = arity;
+<<<<<<< HEAD
      type_kind = Type_abstract Abstract_def;
      type_jkind = Jkind.Primitive.value ~why:Object;
      type_jkind_annotation = None;
+||||||| 7b73c6aa3
+     type_kind = Type_abstract;
+=======
+     type_kind = Type_abstract Definition;
+>>>>>>> upstream/main
      type_private = Public;
      type_manifest = Some obj_ty;
      type_variance = Variance.unknown_signature ~injective:false ~arity;
@@ -1862,7 +2095,25 @@ let class_infos define_class kind
   let cl_abbr =
     { cl_td with
      type_params = cl_params;
+<<<<<<< HEAD
      type_manifest = Some cl_ty;
+||||||| 7b73c6aa3
+     type_arity = arity;
+     type_kind = Type_abstract;
+     type_private = Public;
+     type_manifest = Some cl_ty;
+     type_variance = Variance.unknown_signature ~injective:false ~arity;
+     type_separability = Types.Separability.default_signature ~arity;
+     type_is_newtype = false;
+     type_expansion_scope = Btype.lowest_level;
+     type_loc = cl.pci_loc;
+     type_attributes = []; (* or keep attrs from cl? *)
+     type_immediate = Unknown;
+     type_unboxed_default = false;
+     type_uid = dummy_class.cty_uid;
+=======
+     type_manifest = Some cl_ty
+>>>>>>> upstream/main
     }
   in
   let cltydef =
@@ -2151,13 +2402,26 @@ let approx_class_declarations env sdecls =
 
 open Format
 
+<<<<<<< HEAD
 let non_virtual_string_of_kind (t : kind) =
   match t with
+||||||| 7b73c6aa3
+let non_virtual_string_of_kind = function
+=======
+let non_virtual_string_of_kind : kind -> string = function
+>>>>>>> upstream/main
   | Object -> "object"
   | Class -> "non-virtual class"
   | Class_type -> "non-virtual class type"
 
-let report_error env ppf = function
+module Style=Misc.Style
+
+let report_error env ppf =
+  let pp_args ppf args =
+    let args = List.map (Printtyp.tree_of_typexp Type) args in
+    Style.as_inline_code !Oprint.out_type_args ppf args
+  in
+  function
   | Repeated_parameter ->
       fprintf ppf "A type parameter occurs several times"
   | Unconsistent_constraint err ->
@@ -2169,50 +2433,58 @@ let report_error env ppf = function
   | Field_type_mismatch (k, m, err) ->
       Printtyp.report_unification_error ppf env err
         (function ppf ->
-           fprintf ppf "The %s %s@ has type" k m)
+           fprintf ppf "The %s %a@ has type" k Style.inline_code m)
         (function ppf ->
            fprintf ppf "but is expected to have type")
   | Unexpected_field (ty, lab) ->
       fprintf ppf
         "@[@[<2>This object is expected to have type :@ %a@]\
-         @ This type does not have a method %s."
-        Printtyp.type_expr ty lab
+         @ This type does not have a method %a."
+        (Style.as_inline_code Printtyp.type_expr) ty
+        Style.inline_code lab
   | Structure_expected clty ->
       fprintf ppf
         "@[This class expression is not a class structure; it has type@ %a@]"
-        Printtyp.class_type clty
+        (Style.as_inline_code Printtyp.class_type) clty
   | Cannot_apply _ ->
       fprintf ppf
         "This class expression is not a class function, it cannot be applied"
   | Apply_wrong_label l ->
-      let mark_label = function
-        | Nolabel -> "out label"
-        |  l -> sprintf " label %s" (Btype.prefixed_label_name l) in
-      fprintf ppf "This argument cannot be applied with%s" (mark_label l)
+      let mark_label ppf = function
+        | Nolabel -> fprintf ppf "without label"
+        |  l -> fprintf ppf "with label %a"
+                  Style.inline_code (Btype.prefixed_label_name l)
+      in
+      fprintf ppf "This argument cannot be applied %a" mark_label l
   | Pattern_type_clash ty ->
       (* XXX Trace *)
       (* XXX Revoir message d'erreur | Improve error message *)
       fprintf ppf "@[%s@ %a@]"
         "This pattern cannot match self: it only matches values of type"
-        Printtyp.type_expr ty
+        (Style.as_inline_code Printtyp.type_expr) ty
   | Unbound_class_2 cl ->
       fprintf ppf "@[The class@ %a@ is not yet completely defined@]"
-      Printtyp.longident cl
+      (Style.as_inline_code Printtyp.longident) cl
   | Unbound_class_type_2 cl ->
       fprintf ppf "@[The class type@ %a@ is not yet completely defined@]"
-      Printtyp.longident cl
+      (Style.as_inline_code Printtyp.longident) cl
   | Abbrev_type_clash (abbrev, actual, expected) ->
       (* XXX Afficher une trace ? | Print a trace? *)
       Printtyp.prepare_for_printing [abbrev; actual; expected];
       fprintf ppf "@[The abbreviation@ %a@ expands to type@ %a@ \
        but is used with type@ %a@]"
-        !Oprint.out_type (Printtyp.tree_of_typexp Type abbrev)
-        !Oprint.out_type (Printtyp.tree_of_typexp Type actual)
-        !Oprint.out_type (Printtyp.tree_of_typexp Type expected)
+        (Style.as_inline_code !Oprint.out_type)
+        (Printtyp.tree_of_typexp Type abbrev)
+        (Style.as_inline_code !Oprint.out_type)
+        (Printtyp.tree_of_typexp Type actual)
+        (Style.as_inline_code !Oprint.out_type)
+        (Printtyp.tree_of_typexp Type expected)
   | Constructor_type_mismatch (c, err) ->
       Printtyp.report_unification_error ppf env err
         (function ppf ->
-           fprintf ppf "The expression \"new %s\" has type" c)
+           fprintf ppf "The expression %a has type"
+             Style.inline_code ("new " ^ c)
+        )
         (function ppf ->
            fprintf ppf "but is used with type")
   | Virtual_class (kind, mets, vals) ->
@@ -2227,18 +2499,18 @@ let report_error env ppf = function
         "@[This %s has virtual %s.@ \
          @[<2>The following %s are virtual : %a@]@]"
         kind missings missings
-        (pp_print_list ~pp_sep:pp_print_space pp_print_string) (mets @ vals)
+        (pp_print_list ~pp_sep:pp_print_space Style.inline_code) (mets @ vals)
   | Undeclared_methods(kind, mets) ->
       let kind = non_virtual_string_of_kind kind in
       fprintf ppf
         "@[This %s has undeclared virtual methods.@ \
          @[<2>The following methods were not declared : %a@]@]"
-        kind (pp_print_list ~pp_sep:pp_print_space pp_print_string) mets
+        kind (pp_print_list ~pp_sep:pp_print_space Style.inline_code) mets
   | Parameter_arity_mismatch(lid, expected, provided) ->
       fprintf ppf
         "@[The class constructor %a@ expects %i type argument(s),@ \
            but is here applied to %i type argument(s)@]"
-        Printtyp.longident lid expected provided
+        (Style.as_inline_code Printtyp.longident) lid expected provided
   | Parameter_mismatch err ->
       Printtyp.report_unification_error ppf env err
         (function ppf ->
@@ -2248,6 +2520,7 @@ let report_error env ppf = function
   | Bad_parameters (id, params, cstrs) ->
       Printtyp.prepare_for_printing (params @ cstrs);
       fprintf ppf
+<<<<<<< HEAD
         "@[The abbreviation %a@ is used with parameter(s)@ %a@ \
            which are incompatible with constraint(s)@ %a@]"
         Printtyp.ident id
@@ -2262,10 +2535,33 @@ let report_error env ppf = function
         Printtyp.ident id
         !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) params)
         !Oprint.out_type_args (List.map (Printtyp.tree_of_typexp Type) cstrs)
+||||||| 7b73c6aa3
+        "@[The abbreviation %a@ is used with parameters@ %a@ \
+           which are incompatible with constraints@ %a@]"
+        Printtyp.ident id
+        !Oprint.out_type (Printtyp.tree_of_typexp Type params)
+        !Oprint.out_type (Printtyp.tree_of_typexp Type cstrs)
+=======
+        "@[The abbreviation %a@ is used with parameter(s)@ %a@ \
+           which are incompatible with constraint(s)@ %a@]"
+        (Style.as_inline_code Printtyp.ident) id
+        pp_args params
+        pp_args cstrs
+  | Bad_class_type_parameters (id, params, cstrs) ->
+      let pp_hash ppf id = fprintf ppf "#%a" Printtyp.ident id in
+      Printtyp.prepare_for_printing (params @ cstrs);
+      fprintf ppf
+        "@[The class type %a@ is used with parameter(s)@ %a,@ \
+           whereas the class type definition@ constrains@ \
+           those parameters to be@ %a@]"
+        (Style.as_inline_code pp_hash) id
+       pp_args params
+       pp_args cstrs
+>>>>>>> upstream/main
   | Class_match_failure error ->
       Includeclass.report_error Type ppf error
   | Unbound_val lab ->
-      fprintf ppf "Unbound instance variable %s" lab
+      fprintf ppf "Unbound instance variable %a" Style.inline_code lab
   | Unbound_type_var (printer, reason) ->
       let print_reason ppf { Ctype.free_variable; meth; meth_ty; } =
         let (ty0, kind) = free_variable in
@@ -2276,38 +2572,72 @@ let report_error env ppf = function
         in
         Printtyp.add_type_to_preparation meth_ty;
         Printtyp.add_type_to_preparation ty1;
+        let pp_type ppf ty = Style.as_inline_code !Oprint.out_type ppf ty in
         fprintf ppf
+<<<<<<< HEAD
           "The method %s@ has type@;<1 2>%a@ where@ %a@ is unbound"
           meth
           !Oprint.out_type (Printtyp.tree_of_typexp Type meth_ty)
           !Oprint.out_type (Printtyp.tree_of_typexp Type ty0)
+||||||| 7b73c6aa3
+          "The method %s@ has type@;<1 2>%a@ where@ %a@ is unbound"
+          lab
+          !Oprint.out_type (Printtyp.tree_of_typexp Type ty)
+          !Oprint.out_type (Printtyp.tree_of_typexp Type ty0)
+=======
+          "The method %a@ has type@;<1 2>%a@ where@ %a@ is unbound"
+          Style.inline_code meth
+          pp_type (Printtyp.tree_of_typexp Type meth_ty)
+          pp_type (Printtyp.tree_of_typexp Type ty0)
+>>>>>>> upstream/main
       in
       fprintf ppf
         "@[<v>@[Some type variables are unbound in this type:@;<1 2>%t@]@ \
               @[%a@]@]"
        printer print_reason reason
+<<<<<<< HEAD
   | Non_generalizable_class {id;  clty; nongen_vars } ->
       let manual_ref = [ 6; 1; 2] in
       Printtyp.prepare_for_printing nongen_vars;
+||||||| 7b73c6aa3
+  | Non_generalizable_class (id, clty) ->
+=======
+  | Non_generalizable_class {id;  clty; nongen_vars } ->
+      let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2] in
+      Printtyp.prepare_for_printing nongen_vars;
+>>>>>>> upstream/main
       fprintf ppf
         "@[The type of this class,@ %a,@ \
+<<<<<<< HEAD
          contains the non-generalizable type variable(s): %a.@ %a@]"
         (Printtyp.class_declaration id) clty
         (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
            Printtyp.prepared_type_scheme) nongen_vars
         Misc.print_see_manual manual_ref
 
+||||||| 7b73c6aa3
+           contains type variables that cannot be generalized@]"
+        (Printtyp.class_declaration id) clty
+=======
+         contains the non-generalizable type variable(s): %a.@ %a@]"
+        (Style.as_inline_code @@ Printtyp.class_declaration id) clty
+        (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
+           (Style.as_inline_code Printtyp.prepared_type_scheme)
+        ) nongen_vars
+        Misc.print_see_manual manual_ref
+
+>>>>>>> upstream/main
   | Cannot_coerce_self ty ->
       fprintf ppf
         "@[The type of self cannot be coerced to@ \
            the type of the current class:@ %a.@.\
            Some occurrences are contravariant@]"
-        Printtyp.type_scheme ty
+        (Style.as_inline_code Printtyp.type_scheme) ty
   | Non_collapsable_conjunction (id, clty, err) ->
       fprintf ppf
         "@[The type of this class,@ %a,@ \
            contains non-collapsible conjunctive types in constraints.@ %t@]"
-        (Printtyp.class_declaration id) clty
+        (Style.as_inline_code @@ Printtyp.class_declaration id) clty
         (fun ppf -> Printtyp.report_unification_error ppf env err
             (fun ppf -> fprintf ppf "Type")
             (fun ppf -> fprintf ppf "is not compatible with type")
@@ -2328,18 +2658,23 @@ let report_error env ppf = function
         "@[The instance variable is %s;@ it cannot be redefined as %s@]"
         mut1 mut2
   | No_overriding (_, "") ->
-      fprintf ppf "@[This inheritance does not override any method@ %s@]"
-        "instance variable"
+      fprintf ppf
+        "@[This inheritance does not override any methods@ \
+         or instance variables@ but is explicitly marked as@ \
+         overriding with %a.@]"
+        Style.inline_code "!"
   | No_overriding (kind, name) ->
-      fprintf ppf "@[The %s `%s'@ has no previous definition@]" kind name
+      fprintf ppf "@[The %s %a@ has no previous definition@]" kind
+        Style.inline_code name
   | Duplicate (kind, name) ->
-      fprintf ppf "@[The %s `%s'@ has multiple definitions in this object@]"
-                    kind name
+      fprintf ppf "@[The %s %a@ has multiple definitions in this object@]"
+                    kind Style.inline_code name
   | Closing_self_type sign ->
     fprintf ppf
       "@[Cannot close type of object literal:@ %a@,\
        it has been unified with the self type of a class that is not yet@ \
        completely defined.@]"
+<<<<<<< HEAD
       Printtyp.type_scheme sign.csig_self
   | Polymorphic_class_parameter ->
       fprintf ppf
@@ -2357,6 +2692,11 @@ let report_error env ppf = function
     fprintf ppf
       "@[the argument labeled '%s' is a [%%call_pos] argument, filled in @ \
          automatically if ommitted. It cannot be passed with '?'.@]" label
+||||||| 7b73c6aa3
+      Printtyp.type_scheme sign.csig_self
+=======
+      (Style.as_inline_code Printtyp.type_scheme) sign.csig_self
+>>>>>>> upstream/main
 
 let report_error env ppf err =
   Printtyp.wrap_printing_env ~error:true

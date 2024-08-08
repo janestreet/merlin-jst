@@ -16,11 +16,21 @@
 
 
 val pretty_const
+<<<<<<< HEAD
     : Typedtree.constant -> string
 val top_pretty
     : Format.formatter -> 'k Typedtree.general_pattern -> unit
+||||||| 7b73c6aa3
+    : Asttypes.constant -> string
+val top_pretty
+    : Format.formatter -> 'k Typedtree.general_pattern -> unit
+=======
+  : Asttypes.constant -> string
+val pretty_val : Format.formatter -> 'k Typedtree.general_pattern -> unit
+
+>>>>>>> upstream/main
 val pretty_pat
-    : 'k Typedtree.general_pattern -> unit
+    : Format.formatter -> 'k Typedtree.general_pattern -> unit
 val pretty_line
     : Format.formatter -> 'k Typedtree.general_pattern list -> unit
 val pretty_matrix

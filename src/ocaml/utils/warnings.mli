@@ -73,7 +73,11 @@ type t =
   | Unused_var of string                    (* 26 *)
   | Unused_var_strict of string             (* 27 *)
   | Wildcard_arg_to_constant_constr         (* 28 *)
-  | Eol_in_string                           (* 29 *)
+  | Eol_in_string                           (* 29
+      Note: since OCaml 5.2, the lexer normalizes \r\n sequences in
+      the source file to a single \n character, so the behavior of
+      newlines in string literals is portable. This warning is
+      never emitted anymore. *)
   | Duplicate_definitions of string * string * string * string (* 30 *)
   | Unused_value_declaration of string      (* 32 *)
   | Unused_open of string                   (* 33 *)
@@ -116,6 +120,7 @@ type t =
   | Missing_mli                             (* 70 *)
   | Unused_tmc_attribute                    (* 71 *)
   | Tmc_breaks_tailcall                     (* 72 *)
+<<<<<<< HEAD
   | Generative_application_expects_unit     (* 73 *)
 (* Flambda_backend specific warnings: numbers should go down from 199 *)
   | Incompatible_with_upstream of upstream_compat_warning (* 187 *)
@@ -124,6 +129,11 @@ type t =
   | Probe_name_too_long of string           (* 190 *)
   | Unchecked_zero_alloc_attribute          (* 199 *)
   | Unboxing_impossible                     (* 210 *)
+||||||| 7b73c6aa3
+;;
+=======
+  | Generative_application_expects_unit     (* 73 *)
+>>>>>>> upstream/main
 
 type alert = {kind:string; message:string; def:loc; use:loc}
 

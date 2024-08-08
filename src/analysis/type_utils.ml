@@ -31,7 +31,7 @@ open Std
 module Verbosity = Mconfig.Verbosity
 
 let protect expr =
-  Pprintast.protect_ident (Format.str_formatter) expr;
+  Pprintast.ident_of_name (Format.str_formatter) expr;
   Format.flush_str_formatter ()
 
 let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
@@ -216,7 +216,21 @@ let print_type_with_decl ~verbosity env ppf typ =
         Env.with_cmis @@ fun () ->
         Env.find_type path env
       in
+<<<<<<< HEAD
       let is_abstract = Btype.type_kind_is_abstract decl in
+||||||| 7b73c6aa3
+      let is_abstract =
+        match decl.Types.type_kind with
+        | Types.Type_abstract -> true
+        | _ -> false
+      in
+=======
+      let is_abstract =
+        match decl.Types.type_kind with
+        | Types.Type_abstract _ -> true
+        | _ -> false
+      in
+>>>>>>> upstream/main
       (* Print expression only if it is parameterized or abstract *)
       let print_expr = is_abstract || params <> [] in
       if print_expr then

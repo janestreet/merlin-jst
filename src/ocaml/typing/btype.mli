@@ -39,9 +39,16 @@ module TypeMap : sig
 end
 module TypeHash : sig
   include Hashtbl.S with type key = transient_expr
+  val mem: 'a t -> type_expr -> bool
   val add: 'a t -> type_expr -> 'a -> unit
+<<<<<<< HEAD
   val remove : 'a t -> type_expr -> unit
+||||||| 7b73c6aa3
+=======
+  val remove: 'a t -> type_expr -> unit
+>>>>>>> upstream/main
   val find: 'a t -> type_expr -> 'a
+  val find_opt: 'a t -> type_expr -> 'a option
   val iter: (type_expr -> 'a -> unit) -> 'a t -> unit
 end
 module TypePairs : sig
@@ -80,7 +87,13 @@ val is_Tconstr: type_expr -> bool
 val is_Tpoly: type_expr -> bool
 
 val dummy_method: label
+<<<<<<< HEAD
 val type_kind_is_abstract: type_declaration -> bool
+||||||| 7b73c6aa3
+=======
+val type_kind_is_abstract: type_declaration -> bool
+val type_origin : type_declaration -> type_origin
+>>>>>>> upstream/main
 
 (**** polymorphic variants ****)
 

@@ -270,11 +270,18 @@ type type_declaration =
 and type_decl_kind = (label_declaration, constructor_declaration) type_kind
 
 and ('lbl, 'cstr) type_kind =
+<<<<<<< HEAD
     Type_abstract of abstract_reason
+||||||| 7b73c6aa3
+    Type_abstract
+=======
+    Type_abstract of type_origin
+>>>>>>> upstream/main
   | Type_record of 'lbl list * record_representation
   | Type_variant of 'cstr list * variant_representation
   | Type_open
 
+<<<<<<< HEAD
 and tag = Ordinary of {src_index: int;     (* Unique name (per type) *)
                        runtime_tag: int}   (* The runtime tag *)
         | Extension of Path.t * jkind array
@@ -297,6 +304,14 @@ and mixed_product_shape =
     flat_suffix : flat_element array;
   }
 
+||||||| 7b73c6aa3
+=======
+and type_origin =
+    Definition
+  | Rec_check_regularity
+  | Existential of string
+
+>>>>>>> upstream/main
 and record_representation =
   | Record_unboxed
   | Record_inlined of tag * constructor_representation * variant_representation

@@ -228,7 +228,7 @@ let compute_variance_type env ~check (required, loc) decl tyl =
     List.iter (fun (_,ty) -> check ty) tyl;
   end;
   List.map2
-    (fun ty (p, n, i) ->
+    (fun ty (p, n, _i) ->
       let v = get_variance ty tvl in
       let tr = decl.type_private in
       (* Use required variance where relevant *)
@@ -236,7 +236,7 @@ let compute_variance_type env ~check (required, loc) decl tyl =
       let (p, n) =
         if tr = Private || not (Btype.is_Tvar ty) then (p, n) (* set *)
         else (false, false) (* only check *)
-      and i = concr  || i && tr = Private in
+      and i = concr in
       let v = union v (make p n i) in
       if not concr || Btype.is_Tvar ty then v else
       union v
@@ -296,6 +296,7 @@ let compute_variance_extension env decl ext rloc =
     {decl with type_params = ext.ext_type_params}
     (ext.ext_args, ext.ext_ret_type)
 
+<<<<<<< HEAD
 let compute_variance_gadt_constructor env ~check rloc decl tl =
   let check =
     match check with
@@ -360,6 +361,109 @@ let compute_variance_decl env ~check decl (required, _ as rloc) =
       List.map Variance.strengthen vari
     else vari
   end
+||||||| 7b73c6aa3
+let compute_variance_decl env ~check decl (required, _ as rloc) =
+  if (decl.type_kind = Type_abstract || decl.type_kind = Type_open)
+       && decl.type_manifest = None then
+    List.map
+      (fun (c, n, i) ->
+        make (not n) (not c) (decl.type_kind <> Type_abstract || i))
+      required
+  else
+  let mn =
+    match decl.type_manifest with
+      None -> []
+    | Some ty -> [false, ty]
+  in
+  match decl.type_kind with
+    Type_abstract | Type_open ->
+      compute_variance_type env ~check rloc decl mn
+  | Type_variant (tll,_rep) ->
+      if List.for_all (fun c -> c.Types.cd_res = None) tll then
+        compute_variance_type env ~check rloc decl
+          (mn @ List.flatten (List.map (fun c -> for_constr c.Types.cd_args)
+                                tll))
+      else begin
+        let mn =
+          List.map (fun (_,ty) -> (Types.Cstr_tuple [ty],None)) mn in
+        let tll =
+          mn @ List.map (fun c -> c.Types.cd_args, c.Types.cd_res) tll in
+        match List.map (compute_variance_gadt env ~check rloc decl) tll with
+        | vari :: rem ->
+            let varl = List.fold_left (List.map2 Variance.union) vari rem in
+            List.map
+              Variance.(fun v -> if mem Pos v && mem Neg v then full else v)
+              varl
+        | _ -> assert false
+      end
+  | Type_record (ftl, _) ->
+      compute_variance_type env ~check rloc decl
+        (mn @ List.map (fun {Types.ld_mutable; ld_type} ->
+             (ld_mutable = Mutable, ld_type)) ftl)
+=======
+let compute_variance_gadt_constructor env ~check rloc decl tl =
+  let check =
+    match check with
+    | Some _ -> Some (Gadt_constructor tl)
+    | None -> None
+  in
+  compute_variance_gadt env ~check rloc decl
+    (tl.Types.cd_args, tl.Types.cd_res)
+
+let compute_variance_decl env ~check decl (required, _ as rloc) =
+  let check =
+    Option.map (fun id -> Type_declaration (id, decl)) check
+  in
+  let abstract = Btype.type_kind_is_abstract decl in
+  if (abstract || decl.type_kind = Type_open) && decl.type_manifest = None then
+    List.map
+      (fun (c, n, i) -> make (not n) (not c) (not abstract || i))
+      required
+  else begin
+    let mn =
+      match decl.type_manifest with
+        None -> []
+      | Some ty -> [ false, ty ]
+    in
+    let vari =
+      match decl.type_kind with
+        Type_abstract _ | Type_open ->
+          compute_variance_type env ~check rloc decl mn
+      | Type_variant (tll,_rep) ->
+          if List.for_all (fun c -> c.Types.cd_res = None) tll then
+            compute_variance_type env ~check rloc decl
+              (mn @ List.flatten (List.map (fun c -> for_constr c.Types.cd_args)
+                                    tll))
+          else begin
+            let vari =
+              List.map
+                (fun ty ->
+                   compute_variance_type env ~check rloc
+                     {decl with type_private = Private}
+                     (add_false [ ty ])
+                )
+                (Option.to_list decl.type_manifest)
+            in
+            let constructor_variance =
+              List.map
+                (compute_variance_gadt_constructor env ~check rloc decl)
+                tll
+            in
+            match List.append vari constructor_variance with
+            | vari :: rem ->
+                List.fold_left (List.map2 Variance.union) vari rem
+            | _ -> assert false
+          end
+      | Type_record (ftl, _) ->
+          compute_variance_type env ~check rloc decl
+            (mn @ List.map (fun {Types.ld_mutable; ld_type} ->
+                 (ld_mutable = Mutable, ld_type)) ftl)
+    in
+    if mn = [] || not abstract then
+      List.map Variance.strengthen vari
+    else vari
+  end
+>>>>>>> upstream/main
 
 let is_hash id =
   let s = Ident.name id in

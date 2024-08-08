@@ -56,7 +56,18 @@ type out_value =
   | Oval_stuff of string
   | Oval_tuple of (string option * out_value) list
   | Oval_variant of string * out_value option
+  | Oval_lazy of out_value
 
+<<<<<<< HEAD
+||||||| 7b73c6aa3
+type out_type_param = string * (Asttypes.variance * Asttypes.injectivity)
+=======
+type out_type_param = {
+    ot_non_gen: bool;
+    ot_name: string;
+    ot_variance: Asttypes.variance * Asttypes.injectivity
+}
+>>>>>>> upstream/main
 
 type out_modality_legacy = Ogf_global
 
@@ -125,21 +136,48 @@ and out_vars_jkinds = (string * out_jkind option) list
 and out_type =
   | Otyp_abstract
   | Otyp_open
+<<<<<<< HEAD
   | Otyp_alias of {non_gen:bool; aliased:out_type; alias:string}
   | Otyp_arrow of arg_label * out_arg_mode * out_type * out_ret_mode * out_type
   (* INVARIANT: the [out_ret_mode] is [Orm_not_arrow] unless the RHS [out_type]
     is [Otyp_arrow] *)
   | Otyp_class of out_ident * out_type list
+||||||| 7b73c6aa3
+  | Otyp_alias of out_type * string
+  | Otyp_arrow of string * out_type * out_type
+  | Otyp_class of bool * out_ident * out_type list
+=======
+  | Otyp_alias of {non_gen:bool; aliased:out_type; alias:string}
+  | Otyp_arrow of Asttypes.arg_label * out_type * out_type
+  | Otyp_class of out_ident * out_type list
+>>>>>>> upstream/main
   | Otyp_constr of out_ident * out_type list
   | Otyp_manifest of out_type * out_type
+<<<<<<< HEAD
   | Otyp_object of { fields: (string * out_type) list; open_row:bool}
   | Otyp_record of (string * out_mutability * out_type * out_modality list) list
+||||||| 7b73c6aa3
+  | Otyp_object of (string * out_type) list * bool option
+  | Otyp_record of (string * bool * out_type) list
+=======
+  | Otyp_object of { fields: (string * out_type) list; open_row:bool}
+  | Otyp_record of (string * bool * out_type) list
+>>>>>>> upstream/main
   | Otyp_stuff of string
   | Otyp_sum of out_constructor list
   | Otyp_tuple of (string option * out_type) list
   | Otyp_var of bool * string
+<<<<<<< HEAD
   | Otyp_variant of out_variant * bool * (string list) option
   | Otyp_poly of out_vars_jkinds * out_type
+||||||| 7b73c6aa3
+  | Otyp_variant of
+      bool * out_variant * bool * (string list) option
+  | Otyp_poly of string list * out_type
+=======
+  | Otyp_variant of out_variant * bool * (string list) option
+  | Otyp_poly of string list * out_type
+>>>>>>> upstream/main
   | Otyp_module of out_ident * (string * out_type) list
   | Otyp_attribute of out_type * out_attribute
   | Otyp_jkind_annot of out_type * out_jkind
@@ -158,7 +196,13 @@ and out_variant =
 
 type out_class_type =
   | Octy_constr of out_ident * out_type list
+<<<<<<< HEAD
   | Octy_arrow of arg_label * out_type * out_class_type
+||||||| 7b73c6aa3
+  | Octy_arrow of string * out_type * out_class_type
+=======
+  | Octy_arrow of Asttypes.arg_label * out_type * out_class_type
+>>>>>>> upstream/main
   | Octy_signature of out_type option * out_class_sig_item list
 and out_class_sig_item =
   | Ocsg_constraint of out_type * out_type
