@@ -200,47 +200,8 @@ let output_cmi filename oc cmi =
   output_value oc (crcs : crcs);
   output_value oc (cmi.cmi_flags : flags);
   crc
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-(* Error report *)
 
-open Format
-=======
-(* Error report *)
-
-open Format
-module Style = Misc.Style
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
-
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 let input_cmi ic = input_cmi_lazy ic |> force_cmi_infos
 let read_cmi filename = read_cmi_lazy filename |> force_cmi_infos
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let report_error ppf = function
-  | Not_an_interface filename ->
-      fprintf ppf "%a@ is not a compiled interface"
-        Location.print_filename filename
-  | Wrong_version_interface (filename, older_newer) ->
-      fprintf ppf
-        "%a@ is not a compiled interface for this version of OCaml.@.\
-         It seems to be for %s version of OCaml."
-        Location.print_filename filename older_newer
-  | Corrupted_interface filename ->
-      fprintf ppf "Corrupted compiled interface@ %a"
-        Location.print_filename filename
-=======
-let report_error ppf = function
-  | Not_an_interface filename ->
-      fprintf ppf "%a@ is not a compiled interface"
-        (Style.as_inline_code Location.print_filename) filename
-  | Wrong_version_interface (filename, older_newer) ->
-      fprintf ppf
-        "%a@ is not a compiled interface for this version of OCaml.@.\
-         It seems to be for %s version of OCaml."
-        (Style.as_inline_code  Location.print_filename) filename older_newer
-  | Corrupted_interface filename ->
-      fprintf ppf "Corrupted compiled interface@ %a"
-        (Style.as_inline_code Location.print_filename) filename
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 (* Error report moved to src/ocaml/typing/magic_numbers.ml *)

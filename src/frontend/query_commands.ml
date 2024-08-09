@@ -311,9 +311,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Stack_or_heap_enclosing.No_alloc { reason }, true ->
               ret (`String ("not an allocation (" ^ reason ^ ")"))
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
-            let locality = alloc_mode 
-                           |> Mode.Alloc.proj (Comonadic Areality) 
-                           |> Mode.Locality.Guts.check_const_conservative 
+            let locality = alloc_mode
+                           |> Mode.Alloc.proj (Comonadic Areality)
+                           |> Mode.Locality.Guts.check_const_conservative
             in
             let str = match locality with
               | Some Global -> "heap"
@@ -329,7 +329,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let all_results =
       match all_results with
       | _ :: _ -> all_results
-      | [] -> 
+      | [] ->
           let pos' : Lexing.position = { pos with pos_cnum = pos.pos_cnum - 1 } in
           let loc : Location.t = { loc_start=pos'; loc_end=pos; loc_ghost=false } in
           [ (loc, `String "no relevant allocation to show") ]
@@ -583,9 +583,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node = Mtyper.node_at typer pos in
-    let res = Syntax_doc.get_syntax_doc pos node in 
+    let res = Syntax_doc.get_syntax_doc pos node in
     (match res with
-    | Some res -> `Found res 
+    | Some res -> `Found res
     | None -> `No_documentation)
 
   | Locate (patho, ml_or_mli, pos) ->
@@ -836,9 +836,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
-          find_in_path_uncap (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
+          find_in_path_normalized (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
         with Not_found -> try
-            find_in_path_uncap (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
+            find_in_path_normalized (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
           with Not_found ->
             aux xs
     in

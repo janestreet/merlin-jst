@@ -401,27 +401,11 @@ let index_occurrences binary_annots =
 
 exception Error of error
 
-let input_cmt ic = (Compression.input_value ic : cmt_infos)
+let input_cmt ic = (input_value ic : cmt_infos)
 
 let output_cmt oc cmt =
   output_string oc Config.cmt_magic_number;
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
   output_value oc (cmt : cmt_infos)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  (* BACKPORT BEGIN *)
-  (* CR ocaml 5 compressed-marshal mshinwell:
-     upstream uses [Compression] here *)
-  Marshal.(to_channel oc (cmt : cmt_infos) [])
-  (* BACKPORT END *)
-=======
-  (* BACKPORT BEGIN *)
-  (* CR ocaml 5 compressed-marshal mshinwell:
-     upstream uses [Compression] here:
-     Compression.output_value oc (cmt : cmt_infos)
-  *)
-  Marshal.(to_channel oc (cmt : cmt_infos) [])
-  (* BACKPORT END *)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 let read filename =
 (*  Printf.fprintf stderr "Cmt_format.read %s\n%!" filename; *)
@@ -488,11 +472,6 @@ let save_cmt target cu binary_annots initial_env cmi shape =
            | None -> None
            | Some cmi -> Some (output_cmi temp_file_name oc cmi)
          in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-         let source_digest = Option.map ~f:Digest.file sourcefile in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-         let source_digest = Option.map Digest.file sourcefile in
-=======
          let sourcefile = Unit_info.Artifact.source_file target in
          let cmt_ident_occurrences =
           if !Clflags.store_occurrences then
@@ -502,8 +481,7 @@ let save_cmt target cu binary_annots initial_env cmi shape =
          in
          let cmt_annots = clear_env binary_annots in
          let cmt_uid_to_decl = index_declarations cmt_annots in
-         let source_digest = Option.map Digest.file sourcefile in
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+         let source_digest = Option.map ~f:Digest.file sourcefile in
          let compare_imports import1 import2 =
            let modname1 = Import_info.name import1 in
            let modname2 = Import_info.name import2 in

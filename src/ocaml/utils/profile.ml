@@ -17,51 +17,8 @@
 
 type file = string
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-module String = Misc.String
-
-module Counters = struct
-  type t = int String.Map.t
-
-  let create () = String.Map.empty
-  let get name t = String.Map.find_opt name t |> Option.value ~default:0
-  let set name count t = String.Map.add name count t
-  let is_empty = String.Map.is_empty
-  let union = String.Map.union (fun _ count1 count2 -> Some (count1 + count2))
-  let to_string t =
-    t
-    |> String.Map.bindings
-    |> List.map (fun (name, count) -> Printf.sprintf "%s = %d" name count)
-    |> String.concat "; "
-    |> Printf.sprintf "[%s]"
-end
-
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-module Int = Misc.Stdlib.Int
-module String = Misc.Stdlib.String
-
-module Counters = struct
-  type t = int String.Map.t
-
-  let create () = String.Map.empty
-  let get name t = String.Map.find_opt name t |> Option.value ~default:0
-  let set name count t = String.Map.add name count t
-  let is_empty = String.Map.is_empty
-  let union = String.Map.union (fun _ count1 count2 -> Some (count1 + count2))
-  let to_string t =
-    t
-    |> String.Map.bindings
-    |> List.map (fun (name, count) -> Printf.sprintf "%s = %d" name count)
-    |> String.concat "; "
-    |> Printf.sprintf "[%s]"
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 external time_include_children: bool -> float = "caml_sys_time_include_children"
 let cpu_time () = time_include_children true
-
-module Int = Misc.Stdlib.Int
 
 module Measure = struct
   type t = {

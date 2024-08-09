@@ -30,15 +30,9 @@ module Dir : sig
   val create : hidden:bool -> string -> t
 
   val find : t -> string -> string option
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-  val find_uncap : t -> string -> string option
+  val find_normalized : t -> string -> string option
 
   val check : hidden:bool -> t -> bool
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  val find_uncap : t -> string -> string option
-=======
-  val find_normalized : t -> string -> string option
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 end = struct
   type entry = {
     basename : string;
@@ -318,6 +312,6 @@ let find_normalized_with_visibility fn =
         (Misc.find_in_path_normalized (get_hidden_path_list ()) fn, Hidden)
   with Not_found ->
     let fn_uncap = String.uncapitalize_ascii fn in
-    (!auto_include_callback Dir.find_uncap fn_uncap, Visible)
+    (!auto_include_callback Dir.find_normalized fn_uncap, Visible)
 
 let find_normalized fn = fst (find_normalized_with_visibility fn)

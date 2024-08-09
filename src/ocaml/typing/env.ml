@@ -1121,19 +1121,9 @@ let runtime_parameters () = Persistent_env.runtime_parameters !persistent_env
 
 let parameters () = Persistent_env.parameters !persistent_env
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-let read_pers_mod modname filename ~add_binding =
-  Persistent_env.read !persistent_env read_sign_of_cmi short_paths_components
-    modname filename ~add_binding
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let read_pers_mod modname filename ~add_binding =
-  Persistent_env.read !persistent_env read_sign_of_cmi modname filename
-    ~add_binding
-=======
 let read_pers_mod modname cmi ~add_binding =
-  Persistent_env.read !persistent_env read_sign_of_cmi modname cmi
-    ~add_binding
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+  Persistent_env.read !persistent_env read_sign_of_cmi short_paths_components
+    modname cmi ~add_binding
 
 let find_pers_mod name =
   Persistent_env.find !persistent_env
@@ -2893,32 +2883,10 @@ let register_parameter modname =
 
 let unit_name_of_filename fn =
   match Filename.extension fn with
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-  | ".cmi" -> begin
-      let unit =
-        String.capitalize_ascii (Filename.remove_extension fn)
-      in
-      if Std.String.for_all is_identchar_latin1 unit then
-        Some unit
-      else
-        None
-    end
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | ".cmi" -> begin
-      let unit =
-        String.capitalize_ascii (Filename.remove_extension fn)
-      in
-      if String.for_all is_identchar_latin1 unit then
-        Some unit
-      else
-        None
-    end
-=======
   | ".cmi" ->
       let modname = Unit_info.modname_from_source fn in
       if Unit_info.is_unit_name modname then Some modname
       else None
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   | _ -> None
 
 let persistent_structures_of_dir dir =
@@ -4429,7 +4397,7 @@ let () =
 let check_state_consistency () =
   let missing modname =
     let modname_as_string = Compilation_unit.Name.to_string modname in
-    match Load_path.find_uncap (modname_as_string ^ ".cmi") with
+    match Load_path.find_normalized (modname_as_string ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
   and found _modname filename ps_name =

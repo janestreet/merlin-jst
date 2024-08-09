@@ -26,19 +26,11 @@ open Path
 open Asttypes
 open Types
 open Mode
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 open Btype
 open Outcometree
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-module String = Misc.Stdlib.String
-module Int = Misc.Stdlib.Int
-module Sig_component_kind = Shape.Sig_component_kind
-=======
-module String = Misc.Stdlib.String
-module Int = Misc.Stdlib.Int
+
 module Sig_component_kind = Shape.Sig_component_kind
 module Style = Misc.Style
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 (* Note [When to print jkind annotations]
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,18 +225,10 @@ module Conflicts = struct
           explanations := M.add name explanation !explanations
 
   let pp_explanation ppf r=
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-    Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %s@]"
-      Location.print_loc r.location
-        (Shape.Sig_component_kind.to_string r.kind) r.name
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %s@]"
-      Location.print_loc r.location (Sig_component_kind.to_string r.kind) r.name
-=======
     Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %a@]"
-      Location.print_loc r.location (Sig_component_kind.to_string r.kind)
+      Location.print_loc r.location
+      (Shape.Sig_component_kind.to_string r.kind)
       Style.inline_code r.name
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
   let print_located_explanations ppf l =
     Format.fprintf ppf "@[<v>%a@]" (Format.pp_print_list pp_explanation) l
@@ -1019,21 +1003,7 @@ end = struct
     || String.Set.mem name !named_weak_vars
 
   let rec new_name () =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-    let name =
-      if !name_counter < 26
-      then String.make 1 (Char.chr(97 + !name_counter))
-      else String.make 1 (Char.chr(97 + !name_counter mod 26)) ^
-            Int.to_string(!name_counter / 26) in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    let name =
-      if !name_counter < 26
-      then String.make 1 (Char.chr(97 + !name_counter))
-      else String.make 1 (Char.chr(97 + !name_counter mod 26)) ^
-             Int.to_string(!name_counter / 26) in
-=======
     let name = Misc.letter_of_int !name_counter in
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
     incr name_counter;
     if name_is_already_used name then new_name () else name
 
@@ -1422,25 +1392,11 @@ let rec tree_of_typexp mode alloc_mode ty =
     | Tconstr(p, tyl, _abbrev) -> begin
       match best_type_path p with
       | Nth n -> tree_of_typexp mode Alloc.Const.legacy (apply_nth n tyl)
-      | Path(nso, p) ->
-          let tyl' = apply_subst_opt nso tyl in
-          Otyp_constr (tree_of_path (Some Type) p, tree_of_typlist mode tyl')
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-    end
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        let tyl' = apply_subst s tyl in
-        if is_nth s && not (tyl'=[])
-        then tree_of_typexp mode Alloc.Const.legacy (List.hd tyl')
-        else Otyp_constr (tree_of_path (Some Type) p', tree_of_typlist mode tyl')
-=======
-        let tyl' = apply_subst s tyl in
-        if is_nth s && not (tyl'=[])
-        then tree_of_typexp mode Alloc.Const.legacy (List.hd tyl')
-        else begin
+      | Path(nso, p') ->
           Internal_names.add p';
+          let tyl' = apply_subst_opt nso tyl in
           Otyp_constr (tree_of_path (Some Type) p', tree_of_typlist mode tyl')
-        end
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+    end
     | Tvariant row ->
       let Row {fields; name; closed; _} = row_repr row in
       let fields =

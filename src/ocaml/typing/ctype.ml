@@ -1933,61 +1933,7 @@ let expand_abbrev_gen kind find_type_expansion env ty =
           update_scope scope ty;
           update_scope scope ty';
           ty'
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      | None ->
-          match find_type_expansion path env with
-          | exception Not_found ->
-            (* another way to expand is to normalize the path itself *)
-            let path' = Env.normalize_type_path None env path in
-            if Path.same path path' then raise Cannot_expand
-            else newty2 ~level (Tconstr (path', args, abbrev))
-          | (params, body, lv) ->
-            (* prerr_endline
-              ("add a "^string_of_kind kind^" expansion for "^Path.name path);*)
-            let ty' =
-              try
-                subst env level kind abbrev (Some ty) params args body
-              with Cannot_subst -> raise_escape_exn Constraint
-            in
-            (* For gadts, remember type as non exportable *)
-            (* The ambiguous level registered for ty' should be the highest *)
-            (* if !trace_gadt_instances then begin *)
-            let scope = Int.max lv (get_scope ty) in
-            update_scope scope ty;
-            update_scope scope ty';
-            ty'
-      end
-  | _ ->
-      assert false
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      | None ->
-          match find_type_expansion path env with
-          | exception Not_found ->
-            (* another way to expand is to normalize the path itself *)
-            let path' = Env.normalize_type_path None env path in
-            if Path.same path path' then raise Cannot_expand
-            else newty2 ~level (Tconstr (path', args, abbrev))
-          | (params, body, lv) ->
-            (* prerr_endline
-              ("add a "^string_of_kind kind^" expansion for "^Path.name path);*)
-            let ty' =
-              try
-                subst env level kind abbrev (Some ty) params args body
-              with Cannot_subst -> raise_escape_exn Constraint
-            in
-            (* For gadts, remember type as non exportable *)
-            (* The ambiguous level registered for ty' should be the highest *)
-            (* if !trace_gadt_instances then begin *)
-            let scope = Misc.Stdlib.Int.max lv (get_scope ty) in
-            update_scope scope ty;
-            update_scope scope ty';
-            ty'
-      end
-  | _ ->
-      assert false
-=======
   end
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 (* Expand respecting privacy *)
 let expand_abbrev env ty =
@@ -5671,7 +5617,7 @@ let match_class_declarations env patt_params patt_type subj_params subj_type =
         let ls = List.length subj_params in
         if lp  <> ls then
           raise (Failure [CM_Parameter_arity_mismatch (lp, ls)]);
-        Stdlib.List.iteri2 (fun n p s ->
+        Misc.List.iteri2 (fun n p s ->
           try eqtype true type_pairs subst env p s with Equality_trace trace ->
             raise (Failure
                      [CM_Type_parameter_mismatch

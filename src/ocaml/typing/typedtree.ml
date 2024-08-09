@@ -219,90 +219,6 @@ and expression_desc =
   | Texp_src_pos
   | Texp_hole
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-and function_curry =
-  | More_args of { partial_mode : Mode.Alloc.l }
-  | Final_arg
-
-and function_param =
-  {
-    fp_arg_label: arg_label;
-    fp_param: Ident.t;
-    fp_partial: partial;
-    fp_kind: function_param_kind;
-    fp_sort: Jkind.sort;
-    fp_mode: Mode.Alloc.l;
-    fp_curry: function_curry;
-    fp_newtypes: fp_newtype list;
-    fp_loc: Location.t;
-  }
-
-and fp_newtype =
-  | Newtype of string loc * Jkind.annotation option
-  | Newtype' of Ident.t * string loc * Jkind.annotation option * Uid.t
-
-and function_param_kind =
-  | Tparam_pat of pattern
-  | Tparam_optional_default of pattern * expression * Jkind.sort
-
-and function_body =
-  | Tfunction_body of expression
-  | Tfunction_cases of function_cases
-
-and function_cases =
-  { fc_cases: value case list;
-    fc_env : Env.t;
-    fc_arg_mode: Mode.Alloc.l;
-    fc_arg_sort: Jkind.sort;
-    fc_ret_type : Types.type_expr;
-    fc_partial: partial;
-    fc_param: Ident.t;
-    fc_loc: Location.t;
-    fc_exp_extra: exp_extra option;
-    fc_attributes: attributes;
-  }
-
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-and function_curry =
-  | More_args of { partial_mode : Mode.Alloc.l }
-  | Final_arg
-
-and function_param =
-  {
-    fp_arg_label: arg_label;
-    fp_param: Ident.t;
-    fp_partial: partial;
-    fp_kind: function_param_kind;
-    fp_sort: Jkind.sort;
-    fp_mode: Mode.Alloc.l;
-    fp_curry: function_curry;
-    fp_newtypes: (string loc * Jkind.annotation option) list;
-    fp_loc: Location.t;
-  }
-
-and function_param_kind =
-  | Tparam_pat of pattern
-  | Tparam_optional_default of pattern * expression * Jkind.sort
-
-and function_body =
-  | Tfunction_body of expression
-  | Tfunction_cases of function_cases
-
-and function_cases =
-  { fc_cases: value case list;
-    fc_env : Env.t;
-    fc_arg_mode: Mode.Alloc.l;
-    fc_arg_sort: Jkind.sort;
-    fc_ret_type : Types.type_expr;
-    fc_partial: partial;
-    fc_param: Ident.t;
-    fc_loc: Location.t;
-    fc_exp_extra: exp_extra option;
-    fc_attributes: attributes;
-  }
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 and ident_kind =
   | Id_value
   | Id_prim of Mode.Locality.l option * Jkind.Sort.t option
@@ -359,9 +275,13 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.l;
     fp_curry: function_curry;
-    fp_newtypes: (string loc * Jkind.annotation option) list;
+    fp_newtypes: fp_newtype list;
     fp_loc: Location.t;
   }
+
+and fp_newtype =
+  | Newtype of string loc * Jkind.annotation option
+  | Newtype' of Ident.t * string loc * Jkind.annotation option * Uid.t
 
 and function_param_kind =
   | Tparam_pat of pattern

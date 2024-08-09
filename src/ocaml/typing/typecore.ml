@@ -1059,28 +1059,9 @@ let unify_pat_types_return_equated_pairs ~refine loc penv ty ty' =
     else (unify !!penv ty ty'; nothing_equated)
   with
   | Unify err ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      raise(error(loc, !env, Pattern_type_clash(err, None)))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      raise(Error(loc, !env, Pattern_type_clash(err, None)))
-=======
       raise(Error(loc, !!penv, Pattern_type_clash(err, None)))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   | Tags(l1,l2) ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      raise(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
-
-let unify_pat_types ?refine loc env ty ty' =
-  ignore (unify_pat_types_return_equated_pairs ?refine loc env ty ty')
-
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      raise(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
-
-let unify_pat_types ?refine loc env ty ty' =
-  ignore (unify_pat_types_return_equated_pairs ?refine loc env ty ty')
-=======
       raise(Typetexp.Error(loc, !!penv, Typetexp.Variant_tags (l1, l2)))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 let unify_pat_types_refine ~refine loc penv ty ty' =
   ignore (unify_pat_types_return_equated_pairs ~refine loc penv ty ty')
@@ -1557,13 +1538,7 @@ let reorder_pat loc penv patl closed labeled_tl expected_ty =
     match extract_or_mk_pat label rem closed with
     | Some (pat, rem) -> (label, pat) :: taken, rem
     | None ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      raise (error (loc, !env, Missing_tuple_label(label, expected_ty)))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      raise (Error (loc, !env, Missing_tuple_label(label, expected_ty)))
-=======
-      raise (Error (loc, !!penv, Missing_tuple_label(label, expected_ty)))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      raise (error (loc, !!penv, Missing_tuple_label(label, expected_ty)))
   in
   match List.fold_left take_next ([], patl) labeled_tl with
   | taken, [] ->
@@ -1621,15 +1596,8 @@ let solve_constructor_annotation
   in
   let cty, ty, force =
     with_local_level ~post:(fun (_,ty,_) -> generalize_structure ty)
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      (fun () -> Typetexp.transl_simple_type_delayed !env Alloc.Const.legacy sty)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      (fun () ->
-         Typetexp.transl_simple_type_delayed !env Alloc.Const.legacy sty)
-=======
       (fun () ->
          Typetexp.transl_simple_type_delayed !!penv Alloc.Const.legacy sty)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   in
   tps.tps_pattern_force <- force :: tps.tps_pattern_force;
   let ty_args =
@@ -1655,24 +1623,12 @@ let solve_constructor_annotation
             Tconstr(Path.Pident id, [], _) when List.mem id rem ->
               list_remove id rem
           | _ ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-              raise (error (cty.ctyp_loc, !env,
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-              raise (Error (cty.ctyp_loc, !env,
-=======
-              raise (Error (cty.ctyp_loc, !!penv,
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+              raise (error (cty.ctyp_loc, !!penv,
                             Unbound_existential (ids, ty))))
         ids ty_ex
     in
     if rem <> [] then
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      raise (error (cty.ctyp_loc, !env,
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      raise (Error (cty.ctyp_loc, !env,
-=======
-      raise (Error (cty.ctyp_loc, !!penv,
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      raise (error (cty.ctyp_loc, !!penv,
                     Unbound_existential (ids, ty)))
   end;
   ty_args, Some (ids, cty)
@@ -1723,17 +1679,9 @@ let solve_Ppat_construct ~refine tps penv loc constr no_existentials
                 (List.map (fun ca -> ca.Types.ca_type, ca.Types.ca_modalities) ty_args)
             in
             let ty_args_ty, existential_ctyp =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-              solve_constructor_annotation tps env name_list sty ty_args_ty ty_ex in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-              solve_constructor_annotation tps env name_list sty ty_args_ty
-                ty_ex
-            in
-=======
               solve_constructor_annotation tps penv name_list sty ty_args_ty
                 ty_ex
             in
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
             ty_args_ty, ty_args_gf, ty_res, equated_types, existential_ctyp
       in
       if constr.cstr_existentials <> [] then
@@ -1772,13 +1720,7 @@ let solve_Ppat_record_field ~refine loc penv label label_lid record_ty =
     begin try
       unify_pat_types_refine ~refine loc penv ty_res (instance record_ty)
     with Error(_loc, _env, Pattern_type_clash(err, _)) ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      raise(error(label_lid.loc, !env,
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      raise(Error(label_lid.loc, !env,
-=======
-      raise(Error(label_lid.loc, !!penv,
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      raise(error(label_lid.loc, !!penv,
                   Label_mismatch(label_lid.txt, err)))
     end;
     (ty_arg, [ty_res; ty_arg])
@@ -2550,16 +2492,16 @@ let rec type_pat
   : type k . type_pat_state -> k pattern_category ->
       no_existentials: existential_restriction option ->
       alloc_mode:expected_pat_mode ->
-      env: Env.t ref -> Parsetree.pattern ->
+      penv: Pattern_env.t -> Parsetree.pattern ->
       type_expr -> k general_pattern
-  = fun tps category ~no_existentials ~alloc_mode ~env sp expected_ty ->
+  = fun tps category ~no_existentials ~alloc_mode ~penv sp expected_ty ->
   Msupport.with_saved_types
     ~warning_attribute:sp.ppat_attributes ?save_part:None
     (fun () ->
        let saved = save_levels () in
        try
          type_pat_aux tps category ~no_existentials
-           ~alloc_mode ~env sp expected_ty
+           ~alloc_mode ~penv sp expected_ty
        with Error _ as exn ->
          (* We only want to catch error, not internal exceptions such as
             [Need_backtrack], etc. *)
@@ -2572,59 +2514,24 @@ let rec type_pat
              pat_desc = Tpat_any;
              pat_loc = loc;
              pat_extra = [];
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
              pat_type = expected_ty;
-             pat_env = !env;
+             pat_env = !!penv;
              pat_attributes = Msupport.recovery_attributes sp.ppat_attributes;
            }
          in
          (match category with
              | Value -> pat
              | Computation -> as_computation_pattern pat)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  : type k . type_pat_state -> k pattern_category ->
-      no_existentials: existential_restriction option ->
-      alloc_mode:expected_pat_mode ->
-      env: Env.t ref -> Parsetree.pattern -> type_expr -> k general_pattern
-  = fun tps category ~no_existentials ~alloc_mode ~env sp expected_ty ->
-  Builtin_attributes.warning_scope sp.ppat_attributes
-    (fun () ->
-       type_pat_aux tps category ~no_existentials
-         ~alloc_mode ~env sp expected_ty
-=======
-  : type k . type_pat_state -> k pattern_category ->
-      no_existentials: existential_restriction option ->
-      alloc_mode:expected_pat_mode ->
-      penv: Pattern_env.t -> Parsetree.pattern -> type_expr ->
-      k general_pattern
-  = fun tps category ~no_existentials ~alloc_mode ~penv sp expected_ty ->
-  Builtin_attributes.warning_scope sp.ppat_attributes
-    (fun () ->
-       type_pat_aux tps category ~no_existentials
-         ~alloc_mode ~penv sp expected_ty
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
     )
 
 and type_pat_aux
   : type k . type_pat_state -> k pattern_category -> no_existentials:_ ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
          alloc_mode:expected_pat_mode ->
-         env:_ -> _ -> _ -> k general_pattern
+         penv:_ -> _ -> _ -> k general_pattern
   = fun tps category ~no_existentials
-      ~alloc_mode ~env sp expected_ty ->
-  let type_pat tps category ?(alloc_mode=alloc_mode) ?(env=env) =
-    type_pat tps category ~no_existentials ~alloc_mode ~env
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-         alloc_mode:expected_pat_mode -> env:_ -> _ -> _ -> k general_pattern
-  = fun tps category ~no_existentials ~alloc_mode ~env sp expected_ty ->
-  let type_pat tps category ?(alloc_mode=alloc_mode) ?(env=env) =
-    type_pat tps category ~no_existentials ~alloc_mode ~env
-=======
-         alloc_mode:expected_pat_mode -> penv:_ -> _ -> _ -> k general_pattern
-  = fun tps category ~no_existentials ~alloc_mode ~penv sp expected_ty ->
+      ~alloc_mode ~penv sp expected_ty ->
   let type_pat tps category ?(alloc_mode=alloc_mode) ?(penv=penv) =
     type_pat tps category ~no_existentials ~alloc_mode ~penv
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   in
   let loc = sp.ppat_loc in
   let solve_expected (x : pattern) : pattern =
@@ -2672,13 +2579,7 @@ and type_pat_aux
       (* If not, it's not allowed to be open (partial) *)
       | _ ->
         match closed with
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        | Open -> raise (error (loc, !env, Partial_tuple_pattern_bad_type))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        | Open -> raise (Error (loc, !env, Partial_tuple_pattern_bad_type))
-=======
-        | Open -> raise (Error (loc, !!penv, Partial_tuple_pattern_bad_type))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+        | Open -> raise (error (loc, !!penv, Partial_tuple_pattern_bad_type))
         | Closed -> spl
     in
     let spl_ann =
@@ -2802,13 +2703,7 @@ and type_pat_aux
       type_pat tps category p expected_ty
         (* TODO: record 'extra' to remember about interval *)
   | Ppat_interval _ ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      raise (error (loc, !env, Invalid_interval))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      raise (Error (loc, !env, Invalid_interval))
-=======
-      raise (Error (loc, !!penv, Invalid_interval))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      raise (error (loc, !!penv, Invalid_interval))
   | Ppat_tuple spl ->
       type_tuple_pat (List.map (fun sp -> None, sp) spl) Closed
   | Ppat_construct(lid, sarg) ->
@@ -2819,16 +2714,8 @@ and type_pat_aux
         | Maybe_a_variant_type -> None
         | Not_a_variant_type ->
             let srt = wrong_kind_sort_of_constructor lid.txt in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
             let err = Wrong_expected_kind(srt, Pattern, expected_ty) in
-            raise (error (loc, !env, err))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            let error = Wrong_expected_kind(srt, Pattern, expected_ty) in
-            raise (Error (loc, !env, error))
-=======
-            let error = Wrong_expected_kind(srt, Pattern, expected_ty) in
-            raise (Error (loc, !!penv, error))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+            raise (error (loc, !!penv, err))
       in
       let constr =
         let candidates =
@@ -2842,13 +2729,7 @@ and type_pat_aux
       | None, _ | _, [] -> ()
       | Some r, (_ :: _) ->
           let name = constr.cstr_name in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-          raise (error (loc, !env, Unexpected_existential (r, name, exs)))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          raise (Error (loc, !env, Unexpected_existential (r, name, exs)))
-=======
-          raise (Error (loc, !!penv, Unexpected_existential (r, name)))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+          raise (error (loc, !!penv, Unexpected_existential (r, name)))
       end;
       let sarg', existential_styp =
         match sarg with
@@ -2859,13 +2740,7 @@ and type_pat_aux
         | Some ([], sp) ->
             Some sp, None
         | Some (_, sp) ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-            raise (error (sp.ppat_loc, !env, Missing_type_constraint))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            raise (Error (sp.ppat_loc, !env, Missing_type_constraint))
-=======
-            raise (Error (sp.ppat_loc, !!penv, Missing_type_constraint))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+            raise (error (sp.ppat_loc, !!penv, Missing_type_constraint))
       in
       let sargs =
         match sarg' with
@@ -2874,13 +2749,7 @@ and type_pat_aux
         match Jane_syntax.Pattern.of_ast sarg' with
         | Some (Jpat_tuple (_, _), attrs) when
             constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-          -> raise (error(loc, !env, Constructor_labeled_arg))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          -> raise (Error(loc, !env, Constructor_labeled_arg))
-=======
-          -> raise (Error(loc, !!penv, Constructor_labeled_arg))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+          -> raise (error(loc, !!penv, Constructor_labeled_arg))
         | Some ((Jpat_immutable_array _, _)
                | (Jpat_layout _, _)
                | (Jpat_tuple _, _)) -> [sarg']
@@ -2905,13 +2774,7 @@ and type_pat_aux
         | _ -> ()
         end;
       if List.length sargs <> constr.cstr_arity then
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        raise(error(loc, !env, Constructor_arity_mismatch(lid.txt,
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        raise(Error(loc, !env, Constructor_arity_mismatch(lid.txt,
-=======
-        raise(Error(loc, !!penv, Constructor_arity_mismatch(lid.txt,
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+        raise(error(loc, !!penv, Constructor_arity_mismatch(lid.txt,
                                      constr.cstr_arity, List.length sargs)));
 
       let (ty_args_ty, ty_args_gf, existential_ctyp) =
@@ -2927,13 +2790,7 @@ and type_pat_aux
         | Ppat_alias (p, _) ->
             check_non_escaping p
         | Ppat_constraint _ ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-            raise (error (p.ppat_loc, !env, Inlined_record_escape))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            raise (Error (p.ppat_loc, !env, Inlined_record_escape))
-=======
-            raise (Error (p.ppat_loc, !!penv, Inlined_record_escape))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+            raise (error (p.ppat_loc, !!penv, Inlined_record_escape))
         | _ ->
             ()
       in
@@ -2982,16 +2839,8 @@ and type_pat_aux
         | Maybe_a_record_type ->
           None, newvar (Jkind.Primitive.value ~why:Boxed_record)
         | Not_a_record_type ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
           let err = Wrong_expected_kind(Record, Pattern, expected_ty) in
-          raise (error (loc, !env, err))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          let error = Wrong_expected_kind(Record, Pattern, expected_ty) in
-          raise (Error (loc, !env, error))
-=======
-          let error = Wrong_expected_kind(Record, Pattern, expected_ty) in
-          raise (Error (loc, !!penv, error))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+          raise (error (loc, !!penv, err))
       in
       let type_label_pat (label_lid, label, sarg) =
         let ty_arg =
@@ -3128,22 +2977,8 @@ and type_pat_aux
   | Ppat_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-let type_pat tps category ?no_existentials
-    ?(lev=get_current_level()) ~alloc_mode env sp expected_ty =
-  Misc.protect_refs [Misc.R (gadt_equations_level, Some lev)]
-    (fun () -> type_pat tps category ~no_existentials
-                 ~alloc_mode ~env sp expected_ty)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let type_pat tps category ?no_existentials
-    ?(lev=get_current_level()) ~alloc_mode env sp expected_ty =
-  Misc.protect_refs [Misc.R (gadt_equations_level, Some lev)] (fun () ->
-        type_pat tps category ~no_existentials ~alloc_mode ~env sp expected_ty
-    )
-=======
 let type_pat tps category ?no_existentials penv =
   type_pat tps category ~no_existentials ~penv
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 let type_pattern category ~lev ~alloc_mode env spat expected_ty allow_modules =
   let tps = create_type_pat_state allow_modules in
@@ -3601,15 +3436,7 @@ let rec check_counter_example_pat
       check_rec ~info:(no_explosion info) tp1 nv
         (fun p1 -> mkp k (Tpat_lazy p1))
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-let check_counter_example_pat ~counter_example_args
-      ?(lev=get_current_level()) env tp expected_ty =
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let check_counter_example_pat ~counter_example_args
-    ?(lev=get_current_level()) env tp expected_ty =
-=======
 let check_counter_example_pat ~counter_example_args penv tp expected_ty =
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   (* [check_counter_example_pat] doesn't use [type_pat_state] in an interesting
      way -- one of the functions it calls writes an entry into
      [tps_pattern_forces] -- so we can just ignore module patterns. *)
@@ -3827,13 +3654,7 @@ let check_local_application_complete ~env ~app_loc args =
             | _ ->
               app_loc, `Entire_apply
           in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-          raise (error(loc, env, Curried_application_complete (lbl, e, loc_kind)))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          raise (Error(loc, env, Curried_application_complete (lbl, e, loc_kind)))
-=======
-          raise (Error(loc, env, Local_application_complete (lbl, loc_kind)))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+          raise (error(loc, env, Local_application_complete (lbl, loc_kind)))
       in
       submode mode_fun mode_ret;
       submode mode_arg mode_ret;
@@ -4473,16 +4294,8 @@ let type_pattern_approx env spat ty_expected =
           inferred_ty.ctyp_type
         | _ -> approx_type env sty
       in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      begin try unify env ty_pat.ctyp_type ty_expected with Unify trace ->
-        raise(error(spat.ppat_loc, env, Pattern_type_clash(trace, None)))
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      begin try unify env ty_pat.ctyp_type ty_expected with Unify trace ->
-        raise(Error(spat.ppat_loc, env, Pattern_type_clash(trace, None)))
-=======
       begin try unify env inferred_ty ty_expected with Unify trace ->
-        raise(Error(spat.ppat_loc, env, Pattern_type_clash(trace, None)))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+        raise(error(spat.ppat_loc, env, Pattern_type_clash(trace, None)))
       end;
   | _ -> ()
 
@@ -6370,7 +6183,7 @@ and type_expect_
               if !Clflags.principal && get_level typ <> generic_level then
                 Location.prerr_warning loc
                   (Warnings.Not_principal "this use of a polymorphic method");
-              snd (instance_poly false tl ty)
+              snd (instance_poly ~fixed:false tl ty)
           | Tvar _ ->
               let ty' = newvar (Jkind.Primitive.value ~why:Object_field) in
               unify env (instance typ) (newty(Tpoly(ty',[])));
@@ -6639,7 +6452,7 @@ and type_expect_
               with_local_level begin fun () ->
                 let vars, ty'' =
                   with_local_level_if_principal
-                    (fun () -> instance_poly true tl ty')
+                    (fun () -> instance_poly ~fixed:true tl ty')
                     ~post:(fun (_,ty'') -> generalize_structure ty'')
                 in
                 let exp = type_expect env expected_mode sbody (mk_expected ty'') in
@@ -6649,19 +6462,7 @@ and type_expect_
                 generalize_and_check_univars env "method" exp ty_expected vars
               end
             in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
             { exp with exp_type = instance ty }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            if !Clflags.principal && get_level typ <> generic_level then
-              Location.prerr_warning loc
-                (Warnings.Not_principal "this use of a polymorphic method");
-            snd (instance_poly false tl ty)
-=======
-            if !Clflags.principal && get_level typ <> generic_level then
-              Location.prerr_warning loc
-                (Warnings.Not_principal "this use of a polymorphic method");
-            snd (instance_poly ~fixed:false tl ty)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
         | Tvar _ ->
             let exp = type_exp env expected_mode sbody in
             let exp = {exp with exp_type = newmono exp.exp_type} in
@@ -8448,10 +8249,7 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
 (* Typing of statements (expressions whose values are discarded) *)
 
 and type_statement ?explanation ?(position=RNontail) env sexp =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
   let has_errors = Msupport.monitor_errors () in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
   (* OCaml 5.2.0 changed the type of 'while' to give 'while true do e done'
      a polymorphic type.  The change has the potential to trigger a
      nonreturning-statement warning in existing code that follows
@@ -8466,7 +8264,6 @@ and type_statement ?explanation ?(position=RNontail) env sexp =
     | Texp_while _ -> true
     | _ -> false
   in
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   (* Raise the current level to detect non-returning functions *)
   let exp =
     with_local_level
@@ -8474,15 +8271,9 @@ and type_statement ?explanation ?(position=RNontail) env sexp =
   in
   let subexp = final_subexpression exp in
   let ty = expand_head env exp.exp_type in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-  if is_Tvar ty && get_level ty > get_current_level () && not !has_errors then
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  if is_Tvar ty && get_level ty > get_current_level () then
-=======
-  if is_Tvar ty
+  if is_Tvar ty && not !has_errors
      && get_level ty > get_current_level ()
      && not (allow_polymorphic subexp) then
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
     Location.prerr_warning
       subexp.exp_loc
       Warnings.Nonreturning_statement;
@@ -8538,12 +8329,8 @@ and map_half_typed_cases
   = fun ?additional_checks_for_split_cases
     category env pat_mode
     ty_arg ty_res loc caselist ~type_body ~check_if_total ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
   let has_errors = Msupport.monitor_errors () in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
   (* ty_arg is _fully_ generalized *)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   let patterns = List.map (fun ((x : untyped_case), _) -> x.pattern) caselist in
   let contains_polyvars = List.exists contains_polymorphic_variant patterns in
   let erase_either = contains_polyvars && contains_variant_either ty_arg in
@@ -8788,7 +8575,7 @@ and map_half_typed_cases
 *)
 and type_newtype
   : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
-    -> a * type_expr * Jkind.annotation option =
+    -> a * type_expr * Jkind.annotation option * _ * Uid.t =
   fun env name jkind_annot_opt type_body  ->
   let { txt = name; loc = name_loc } : _ Location.loc = name in
   let jkind, jkind_annot =
@@ -8823,13 +8610,14 @@ and type_newtype
     in
     let ety = Subst.type_expr Subst.identity exp_type in
     replace ety;
-    (result, ety, jkind_annot)
+    let uid = decl.type_uid in
+    (result, ety, jkind_annot, id, uid)
   end
 
 (** [type_newtype] where the "body" is just an expression. *)
 and type_newtype_expr
     ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
-  let body, ety, jkind_annot =
+  let body, ety, jkind_annot, id, uid =
     type_newtype env name jkind_annot_opt (fun env ->
       let expr = type_exp env expected_mode sbody in
       expr, expr.exp_type)
@@ -8838,7 +8626,7 @@ and type_newtype_expr
      any new extra node in the typed AST. *)
   rue { body with exp_loc = loc; exp_type = ety;
         exp_extra =
-        (Texp_newtype (name.txt, jkind_annot),
+        (Texp_newtype' (id, name, jkind_annot, uid),
          loc, attributes) :: body.exp_extra }
 
 (* Typing of match cases *)
@@ -8955,143 +8743,6 @@ and type_function_cases_expect
     { ret_sort; ret_mode = Alloc.disallow_right ret_mode }
   end
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-(** Typecheck the body of a newtype. The "body" of a newtype may be:
-    - an expression
-    - a suffix of function parameters together with a function body
-      That's why this function is polymorphic over the body.
-
-      @param type_body A function that produces a type for the body given the
-      environment. When typechecking an expression, this is [type_exp].
-      @return The type returned by [type_body] but with the Tconstr
-      nodes for the newtype properly linked, and the jkind annotation written
-      by the user.
-*)
-and type_newtype
-  : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
-    -> a * type_expr * Jkind.annotation option * _ * Uid.t =
-  fun env name jkind_annot_opt type_body  ->
-  let { txt = name; loc = name_loc } : _ Location.loc = name in
-  let jkind, jkind_annot =
-    Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
-      ~default:(Jkind.Primitive.value ~why:Univar) jkind_annot_opt
-  in
-  let ty =
-    if Typetexp.valid_tyvar_name name then
-      newvar ~name jkind
-    else
-      newvar jkind
-  in
-  (* Use [with_local_level] just for scoping *)
-  with_local_level begin fun () ->
-    (* Create a fake abstract type declaration for name. *)
-    let decl = new_local_type ~loc:name_loc jkind ~jkind_annot in
-    let scope = create_scope () in
-    let (id, new_env) = Env.enter_type ~scope name decl env in
-
-    let result, exp_type = type_body new_env in
-    (* Replace every instance of this type constructor in the resulting
-       type. *)
-    let seen = Hashtbl.create 8 in
-    let rec replace t =
-      if Hashtbl.mem seen (get_id t) then ()
-      else begin
-        Hashtbl.add seen (get_id t) ();
-        match get_desc t with
-        | Tconstr (Path.Pident id', _, _) when id == id' -> link_type t ty
-        | _ -> Btype.iter_type_expr replace t
-      end
-    in
-    let ety = Subst.type_expr Subst.identity exp_type in
-    replace ety;
-    let uid = decl.type_uid in
-    (result, ety, jkind_annot, id, uid)
-  end
-
-(** [type_newtype] where the "body" is just an expression. *)
-and type_newtype_expr
-    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
-  let body, ety, jkind_annot, id, uid =
-    type_newtype env name jkind_annot_opt (fun env ->
-      let expr = type_exp env expected_mode sbody in
-      expr, expr.exp_type)
-  in
-  (* non-expansive if the body is non-expansive, so we don't introduce
-     any new extra node in the typed AST. *)
-  rue { body with exp_loc = loc; exp_type = ety;
-        exp_extra =
-        (Texp_newtype' (id, name, jkind_annot, uid),
-         loc, attributes) :: body.exp_extra }
-
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-(** Typecheck the body of a newtype. The "body" of a newtype may be:
-    - an expression
-    - a suffix of function parameters together with a function body
-      That's why this function is polymorphic over the body.
-
-      @param type_body A function that produces a type for the body given the
-      environment. When typechecking an expression, this is [type_exp].
-      @return The type returned by [type_body] but with the Tconstr
-      nodes for the newtype properly linked, and the jkind annotation written
-      by the user.
-*)
-and type_newtype
-  : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
-    -> a * type_expr * Jkind.annotation option =
-  fun env name jkind_annot_opt type_body  ->
-  let { txt = name; loc = name_loc } : _ Location.loc = name in
-  let jkind, jkind_annot =
-    Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
-      ~default:(Jkind.Primitive.value ~why:Univar) jkind_annot_opt
-  in
-  let ty =
-    if Typetexp.valid_tyvar_name name then
-      newvar ~name jkind
-    else
-      newvar jkind
-  in
-  (* Use [with_local_level] just for scoping *)
-  with_local_level begin fun () ->
-    (* Create a fake abstract type declaration for name. *)
-    let decl = new_local_type ~loc:name_loc jkind ~jkind_annot in
-    let scope = create_scope () in
-    let (id, new_env) = Env.enter_type ~scope name decl env in
-
-    let result, exp_type = type_body new_env in
-    (* Replace every instance of this type constructor in the resulting
-       type. *)
-    let seen = Hashtbl.create 8 in
-    let rec replace t =
-      if Hashtbl.mem seen (get_id t) then ()
-      else begin
-        Hashtbl.add seen (get_id t) ();
-        match get_desc t with
-        | Tconstr (Path.Pident id', _, _) when id == id' -> link_type t ty
-        | _ -> Btype.iter_type_expr replace t
-      end
-    in
-    let ety = Subst.type_expr Subst.identity exp_type in
-    replace ety;
-    (result, ety, jkind_annot)
-  end
-
-(** [type_newtype] where the "body" is just an expression. *)
-and type_newtype_expr
-    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
-  let body, ety, jkind_annot =
-    type_newtype env name jkind_annot_opt (fun env ->
-      let expr = type_exp env expected_mode sbody in
-      expr, expr.exp_type)
-  in
-  (* non-expansive if the body is non-expansive, so we don't introduce
-     any new extra node in the typed AST. *)
-  rue { body with exp_loc = loc; exp_type = ety;
-        exp_extra =
-        (Texp_newtype (name.txt, jkind_annot),
-         loc, attributes) :: body.exp_extra }
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 (* Typing of let bindings *)
 
 and type_let ?check ?check_strict ?(force_toplevel = false)

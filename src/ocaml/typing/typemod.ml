@@ -1664,13 +1664,8 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
    so we need this to take the signature of the previously checked portion
    to support include functor. *)
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signature) =
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-and transl_signature env (sg : Parsetree.signature) =
-=======
-and transl_signature ?(toplevel = false) env sg =
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+and transl_signature ?(keep_warnings = false) ?(toplevel = false)
+    env sig_acc (sg : Parsetree.signature) =
   let names = Signature_names.create () in
 
   let transl_include ~functor_ ~loc env sig_acc sincl =
@@ -2762,19 +2757,11 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
       let apply_error () =
         let args = List.map simplify_app_summary args in
         let mty_f = md_f.mod_type in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        let lid_app = None in
-        Includemod.Apply_error {loc=apply_loc;env;lid_app;mty_f;args}
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        let lid_app = None in
-        raise(Includemod.Apply_error {loc=apply_loc;env;lid_app;mty_f;args})
-=======
         let app_name = match sfunct.pmod_desc with
           | Pmod_ident l -> Includemod.Named_leftmost_functor l.txt
           | _ -> Includemod.Anonymous_functor
         in
-        raise(Includemod.Apply_error {loc=apply_loc;env;app_name;mty_f;args})
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+        Includemod.Apply_error {loc=apply_loc;env;app_name;mty_f;args}
       in
       begin match app_view with
       | { arg = None; loc = app_loc; attributes = app_attributes; _ } ->
@@ -2851,7 +2838,7 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
     end
   | Mty_alias path ->
       raise(Error(app_view.f_loc, env, Cannot_scrape_alias path))
-  | Mty_ident _ | Mty_signature _ | Mty_strengthen _ ->
+  | Mty_ident _ | Mty_signature _ | Mty_strengthen _ | Mty_for_hole ->
       let args = List.map simplify_app_summary args in
       let mty_f = md_f.mod_type in
       let app_name = match sfunct.pmod_desc with
@@ -3413,7 +3400,7 @@ let merlin_type_structure env sig_acc str =
   str, sg, env
 let type_structure env = type_structure false None env []
 let merlin_transl_signature env sig_acc sg = transl_signature ~keep_warnings:true env sig_acc sg
-let transl_signature env sg = transl_signature env [] sg
+let transl_signature ?toplevel env sg = transl_signature env [] sg ?toplevel
 
 (* Normalize types in a signature *)
 
@@ -3603,21 +3590,6 @@ let register_params params =
 
 (* Typecheck an implementation file *)
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let gen_annot outputprefix sourcefile annots =
-  Cmt2annot.gen_annot (Some (outputprefix ^ ".annot"))
-    ~sourcefile:(Some sourcefile) ~use_summaries:false annots
-
-=======
-let gen_annot target annots =
-  let annot = Unit_info.annot target in
-  Cmt2annot.gen_annot (Some (Unit_info.Artifact.filename annot))
-    ~sourcefile:(Unit_info.Artifact.source_file annot)
-    ~use_summaries:false
-    annots
-
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 let cms_register_toplevel_attributes ~sourcefile ~uid ~f ast =
   (* Cms files do not store the typetree. This can be a problem for Merlin has
     it uses attributes - which is why we manually construct a mapping from uid
@@ -3684,7 +3656,6 @@ let type_implementation target modulename initial_env ast =
       annots initial_env cmi shape;
     Cms_format.save_cms (Unit_info.cms target) modulename
       annots shape;
-    gen_annot target annots;
   in
   Cmt_format.clear ();
   Cms_format.clear ();
@@ -3720,12 +3691,6 @@ let type_implementation target modulename initial_env ast =
               (Printtyp.printed_signature @@ Unit_info.source_file target)
               simple_sg
           );
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        gen_annot outputprefix sourcefile (Cmt_format.Implementation str);
-=======
-        gen_annot target (Cmt_format.Implementation str);
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
         { structure = str;
           coercion = Tcoerce_none;
           shape;
@@ -3767,18 +3732,8 @@ let type_implementation target modulename initial_env ast =
                      { new_arg_type = arg_type; old_source_file = source_intf;
                        old_arg_type = arg_type_from_cmi });
           let coercion, shape =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
             Includemod.compunit initial_env ~mark:Mark_positive
-              sourcefile sg intf_file dclsig shape
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            Profile.record_call "check_sig" (fun () ->
-              Includemod.compunit initial_env ~mark:Mark_positive
-                sourcefile sg intf_file dclsig shape)
-=======
-            Profile.record_call "check_sig" (fun () ->
-              Includemod.compunit initial_env ~mark:Mark_positive
-                sourcefile sg source_intf dclsig shape)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+              sourcefile sg source_intf dclsig shape
           in
           (* Check the _mli_ against the argument type, since the mli determines
              the visible type of the module and that's what needs to conform to
@@ -3799,26 +3754,7 @@ let type_implementation target modulename initial_env ast =
              exported are not reported as being unused. *)
           let shape = Shape_reduce.local_reduce Env.empty shape in
           let annots = Cmt_format.Implementation str in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-          Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
-            annots (Some sourcefile) initial_env None (Some shape);
-          Cms_format.save_cms (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) (Some shape);
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          Profile.record_call "save_cmt" (fun () ->
-            let shape = Shape_reduce.local_reduce Env.empty shape in
-            let annots = Cmt_format.Implementation str in
-            Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env None (Some shape);
-            Cms_format.save_cms (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) (Some shape);
-            gen_annot outputprefix sourcefile annots);
-=======
-          Profile.record_call "save_cmt" (fun () ->
-            let shape = Shape_reduce.local_reduce Env.empty shape in
-            let annots = Cmt_format.Implementation str in
-            save_cmt_and_cms target annots initial_env None (Some shape));
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+          save_cmt_and_cms target annots initial_env None (Some shape);
           { structure = str;
             coercion;
             shape;
@@ -3858,38 +3794,11 @@ let type_implementation target modulename initial_env ast =
               Cmi_format.Normal { cmi_impl = modulename; cmi_arg_for = arg_type }
             in
             let cmi =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-              Env.save_signature ~alerts
-                simple_sg name kind (outputprefix ^ ".cmi")
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts
-                  simple_sg name kind (outputprefix ^ ".cmi"))
-=======
-              Profile.record_call "save_cmi" (fun () ->
-                Env.save_signature ~alerts simple_sg name kind
-                  (Unit_info.cmi target))
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+              Env.save_signature ~alerts simple_sg name kind
+                (Unit_info.cmi target)
             in
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
             let annots = Cmt_format.Implementation str in
-            Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env (Some cmi) (Some shape);
-            Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) (Some shape)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            Profile.record_call "save_cmt" (fun () ->
-              let annots = Cmt_format.Implementation str in
-              Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-                annots (Some sourcefile) initial_env (Some cmi) (Some shape);
-              Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-                annots (Some sourcefile) (Some shape);
-              gen_annot outputprefix sourcefile annots)
-=======
-            Profile.record_call "save_cmt" (fun () ->
-              let annots = Cmt_format.Implementation str in
-              save_cmt_and_cms target annots initial_env (Some cmi) (Some shape));
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+            save_cmt_and_cms target annots initial_env (Some cmi) (Some shape)
           end;
           { structure = str;
             coercion;
@@ -3905,26 +3814,7 @@ let type_implementation target modulename initial_env ast =
           Cmt_format.Partial_implementation
             (Array.of_list (Cmt_format.get_saved_types ()))
         in
-        Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-          annots (Some sourcefile) initial_env None None;
-        Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-          annots (Some sourcefile) None
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            Cmt_format.Partial_implementation
-              (Array.of_list (Cmt_format.get_saved_types ()))
-          in
-          Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-            annots (Some sourcefile) initial_env None None;
-          Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) None;
-          gen_annot outputprefix sourcefile annots)
-=======
-            Cmt_format.Partial_implementation
-              (Array.of_list (Cmt_format.get_saved_types ()))
-          in
-          save_cmt_and_cms target annots initial_env None None)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+        save_cmt_and_cms target annots initial_env None None
       )
 
 let save_signature target modname tsg initial_env cmi =
@@ -4073,17 +3963,8 @@ let package_units initial_env objfiles target_cmi modulename =
       let name = Compilation_unit.name modulename in
       let kind = Cmi_format.Normal { cmi_impl = modulename; cmi_arg_for } in
       let cmi =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
-          sg name kind
-          (prefix ^ ".cmi") (Array.of_list imports)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
-          sg name kind (prefix ^ ".cmi") (Array.of_list imports)
-=======
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
           sg name kind target_cmi (Array.of_list imports)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
       Cmt_format.save_cmt (Unit_info.companion_cmt target_cmi)  modulename

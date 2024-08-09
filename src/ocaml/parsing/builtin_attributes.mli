@@ -46,13 +46,8 @@
 
 *)
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-
-=======
 (** {2 Attribute tracking for warning 53} *)
 
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 (** [register_attr] must be called on the locations of all attributes that
     should be tracked for the purpose of misplaced attribute warnings.  In
     particular, it should be called on all attributes that are present in the

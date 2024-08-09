@@ -117,7 +117,6 @@ end
 val cmi: t -> Artifact.t
 val cmo: t -> Artifact.t
 val cmx: t -> Artifact.t
-val obj: t -> Artifact.t
 val cmt: t -> Artifact.t
 val cmti: t -> Artifact.t
 val cms: t -> Artifact.t
@@ -128,7 +127,6 @@ val annot: t -> Artifact.t
     extension of its filename.
     Those functions purposefully do not cover all artifact kinds because we want
     to track which artifacts are assumed to be bundled together. *)
-val companion_obj: Artifact.t -> Artifact.t
 val companion_cmt: Artifact.t -> Artifact.t
 val companion_cms: Artifact.t -> Artifact.t
 

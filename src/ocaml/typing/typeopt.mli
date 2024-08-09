@@ -36,17 +36,6 @@ val bigarray_type_kind_and_layout :
       Env.t -> Types.type_expr -> Lambda.bigarray_kind * Lambda.bigarray_layout
 val value_kind : Env.t -> Types.type_expr -> Lambda.value_kind
 *)
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-val function_arg_layout :
-  Env.t -> Location.t -> Jkind.sort -> Types.type_expr -> Lambda.layout
-
-=======
-val function_arg_layout :
-  Env.t -> Location.t -> Jkind.sort -> Types.type_expr -> Lambda.layout
-
-val value_kind : Env.t -> Location.t -> Types.type_expr -> Lambda.value_kind
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 val classify_lazy_argument : Typedtree.expression ->
                              [ `Constant_or_function

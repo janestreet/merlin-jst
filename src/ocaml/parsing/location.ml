@@ -198,16 +198,6 @@ let print_updating_num_loc_lines ppf f arg =
   f ppf arg ;
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-
-let setup_colors () =
-  Misc.Color.setup !Clflags.color
-=======
-
-let setup_tags () =
-  Misc.Style.setup !Clflags.color
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 
 (******************************************************************************)
 (* Printing locations, e.g. 'File "foo.ml", line 3, characters 10-12' *)
@@ -278,12 +268,6 @@ let print_filename ppf file =
    location might be invalid; in which case we do not print it.
  *)
 let print_loc ~capitalize_first ppf loc =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  setup_colors ();
-=======
-  setup_tags ();
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   let file_valid = function
     | "_none_" ->
         (* This is a dummy placeholder, but we print it anyway to please editors
@@ -621,14 +605,8 @@ let lines_around
   List.rev !lines
 *)
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 (*
-(* Try to get lines from a lexbuf *)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-(* Try to get lines from a lexbuf *)
-=======
 (* Attempt to get lines from the lexing buffer. *)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 let lines_around_from_lexbuf
     ~(start_pos: position) ~(end_pos: position)
     (lb: lexbuf):
@@ -672,108 +650,10 @@ let lines_around_from_phrasebuf
   lines_around ~start_pos ~end_pos ~seek ~read_char
 *)
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 (*
-(* Get lines from a file *)
-let lines_around_from_file
-    ~(start_pos: position) ~(end_pos: position)
-    (filename: string):
-  input_line list
-  =
-  try
-    let cin = open_in_bin filename in
-    let read_char () =
-      try Some (input_char cin) with End_of_file -> None
-    in
-    let lines =
-      lines_around ~start_pos ~end_pos ~seek:(seek_in cin) ~read_char
-    in
-    close_in cin;
-    lines
-  with Sys_error _ -> []
-*)
-
-(*
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-(* Get lines from a file *)
-let lines_around_from_file
-    ~(start_pos: position) ~(end_pos: position)
-    (filename: string):
-  input_line list
-  =
-  try
-    let cin = open_in_bin filename in
-    let read_char () =
-      try Some (input_char cin) with End_of_file -> None
-    in
-    let lines =
-      lines_around ~start_pos ~end_pos ~seek:(seek_in cin) ~read_char
-    in
-    close_in cin;
-    lines
-  with Sys_error _ -> []
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 (* A [get_lines] function for [highlight_quote] that reads from the current
    input. *)
 let lines_around_from_current_input ~start_pos ~end_pos =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-  (* Be a bit defensive, and do not try to open one of the possible
-     [!input_name] values that we know do not denote valid filenames. *)
-  let file_valid = function
-    | "//toplevel//" | "_none_" | "" -> false
-    | _ -> true
-  in
-  let from_file () =
-    if file_valid !input_name then
-      lines_around_from_file !input_name ~start_pos ~end_pos
-    else
-      []
-  in
-  match !input_lexbuf with
-  | Some lb ->
-      begin match lines_around_from_lexbuf lb ~start_pos ~end_pos with
-      | [] -> (* The input is likely not in the lexbuf anymore *)
-          from_file ()
-      | lines ->
-          lines
-      end
-  | None ->
-      from_file ()
-*)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  (* Be a bit defensive, and do not try to open one of the possible
-     [!input_name] values that we know do not denote valid filenames. *)
-  let file_valid = function
-    | "//toplevel//" | "_none_" | "" -> false
-    | _ -> true
-  in
-  let from_file () =
-    if file_valid !input_name then
-      lines_around_from_file !input_name ~start_pos ~end_pos
-    else
-      []
-  in
-  match !input_lexbuf, !input_phrase_buffer, !input_name with
-  | _, Some pb, "//toplevel//" ->
-      begin match lines_around_from_phrasebuf pb ~start_pos ~end_pos with
-      | [] -> (* Could not read the input from the phrase buffer. This is likely
-                 a sign that we were given a buggy location. *)
-          []
-      | lines ->
-          lines
-      end
-  | Some lb, _, _ ->
-      begin match lines_around_from_lexbuf lb ~start_pos ~end_pos with
-      | [] -> (* The input is likely not in the lexbuf anymore *)
-          from_file ()
-      | lines ->
-          lines
-      end
-  | None, _, _ ->
-      from_file ()
-=======
   match !input_lexbuf, !input_phrase_buffer, !input_name with
   | _, Some pb, "//toplevel//" ->
       lines_around_from_phrasebuf pb ~start_pos ~end_pos
@@ -781,7 +661,7 @@ let lines_around_from_current_input ~start_pos ~end_pos =
       lines_around_from_lexbuf lb ~start_pos ~end_pos
   | None, _, _ ->
       []
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+*)
 
 (******************************************************************************)
 (* Reporting errors and warnings *)
@@ -899,12 +779,6 @@ let batch_mode_printer : report_printer =
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    setup_colors ();
-=======
-    setup_tags ();
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
     separate_new_message ppf;
     (* Make sure we keep [num_loc_lines] updated.
         The tabulation box is here to give submessage the option
@@ -1083,13 +957,8 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
 module Style = Misc.Style
 
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 let auto_include_alert lib =
   let message = Format.asprintf "\
     OCaml's lib directory layout changed in 5.0. The %a subdirectory has been \

@@ -114,10 +114,13 @@ val find_in_path: string list -> string -> string
 val find_in_path_rel: string list -> string -> string
        (** Search a relative file in a list of directories. *)
 
-val find_in_path_uncap: ?fallback:string -> string list -> string -> string
-       (** Same, but search also for uncapitalized name, i.e.
-           if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml]
-            to match. *)
+(** Normalize file name [Foo.ml] to [foo.ml] *)
+val normalized_unit_filename: string -> string
+
+val find_in_path_normalized: ?fallback:string -> string list -> string -> string
+(** Same as {!find_in_path_rel} , but search also for normalized unit filename,
+    i.e. if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml] to
+    match. *)
 
 val canonicalize_filename : ?cwd:string -> string -> string
         (* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)
@@ -188,6 +191,8 @@ val no_overflow_mul: int -> int -> bool
 val no_overflow_lsl: int -> int -> bool
         (* [no_overflow_lsl n k] returns [true] if the computation of
            [n lsl k] does not overflow. *)
+
+val letter_of_int : int -> string
 
 module Int_literal_converter : sig
   val int : string -> int
@@ -344,6 +349,10 @@ module List : sig
     -> bool
   (** Returns [true] if and only if the given list, with respect to the given
       equality function on list members, is a prefix of the list [of_]. *)
+
+  val iteri2 : (int -> 'a -> 'b -> unit) -> 'a list -> 'b list -> unit
+  (** Same as {!List.iter2}, but the function is applied to the index of
+      the element as first argument (counting from 0) *)
 end
 
 module String : sig
@@ -375,8 +384,18 @@ val ordinal_suffix : int -> string
     [4] -> ["th"], and so on.  Handles larger numbers (e.g., [42] -> ["nd"]) and
     the numbers 11--13 (which all get ["th"]) correctly. *)
 
-(* Color handling *)
-module Color : sig
+(** {1 Color support detection }*)
+module Color: sig
+  type setting = Auto | Always | Never
+
+  val default_setting : setting
+
+end
+
+
+(** {1 Styling handling for terminal output } *)
+
+module Style : sig
   type color =
     | Black
     | Red
@@ -398,27 +417,33 @@ module Color : sig
   val ansi_of_style_l : style list -> string
   (* ANSI escape sequence for the given style *)
 
-  type styles = {
-    error: style list;
-    warning: style list;
-    loc: style list;
-    hint:style list;
+  type tag_style ={
+    ansi: style list;
+    text_open:string;
+    text_close:string
   }
+
+  type styles = {
+    error: tag_style;
+    warning: tag_style;
+    loc: tag_style;
+    hint: tag_style;
+    inline_code: tag_style;
+  }
+
+  val as_inline_code: (Format.formatter -> 'a -> unit as 'printer) -> 'printer
+  val inline_code: Format.formatter -> string -> unit
 
   val default_styles: styles
   val get_styles: unit -> styles
   val set_styles: styles -> unit
 
-  type setting = Auto | Always | Never
-
-  val default_setting : setting
-
-  val setup : setting option -> unit
+  val setup : Color.setting option -> unit
   (* [setup opt] will enable or disable color handling on standard formatters
      according to the value of color setting [opt].
      Only the first call to this function has an effect. *)
 
-  val set_color_tag_handling : Format.formatter -> unit
+  val set_tag_handling : Format.formatter -> unit
   (* adds functions to support color tags to the given formatter. *)
 end
 

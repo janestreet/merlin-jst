@@ -56,11 +56,12 @@ module Cmi = struct
   let () = assert (to_version_opt Config.cmi_magic_number <> None)
 
   open Format
+  module Style = Misc.Style
 
   let report_error ppf = function
     | Not_an_interface filename ->
         fprintf ppf "%a@ is not a compiled interface"
-          Location.print_filename filename
+        (Style.as_inline_code Location.print_filename) filename
     | Wrong_version_interface (filename, compiler_magic) ->
       let merlin_ocaml_version =
         let ocaml_version =
@@ -90,7 +91,7 @@ module Cmi = struct
     | Corrupted_interface filename ->
       fprintf ppf
         "Corrupted compiled interface@ %a"
-        Location.print_filename filename
+        (Style.as_inline_code Location.print_filename) filename
 
   let () =
     Location.register_error_of_exn

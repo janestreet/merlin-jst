@@ -268,12 +268,14 @@ let find_in_path_rel path name =
       else try_dir rem
   in try_dir path
 
-let find_in_path_uncap ?(fallback="") path name =
+let normalized_unit_filename = String.uncapitalize_ascii
+
+let find_in_path_normalized ?(fallback="") path name =
   let has_fallback = fallback <> "" in
   canonicalize_filename
   begin
-    let uname = String.uncapitalize name in
-    let ufallback = String.uncapitalize fallback in
+    let uname = normalized_unit_filename name in
+    let ufallback = normalized_unit_filename fallback in
     List.find_map path ~f:(fun dirname ->
         if exact_file_exists ~dirname ~basename:uname
         then Some (Filename.concat dirname uname)
@@ -386,6 +388,12 @@ let no_overflow_mul a b =
 
 let no_overflow_lsl a k =
   0 <= k && k < Sys.word_size - 1 && min_int asr k <= a && a <= max_int asr k
+
+let letter_of_int n =
+  let letter = String.make 1 (Char.chr (Char.code 'a' + n mod 26)) in
+  let num = n / 26 in
+  if num = 0 then letter
+  else letter ^ Int.to_string num
 
 module Int_literal_converter = struct
   (* To convert integer literals, allowing max_int + 1 (PR#4210) *)
@@ -673,8 +681,26 @@ let ordinal_suffix n =
   | 3 when not teen -> "rd"
   | _ -> "th"
 
-(* Color handling *)
+(* Color support handling *)
 module Color = struct
+  external isatty : out_channel -> bool = "caml_sys_isatty"
+
+  (* reasonable heuristic on whether colors should be enabled *)
+  let should_enable_color () =
+    let term = try Sys.getenv "TERM" with Not_found -> "" in
+    term <> "dumb"
+    && term <> ""
+    && isatty stderr
+
+  type setting = Auto | Always | Never
+
+  let default_setting = Auto
+  let enabled = ref true
+
+end
+
+(* Terminal styling handling *)
+module Style = struct
   (* use ANSI color codes, see https://en.wikipedia.org/wiki/ANSI_escape_code *)
   type color =
     | Black
@@ -718,19 +744,30 @@ module Color = struct
 
 
   type Format.stag += Style of style list
-  type styles = {
-    error: style list;
-    warning: style list;
-    loc: style list;
-    hint:style list;
+
+  type tag_style ={
+    ansi: style list;
+    text_open:string;
+    text_close:string
   }
 
-  let default_styles = {
-    warning = [Bold; FG Magenta];
-    error = [Bold; FG Red];
-    loc = [Bold];
-    hint = [Bold; FG Blue];
+  type styles = {
+    error: tag_style;
+    warning: tag_style;
+    loc: tag_style;
+    hint: tag_style;
+    inline_code: tag_style;
   }
+
+  let no_markup stl = { ansi = stl; text_close = ""; text_open = "" }
+
+  let default_styles = {
+      warning = no_markup [Bold; FG Magenta];
+      error = no_markup [Bold; FG Red];
+      loc = no_markup [Bold];
+      hint = no_markup [Bold; FG Blue];
+      inline_code= { ansi=[Bold]; text_open = {|"|}; text_close = {|"|} }
+    }
 
   let cur_styles = ref default_styles
   let get_styles () = !cur_styles
@@ -739,30 +776,36 @@ module Color = struct
   (* map a tag to a style, if the tag is known.
      @raise Not_found otherwise *)
   let style_of_tag s = match s with
-    | Format.String_tag "error" -> (!cur_styles).error
-    | Format.String_tag "warning" -> (!cur_styles).warning
+    | Format.String_tag "error" ->  (!cur_styles).error
+    | Format.String_tag "warning" ->(!cur_styles).warning
     | Format.String_tag "loc" -> (!cur_styles).loc
     | Format.String_tag "hint" -> (!cur_styles).hint
-    | Style s -> s
+    | Format.String_tag "inline_code" -> (!cur_styles).inline_code
+    | Style s -> no_markup s
     | _ -> raise Not_found
 
-  let color_enabled = ref true
+  let as_inline_code printer ppf x =
+    Format.pp_open_stag ppf (Format.String_tag "inline_code");
+    printer ppf x;
+    Format.pp_close_stag ppf ()
+
+  let inline_code ppf s = as_inline_code Format.pp_print_string ppf s
 
   (* either prints the tag of [s] or delegates to [or_else] *)
   let mark_open_tag ~or_else s =
     try
       let style = style_of_tag s in
-      if !color_enabled then ansi_of_style_l style else ""
+      if !Color.enabled then ansi_of_style_l style.ansi else style.text_open
     with Not_found -> or_else s
 
   let mark_close_tag ~or_else s =
     try
-      let _ = style_of_tag s in
-      if !color_enabled then ansi_of_style_l [Reset] else ""
+      let style = style_of_tag s in
+      if !Color.enabled then ansi_of_style_l [Reset] else style.text_close
     with Not_found -> or_else s
 
-  (* add color handling to formatter [ppf] *)
-  let set_color_tag_handling ppf =
+  (* add tag handling to formatter [ppf] *)
+  let set_tag_handling ppf =
     let open Format in
     let functions = pp_get_formatter_stag_functions ppf () in
     let functions' = {functions with
@@ -773,37 +816,24 @@ module Color = struct
     pp_set_formatter_stag_functions ppf functions';
     ()
 
-  external isatty : out_channel -> bool = "caml_sys_isatty"
-
-  (* reasonable heuristic on whether colors should be enabled *)
-  let should_enable_color () =
-    let term = try Sys.getenv "TERM" with Not_found -> "" in
-    term <> "dumb"
-    && term <> ""
-    && isatty stderr
-
-  type setting = Auto | Always | Never
-
-  let default_setting = Auto
-
   let setup =
     let first = ref true in (* initialize only once *)
     let formatter_l =
       [Format.std_formatter; Format.err_formatter; Format.str_formatter]
     in
     let enable_color = function
-      | Auto -> should_enable_color ()
-      | Always -> true
-      | Never -> false
+      | Color.Auto -> Color.should_enable_color ()
+      | Color.Always -> true
+      | Color.Never -> false
     in
     fun o ->
       if !first then (
         first := false;
         Format.set_mark_tags true;
-        List.iter ~f:set_color_tag_handling formatter_l;
-        color_enabled := (match o with
+        List.iter ~f:set_tag_handling formatter_l;
+        Color.enabled := (match o with
           | Some s -> enable_color s
-          | None -> enable_color default_setting)
+          | None -> enable_color Color.default_setting)
       );
       ()
 end
@@ -899,6 +929,14 @@ module List = struct
     | _::_, [] -> false
     | [], _::_ -> true
     | x1::t, x2::of_ -> equal x1 x2 && is_prefix ~equal t ~of_
+
+  let rec iteri2 i f l1 l2 =
+    match (l1, l2) with
+      ([], []) -> ()
+    | (a1::l1, a2::l2) -> f i a1 a2; iteri2 (i + 1) f l1 l2
+    | (_, _) -> raise (Invalid_argument "iteri2")
+
+  let iteri2 f l1 l2 = iteri2 0 f l1 l2
 end
 
 module String = struct

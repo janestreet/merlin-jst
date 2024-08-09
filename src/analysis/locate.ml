@@ -419,7 +419,7 @@ module Utils = struct
               None
           in
           let fname = File.with_ext ~src_suffix_pair file in
-          try Some (Misc.find_in_path_uncap ?fallback path fname)
+          try Some (Misc.find_in_path_normalized ?fallback path fname)
           with Not_found ->  None
         in
         match try_one file with

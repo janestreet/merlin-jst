@@ -439,7 +439,7 @@ module Gen = struct
           (List.map labels ~f:(fun l -> l.Types.lbl_name)));
 
       let labels = List.map labels ~f:(fun ({ lbl_name; _ } as lbl) ->
-        let _, arg, res = Ctype.instance_label true lbl in
+        let _, arg, res = Ctype.instance_label ~fixed:true lbl in
         Ctype.unify env res typ ;
         let lid =
           Util.maybe_prefix env

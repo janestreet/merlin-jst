@@ -69,4 +69,5 @@ val mode : Format.formatter -> Jane_syntax.Mode_expr.Const.t -> unit
 
 (* merlin *)
 val case_list : Format.formatter -> Parsetree.case list -> unit
-val protect_ident : Format.formatter -> string -> unit
+val ident_of_name : Format.formatter -> string -> unit
+val needs_parens : string -> bool

@@ -24,15 +24,11 @@
 
 %{
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 [@@@ocaml.warning "-9"]
 
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
 [@@@ocaml.warning "-60"] module Str = Ast_helper.Str (* For ocamldep *)
 [@@@ocaml.warning "+60"]
 
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
 open Asttypes
 open Longident
 open Parsetree
@@ -844,30 +840,16 @@ let package_type_of_module_type pmty =
         | None -> None
         end
     | _ ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        err pmty.pmty_loc "only 'with type t =' constraints are supported";
+        err pmty.pmty_loc Not_with_type;
         None
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        err pmty.pmty_loc "only 'with type t =' constraints are supported"
-=======
-        err pmty.pmty_loc Not_with_type
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   in
   match pmty with
   | {pmty_desc = Pmty_ident lid} -> (lid, [], pmty.pmty_attributes)
   | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
       (lid, List.filter_map map_cstr cstrs, pmty.pmty_attributes)
   | _ ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      err pmty.pmty_loc
-        "only module type identifier and 'with type' constraints are supported"
-      ; (Location.mkloc (Lident "_") pmty.pmty_loc, [], [])
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      err pmty.pmty_loc
-        "only module type identifier and 'with type' constraints are supported"
-=======
       err pmty.pmty_loc Neither_identifier_nor_with_type
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      ; (Location.mkloc (Lident "_") pmty.pmty_loc, [], [])
 
 let mk_directive_arg ~loc k =
   { pdira_desc = k;

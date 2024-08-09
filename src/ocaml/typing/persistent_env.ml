@@ -470,16 +470,8 @@ let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
   register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
   ps
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-let read_pers_struct penv val_of_pers_sig short_path_comps check modname filename ~add_binding =
-  let import = read_import penv ~check modname filename in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let read_pers_struct penv val_of_pers_sig check modname filename ~add_binding =
-  let import = read_import penv ~check modname filename in
-=======
-let read_pers_struct penv val_of_pers_sig check modname cmi ~add_binding =
+let read_pers_struct penv val_of_pers_sig short_path_comps check modname cmi ~add_binding =
   let import = read_import penv ~check modname cmi in
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   if add_binding then
     ignore
       (acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
@@ -541,22 +533,8 @@ let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
       let warn = Warnings.No_cmi_file(name_as_string, Some msg) in
         Location.prerr_warning loc warn
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let read penv f modname filename ~add_binding =
-  read_pers_struct penv f true modname filename ~add_binding
-
-let find ~allow_hidden penv f name =
-  (find_pers_struct ~allow_hidden penv f true name).ps_val
-=======
-let read penv f modname a ~add_binding =
-  read_pers_struct penv f true modname a ~add_binding
-
-let find ~allow_hidden penv f name =
-  (find_pers_struct ~allow_hidden penv f true name).ps_val
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
-let read penv f1 f2 modname filename ~add_binding =
-  read_pers_struct penv f1 f2 true modname filename ~add_binding
+let read penv f1 f2 modname a ~add_binding =
+  read_pers_struct penv f1 f2 true modname a ~add_binding
 
 let find ~allow_hidden penv f1 f2 name =
   (find_pers_struct ~allow_hidden penv f1 f2 true name).ps_val

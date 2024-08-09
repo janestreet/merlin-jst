@@ -38,11 +38,11 @@ let index_buffer_ ~scope ~current_buffer_path ~local_defs () =
           log ~title:"read_unit_shape" "inspecting %s" unit_name;
           let read unit_name =
             let cms = Format.sprintf "%s.cms" unit_name in
-            match Locate.Artifact.read (Load_path.find_uncap cms) with
+            match Locate.Artifact.read (Load_path.find_normalized cms) with
             | artifact -> Some artifact
             | exception _ ->
               let cmt = Format.sprintf "%s.cmt" unit_name in
-              match Locate.Artifact.read (Load_path.find_uncap cmt) with
+              match Locate.Artifact.read (Load_path.find_normalized cmt) with
               | artifact -> Some artifact
               | exception _ ->
                 None

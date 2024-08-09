@@ -3290,15 +3290,8 @@ let explain_unbound_gen ppf tv tl typ kwd pr =
     Printtyp.prepare_for_printing [typ ti; ty0];
     fprintf ppf
       ".@ @[<hov2>In %s@ %a@;<1 -2>the variable %a is unbound@]"
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      kwd pr ti Printtyp.prepared_type_expr tv
-      (* kwd pr ti Printtyp.prepared_type_expr tv *)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      kwd pr ti Printtyp.prepared_type_expr tv
-=======
       kwd (Style.as_inline_code pr) ti
       (Style.as_inline_code Printtyp.prepared_type_expr) tv
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
   with Not_found -> ()
 
 let explain_unbound ppf tv tl typ kwd lab =

@@ -163,21 +163,12 @@ let list_keywords =
   let add_kw str _tok kws = str :: kws in
   let init = Hashtbl.fold add_kw keyword_table [] in
   fun keywords ->
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
     Hashtbl.fold add_kw keywords init
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let store_string_char c = Buffer.add_char string_buffer c
-let store_string_utf_8_uchar u = Buffer.add_utf_8_uchar string_buffer u
-let store_string s = Buffer.add_string string_buffer s
-let store_lexeme lexbuf = store_string (Lexing.lexeme lexbuf)
-=======
-let store_string_char c = Buffer.add_char string_buffer c
-let store_string_utf_8_uchar u = Buffer.add_utf_8_uchar string_buffer u
-let store_string s = Buffer.add_string string_buffer s
-let store_substring s ~pos ~len = Buffer.add_substring string_buffer s pos len
 
-let store_lexeme lexbuf = store_string (Lexing.lexeme lexbuf)
-let store_normalized_newline newline =
+let store_string_char buf c = Buffer.add_char buf c
+let store_substring buf s ~pos ~len = Buffer.add_substring buf s pos len
+
+let store_normalized_newline buf newline =
   (* #12502: we normalize "\r\n" to "\n" at lexing time,
      to avoid behavior difference due to OS-specific
      newline characters in string literals.
@@ -200,9 +191,8 @@ let store_normalized_newline newline =
      the first carriage return, if any. *)
   let len = String.length newline in
   if len = 1
-  then store_string_char '\n'
-  else store_substring newline ~pos:1 ~len:(len - 1)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+  then store_string_char buf '\n'
+  else store_substring buf newline ~pos:1 ~len:(len - 1)
 
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
@@ -617,28 +607,18 @@ rule token state = parse
   | ".~"
       { fail lexbuf
           (Reserved_sequence (".~", Some "is reserved for use in MetaOCaml")) }
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
       *)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
   | "~" raw_ident_escape (lowercase identchar * as name) ':'
-      { LABEL name }
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      { return (LABEL name) }
   | "~" (lowercase identchar * as name) ':'
       { lABEL (check_label_name lexbuf name) }
   | "~" (lowercase_latin1 identchar_latin1 * as name) ':'
       { warn_latin1 lexbuf;
         return (LABEL name) }
   | "?"
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
       { return QUESTION }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { QUESTION }
-=======
-      { QUESTION }
   | "?" raw_ident_escape (lowercase identchar * as name) ':'
-      { OPTLABEL name }
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+      { return (OPTLABEL name) }
   | "?" (lowercase identchar * as name) ':'
       { oPTLABEL (check_label_name lexbuf name) }
   | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
@@ -655,23 +635,11 @@ rule token state = parse
   | (lowercase identchar * as name) '#'
       (* See Note [Lexing hack for float#] *)
       { enqueue_hash_suffix_from_end_of_lexbuf_window lexbuf;
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        lookup_keyword name }
-  | lowercase identchar * as name
-      { lookup_keyword name }
-  (* Lowercase latin1 identifiers are split into 3 cases, and the order matters
-=======
-        lookup_keyword name }
-  | raw_ident_escape (lowercase identchar * as name)
-      { LIDENT name }
-  | lowercase identchar * as name
-      { lookup_keyword name }
-  (* Lowercase latin1 identifiers are split into 3 cases, and the order matters
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
         return (try Hashtbl.find state.keywords name
               with Not_found ->
               lookup_keyword name) }
+  | raw_ident_escape (lowercase identchar * as name)
+    { return (LIDENT name) }
   | lowercase identchar * as name
     { return (try Hashtbl.find state.keywords name
               with Not_found ->
@@ -771,22 +739,8 @@ rule token state = parse
   | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "\'"
     { char_for_decimal_code state lexbuf 2 >>= fun c -> return (CHAR c) }
   | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "\'"
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
     { return (CHAR (char_for_hexadecimal_code lexbuf 3)) }
-  | "\'" ("\\" _ as esc)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { CHAR(char_for_hexadecimal_code lexbuf 3) }
-  | "\'" ("\\" _ as esc)
-      { error lexbuf (Illegal_escape (esc, None)) }
-  | "\'\'"
-      { error lexbuf Empty_character_literal }
-=======
-      { CHAR(char_for_hexadecimal_code lexbuf 3) }
   | "\'" ("\\" [^ '#'] as esc)
-      { error lexbuf (Illegal_escape (esc, None)) }
-  | "\'\'"
-      { error lexbuf Empty_character_literal }
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       { fail lexbuf (Illegal_escape (esc, None)) }
   | "(*"
       { let start_loc = Location.curr lexbuf in
@@ -1009,32 +963,12 @@ and comment state = parse
 
   | "''"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'" newline "'"
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        comment lexbuf }
-  | "\'\'"
-      { store_lexeme lexbuf; comment lexbuf }
-  | "\'" newline "\'"
-=======
-        comment lexbuf }
-  | "\'\'"
-      { store_lexeme lexbuf; comment lexbuf }
-  | "\'" (newline as nl) "\'"
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+  | "'" (newline as nl) "'"
       { update_loc lexbuf None 1 false 1;
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        store_string_char state.buffer '\'';
+        store_normalized_newline state.buffer nl;
+        store_string_char state.buffer '\'';
         comment state lexbuf
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        store_lexeme lexbuf;
-        comment lexbuf
-=======
-        store_string_char '\'';
-        store_normalized_newline nl;
-        store_string_char '\'';
-        comment lexbuf
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       }
   | "'" [^ '\\' '\'' '\010' '\013' ] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
@@ -1056,16 +990,8 @@ and comment state = parse
       }
   | newline as nl
       { update_loc lexbuf None 1 false 0;
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        store_normalized_newline state.buffer nl;
         comment state lexbuf
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        store_lexeme lexbuf;
-        comment lexbuf
-=======
-        store_normalized_newline nl;
-        comment lexbuf
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       }
   | (lowercase | uppercase) identchar *
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
@@ -1074,30 +1000,10 @@ and comment state = parse
 
 and string state = parse
     '\"'
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-      { return lexbuf.lex_start_p  }
+      { return lexbuf.lex_start_p }
   | '\\' newline ([' ' '\t'] * as space)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { lexbuf.lex_start_p }
-  | '\\' newline ([' ' '\t'] * as space)
-=======
-      { lexbuf.lex_start_p }
-  | '\\' (newline as nl) ([' ' '\t'] * as space)
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       { update_loc lexbuf None 1 false (String.length space);
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
         string state lexbuf
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        if in_comment () then store_lexeme lexbuf;
-        string lexbuf
-=======
-        if in_comment () then begin
-          store_string_char '\\';
-          store_normalized_newline nl;
-          store_string space;
-        end;
-        string lexbuf
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       }
   | '\\' ['\\' '\'' '\"' 'n' 't' 'b' 'r' ' ']
       { Buffer.add_char state.buffer
@@ -1128,26 +1034,10 @@ and string state = parse
           string state lexbuf
         end
       }
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-  | newline
-      { if not (in_comment state) then
-          Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
-        update_loc lexbuf None 1 false 0;
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
-        string state lexbuf
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | newline
-      { if not (in_comment ()) then
-          Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
-        update_loc lexbuf None 1 false 0;
-        store_lexeme lexbuf;
-        string lexbuf
-=======
   | newline as nl
       { update_loc lexbuf None 1 false 0;
-        store_normalized_newline nl;
-        string lexbuf
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
+        store_normalized_newline state.buffer nl;
+        string state lexbuf
       }
   | eof
       { let loc = state.string_start_loc in
@@ -1157,27 +1047,11 @@ and string state = parse
       { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         string state lexbuf }
 
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
 and quoted_string delim state = parse
-  | newline
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-and quoted_string delim = parse
-  | newline
-=======
-and quoted_string delim = parse
   | newline as nl
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       { update_loc lexbuf None 1 false 0;
-<<<<<<< janestreet/merlin-jst:merge-with-flambda-backend-5.2-merge
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        store_normalized_newline state.buffer nl;
         quoted_string delim state lexbuf
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        store_lexeme lexbuf;
-        quoted_string delim lexbuf
-=======
-        store_normalized_newline nl;
-        quoted_string delim lexbuf
->>>>>>> ocaml-flambda/flambda-backend:33aedfc93c38ccad7a4d89974405c05123a18932
       }
   | eof
       { let loc = state.string_start_loc in

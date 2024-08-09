@@ -586,6 +586,7 @@ and of_signature_item_desc = function
 
 and of_core_type_desc = function
   | Ttyp_var _ | Ttyp_call_pos -> id_fold
+  | Ttyp_open (_,_,ct) -> of_core_type ct
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts ->
