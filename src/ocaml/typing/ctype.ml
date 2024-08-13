@@ -379,12 +379,26 @@ let can_generate_equations = function
   | Expression _ | Pattern { equations_generation = Forbidden } -> false
   | Pattern { equations_generation = Allowed _ } -> true
 
+<<<<<<< HEAD
 (* Can only be called when generate_equations is true.  Tracks equations only to
    improve error messages. *)
 let record_equation uenv t1 t2 =
   match uenv with
   | Expression _ | Pattern { equations_generation = Forbidden } ->
       invalid_arg "Ctype.record_equation"
+||||||| fcc3157ab0
+(* Can only be called when generate_equations is true *)
+let record_equation t1 t2 =
+  match !umode with
+  | Expression | Subst | Pattern { equations_generation = Forbidden } ->
+      assert false
+=======
+(* Can only be called when generate_equations is true *)
+let record_equation uenv t1 t2 =
+  match uenv with
+  | Expression _ | Pattern { equations_generation = Forbidden } ->
+      invalid_arg "Ctype.record_equation"
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Pattern { equations_generation = Allowed { equated_types } } ->
       TypePairs.add equated_types (t1, t2)
 
@@ -407,6 +421,7 @@ let without_assume_injective uenv f =
   | Expression _ as uenv -> f uenv
   | Pattern r -> f (Pattern { r with assume_injective = false })
 
+<<<<<<< HEAD
 let without_generating_equations uenv f =
   match uenv with
   | Expression _ as uenv -> f uenv
@@ -434,6 +449,26 @@ let delay_jkind_checks_in f =
   let r = ref [] in
   Misc.protect_refs [Misc.R (lmode, Delay_checks r)] f;
   !r
+||||||| fcc3157ab0
+let without_assume_injective f =
+  match !umode with
+  | Expression | Subst -> f ()
+  | Pattern r ->
+      let new_umode = Pattern { r with assume_injective = false } in
+      Misc.protect_refs [ Misc.R (umode, new_umode) ] f
+
+let without_generating_equations f =
+  match !umode with
+  | Expression | Subst -> f ()
+  | Pattern r ->
+    let new_umode = Pattern { r with equations_generation = Forbidden } in
+    Misc.protect_refs [ Misc.R (umode, new_umode) ] f
+=======
+let without_generating_equations uenv f =
+  match uenv with
+  | Expression _ as uenv -> f uenv
+  | Pattern r -> f (Pattern { r with equations_generation = Forbidden })
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (*** Checks for type definitions ***)
 
@@ -1366,8 +1401,14 @@ let get_new_abstract_name env s =
   let index = Misc.find_first_mono check in
   name index
 
+<<<<<<< HEAD
 let new_local_type ?(loc = Location.none) ?manifest_and_scope origin
     jkind ~jkind_annot =
+||||||| fcc3157ab0
+let new_local_type ?(loc = Location.none) ?manifest_and_scope () =
+=======
+let new_local_type ?(loc = Location.none) ?manifest_and_scope origin =
+>>>>>>> 501-plus-upstream-main-9fa77db
   let manifest, expansion_scope =
     match manifest_and_scope with
       None -> None, Btype.lowest_level
@@ -1376,9 +1417,15 @@ let new_local_type ?(loc = Location.none) ?manifest_and_scope origin
   {
     type_params = [];
     type_arity = 0;
+<<<<<<< HEAD
     type_kind = Type_abstract origin;
     type_jkind = jkind;
     type_jkind_annotation = jkind_annot;
+||||||| fcc3157ab0
+    type_kind = Type_abstract;
+=======
+    type_kind = Type_abstract origin;
+>>>>>>> 501-plus-upstream-main-9fa77db
     type_private = Public;
     type_manifest = manifest;
     type_variance = [];
@@ -1392,6 +1439,7 @@ let new_local_type ?(loc = Location.none) ?manifest_and_scope origin
     type_has_illegal_crossings = false;
   }
 
+<<<<<<< HEAD
 let existential_name name_counter ty =
   let name =
     match get_desc ty with
@@ -1402,6 +1450,23 @@ let existential_name name_counter ty =
         name
   in
   "$" ^ name
+||||||| fcc3157ab0
+let existential_name cstr ty =
+  match get_desc ty with
+  | Tvar (Some name) -> "$" ^ cstr.cstr_name ^ "_'" ^ name
+  | _ -> "$" ^ cstr.cstr_name
+=======
+let existential_name name_counter ty =
+  let name =
+    match get_desc ty with
+    | Tvar (Some name) -> name
+    | _ ->
+        let name = Misc.letter_of_int !name_counter in
+        incr name_counter;
+        name
+  in
+  "$" ^ name
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 type existential_treatment =
   | Keep_existentials_flexible
@@ -1415,6 +1480,7 @@ let instance_constructor existential_treatment cstr =
       | Keep_existentials_flexible -> copy copy_scope
       | Make_existentials_abstract penv ->
           fun existential ->
+<<<<<<< HEAD
             (* CR layouts v1.5: Add test case that hits this once we have syntax
                for it *)
             let jkind =
@@ -1431,6 +1497,15 @@ let instance_constructor existential_treatment cstr =
             let name = existential_name name_counter existential in
             let env = penv.env in
             let fresh_constr_scope = penv.equations_scope in
+||||||| fcc3157ab0
+            let decl = new_local_type () in
+            let name = existential_name cstr existential in
+=======
+            let env = penv.env in
+            let fresh_constr_scope = penv.equations_scope in
+            let decl = new_local_type (Existential cstr.cstr_name) in
+            let name = existential_name name_counter existential in
+>>>>>>> 501-plus-upstream-main-9fa77db
             let (id, new_env) =
               Env.enter_type (get_new_abstract_name env name) decl env
                 ~scope:fresh_constr_scope in
@@ -1458,7 +1533,15 @@ let instance_parameterized_type ?keep_names sch_args sch =
 
 (* [map_kind f kind] maps [f] over all the types in [kind]. [f] must preserve jkinds *)
 let map_kind f = function
+<<<<<<< HEAD
   | (Type_abstract _ | Type_open) as k -> k
+||||||| fcc3157ab0
+  | Type_abstract -> Type_abstract
+  | Type_open -> Type_open
+=======
+  | Type_abstract r -> Type_abstract r
+  | Type_open -> Type_open
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Type_variant (cl, rep) ->
       Type_variant (
         List.map
@@ -2574,6 +2657,7 @@ let local_non_recursive_abbrev uenv p ty =
 
 (* Since we cannot duplicate universal variables, unification must
    be done at meta-level, using bindings in univar_pairs *)
+<<<<<<< HEAD
 (* Invariant: [jkind1] and [jkind2] (newly added) have to be the
    jkinds of Tunivar [t1] and [t2] respectively.
 
@@ -2582,6 +2666,12 @@ let local_non_recursive_abbrev uenv p ty =
 let unify_univar t1 t2 jkind1 jkind2 pairs =
   if not (Jkind.equal jkind1 jkind2) then raise Cannot_unify_universal_variables;
   let rec inner t1 t2 = function
+||||||| fcc3157ab0
+(* TODO: use find_opt *)
+let rec unify_univar t1 t2 = function
+=======
+let rec unify_univar t1 t2 = function
+>>>>>>> 501-plus-upstream-main-9fa77db
     (cl1, cl2) :: rem ->
       let find_univ t cl =
         List.find_map (fun (t', r) ->
@@ -2839,6 +2929,7 @@ let deep_occur_list t0 tyl =
     List.iter unmark_type tyl;
     true
 
+<<<<<<< HEAD
 let deep_occur t0 ty =
   try
     deep_occur_rec t0 ty;
@@ -2850,19 +2941,57 @@ let deep_occur t0 ty =
 
 
 (* a local constraint can be added only if the rhs
+||||||| fcc3157ab0
+let gadt_equations_level = ref None
+
+let get_gadt_equations_level () =
+  match !gadt_equations_level with
+  | None -> assert false
+  | Some x -> x
+
+
+(* a local constraint can be added only if the rhs
+=======
+
+(* A local constraint can be added only if the rhs
+>>>>>>> 501-plus-upstream-main-9fa77db
    of the constraint does not contain any Tvars.
+<<<<<<< HEAD
    They need to be removed using this function
     This function is called only in [Pattern] mode. *)
 let reify uenv t =
   let fresh_constr_scope = get_equations_scope uenv in
   let create_fresh_constr lev name jkind =
+||||||| fcc3157ab0
+   They need to be removed using this function *)
+let reify env t =
+  let fresh_constr_scope = get_gadt_equations_level () in
+  let create_fresh_constr lev name =
+=======
+   They need to be removed using this function.
+   This function is called only in [Pattern] mode. *)
+let reify uenv t =
+  let fresh_constr_scope = get_equations_scope uenv in
+  let create_fresh_constr lev name =
+>>>>>>> 501-plus-upstream-main-9fa77db
     let name = match name with Some s -> "$'"^s | _ -> "$" in
+<<<<<<< HEAD
     let decl = new_local_type Definition jkind ~jkind_annot:None in
     let env = get_env uenv in
     let new_name =
       (* unique names are needed only for error messages *)
       if in_counterexample uenv then name else get_new_abstract_name env name
     in
+||||||| fcc3157ab0
+    let decl = new_local_type () in
+=======
+    let decl = new_local_type Definition in
+    let env = get_env uenv in
+    let new_name =
+      (* unique names are needed only for error messages *)
+      if in_counterexample uenv then name else get_new_abstract_name env name
+    in
+>>>>>>> 501-plus-upstream-main-9fa77db
     let (id, new_env) =
       Env.enter_type new_name decl env ~scope:fresh_constr_scope in
     let path = Path.Pident id in
@@ -3151,9 +3280,19 @@ and mcomp_type_decl type_pairs env p1 p2 tl1 tl2 =
           mcomp_variant_description type_pairs env v1 v2
       | Type_open, Type_open ->
           mcomp_list type_pairs env tl1 tl2
+<<<<<<< HEAD
       | Type_abstract _, Type_abstract _ -> check_jkinds ()
       | Type_abstract _, _ when not (non_aliasable p1 decl)-> check_jkinds ()
       | _, Type_abstract _ when not (non_aliasable p2 decl') -> check_jkinds ()
+||||||| fcc3157ab0
+      | Type_abstract, Type_abstract -> ()
+      | Type_abstract, _ when not (non_aliasable p1 decl)-> ()
+      | _, Type_abstract when not (non_aliasable p2 decl') -> ()
+=======
+      | Type_abstract _, Type_abstract _ -> ()
+      | Type_abstract _, _ when not (non_aliasable p1 decl)-> ()
+      | _, Type_abstract _ when not (non_aliasable p2 decl') -> ()
+>>>>>>> 501-plus-upstream-main-9fa77db
       | _ -> raise Incompatible
   with Not_found -> ()
 
@@ -3231,6 +3370,7 @@ let find_lowest_level ty =
     end
   in find ty; unmark_type ty; !lowest
 
+<<<<<<< HEAD
 let jkind_of_abstract_type_declaration env p =
   try
     (* CR layouts: This lookup duplicates work already done in is_instantiable,
@@ -3269,6 +3409,12 @@ let add_jkind_equation ~reason uenv destination jkind1 =
 
 (* This function can be called only in [Pattern] mode. *)
 let add_gadt_equation uenv source destination =
+||||||| fcc3157ab0
+let add_gadt_equation env source destination =
+=======
+(* This function can be called only in [Pattern] mode. *)
+let add_gadt_equation uenv source destination =
+>>>>>>> 501-plus-upstream-main-9fa77db
   (* Format.eprintf "@[add_gadt_equation %s %a@]@."
     (Path.name source) !Btype.print_raw destination; *)
   let env = get_env uenv in
@@ -3277,7 +3423,18 @@ let add_gadt_equation uenv source destination =
   else if local_non_recursive_abbrev uenv source destination then begin
     let destination = duplicate_type destination in
     let expansion_scope =
+<<<<<<< HEAD
       Int.max (Path.scope source) (get_equations_scope uenv)
+||||||| fcc3157ab0
+      Int.max (Path.scope source) (get_gadt_equations_level ())
+=======
+      Int.max (Path.scope source) (get_equations_scope uenv)
+    in
+    let type_origin =
+      match Env.find_type source env with
+      | decl -> type_origin decl
+      | exception Not_found -> assert false
+>>>>>>> 501-plus-upstream-main-9fa77db
     in
     let type_origin =
       match Env.find_type source env with
@@ -3293,6 +3450,7 @@ let add_gadt_equation uenv source destination =
     add_jkind_equation ~reason:(Gadt_equation source)
       uenv destination jkind;
     let decl =
+<<<<<<< HEAD
       new_local_type
         ~manifest_and_scope:(destination, expansion_scope)
         type_origin
@@ -3300,6 +3458,16 @@ let add_gadt_equation uenv source destination =
         ~jkind_annot
     in
     set_env uenv (Env.add_local_constraint source decl env);
+||||||| fcc3157ab0
+      new_local_type ~manifest_and_scope:(destination, expansion_scope) () in
+    env := Env.add_local_type source decl !env;
+=======
+      new_local_type
+        ~manifest_and_scope:(destination, expansion_scope)
+        type_origin
+    in
+    set_env uenv (Env.add_local_constraint source decl env);
+>>>>>>> 501-plus-upstream-main-9fa77db
     cleanup_abbrev ()
   end
 
@@ -3393,6 +3561,7 @@ let unify_alloc_mode_for tr_exn a b =
    environment is built in subst. *)
 let rigid_variants = ref false
 
+<<<<<<< HEAD
 let unify1_var uenv t1 t2 =
   let jkind = match get_desc t1 with
     | Tvar { jkind } -> jkind
@@ -3404,6 +3573,23 @@ let unify1_var uenv t1 t2 =
     occur_univar_for Unify env t2;
     unification_jkind_check env t2 jkind
   with
+||||||| fcc3157ab0
+let unify_eq t1 t2 =
+  eq_type t1 t2
+  || (in_pattern_mode ()
+      && TypePairs.mem unify_eq_set (order_type_pair t1 t2))
+
+let unify1_var env t1 t2 =
+  assert (is_Tvar t1);
+  occur_for Unify env t1 t2;
+  match occur_univar_for Unify env t2 with
+=======
+let unify1_var uenv t1 t2 =
+  assert (is_Tvar t1);
+  occur_for Unify uenv t1 t2;
+  let env = get_env uenv in
+  match occur_univar_for Unify env t2 with
+>>>>>>> 501-plus-upstream-main-9fa77db
   | () ->
       begin
         try
@@ -3418,6 +3604,7 @@ let unify1_var uenv t1 t2 =
       false
 
 (* Called from unify3 *)
+<<<<<<< HEAD
 let unify3_var uenv jkind1 t1' t2 t2' =
   occur_for Unify uenv t1' t2;
   (* There are two possible ways forward here. Either the variable [t1']
@@ -3432,7 +3619,17 @@ let unify3_var uenv jkind1 t1' t2 t2' =
     occur_univar_for Unify (get_env uenv) t2;
     unification_jkind_check (get_env uenv) t2' jkind1
   with
+||||||| fcc3157ab0
+let unify3_var env t1' t2 t2' =
+  occur_for Unify !env t1' t2;
+  match occur_univar_for Unify !env t2 with
+=======
+let unify3_var uenv t1' t2 t2' =
+  occur_for Unify uenv t1' t2;
+  match occur_univar_for Unify (get_env uenv) t2 with
+>>>>>>> 501-plus-upstream-main-9fa77db
   | () -> link_type t1' t2
+<<<<<<< HEAD
   | exception Unify_trace _ when in_pattern_mode uenv ->
       backtrack snap;
       reify uenv t1';
@@ -3454,6 +3651,21 @@ let unify3_var uenv jkind1 t1' t2 t2' =
                here specially, but it seems simpler not to. *)
         end;
         record_equation uenv t1' t2';
+||||||| fcc3157ab0
+  | exception Unify_trace _ when in_pattern_mode () ->
+      reify env t1';
+      reify env t2';
+      if can_generate_equations () then begin
+        occur_univar ~inj_only:true !env t2';
+        record_equation t1' t2';
+=======
+  | exception Unify_trace _ when in_pattern_mode uenv ->
+      reify uenv t1';
+      reify uenv t2';
+      if can_generate_equations uenv then begin
+        occur_univar ~inj_only:true (get_env uenv) t2';
+        record_equation uenv t1' t2';
+>>>>>>> 501-plus-upstream-main-9fa77db
       end
 
 (*
@@ -3495,10 +3707,22 @@ let rec unify uenv t1 t2 =
     | (Tvar _, _) ->
         if unify1_var uenv t1 t2 then () else unify2 uenv t1 t2
     | (_, Tvar _) ->
+<<<<<<< HEAD
         if unify1_var uenv t2 t1 then () else unify2 uenv t1 t2
     | (Tunivar { jkind = k1 }, Tunivar { jkind = k2 }) ->
         unify_univar_for Unify t1 t2 k1 k2 !univar_pairs;
         update_level_for Unify (get_env uenv) (get_level t1) t2;
+||||||| fcc3157ab0
+        if unify1_var !env t2 t1 then () else unify2 env t1 t2
+    | (Tunivar _, Tunivar _) ->
+        unify_univar_for Unify t1 t2 !univar_pairs;
+        update_level_for Unify !env (get_level t1) t2;
+=======
+        if unify1_var uenv t2 t1 then () else unify2 uenv t1 t2
+    | (Tunivar _, Tunivar _) ->
+        unify_univar_for Unify t1 t2 !univar_pairs;
+        update_level_for Unify (get_env uenv) (get_level t1) t2;
+>>>>>>> 501-plus-upstream-main-9fa77db
         update_scope_for Unify (get_scope t1) t2;
         link_type t1 t2
     | (Tconstr (p1, [], a1), Tconstr (p2, [], a2))
@@ -3586,10 +3810,22 @@ and unify3 uenv t1 t1' t2 t2' =
     (Tunivar { jkind = k1 }, Tunivar { jkind = k2 }) ->
       unify_univar_for Unify t1' t2' k1 k2 !univar_pairs;
       link_type t1' t2'
+<<<<<<< HEAD
   | (Tvar { jkind }, _) ->
       unify3_var uenv jkind t1' t2 t2'
   | (_, Tvar { jkind }) ->
       unify3_var uenv jkind t2' t1 t1'
+||||||| fcc3157ab0
+  | (Tvar _, _) ->
+      unify3_var env t1' t2 t2'
+  | (_, Tvar _) ->
+      unify3_var env t2' t1 t1'
+=======
+  | (Tvar _, _) ->
+      unify3_var uenv t1' t2 t2'
+  | (_, Tvar _) ->
+      unify3_var uenv t2' t1 t1'
+>>>>>>> 501-plus-upstream-main-9fa77db
   | (Tfield _, Tfield _) -> (* special case for GADTs *)
       unify_fields uenv t1' t2'
   | _ ->
@@ -3601,6 +3837,7 @@ and unify3 uenv t1 t1' t2 t2' =
     end;
     try
       begin match (d1, d2) with
+<<<<<<< HEAD
         (Tarrow ((l1,a1,r1), t1, u1, c1),
          Tarrow ((l2,a2,r2), t2, u2, c2))
            when
@@ -3610,14 +3847,33 @@ and unify3 uenv t1 t1' t2 t2' =
           unify_alloc_mode_for Unify a1 a2;
           unify_alloc_mode_for Unify r1 r2;
           unify  uenv t1 t2; unify uenv  u1 u2;
+||||||| fcc3157ab0
+        (Tarrow (l1, t1, u1, c1), Tarrow (l2, t2, u2, c2)) when l1 = l2 ||
+        (!Clflags.classic || in_pattern_mode ()) &&
+        not (is_optional l1 || is_optional l2) ->
+          unify  env t1 t2; unify env  u1 u2;
+=======
+        (Tarrow (l1, t1, u1, c1), Tarrow (l2, t2, u2, c2)) when l1 = l2 ||
+        (!Clflags.classic || in_pattern_mode uenv) &&
+        not (is_optional l1 || is_optional l2) ->
+          unify uenv t1 t2; unify uenv u1 u2;
+>>>>>>> 501-plus-upstream-main-9fa77db
           begin match is_commu_ok c1, is_commu_ok c2 with
           | false, true -> set_commu_ok c1
           | true, false -> set_commu_ok c2
           | false, false -> link_commu ~inside:c1 c2
           | true, true -> ()
           end
+<<<<<<< HEAD
       | (Ttuple labeled_tl1, Ttuple labeled_tl2) ->
           unify_labeled_list uenv labeled_tl1 labeled_tl2
+||||||| fcc3157ab0
+      | (Ttuple tl1, Ttuple tl2) ->
+          unify_list env tl1 tl2
+=======
+      | (Ttuple tl1, Ttuple tl2) ->
+          unify_list uenv tl1 tl2
+>>>>>>> 501-plus-upstream-main-9fa77db
       | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _)) when Path.same p1 p2 ->
           if not (can_generate_equations uenv) then
             unify_list uenv tl1 tl2
@@ -3647,10 +3903,19 @@ and unify3 uenv t1 t1' t2 t2' =
               inj (List.combine tl1 tl2)
       | (Tconstr (path,[],_),
          Tconstr (path',[],_))
+<<<<<<< HEAD
           when let env = get_env uenv in
           is_instantiable env ~for_jkind_eqn:false path
           && is_instantiable env ~for_jkind_eqn:false path'
           && can_generate_equations uenv ->
+||||||| fcc3157ab0
+        when is_instantiable !env path && is_instantiable !env path'
+        && can_generate_equations () ->
+=======
+        when let env = get_env uenv in
+        is_instantiable env path && is_instantiable env path'
+        && can_generate_equations uenv ->
+>>>>>>> 501-plus-upstream-main-9fa77db
           let source, destination =
             if Path.scope path > Path.scope path'
             then  path , t2'
@@ -3659,12 +3924,26 @@ and unify3 uenv t1 t1' t2 t2' =
           record_equation uenv t1' t2';
           add_gadt_equation uenv source destination
       | (Tconstr (path,[],_), _)
+<<<<<<< HEAD
         when is_instantiable (get_env uenv) ~for_jkind_eqn:false path
           && can_generate_equations uenv ->
           reify uenv t2';
           record_equation uenv t1' t2';
           add_gadt_equation uenv path t2'
+||||||| fcc3157ab0
+        when is_instantiable !env path && can_generate_equations () ->
+          reify env t2';
+          record_equation t1' t2';
+          add_gadt_equation env path t2'
+=======
+        when is_instantiable (get_env uenv) path
+        && can_generate_equations uenv ->
+          reify uenv t2';
+          record_equation uenv t1' t2';
+          add_gadt_equation uenv path t2'
+>>>>>>> 501-plus-upstream-main-9fa77db
       | (_, Tconstr (path,[],_))
+<<<<<<< HEAD
         when is_instantiable (get_env uenv) ~for_jkind_eqn:false path
           && can_generate_equations uenv ->
           reify uenv t1';
@@ -3676,6 +3955,30 @@ and unify3 uenv t1 t1' t2 t2' =
           if can_generate_equations uenv then (
             mcomp_for Unify (get_env uenv) t1' t2';
             record_equation uenv t1' t2'
+||||||| fcc3157ab0
+        when is_instantiable !env path && can_generate_equations () ->
+          reify env t1';
+          record_equation t1' t2';
+          add_gadt_equation env path t1'
+      | (Tconstr (_,_,_), _) | (_, Tconstr (_,_,_)) when in_pattern_mode () ->
+          reify env t1';
+          reify env t2';
+          if can_generate_equations () then (
+            mcomp_for Unify !env t1' t2';
+            record_equation t1' t2'
+=======
+        when is_instantiable (get_env uenv) path
+        && can_generate_equations uenv ->
+          reify uenv t1';
+          record_equation uenv t1' t2';
+          add_gadt_equation uenv path t1'
+      | (Tconstr (_,_,_), _) | (_, Tconstr (_,_,_)) when in_pattern_mode uenv ->
+          reify uenv t1';
+          reify uenv t2';
+          if can_generate_equations uenv then (
+            mcomp_for Unify (get_env uenv) t1' t2';
+            record_equation uenv t1' t2'
+>>>>>>> 501-plus-upstream-main-9fa77db
           )
       | (Tobject (fi1, nm1), Tobject (fi2, _)) ->
           unify_fields uenv fi1 fi2;
@@ -4066,13 +4369,28 @@ let unify_gadt (penv : Pattern_env.t) ty1 ty2 =
   unify uenv ty1 ty2;
   equated_types
 
+<<<<<<< HEAD
 let unify_var ~from_subst uenv t1 t2 =
+||||||| fcc3157ab0
+let unify_var env t1 t2 =
+=======
+let unify_var uenv t1 t2 =
+>>>>>>> 501-plus-upstream-main-9fa77db
   if eq_type t1 t2 then () else
   match get_desc t1, get_desc t2 with
     Tvar _, Tconstr _ when deep_occur t1 t2 ->
+<<<<<<< HEAD
       unify uenv t1 t2
   | Tvar { jkind }, _ ->
       let env = get_env uenv in
+||||||| fcc3157ab0
+      unify (ref env) t1 t2
+  | Tvar _, _ ->
+=======
+      unify uenv t1 t2
+  | Tvar _, _ ->
+      let env = get_env uenv in
+>>>>>>> 501-plus-upstream-main-9fa77db
       let reset_tracing = check_trace_gadt_instances env in
       begin try
         occur_for Unify uenv t1 t2;
@@ -4101,16 +4419,26 @@ let unify_var = unify_var ~from_subst:false
 let unify_var env ty1 ty2 =
   unify_var (Expression {env; in_subst = false}) ty1 ty2
 
+(* the final versions of unification functions *)
+let unify_var env ty1 ty2 =
+  unify_var (Expression {env; in_subst = false}) ty1 ty2
+
 let unify_pairs env ty1 ty2 pairs =
   univar_pairs := pairs;
   unify (Expression {env; in_subst = false}) ty1 ty2
 
 let unify env ty1 ty2 =
+<<<<<<< HEAD
   unify_pairs env ty1 ty2 []
 
 let unify_delaying_jkind_checks env ty1 ty2 =
   delay_jkind_checks_in (fun () ->
     unify_pairs env ty1 ty2 [])
+||||||| fcc3157ab0
+  unify_pairs (ref env) ty1 ty2 []
+=======
+  unify_pairs env ty1 ty2 []
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Lower the level of a type to the current level *)
 let enforce_current_level env ty =
@@ -4698,10 +5026,16 @@ let rec moregen inst_nongen variance type_pairs env t1 t2 =
       (Tvar { jkind }, _) when may_instantiate inst_nongen t1 ->
         moregen_occur env (get_level t1) t2;
         update_scope_for Moregen (get_scope t1) t2;
+<<<<<<< HEAD
         occur_for Moregen (Expression {env; in_subst = false}) t1 t2;
         (* use [check], not [constrain], here because [constrain] would be like
         instantiating [t2], which we do not wish to do *)
         check_type_jkind_exn env Moregen t2 jkind;
+||||||| fcc3157ab0
+        occur_for Moregen env t1 t2;
+=======
+        occur_for Moregen (Expression {env; in_subst = false}) t1 t2;
+>>>>>>> 501-plus-upstream-main-9fa77db
         link_type t1 t2
     | (Tconstr (p1, [], _), Tconstr (p2, [], _)) when Path.same p1 p2 ->
         ()
@@ -5617,7 +5951,13 @@ let match_class_declarations env patt_params patt_type subj_params subj_type =
         let ls = List.length subj_params in
         if lp  <> ls then
           raise (Failure [CM_Parameter_arity_mismatch (lp, ls)]);
+<<<<<<< HEAD
         Misc.List.iteri2 (fun n p s ->
+||||||| fcc3157ab0
+        List.iter2 (fun p s ->
+=======
+        Std.List.iteri2 ~f:(fun n p s ->
+>>>>>>> 501-plus-upstream-main-9fa77db
           try eqtype true type_pairs subst env p s with Equality_trace trace ->
             raise (Failure
                      [CM_Type_parameter_mismatch

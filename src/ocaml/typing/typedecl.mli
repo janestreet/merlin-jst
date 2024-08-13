@@ -46,6 +46,7 @@ val transl_with_constraint:
     outer_env:Env.t -> Parsetree.type_declaration ->
     Typedtree.type_declaration
 
+<<<<<<< HEAD
 val transl_package_constraint:
   loc:Location.t -> type_expr -> Types.type_declaration
 
@@ -58,6 +59,14 @@ val abstract_type_decl:
   params:Jkind.t list ->
   type_declaration
 
+||||||| fcc3157ab0
+val abstract_type_decl: injective:bool -> int -> type_declaration
+=======
+val transl_package_constraint:
+  loc:Location.t -> Env.t -> type_expr -> Types.type_declaration
+
+val abstract_type_decl: injective:bool -> int -> type_declaration
+>>>>>>> 501-plus-upstream-main-9fa77db
 val approx_type_decl:
     Parsetree.type_declaration list -> (Ident.t * type_declaration) list
 val check_recmod_typedecl:

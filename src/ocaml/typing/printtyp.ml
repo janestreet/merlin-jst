@@ -32,6 +32,7 @@ open Outcometree
 module Sig_component_kind = Shape.Sig_component_kind
 module Style = Misc.Style
 
+<<<<<<< HEAD
 (* Note [When to print jkind annotations]
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    Jkind annotations are only occasionally necessary to write
@@ -117,6 +118,15 @@ module Style = Misc.Style
 
 (* Print a long identifier *)
 let longident = Pprintast.longident
+||||||| fcc3157ab0
+let rec longident ppf = function
+  | Lident s -> pp_print_string ppf s
+  | Ldot(p, s) -> fprintf ppf "%a.%s" longident p s
+  | Lapply(p1, p2) -> fprintf ppf "%a(%a)" longident p1 longident p2
+=======
+(* Print a long identifier *)
+let longident = Pprintast.longident
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let () = Env.print_longident := longident
 
@@ -225,10 +235,20 @@ module Conflicts = struct
           explanations := M.add name explanation !explanations
 
   let pp_explanation ppf r=
+<<<<<<< HEAD
     Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %a@]"
       Location.print_loc r.location
       (Shape.Sig_component_kind.to_string r.kind)
       Style.inline_code r.name
+||||||| fcc3157ab0
+    Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %s@]"
+      Location.print_loc r.location
+        (Shape.Sig_component_kind.to_string r.kind) r.name
+=======
+    Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %a@]"
+      Location.print_loc r.location (Sig_component_kind.to_string r.kind)
+      Style.inline_code r.name
+>>>>>>> 501-plus-upstream-main-9fa77db
 
   let print_located_explanations ppf l =
     Format.fprintf ppf "@[<v>%a@]" (Format.pp_print_list pp_explanation) l
@@ -366,6 +386,7 @@ let pervasives_name namespace name =
           set namespace @@ M.add name (Associated_to_pervasives r) (get namespace);
           r
 
+<<<<<<< HEAD
 (** Lookup for preexisting named item within the current {!printing_env} *)
 let env_ident namespace name =
   if S.mem name !protected then None else
@@ -373,6 +394,79 @@ let env_ident namespace name =
   | Pident id -> Some id
   | _ -> None
   | exception Not_found -> None
+||||||| fcc3157ab0
+let indexed_name namespace id =
+  let find namespace id env = match namespace with
+    | Type -> Env.find_type_index id env
+    | Module -> Env.find_module_index id env
+    | Module_type -> Env.find_modtype_index id env
+    | Class -> Env.find_class_index id env
+    | Class_type-> Env.find_cltype_index id env
+    | Value | Extension_constructor -> None
+  in
+  let index =
+    match M.find_opt (Ident.name id) !bound_in_recursion with
+    | Some rec_bound_id ->
+        (* the identifier name appears in the current group of recursive
+           definition *)
+        if Ident.same rec_bound_id id then
+          Some 0
+        else
+          (* the current recursive definition shadows one more time the
+            previously existing identifier with the same name *)
+          Option.map succ (in_printing_env (find namespace id))
+    | None ->
+        in_printing_env (find namespace id)
+  in
+  let index =
+    (* If [index] is [None] at this point, it might indicate that
+       the identifier id is not defined in the environment, while there
+       are other identifiers in scope that share the same name.
+       Currently, this kind of partially incoherent environment happens
+       within functor error messages where the left and right hand side
+       have a different views of the environment at the source level.
+       Printing the source-level by using a default index of `0`
+       seems like a reasonable compromise in this situation however.*)
+    Option.value index ~default:0
+  in
+  human_id id index
+=======
+let indexed_name namespace id =
+  let find namespace id env = match namespace with
+    | Type -> Env.find_type_index id env
+    | Module -> Env.find_module_index id env
+    | Module_type -> Env.find_modtype_index id env
+    | Class -> Env.find_class_index id env
+    | Class_type-> Env.find_cltype_index id env
+    | Value | Extension_constructor | Constructor | Label -> None
+  in
+  let index =
+    match M.find_opt (Ident.name id) !bound_in_recursion with
+    | Some rec_bound_id ->
+        (* the identifier name appears in the current group of recursive
+           definition *)
+        if Ident.same rec_bound_id id then
+          Some 0
+        else
+          (* the current recursive definition shadows one more time the
+            previously existing identifier with the same name *)
+          Option.map succ (in_printing_env (find namespace id))
+    | None ->
+        in_printing_env (find namespace id)
+  in
+  let index =
+    (* If [index] is [None] at this point, it might indicate that
+       the identifier id is not defined in the environment, while there
+       are other identifiers in scope that share the same name.
+       Currently, this kind of partially incoherent environment happens
+       within functor error messages where the left and right hand side
+       have a different views of the environment at the source level.
+       Printing the source-level by using a default index of `0`
+       seems like a reasonable compromise in this situation however.*)
+    Option.value index ~default:0
+  in
+  human_id id index
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (** Associate a name to the identifier [id] within [namespace] *)
 let ident_name_simple namespace id =
@@ -494,7 +588,25 @@ let rec rewrite_double_underscore_paths env p =
     let name = Ident.name id in
     match expand_longident_head name with
     | None -> p
+<<<<<<< HEAD
     | Some better_lid ->
+||||||| fcc3157ab0
+    | Some i ->
+      let better_lid =
+        Ldot
+          (Lident (String.sub name 0 i),
+           String.capitalize_ascii
+             (String.sub name (i + 2) (String.length name - i - 2)))
+      in
+=======
+    | Some i ->
+      let better_lid =
+        Ldot
+          (Lident (String.sub name 0 i),
+           Unit_info.modulize
+             (String.sub name (i + 2) (String.length name - i - 2)))
+      in
+>>>>>>> 501-plus-upstream-main-9fa77db
       match Env.find_module_by_name better_lid env with
       | exception Not_found -> p
       | p', _ ->
@@ -624,11 +736,19 @@ and labeled_type ppf (label, ty) =
   raw_type ppf ty
 
 and raw_type_list tl = raw_list raw_type tl
+<<<<<<< HEAD
 and labeled_type_list tl = raw_list labeled_type tl
 and raw_lid_type_list tl =
   raw_list (fun ppf (lid, typ) ->
              fprintf ppf "(@,%a,@,%a)" longident lid raw_type typ)
     tl
+||||||| fcc3157ab0
+=======
+and raw_lid_type_list tl =
+  raw_list (fun ppf (lid, typ) ->
+             fprintf ppf "(@,%a,@,%a)" longident lid raw_type typ)
+    tl
+>>>>>>> 501-plus-upstream-main-9fa77db
 and raw_type_desc ppf = function
     Tvar { name; jkind } ->
       fprintf ppf "Tvar (@,%a,@,%a)" print_name name Jkind.format jkind
@@ -683,8 +803,16 @@ and raw_type_desc ppf = function
           | Some(p,tl) ->
               fprintf ppf "Some(@,%a,@,%a)" path p raw_type_list tl)
   | Tpackage (p, fl) ->
+<<<<<<< HEAD
       fprintf ppf "@[<hov1>Tpackage(@,%a,@,%a)@]" path p
         raw_lid_type_list fl
+||||||| fcc3157ab0
+      fprintf ppf "@[<hov1>Tpackage(@,%a@,%a)@]" path p
+        raw_type_list (List.map snd fl)
+=======
+    fprintf ppf "@[<hov1>Tpackage(@,%a,@,%a)@]" path p raw_lid_type_list fl
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 and raw_row_fixed ppf = function
 | None -> fprintf ppf "None"
 | Some Types.Fixed_private -> fprintf ppf "Some Fixed_private"
@@ -1365,8 +1493,14 @@ let rec tree_of_typexp mode alloc_mode ty =
            printing should not mutate states. *)
         let snap = Btype.snapshot () in
         let lab =
+<<<<<<< HEAD
           if !print_labels || is_omittable l then outcome_label l
           else Nolabel
+||||||| fcc3157ab0
+          if !print_labels || is_optional l then string_of_label l else ""
+=======
+          if !print_labels || is_optional l then l else Nolabel
+>>>>>>> 501-plus-upstream-main-9fa77db
         in
         (* [marg] will contain undetermined axes. It would be imprecise if we
            don't print anything for those axes, since user would interpret that
@@ -1390,6 +1524,7 @@ let rec tree_of_typexp mode alloc_mode ty =
     | Ttuple labeled_tyl ->
       Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
     | Tconstr(p, tyl, _abbrev) -> begin
+<<<<<<< HEAD
       match best_type_path p with
       | Nth n -> tree_of_typexp mode Alloc.Const.legacy (apply_nth n tyl)
       | Path(nso, p') ->
@@ -1397,6 +1532,22 @@ let rec tree_of_typexp mode alloc_mode ty =
           let tyl' = apply_subst_opt nso tyl in
           Otyp_constr (tree_of_path (Some Type) p', tree_of_typlist mode tyl')
     end
+||||||| fcc3157ab0
+        match best_type_path p with
+        | Nth n -> tree_of_typexp mode (apply_nth n tyl)
+        | Path(nso, p) ->
+            let tyl' = apply_subst_opt nso tyl in
+            Otyp_constr (tree_of_path (Some Type) p, tree_of_typlist mode tyl')
+      end
+=======
+        match best_type_path p with
+        | Nth n -> tree_of_typexp mode (apply_nth n tyl)
+        | Path(nso, p') ->
+            Internal_names.add p';
+            let tyl' = apply_subst_opt nso tyl in
+            Otyp_constr (tree_of_path (Some Type) p', tree_of_typlist mode tyl')
+      end
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Tvariant row ->
       let Row {fields; name; closed; _} = row_repr row in
       let fields =
@@ -1796,11 +1947,25 @@ let prepare_decl id decl =
 
 let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
   let ty_manifest, params = prepare_decl id decl in
+<<<<<<< HEAD
   let type_param ot_variance ot_jkind =
+||||||| fcc3157ab0
+  let type_param =
+=======
+  let type_param ot_variance =
+>>>>>>> 501-plus-upstream-main-9fa77db
     function
+<<<<<<< HEAD
     | Otyp_var (ot_non_gen, ot_name) ->
         {ot_non_gen; ot_name; ot_variance; ot_jkind}
     | _ -> {ot_non_gen=false; ot_name="?"; ot_variance; ot_jkind}
+||||||| fcc3157ab0
+    | Otyp_var (_, id) -> id
+    | _ -> "?"
+=======
+    | Otyp_var (ot_non_gen, ot_name) -> {ot_non_gen; ot_name; ot_variance}
+    | _ -> {ot_non_gen=false; ot_name="?"; ot_variance}
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   let type_defined decl =
     let abstr =
@@ -1839,7 +2004,15 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
       type_param variance jkind (tree_of_typexp Type ty)
     in
     (Ident.name id,
+<<<<<<< HEAD
      List.map2 mk_param params vari)
+||||||| fcc3157ab0
+     List.map2 (fun ty cocn -> type_param (tree_of_typexp Type ty), cocn)
+       params vari)
+=======
+     List.map2 (fun ty cocn -> type_param cocn (tree_of_typexp Type ty))
+       params vari)
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   let tree_of_manifest ty1 =
     match ty_manifest with
@@ -2224,8 +2397,14 @@ let rec tree_of_class_type mode params =
       Octy_signature (self_ty, List.rev csil)
   | Cty_arrow (l, ty, cty) ->
       let lab =
+<<<<<<< HEAD
         if !print_labels || is_omittable l then outcome_label l
         else Nolabel
+||||||| fcc3157ab0
+        if !print_labels || is_optional l then string_of_label l else ""
+=======
+        if !print_labels || is_optional l then l else Nolabel
+>>>>>>> 501-plus-upstream-main-9fa77db
       in
       let tr =
        if is_optional l then
@@ -2242,6 +2421,7 @@ let class_type ppf cty =
   !Oprint.out_class_type ppf (tree_of_class_type Type [] cty)
 
 let tree_of_class_param param variance =
+<<<<<<< HEAD
   let ot_variance =
     if is_Tvar param then Asttypes.(NoVariance, NoInjectivity) else variance in
   (* CR layouts: fix next line when adding support for jkind
@@ -2250,6 +2430,19 @@ let tree_of_class_param param variance =
   match tree_of_typexp Type_scheme param with
     Otyp_var (ot_non_gen, ot_name) -> {ot_non_gen; ot_name; ot_variance; ot_jkind}
   | _ -> {ot_non_gen=false; ot_name="?"; ot_variance; ot_jkind}
+||||||| fcc3157ab0
+  (match tree_of_typexp Type_scheme param with
+    Otyp_var (_, s) -> s
+  | _ -> "?"),
+  if is_Tvar param then Asttypes.(NoVariance, NoInjectivity)
+  else variance
+=======
+  let ot_variance =
+    if is_Tvar param then Asttypes.(NoVariance, NoInjectivity) else variance in
+  match tree_of_typexp Type_scheme param with
+    Otyp_var (ot_non_gen, ot_name) -> {ot_non_gen; ot_name; ot_variance}
+  | _ -> {ot_non_gen=false; ot_name="?"; ot_variance}
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let class_variance =
   let open Variance in let open Asttypes in
@@ -2324,9 +2517,15 @@ let dummy =
   {
     type_params = [];
     type_arity = 0;
+<<<<<<< HEAD
     type_kind = Type_abstract Definition;
     type_jkind = Jkind.Primitive.any ~why:Dummy_jkind;
     type_jkind_annotation = None;
+||||||| fcc3157ab0
+    type_kind = Type_abstract;
+=======
+    type_kind = Type_abstract Definition;
+>>>>>>> 501-plus-upstream-main-9fa77db
     type_private = Public;
     type_manifest = None;
     type_variance = [];

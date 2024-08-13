@@ -1,3 +1,4 @@
+FIXME: with 5.2 new function representation we lost some granularity
   $ cat >main.ml <<EOF
   > module M = struct
   >  let g =

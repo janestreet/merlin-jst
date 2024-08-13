@@ -108,6 +108,7 @@ Module types substitutions
     }
   ]
 
+FIXME: this doesn't work anymore with the new occurrences backend
   $ $MERLIN single occurrences -identifier-at 6:19 \
   > -filename mtsubst.ml < mtsubst.ml |
   > tr '\n' ' ' |  jq '.value'
@@ -155,6 +156,7 @@ Module types substitutions
     }
   ]
 
+FIXME: this doesn't work anymore with the new occurrences backend
   $ $MERLIN single occurrences -identifier-at 6:19 \
   > -filename mtsubst.ml < mtsubst.ml |
   > tr '\n' ' ' |  jq '.value'

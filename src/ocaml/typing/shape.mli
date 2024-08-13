@@ -62,6 +62,9 @@ module Uid : sig
     | Predef of string
 
   val reinit : unit -> unit
+  val get_current_stamp : unit -> int
+  val restore_stamp : int -> unit
+  val stamp_of_uid : t -> int option
 
   val mk : current_unit:Compilation_unit.t option -> t
   val of_compilation_unit_id : Compilation_unit.t -> t
@@ -112,15 +115,27 @@ module Item : sig
   val class_ : Ident.t -> t
   val class_type : Ident.t -> t
 
+<<<<<<< HEAD
   val print : Format.formatter -> t -> unit
 
   val compare : t -> t -> int
 
+||||||| fcc3157ab0
+=======
+  val print : Format.formatter -> t -> unit
+
+>>>>>>> 501-plus-upstream-main-9fa77db
   module Map : Map.S with type key = t
 end
 
 type var = Ident.t
+<<<<<<< HEAD
 type t = private { hash: int; uid: Uid.t option; desc: desc; approximated: bool }
+||||||| fcc3157ab0
+type t = { uid: Uid.t option; desc: desc }
+=======
+type t = { uid: Uid.t option; desc: desc; approximated: bool }
+>>>>>>> 501-plus-upstream-main-9fa77db
 and desc =
   | Var of var
   | Abs of var * t
@@ -134,10 +149,16 @@ and desc =
 
 val print : Format.formatter -> t -> unit
 
+<<<<<<< HEAD
 val strip_head_aliases : t -> t
 
 val equal : t -> t -> bool
 
+||||||| fcc3157ab0
+=======
+val strip_head_aliases : t -> t
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 (* Smart constructors *)
 
 val for_unnamed_functor_param : var
@@ -147,8 +168,13 @@ val var : Uid.t -> Ident.t -> t
 val abs : ?uid:Uid.t -> var -> t -> t
 val app : ?uid:Uid.t -> t -> arg:t -> t
 val str : ?uid:Uid.t -> t Item.Map.t -> t
+<<<<<<< HEAD
 val alias : ?uid:Uid.t -> t -> t
 val error : ?uid:Uid.t -> string -> t
+||||||| fcc3157ab0
+=======
+val alias : ?uid:Uid.t -> t -> t
+>>>>>>> 501-plus-upstream-main-9fa77db
 val proj : ?uid:Uid.t -> t -> Item.t -> t
 val leaf : Uid.t -> t
 val leaf' : Uid.t option -> t

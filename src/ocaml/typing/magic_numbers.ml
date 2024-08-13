@@ -51,6 +51,7 @@ module Cmi = struct
     | "Caml1999I534" -> Some "5.1.1minus-20"
     | "Caml1999I032" -> Some "5.0"
     | "Caml1999I033" -> Some "5.1"
+    | "Caml1999I034" -> Some "5.2"
     | _ -> None
 
   let () = assert (to_version_opt Config.cmi_magic_number <> None)
@@ -89,9 +90,17 @@ module Cmi = struct
           merlin_ocaml_version
       end
     | Corrupted_interface filename ->
+<<<<<<< HEAD
       fprintf ppf
         "Corrupted compiled interface@ %a"
         (Style.as_inline_code Location.print_filename) filename
+||||||| fcc3157ab0
+        fprintf ppf "Corrupted compiled interface@ %a"
+          Location.print_filename filename
+=======
+        fprintf ppf "Corrupted compiled interface@ %a"
+        (Style.as_inline_code Location.print_filename) filename
+>>>>>>> 501-plus-upstream-main-9fa77db
 
   let () =
     Location.register_error_of_exn

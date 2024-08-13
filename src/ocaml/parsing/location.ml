@@ -199,6 +199,11 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
+(*
+let setup_tags () =
+  Misc.Style.setup !Clflags.color
+*)
+
 (******************************************************************************)
 (* Printing locations, e.g. 'File "foo.ml", line 3, characters 10-12' *)
 
@@ -267,7 +272,14 @@ let print_filename ppf file =
    Some of the information (filename, line number or characters numbers) in the
    location might be invalid; in which case we do not print it.
  *)
+<<<<<<< HEAD
 let print_loc ~capitalize_first ppf loc =
+||||||| fcc3157ab0
+let print_loc ppf loc =
+=======
+let print_loc ppf loc =
+  (* setup_tags (); *)
+>>>>>>> 501-plus-upstream-main-9fa77db
   let file_valid = function
     | "_none_" ->
         (* This is a dummy placeholder, but we print it anyway to please editors
@@ -779,6 +791,7 @@ let batch_mode_printer : report_printer =
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
+    (* setup_tags (); *)
     separate_new_message ppf;
     (* Make sure we keep [num_loc_lines] updated.
         The tabulation box is here to give submessage the option
@@ -956,6 +969,8 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
+
+module Style = Misc.Style
 
 module Style = Misc.Style
 

@@ -555,6 +555,7 @@ let transl_type_param env path styp =
   Builtin_attributes.warning_scope styp.ptyp_attributes
     (fun () -> transl_type_param env path styp)
 
+<<<<<<< HEAD
 let get_type_param_jkind path styp =
   match Jane_syntax.Core_type.of_ast styp with
   | None -> Jkind.of_new_legacy_sort ~why:(Unannotated_type_parameter path)
@@ -649,17 +650,44 @@ let type_open :
   ref (fun ?used_slot:_ _ -> assert false)
 
 let rec transl_type env ~policy ?(aliased=false) ~row_context mode styp =
+||||||| fcc3157ab0
+let rec transl_type env ~policy ?(aliased=false) ~row_context styp =
+=======
+(* Forward declaration (set in Typemod.type_open) *)
+
+let type_open :
+  (?used_slot:bool ref -> override_flag -> Env.t -> Location.t ->
+   Longident.t loc -> Path.t * Env.t)
+    ref =
+  ref (fun ?used_slot:_ _ -> assert false)
+
+let rec transl_type env ~policy ?(aliased=false) ~row_context styp =
+>>>>>>> 501-plus-upstream-main-9fa77db
   Msupport.with_saved_types
     ~warning_attribute:styp.ptyp_attributes ?save_part:None
     (fun () ->
        try
          transl_type_aux env ~policy ~aliased ~row_context mode styp
        with exn ->
+<<<<<<< HEAD
          let ty = new_global_var (Jkind.Primitive.value ~why:(Unknown "merlin")) in
          Msupport.erroneous_type_register ty;
+||||||| fcc3157ab0
+=======
+         let ty = new_global_var () in
+         Msupport.erroneous_type_register ty;
+>>>>>>> 501-plus-upstream-main-9fa77db
          Msupport.raise_error exn;
+<<<<<<< HEAD
            { ctyp_desc = Ttyp_var (None, None);
              ctyp_type = ty;
+||||||| fcc3157ab0
+           { ctyp_desc = Ttyp_any;
+             ctyp_type = new_global_var ();
+=======
+           { ctyp_desc = Ttyp_any;
+             ctyp_type = ty;
+>>>>>>> 501-plus-upstream-main-9fa77db
              ctyp_env = env;
              ctyp_loc = styp.ptyp_loc;
              ctyp_attributes = [];
@@ -833,11 +861,82 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
       in
       ctyp (Ttyp_class (path, lid, args)) ty
   | Ptyp_alias(st, alias) ->
+<<<<<<< HEAD
     let desc, typ =
       transl_type_alias env ~policy ~row_context
         mode styp.ptyp_attributes loc st (Some alias) None
     in
     ctyp desc typ
+||||||| fcc3157ab0
+      let cty =
+        try
+          let t = TyVarEnv.lookup_local ~row_context alias in
+          let ty = transl_type env ~policy ~aliased:true ~row_context st in
+          begin try unify_var env t ty.ctyp_type with Unify err ->
+            let err = Errortrace.swap_unification_error err in
+            raise(Error(styp.ptyp_loc, env, Alias_type_mismatch err))
+          end;
+          ty
+        with Not_found ->
+          let t, ty =
+            with_local_level_if_principal begin fun () ->
+              let t = newvar () in
+              TyVarEnv.remember_used alias t styp.ptyp_loc;
+              let ty = transl_type env ~policy ~row_context st in
+              begin try unify_var env t ty.ctyp_type with Unify err ->
+                let err = Errortrace.swap_unification_error err in
+                raise(Error(styp.ptyp_loc, env, Alias_type_mismatch err))
+              end;
+              (t, ty)
+            end
+            ~post: (fun (t, _) -> generalize_structure t)
+          in
+          let t = instance t in
+          let px = Btype.proxy t in
+          begin match get_desc px with
+          | Tvar None -> set_type_desc px (Tvar (Some alias))
+          | Tunivar None -> set_type_desc px (Tunivar (Some alias))
+          | _ -> ()
+          end;
+          { ty with ctyp_type = t }
+      in
+      ctyp (Ttyp_alias (cty, alias)) cty.ctyp_type
+=======
+      let cty =
+        try
+          let t = TyVarEnv.lookup_local ~row_context alias.txt in
+          let ty = transl_type env ~policy ~aliased:true ~row_context st in
+          begin try unify_var env t ty.ctyp_type with Unify err ->
+            let err = Errortrace.swap_unification_error err in
+            raise(Error(alias.loc, env, Alias_type_mismatch err))
+          end;
+          ty
+        with Not_found ->
+          let t, ty =
+            with_local_level_if_principal begin fun () ->
+              let t = newvar () in
+              (* Use the whole location, which is used by [Type_mismatch]. *)
+              TyVarEnv.remember_used alias.txt t styp.ptyp_loc;
+              let ty = transl_type env ~policy ~row_context st in
+              begin try unify_var env t ty.ctyp_type with Unify err ->
+                let err = Errortrace.swap_unification_error err in
+                raise(Error(alias.loc, env, Alias_type_mismatch err))
+              end;
+              (t, ty)
+            end
+            ~post: (fun (t, _) -> generalize_structure t)
+          in
+          let t = instance t in
+          let px = Btype.proxy t in
+          begin match get_desc px with
+          | Tvar None -> set_type_desc px (Tvar (Some alias.txt))
+          | Tunivar None -> set_type_desc px (Tunivar (Some alias.txt))
+          | _ -> ()
+          end;
+          { ty with ctyp_type = t }
+      in
+      ctyp (Ttyp_alias (cty, alias)) cty.ctyp_type
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Ptyp_variant(fields, closed, present) ->
       let name = ref None in
       let mkfield l f =
@@ -978,6 +1077,7 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
        the [create_package_mty] hack that constructs fake source code. *)
       let loc = styp.ptyp_loc in
       let l = sort_constraints_no_duplicates loc env l in
+<<<<<<< HEAD
       let mty = Ast_helper.Mty.mk ~loc (Pmty_ident p) in
       let mty = TyVarEnv.with_local_scope (fun () -> !transl_modtype env mty) in
       let ptys =
@@ -985,6 +1085,15 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
           s, transl_type env ~policy ~row_context Alloc.Const.legacy pty
         ) l
       in
+||||||| fcc3157ab0
+      let mty = create_package_mty loc p l in
+=======
+      let mty = Ast_helper.Mty.mk ~loc (Pmty_ident p) in
+      let mty = TyVarEnv.with_local_scope (fun () -> !transl_modtype env mty) in
+      let ptys =
+        List.map (fun (s, pty) -> s, transl_type env ~policy ~row_context pty) l
+      in
+>>>>>>> 501-plus-upstream-main-9fa77db
       let mty =
         if ptys <> [] then
           !check_package_with_type_constraints loc env mty.mty_type ptys
@@ -1000,12 +1109,22 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
             pack_fields = ptys;
             pack_txt = p;
            }) ty
+<<<<<<< HEAD
   | Ptyp_open (mod_ident, t) ->
       let path, new_env =
         !type_open Asttypes.Fresh env loc mod_ident
       in
       let cty = transl_type new_env ~policy ~row_context mode t in
       ctyp (Ttyp_open (path, mod_ident, cty)) cty.ctyp_type
+||||||| fcc3157ab0
+=======
+  | Ptyp_open (mod_ident, t) ->
+      let path, new_env =
+        !type_open Asttypes.Fresh env loc mod_ident
+      in
+      let cty = transl_type new_env ~policy ~row_context t in
+      ctyp (Ttyp_open (path, mod_ident, cty)) cty.ctyp_type
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Ptyp_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
@@ -1481,21 +1600,51 @@ let report_error env ppf = function
         (Style.as_inline_code pp_tag) lab2
         "Change one of them."
   | Invalid_variable_name name ->
+<<<<<<< HEAD
       fprintf ppf "The type variable name %a is not allowed in programs"
         Style.inline_code name
   | Cannot_quantify (name, reason) ->
+||||||| fcc3157ab0
+      fprintf ppf "The type variable name %s is not allowed in programs" name
+  | Cannot_quantify (name, v) ->
+=======
+      fprintf ppf "The type variable name %a is not allowed in programs"
+        Style.inline_code name
+  | Cannot_quantify (name, v) ->
+>>>>>>> 501-plus-upstream-main-9fa77db
       fprintf ppf
         "@[<hov>The universal type variable %a cannot be generalized:@ "
+<<<<<<< HEAD
         (Style.as_inline_code Pprintast.tyvar) name;
       begin match reason with
       | Unified v ->
         fprintf ppf "it is bound to@ %a"
           (Style.as_inline_code Printtyp.type_expr) v;
       | Univar ->
+||||||| fcc3157ab0
+        Pprintast.tyvar name;
+      if Btype.is_Tvar v then
+        fprintf ppf "it escapes its scope"
+      else if Btype.is_Tunivar v then
+=======
+        (Style.as_inline_code Pprintast.tyvar) name;
+      if Btype.is_Tvar v then
+        fprintf ppf "it escapes its scope"
+      else if Btype.is_Tunivar v then
+>>>>>>> 501-plus-upstream-main-9fa77db
         fprintf ppf "it is already bound to another variable"
+<<<<<<< HEAD
       | Scope_escape ->
         fprintf ppf "it escapes its scope"
       end;
+||||||| fcc3157ab0
+      else
+        fprintf ppf "it is bound to@ %a" Printtyp.type_expr v;
+=======
+      else
+        fprintf ppf "it is bound to@ %a"
+          (Style.as_inline_code Printtyp.type_expr) v;
+>>>>>>> 501-plus-upstream-main-9fa77db
       fprintf ppf ".@]";
   | Bad_univar_jkind { name; jkind_info; inferred_jkind } ->
       fprintf ppf
@@ -1526,6 +1675,7 @@ let report_error env ppf = function
            | None -> fprintf ppf "") nm
   | Not_an_object ty ->
       fprintf ppf "@[The type %a@ is not an object type@]"
+<<<<<<< HEAD
         (Style.as_inline_code Printtyp.type_expr) ty
   | Unsupported_extension ext ->
       let ext = Language_extension.to_string ext in
@@ -1570,6 +1720,11 @@ let report_error env ppf = function
         | Nolabel -> "unlabelled"
         | Optional _ -> "optional"
         | Labelled _ -> assert false )
+||||||| fcc3157ab0
+        Printtyp.type_expr ty
+=======
+        (Style.as_inline_code Printtyp.type_expr) ty
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let () =
   Location.register_error_of_exn

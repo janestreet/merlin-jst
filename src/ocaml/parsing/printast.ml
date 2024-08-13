@@ -267,9 +267,23 @@ and expression i ppf x =
       expression i ppf e;
   | Pexp_function (params, c, body) ->
       line i ppf "Pexp_function\n";
+<<<<<<< HEAD
       list i function_param ppf params;
       option i function_constraint ppf c;
       function_body i ppf body
+||||||| fcc3157ab0
+      list i case ppf l;
+  | Pexp_fun (l, eo, p, e) ->
+      line i ppf "Pexp_fun\n";
+      arg_label i ppf l;
+      option i expression ppf eo;
+      pattern i ppf p;
+      expression i ppf e;
+=======
+      list i function_param ppf params;
+      option i type_constraint ppf c;
+      function_body i ppf body
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Pexp_apply (e, l) ->
       line i ppf "Pexp_apply\n";
       expression i ppf e;
@@ -387,6 +401,7 @@ and expression i ppf x =
   | Pexp_unreachable ->
       line i ppf "Pexp_unreachable"
 
+<<<<<<< HEAD
 and jkind_annotation i ppf (jkind : jkind_annotation) =
   match jkind with
   | Default -> line i ppf "Default\n"
@@ -449,6 +464,39 @@ and mode_expression i ppf mode_annotations =
       line i ppf "mode_annotations %a" fmt_location mode_annotations.loc;
       list (i+1) string_loc ppf mode_annotations.txt
 
+||||||| fcc3157ab0
+=======
+and function_param i ppf { pparam_desc = desc; pparam_loc = loc } =
+  match desc with
+  | Pparam_val (l, eo, p) ->
+      line i ppf "Pparam_val %a\n" fmt_location loc;
+      arg_label (i+1) ppf l;
+      option (i+1) expression ppf eo;
+      pattern (i+1) ppf p
+  | Pparam_newtype ty ->
+      line i ppf "Pparam_newtype \"%s\" %a\n" ty.txt fmt_location loc
+
+and function_body i ppf body =
+  match body with
+  | Pfunction_body e ->
+      line i ppf "Pfunction_body\n";
+      expression (i+1) ppf e
+  | Pfunction_cases (cases, loc, attrs) ->
+      line i ppf "Pfunction_cases %a\n" fmt_location loc;
+      attributes (i+1) ppf attrs;
+      list (i+1) case ppf cases
+
+and type_constraint i ppf constraint_ =
+  match constraint_ with
+  | Pconstraint ty ->
+      line i ppf "Pconstraint\n";
+      core_type (i+1) ppf ty
+  | Pcoerce (ty1, ty2) ->
+      line i ppf "Pcoerce\n";
+      option (i+1) core_type ppf ty1;
+      core_type (i+1) ppf ty2
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_string_loc
        x.pval_name fmt_location x.pval_loc;

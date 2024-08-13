@@ -34,7 +34,13 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
+<<<<<<< HEAD
     jkind_annotation: iterator -> Jkind.annotation -> unit;
+||||||| fcc3157ab0
+=======
+    include_declaration: iterator -> include_declaration -> unit;
+    include_description: iterator -> include_description -> unit;
+>>>>>>> 501-plus-upstream-main-9fa77db
     location: iterator -> Location.t -> unit;
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
@@ -129,6 +135,12 @@ let str_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
   sub.module_expr sub incl_mod;
   include_kind sub incl_kind
 
+let include_description sub incl =
+  include_infos sub (sub.module_type sub) incl
+
+let include_declaration sub incl =
+  include_infos sub (sub.module_expr sub) incl
+
 let class_type_declaration sub x =
   sub.item_declaration sub (Class_type x);
   class_infos sub (sub.class_type sub) x
@@ -155,7 +167,13 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_class_type list ->
       List.iter (fun (_, s, cltd) ->
         iter_loc sub s; sub.class_type_declaration sub cltd) list
+<<<<<<< HEAD
   | Tstr_include incl -> str_include_infos sub incl
+||||||| fcc3157ab0
+  | Tstr_include incl -> include_infos sub (sub.module_expr sub) incl
+=======
+  | Tstr_include incl -> sub.include_declaration sub incl
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tstr_open od -> sub.open_declaration sub od
   | Tstr_attribute attr -> sub.attribute sub attr
 
@@ -166,8 +184,15 @@ let value_description sub x =
   iter_loc sub x.val_name;
   sub.typ sub x.val_desc
 
+<<<<<<< HEAD
 let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; ld_modalities = _} as ld) =
   sub.item_declaration sub (Label ld);
+||||||| fcc3157ab0
+let label_decl sub {ld_loc; ld_name; ld_type; ld_attributes; _} =
+=======
+let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; _} as ld) =
+  sub.item_declaration sub (Label ld);
+>>>>>>> 501-plus-upstream-main-9fa77db
   sub.location sub ld_loc;
   sub.attributes sub ld_attributes;
   iter_loc sub ld_name;
@@ -254,7 +279,13 @@ let pat
   List.iter (pat_extra sub) extra;
   match pat_desc with
   | Tpat_any  -> ()
+<<<<<<< HEAD
   | Tpat_var (_, s, _, _) -> iter_loc sub s
+||||||| fcc3157ab0
+  | Tpat_var (_, s) -> iter_loc sub s
+=======
+  | Tpat_var (_, s, _) -> iter_loc sub s
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_constant _ -> ()
   | Tpat_tuple l -> List.iter (fun (_, p) -> sub.pat sub p) l
   | Tpat_construct (lid, _, l, vto) ->
@@ -265,8 +296,16 @@ let pat
   | Tpat_variant (_, po, _) -> Option.iter (sub.pat sub) po
   | Tpat_record (l, _) ->
       List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
+<<<<<<< HEAD
   | Tpat_array (_, _, l) -> List.iter (sub.pat sub) l
   | Tpat_alias (p, _, s, _, _) -> sub.pat sub p; iter_loc sub s
+||||||| fcc3157ab0
+  | Tpat_array l -> List.iter (sub.pat sub) l
+  | Tpat_alias (p, _, s) -> sub.pat sub p; iter_loc sub s
+=======
+  | Tpat_array l -> List.iter (sub.pat sub) l
+  | Tpat_alias (p, _, s, _) -> sub.pat sub p; iter_loc sub s
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_lazy p -> sub.pat sub p
   | Tpat_value p -> sub.pat sub (p :> pattern)
   | Tpat_exception p -> sub.pat sub p
@@ -274,6 +313,7 @@ let pat
       sub.pat sub p1;
       sub.pat sub p2
 
+<<<<<<< HEAD
 let extra sub = function
   | Texp_constraint cty -> sub.typ sub cty
   | Texp_coerce (cty1, cty2) ->
@@ -312,6 +352,37 @@ let function_body sub body =
       sub.attributes sub fc_attributes;
       sub.env sub fc_env
 
+||||||| fcc3157ab0
+=======
+let extra sub = function
+  | Texp_constraint cty -> sub.typ sub cty
+  | Texp_coerce (cty1, cty2) ->
+    Option.iter (sub.typ sub) cty1;
+    sub.typ sub cty2
+  | Texp_newtype _ | Texp_newtype' _ -> ()
+  | Texp_poly cto -> Option.iter (sub.typ sub) cto
+
+let function_param sub fp =
+  sub.location sub fp.fp_loc;
+  match fp.fp_kind with
+  | Tparam_pat pat -> sub.pat sub pat
+  | Tparam_optional_default (pat, default_arg) ->
+      sub.pat sub pat;
+      sub.expr sub default_arg
+
+let function_body sub body =
+  match[@warning "+9"] body with
+  | Tfunction_body body ->
+      sub.expr sub body
+  | Tfunction_cases
+      { cases; loc; exp_extra; attributes; partial = _; param = _ }
+    ->
+      List.iter (sub.case sub) cases;
+      sub.location sub loc;
+      Option.iter (extra sub) exp_extra;
+      sub.attributes sub attributes
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   let extra x = extra sub x in
   sub.location sub exp_loc;
@@ -324,10 +395,21 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_let (rec_flag, list, exp) ->
       sub.value_bindings sub (rec_flag, list);
       sub.expr sub exp
+<<<<<<< HEAD
   | Texp_function { params; body; _ } ->
       List.iter (function_param sub) params;
       function_body sub body
   | Texp_apply (exp, list, _, _, _) ->
+||||||| fcc3157ab0
+  | Texp_function {cases; _} ->
+     List.iter (sub.case sub) cases
+  | Texp_apply (exp, list) ->
+=======
+  | Texp_function (params, body) ->
+      List.iter (function_param sub) params;
+      function_body sub body
+  | Texp_apply (exp, list) ->
+>>>>>>> 501-plus-upstream-main-9fa77db
       sub.expr sub exp;
       List.iter (function
         | (_, Arg (exp, _)) -> sub.expr sub exp
@@ -461,7 +543,13 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_recmodule list -> List.iter (sub.module_declaration sub) list
   | Tsig_modtype x -> sub.module_type_declaration sub x
   | Tsig_modtypesubst x -> sub.module_type_declaration sub x
+<<<<<<< HEAD
   | Tsig_include incl -> sig_include_infos sub incl
+||||||| fcc3157ab0
+  | Tsig_include incl -> include_infos sub (sub.module_type sub) incl
+=======
+  | Tsig_include incl -> sub.include_description sub incl
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tsig_class list -> List.iter (sub.class_description sub) list
   | Tsig_class_type list -> List.iter (sub.class_type_declaration sub) list
   | Tsig_open od -> sub.open_description sub od
@@ -650,10 +738,17 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
       sub.typ sub ct
   | Ttyp_package pack -> sub.package_type sub pack
+<<<<<<< HEAD
   | Ttyp_open (_, mod_ident, t) ->
       iter_loc sub mod_ident;
       sub.typ sub t
   | Ttyp_call_pos -> ()
+||||||| fcc3157ab0
+=======
+  | Ttyp_open (_, mod_ident, t) ->
+      iter_loc sub mod_ident;
+      sub.typ sub t
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let class_structure sub {cstr_self; cstr_fields; _} =
   sub.pat sub cstr_self;
@@ -706,10 +801,16 @@ let value_binding sub ({vb_loc; vb_pat; vb_expr; vb_attributes; _} as vb) =
 
 let env _sub _ = ()
 
+<<<<<<< HEAD
 let jkind_annotation sub (_, l) = iter_loc sub l
 
 let item_declaration _sub _ = ()
 
+||||||| fcc3157ab0
+=======
+let item_declaration _sub _ = ()
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 let default_iterator =
   {
     attribute;
@@ -728,7 +829,13 @@ let default_iterator =
     env;
     expr;
     extension_constructor;
+<<<<<<< HEAD
     jkind_annotation;
+||||||| fcc3157ab0
+=======
+    include_description;
+    include_declaration;
+>>>>>>> 501-plus-upstream-main-9fa77db
     location;
     module_binding;
     module_coercion;

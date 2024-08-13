@@ -430,10 +430,17 @@ let keyword_or state s default =
       with Not_found -> try Hashtbl.find keyword_table s
   with Not_found -> default
 
+<<<<<<< HEAD
 let is_keyword name =
   match lookup_keyword name with
   | LIDENT _ -> false
   | _ -> true
+||||||| fcc3157ab0
+let is_keyword name = Hashtbl.mem keyword_table name
+=======
+let is_keyword name = Hashtbl.mem keyword_table name
+let () = Lexer.is_keyword_ref := is_keyword
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let check_label_name lexbuf name =
   if is_keyword name
@@ -578,6 +585,7 @@ let raw_ident_escape = "\\#"
 
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
 
+
 rule token state = parse
   | ("\\" as bs) newline {
       match state.preprocessor with
@@ -623,6 +631,7 @@ rule token state = parse
       { oPTLABEL (check_label_name lexbuf name) }
   | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
       { warn_latin1 lexbuf; return (OPTLABEL name) }
+<<<<<<< HEAD
   (* Lowercase identifiers are split into 3 cases, and the order matters
      (longest to shortest).
   *)
@@ -640,6 +649,11 @@ rule token state = parse
               lookup_keyword name) }
   | raw_ident_escape (lowercase identchar * as name)
     { return (LIDENT name) }
+||||||| fcc3157ab0
+=======
+  | raw_ident_escape (lowercase identchar * as name)
+      { return (LIDENT name) }
+>>>>>>> 501-plus-upstream-main-9fa77db
   | lowercase identchar * as name
     { return (try Hashtbl.find state.keywords name
               with Not_found ->
@@ -961,24 +975,30 @@ and comment state = parse
         Buffer.add_char state.buffer '}';
         comment state lexbuf }
 
-  | "''"
+  | "\'\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+<<<<<<< HEAD
   | "'" (newline as nl) "'"
+||||||| fcc3157ab0
+  | "'" newline "'"
+=======
+  | "\'" (newline as nl) "\'"
+>>>>>>> 501-plus-upstream-main-9fa77db
       { update_loc lexbuf None 1 false 1;
         store_string_char state.buffer '\'';
         store_normalized_newline state.buffer nl;
         store_string_char state.buffer '\'';
         comment state lexbuf
       }
-  | "'" [^ '\\' '\'' '\010' '\013' ] "'"
+  | "\'" [^ '\\' '\'' '\010' '\013' ] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
+  | "\'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
+  | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
+  | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | eof
       { match state.comment_start_loc with

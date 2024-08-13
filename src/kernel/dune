@@ -12,6 +12,7 @@
  (public_name merlin-lib.kernel)
  (flags
   :standard
+<<<<<<< HEAD
   -open
   Ocaml_utils
   -open
@@ -41,6 +42,29 @@
   unix
   str)
  (foreign_stubs (language c) (names float32)))
+||||||| fcc3157ab0
+  -open Ocaml_utils
+  -open Merlin_utils
+  -open Ocaml_parsing
+  -open Ocaml_preprocess
+  -open Ocaml_typing
+  -open Merlin_specific
+  -open Merlin_extend)
+ (libraries merlin_config os_ipc ocaml_parsing ocaml_preprocess ocaml_typing
+            ocaml_utils merlin_extend merlin_specific merlin_utils
+            merlin_dot_protocol unix str))
+=======
+  -open Ocaml_utils
+  -open Merlin_utils
+  -open Ocaml_parsing
+  -open Ocaml_preprocess
+  -open Ocaml_typing
+  -open Merlin_specific
+  -open Merlin_extend)
+ (libraries merlin_config os_ipc ocaml_parsing ocaml_preprocess ocaml_typing
+            ocaml_utils merlin_extend merlin_specific merlin_utils
+            merlin_dot_protocol merlin_index_format unix str))
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (rule
  (targets standard_library.ml)

@@ -184,6 +184,7 @@ val generic_instance: type_expr -> type_expr
 val instance_list: type_expr list -> type_expr list
         (* Take an instance of a list of type schemes *)
 val new_local_type:
+<<<<<<< HEAD
         ?loc:Location.t -> ?manifest_and_scope:(type_expr * int) ->
         type_origin -> Jkind.t -> jkind_annot:Jkind.annotation option ->
         type_declaration
@@ -200,6 +201,28 @@ module Pattern_env : sig
   val copy: ?equations_scope:int -> t -> t
   val set_env: t -> Env.t -> unit
 end
+||||||| fcc3157ab0
+        ?loc:Location.t ->
+        ?manifest_and_scope:(type_expr * int) -> unit -> type_declaration
+val existential_name: constructor_description -> type_expr -> string
+=======
+        ?loc:Location.t ->
+        ?manifest_and_scope:(type_expr * int) ->
+        type_origin -> type_declaration
+
+module Pattern_env : sig
+  type t = private
+    { mutable env : Env.t;
+      equations_scope : int;
+      (* scope for local type declarations *)
+      allow_recursive_equations : bool;
+      (* true iff checking counter examples *)
+    }
+  val make: Env.t -> equations_scope:int -> allow_recursive_equations:bool -> t
+  val copy: ?equations_scope:int -> t -> t
+  val set_env: t -> Env.t -> unit
+end
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 type existential_treatment =
   | Keep_existentials_flexible

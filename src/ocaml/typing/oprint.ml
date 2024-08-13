@@ -197,6 +197,7 @@ let print_out_string ppf s =
   else
     fprintf ppf "%S" s
 
+<<<<<<< HEAD
 external float32_format : string -> Obj.t -> string = "caml_format_float32"
 
 let float32_to_string f = Stdlib.valid_float_lexem (float32_format "%.9g" f)
@@ -209,6 +210,17 @@ let print_constr ppf name =
     fprintf ppf "%s" c
   | _ -> print_ident ppf name
 
+||||||| fcc3157ab0
+=======
+let print_constr ppf name =
+  match name with
+  | Oide_ident {printed_name = ("true" | "false") as c} ->
+    (* despite being keywords, these are constructor names
+       and should not be escaped *)
+    fprintf ppf "%s" c
+  | _ -> print_ident ppf name
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 let print_out_value ppf tree =
   let rec print_tree_1 ppf =
     function
@@ -265,6 +277,7 @@ let print_out_value ppf tree =
         end
     | Oval_list tl ->
         fprintf ppf "@[<1>[%a]@]" (print_tree_list print_tree_1 ";") tl
+<<<<<<< HEAD
     | Oval_array (tl, am) ->
         let sigil = match am with
           | Mutable   -> '|'
@@ -274,6 +287,17 @@ let print_out_value ppf tree =
           sigil (print_tree_list print_tree_1 ";") tl sigil
     | Oval_constr (name, []) -> print_constr ppf name
     | Oval_variant (name, None) -> fprintf ppf "`%a" print_lident name
+||||||| fcc3157ab0
+    | Oval_array tl ->
+        fprintf ppf "@[<2>[|%a|]@]" (print_tree_list print_tree_1 ";") tl
+    | Oval_constr (name, []) -> print_ident ppf name
+    | Oval_variant (name, None) -> fprintf ppf "`%s" name
+=======
+    | Oval_array tl ->
+        fprintf ppf "@[<2>[|%a|]@]" (print_tree_list print_tree_1 ";") tl
+    | Oval_constr (name, []) -> print_constr ppf name
+    | Oval_variant (name, None) -> fprintf ppf "`%a" print_lident name
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Oval_stuff s -> pp_print_string ppf s
     | Oval_record fel ->
         fprintf ppf "@[<1>{%a}@]" (cautious (print_fields true)) fel
@@ -349,6 +373,7 @@ let rec print_out_jkind_const ppf (ojkind : Outcometree.out_jkind_const) =
   | Ojkind_const_with _ | Ojkind_const_kind_of _ ->
     failwith "XXX unimplemented jkind syntax"
 
+<<<<<<< HEAD
 let print_out_jkind ppf ojkind =
   match ojkind with
   | Ojkind_var v -> fprintf ppf "%s" v
@@ -442,6 +467,17 @@ let print_arg_label_and_out_type ppf (lbl : arg_label) ty ~print_type =
   | Optional l -> fprintf ppf "?%a:%a" print_lident l print_type ty
 
 let rec print_out_type_0 ppf =
+||||||| fcc3157ab0
+let rec print_out_type ppf =
+=======
+let print_arg_label ppf (lbl : Asttypes.arg_label) =
+  match lbl with
+  | Nolabel -> ()
+  | Labelled s -> fprintf ppf "%a:" print_lident s
+  | Optional s -> fprintf ppf "?%a:" print_lident s
+
+let rec print_out_type ppf =
+>>>>>>> 501-plus-upstream-main-9fa77db
   function
   | Otyp_alias {non_gen; aliased; alias } ->
     fprintf ppf "@[%a@ as %a@]"
@@ -483,7 +519,15 @@ and print_out_type_1 ppf =
   function
   | Otyp_arrow (lab, am, ty1, rm, ty2) ->
       pp_open_box ppf 0;
+<<<<<<< HEAD
       print_arg_label_and_out_type ppf lab ty1 ~print_type:(print_out_arg am);
+||||||| fcc3157ab0
+      if lab <> "" then (pp_print_string ppf lab; pp_print_char ppf ':');
+      print_out_type_2 ppf ty1;
+=======
+      print_arg_label ppf lab;
+      print_out_type_2 ppf ty1;
+>>>>>>> 501-plus-upstream-main-9fa77db
       pp_print_string ppf " ->";
       pp_print_space ppf ();
       print_out_ret rm ppf ty2;
@@ -614,6 +658,7 @@ and print_typargs ppf =
       pp_print_char ppf ')';
       pp_close_box ppf ();
       pp_print_space ppf ()
+<<<<<<< HEAD
 and print_out_label ppf (name, mut, arg, gbl) =
   (* See the notes [NON-LEGACY MODES] *)
   let mut =
@@ -627,6 +672,14 @@ and print_out_label ppf (name, mut, arg, gbl) =
     mut
     print_out_modalities_legacy m_legacy
     print_lident name
+||||||| fcc3157ab0
+and print_out_label ppf (name, mut, arg) =
+  fprintf ppf "@[<2>%s%s :@ %a@];" (if mut then "mutable " else "") name
+=======
+and print_out_label ppf (name, mut, arg) =
+  fprintf ppf "@[<2>%s%a :@ %a@];" (if mut then "mutable " else "")
+    print_lident name
+>>>>>>> 501-plus-upstream-main-9fa77db
     print_out_type arg
     print_out_modalities_new m_new
 
@@ -647,10 +700,16 @@ let out_type_args = ref print_typargs
 let print_type_parameter ?(non_gen=false) ppf s =
   if s = "_" then fprintf ppf "_" else ty_var ~non_gen ppf s
 
+<<<<<<< HEAD
 let type_parameter ~in_parens ppf
     {ot_non_gen=non_gen; ot_name=ty; ot_variance=var,inj;
      ot_jkind=lay; }
   =
+||||||| fcc3157ab0
+let type_parameter ppf (ty, (var, inj)) =
+=======
+let type_parameter ppf {ot_non_gen=non_gen; ot_name=ty; ot_variance=var,inj} =
+>>>>>>> 501-plus-upstream-main-9fa77db
   let open Asttypes in
   let format_string : _ format = "%s%s%a%a" in
   let format_string : _ format = match lay with
@@ -660,8 +719,14 @@ let type_parameter ~in_parens ppf
   fprintf ppf format_string
     (match var with Covariant -> "+" | Contravariant -> "-" | NoVariance ->  "")
     (match inj with Injective -> "!" | NoInjectivity -> "")
+<<<<<<< HEAD
     (print_type_parameter ~non_gen) ty
     print_out_jkind_annot lay
+||||||| fcc3157ab0
+    print_type_parameter ty
+=======
+    (print_type_parameter ~non_gen) ty
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let print_out_class_params ppf =
   function
@@ -683,10 +748,18 @@ let rec print_out_class_type ppf =
       in
       fprintf ppf "@[%a%a@]" pr_tyl tyl print_ident id
   | Octy_arrow (lab, ty, cty) ->
+<<<<<<< HEAD
       let print_type = print_out_type_2 in
       fprintf ppf "@[%t ->@ %a@]"
         (fun ppf -> print_arg_label_and_out_type ppf lab ty ~print_type)
         print_out_class_type cty
+||||||| fcc3157ab0
+      fprintf ppf "@[%s%a ->@ %a@]" (if lab <> "" then lab ^ ":" else "")
+        print_out_type_2 ty print_out_class_type cty
+=======
+      fprintf ppf "@[%a%a ->@ %a@]" print_arg_label lab
+        print_out_type_2 ty print_out_class_type cty
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Octy_signature (self_ty, csil) ->
       let pr_param ppf =
         function
@@ -918,14 +991,32 @@ and print_out_type_decl kwd ppf td =
   in
   let type_defined ppf =
     match td.otype_params with
+<<<<<<< HEAD
       [] -> print_lident ppf td.otype_name
     | [param] -> fprintf ppf "@[%a@ %a@]"
                    (type_parameter ~in_parens:false) param
                    print_lident td.otype_name
+||||||| fcc3157ab0
+      [] -> pp_print_string ppf td.otype_name
+    | [param] -> fprintf ppf "@[%a@ %s@]" type_parameter param td.otype_name
+=======
+      [] -> print_lident ppf td.otype_name
+    | [param] ->
+        fprintf ppf "@[%a@ %a@]" type_parameter param
+          print_lident td.otype_name
+>>>>>>> 501-plus-upstream-main-9fa77db
     | _ ->
+<<<<<<< HEAD
         fprintf ppf "@[(@[%a)@]@ %a@]"
           (print_list (type_parameter ~in_parens:true)
              (fun ppf -> fprintf ppf ",@ "))
+||||||| fcc3157ab0
+        fprintf ppf "@[(@[%a)@]@ %s@]"
+          (print_list type_parameter (fun ppf -> fprintf ppf ",@ "))
+=======
+        fprintf ppf "@[(@[%a)@]@ %a@]"
+          (print_list type_parameter (fun ppf -> fprintf ppf ",@ "))
+>>>>>>> 501-plus-upstream-main-9fa77db
           td.otype_params
           print_lident td.otype_name
   in

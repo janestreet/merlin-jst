@@ -282,6 +282,8 @@ let report_modality_equate_error first second ppf ((equate_step, sub_error) : Mo
 
 module Style = Misc.Style
 
+module Style = Misc.Style
+
 let report_primitive_mismatch first second ppf err =
   let pr fmt = Format.fprintf ppf fmt in
   match (err : primitive_mismatch) with
@@ -1100,6 +1102,7 @@ let type_declarations ?(equality = false) ~loc env ~mark name
   in
   if err <> None then err else
   let err = match (decl1.type_kind, decl2.type_kind) with
+<<<<<<< HEAD
       (_, Type_abstract _) ->
        (* Note that [decl2.type_jkind] is an upper bound.
           If it isn't tight, [decl2] must
@@ -1109,6 +1112,11 @@ let type_declarations ?(equality = false) ~loc env ~mark name
         (match Ctype.check_decl_jkind env decl1 decl2.type_jkind with
          | Ok _ -> None
          | Error v -> Some (Jkind v))
+||||||| fcc3157ab0
+      (_, Type_abstract) -> None
+=======
+      (_, Type_abstract _) -> None
+>>>>>>> 501-plus-upstream-main-9fa77db
     | (Type_variant (cstrs1, rep1), Type_variant (cstrs2, rep2)) ->
         if mark then begin
           let mark usage cstrs =
@@ -1148,7 +1156,39 @@ let type_declarations ?(equality = false) ~loc env ~mark name
     | (_, _) -> Some (Kind (of_kind decl1.type_kind, of_kind decl2.type_kind))
   in
   if err <> None then err else
+<<<<<<< HEAD
   let abstr = Btype.type_kind_is_abstract decl2 && decl2.type_manifest = None in
+||||||| fcc3157ab0
+  let abstr = decl2.type_kind = Type_abstract && decl2.type_manifest = None in
+  (* If attempt to assign a non-immediate type (e.g. string) to a type that
+   * must be immediate, then we error *)
+  let err =
+    if not abstr then
+      None
+    else
+      match
+        Type_immediacy.coerce decl1.type_immediate ~as_:decl2.type_immediate
+      with
+      | Ok () -> None
+      | Error violation -> Some (Immediate violation)
+  in
+  if err <> None then err else
+=======
+  let abstr = Btype.type_kind_is_abstract decl2 && decl2.type_manifest = None in
+  (* If attempt to assign a non-immediate type (e.g. string) to a type that
+   * must be immediate, then we error *)
+  let err =
+    if not abstr then
+      None
+    else
+      match
+        Type_immediacy.coerce decl1.type_immediate ~as_:decl2.type_immediate
+      with
+      | Ok () -> None
+      | Error violation -> Some (Immediate violation)
+  in
+  if err <> None then err else
+>>>>>>> 501-plus-upstream-main-9fa77db
   let need_variance =
     abstr || decl1.type_private = Private || decl1.type_kind = Type_open in
   if not need_variance then None else

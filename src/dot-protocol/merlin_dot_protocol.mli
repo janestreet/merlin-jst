@@ -55,8 +55,15 @@ module Directive : sig
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
+<<<<<<< HEAD
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
+||||||| fcc3157ab0
+=======
+    | `SOURCE_ROOT of string
+    | `UNIT_NAME of string
+    | `WRAPPING_PREFIX of string
+>>>>>>> 501-plus-upstream-main-9fa77db
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR

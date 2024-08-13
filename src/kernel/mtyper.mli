@@ -14,17 +14,41 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
+
+type index_tbl =
+  (Shape.Uid.t * Longident.t Location.loc, unit) Stamped_hashtable.t
+
+val set_index_items :
+  (index:index_tbl
+    -> stamp:int
+    -> Mconfig.t
+    -> [ `Impl of Typedtree.structure_item list
+      | `Intf of Typedtree.signature_item list ]
+    -> unit)
+  -> unit
+
 val run : Mconfig.t -> Mreader.parsetree -> result
 
 val get_env : ?pos:Msource.position -> result -> Env.t
 
 val get_typedtree : result -> typedtree
 
+<<<<<<< HEAD
 val get_stamp : result -> int
 
+||||||| fcc3157ab0
+=======
+val get_index : result -> index_tbl
+
+val get_stamp : result -> int
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 val get_errors : result -> exn list
 
 val initial_env : result -> Env.t
+
+val get_cache_stat : result -> typer_cache_stats
 
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.

@@ -32,28 +32,79 @@ let version = Sys.ocaml_version
 
 let flambda = false
 
+<<<<<<< HEAD
 let exec_magic_number = "Caml1999X534"
+||||||| fcc3157ab0
+let exec_magic_number = "Caml1999X033"
+=======
+let ext_obj = ".o_The boot compiler cannot process C objects"
+
+let exec_magic_number = "Caml1999X034"
+>>>>>>> 501-plus-upstream-main-9fa77db
     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
+<<<<<<< HEAD
 and cmi_magic_number =
   (* When bumping this number, be sure to also update ../typing/magic_numbers.ml *)
   "Caml1999I534"
 and cmo_magic_number = "Caml1999O534"
 and cma_magic_number = "Caml1999A534"
+||||||| fcc3157ab0
+and cmi_magic_number = "Caml1999I033"
+and cmo_magic_number = "Caml1999O033"
+and cma_magic_number = "Caml1999A033"
+=======
+and cmi_magic_number = "Caml1999I034"
+and cmo_magic_number = "Caml1999O034"
+and cma_magic_number = "Caml1999A034"
+>>>>>>> 501-plus-upstream-main-9fa77db
 and cmx_magic_number =
   if flambda then
+<<<<<<< HEAD
     "Caml2021y535"
+||||||| fcc3157ab0
+    "Caml1999y033"
+=======
+    "Caml1999y034"
+>>>>>>> 501-plus-upstream-main-9fa77db
   else
+<<<<<<< HEAD
     "Caml2021Y534"
+||||||| fcc3157ab0
+    "Caml1999Y033"
+=======
+    "Caml1999Y034"
+>>>>>>> 501-plus-upstream-main-9fa77db
 and cmxa_magic_number =
   if flambda then
+<<<<<<< HEAD
     "Caml2021z535"
+||||||| fcc3157ab0
+    "Caml1999z033"
+=======
+    "Caml1999z034"
+>>>>>>> 501-plus-upstream-main-9fa77db
   else
+<<<<<<< HEAD
     "Caml2021Z534"
 and ast_impl_magic_number = "Caml1999M534"
 and ast_intf_magic_number = "Caml1999N534"
 and cmxs_magic_number = "Caml1999D534"
 and cmt_magic_number = "Caml1999T534"
 and cms_magic_number = "Caml1999S534"
+||||||| fcc3157ab0
+    "Caml1999Z033"
+and ast_impl_magic_number = "Caml1999M033"
+and ast_intf_magic_number = "Caml1999N033"
+and cmxs_magic_number = "Caml1999D033"
+and cmt_magic_number = "Caml1999T033"
+=======
+    "Caml1999Z034"
+and ast_impl_magic_number = "Caml1999M034"
+and ast_intf_magic_number = "Caml1999N034"
+and cmxs_magic_number = "Caml1999D034"
+and cmt_magic_number = "Caml1999T034"
+and index_magic_number = "Merl2023I001"
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let interface_suffix = ref ".mli"
 

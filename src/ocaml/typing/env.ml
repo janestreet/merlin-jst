@@ -28,7 +28,7 @@ module String = Misc.String
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
-type 'a usage_tbl = ('a -> unit) Types.Uid.Tbl.t
+type 'a usage_tbl = (Uid.t, ('a -> unit)) Stamped_hashtable.t
 (** This table is used to track usage of value declarations.
     A declaration is identified by its uid.
     The callback attached to a declaration is called whenever the value (or
@@ -36,10 +36,30 @@ type 'a usage_tbl = ('a -> unit) Types.Uid.Tbl.t
     (inclusion test between signatures, cf Includemod.value_descriptions, ...).
 *)
 
-let value_declarations  : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
-let type_declarations   : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
-let module_declarations : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
+let local_stamped n : Stamped_hashtable.changelog * ('a usage_tbl) =
+  let changelog = Stamped_hashtable.create_changelog () in
+  changelog, Stamped_hashtable.create changelog n
 
+<<<<<<< HEAD
+||||||| fcc3157ab0
+let uid_to_loc : Location.t Types.Uid.Tbl.t ref =
+  s_table Types.Uid.Tbl.create 16
+
+let register_uid uid loc = Types.Uid.Tbl.add !uid_to_loc uid loc
+
+let get_uid_to_loc_tbl () = !uid_to_loc
+
+=======
+let stamped_value_declarations = s_table local_stamped 32
+let value_declarations_changelog, value_declarations = !stamped_value_declarations
+
+let stamped_type_declarations = s_table local_stamped 32
+let type_declarations_changelog, type_declarations = !stamped_type_declarations
+
+let stamped_module_declarations = s_table local_stamped 32
+let module_declarations_changelog, module_declarations = !stamped_module_declarations
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 type constructor_usage = Positive | Pattern | Exported_private | Exported
 type constructor_usages =
   {
@@ -74,8 +94,8 @@ let constructor_usage_complaint ~rebind priv cu
       | false, false, true -> Some Only_exported_private
     end
 
-let used_constructors : constructor_usage usage_tbl ref =
-  s_table Types.Uid.Tbl.create 16
+let stamped_used_constructors = s_table local_stamped 32
+let used_constructors_changelog, used_constructors = !stamped_used_constructors
 
 type label_usage =
     Projection | Mutation | Construct | Exported_private | Exported
@@ -124,8 +144,8 @@ let label_usage_complaint priv mut lu
       | true, false, _ -> Some Not_mutated
     end
 
-let used_labels : label_usage usage_tbl ref =
-  s_table Types.Uid.Tbl.create 16
+let stamped_used_labels = s_table local_stamped 32
+let used_labels_changelog, used_labels = !stamped_used_labels
 
 (** Map indexed by the name of module components. *)
 module NameMap = String.Map
@@ -601,7 +621,7 @@ let in_signature_flag = 0x01
 let stamped_changelog =
   s_table Stamped_hashtable.create_changelog ()
 
-let stamped_add table path value =
+let stamped_path_add table path value =
   let rec path_stamp = function
     | Pident id -> Ident.stamp id
     | Pdot (t, _) -> path_stamp t
@@ -612,11 +632,15 @@ let stamped_add table path value =
   let stamp = if stamp = 0 then None else Some stamp in
   Stamped_hashtable.add table ?stamp path value
 
-let stamped_mem table path =
-  Stamped_hashtable.mem table path
+let stamped_uid_add table uid value =
+  let stamp = Types.Uid.stamp_of_uid uid in
+  Stamped_hashtable.add table ?stamp uid value
 
-let stamped_find table path =
-  Stamped_hashtable.find table path
+let stamped_mem table value =
+  Stamped_hashtable.mem table value
+
+let stamped_find table value =
+  Stamped_hashtable.find table value
 
 let stamped_create n =
   Stamped_hashtable.create !stamped_changelog n
@@ -807,6 +831,7 @@ let error err = raise (Error err)
 let lookup_error loc env err =
   error (Lookup_error(loc, env, err))
 
+<<<<<<< HEAD
 type actual_mode = {
   mode : Mode.Value.l;
   context : shared_context option
@@ -822,6 +847,14 @@ let same_type_declarations e1 e2 =
   e1.modules == e2.modules &&
   e1.local_constraints == e2.local_constraints
 
+||||||| fcc3157ab0
+=======
+let same_type_declarations e1 e2 =
+  e1.types == e2.types &&
+  e1.modules == e2.modules &&
+  e1.local_constraints == e2.local_constraints
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 let same_constr = ref (fun _ _ _ -> assert false)
 
 let constrain_type_jkind = ref (fun _ _ _ -> assert false)
@@ -1117,6 +1150,7 @@ let imports () = Persistent_env.imports !persistent_env
 let import_crcs ~source crcs =
   Persistent_env.import_crcs !persistent_env ~source crcs
 
+<<<<<<< HEAD
 let runtime_parameters () = Persistent_env.runtime_parameters !persistent_env
 
 let parameters () = Persistent_env.parameters !persistent_env
@@ -1124,6 +1158,15 @@ let parameters () = Persistent_env.parameters !persistent_env
 let read_pers_mod modname cmi ~add_binding =
   Persistent_env.read !persistent_env read_sign_of_cmi short_paths_components
     modname cmi ~add_binding
+||||||| fcc3157ab0
+let read_pers_mod modname filename =
+  Persistent_env.read !persistent_env
+    read_sign_of_cmi short_paths_components modname filename
+=======
+let read_pers_mod cmi =
+  Persistent_env.read !persistent_env
+    read_sign_of_cmi short_paths_components cmi
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let find_pers_mod name =
   Persistent_env.find !persistent_env
@@ -1149,11 +1192,26 @@ let implemented_parameter modname =
   Persistent_env.implemented_parameter !persistent_env modname
 
 let reset_declaration_caches () =
+<<<<<<< HEAD
   Types.Uid.Tbl.clear !value_declarations;
   Types.Uid.Tbl.clear !type_declarations;
   Types.Uid.Tbl.clear !module_declarations;
   Types.Uid.Tbl.clear !used_constructors;
   Types.Uid.Tbl.clear !used_labels;
+||||||| fcc3157ab0
+  Types.Uid.Tbl.clear !value_declarations;
+  Types.Uid.Tbl.clear !type_declarations;
+  Types.Uid.Tbl.clear !module_declarations;
+  Types.Uid.Tbl.clear !used_constructors;
+  Types.Uid.Tbl.clear !used_labels;
+  Types.Uid.Tbl.clear !uid_to_loc;
+=======
+  Stamped_hashtable.clear value_declarations;
+  Stamped_hashtable.clear type_declarations;
+  Stamped_hashtable.clear module_declarations;
+  Stamped_hashtable.clear used_constructors;
+  Stamped_hashtable.clear used_labels;
+>>>>>>> 501-plus-upstream-main-9fa77db
   ()
 
 let reset_cache ~preserve_persistent_env =
@@ -1201,7 +1259,7 @@ let modtype_of_functor_appl fcomp p1 p2 =
           in
           Subst.modtype (Rescope scope) subst mty
         in
-        stamped_add fcomp.fcomp_subst_cache p2 mty;
+        stamped_path_add fcomp.fcomp_subst_cache p2 mty;
         mty
 
 let check_functor_appl
@@ -1223,7 +1281,13 @@ let find_ident_module id env =
   match find_same_module id env.modules with
   | Mod_local data -> data
   | Mod_unbound _ -> raise Not_found
+<<<<<<< HEAD
   | Mod_persistent -> find_pers_mod ~allow_hidden:true (id |> modname_of_ident)
+||||||| fcc3157ab0
+  | Mod_persistent -> find_pers_mod (Ident.name id)
+=======
+  | Mod_persistent -> find_pers_mod ~allow_hidden:true (Ident.name id)
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let rec find_module_components path env =
   match path with
@@ -2123,9 +2187,9 @@ and check_usage loc id uid warn tbl =
      Warnings.is_active (warn "")
   then begin
     let name = Ident.name id in
-    if Types.Uid.Tbl.mem tbl uid then ()
+    if stamped_mem tbl uid then ()
     else let used = ref false in
-    Types.Uid.Tbl.add tbl uid (fun () -> used := true);
+      stamped_uid_add tbl uid (fun () -> used := true);
     if not (name = "" || name.[0] = '_' || name.[0] = '#')
     then
       !add_delayed_check_forward
@@ -2147,7 +2211,7 @@ and store_value ?check ~mode id addr decl shape env =
   check_value_name (Ident.name id) decl.val_loc;
   Builtin_attributes.mark_alerts_used decl.val_attributes;
   Option.iter
-    (fun f -> check_usage decl.val_loc id decl.val_uid f !value_declarations)
+    (fun f -> check_usage decl.val_loc id decl.val_uid f value_declarations)
     check;
   let vda =
     { vda_description = decl;
@@ -2170,9 +2234,9 @@ and store_constructor ~check type_decl type_id cstr_id cstr env =
     let loc = cstr.cstr_loc in
     let k = cstr.cstr_uid in
     let priv = type_decl.type_private in
-    if not (Types.Uid.Tbl.mem !used_constructors k) then begin
+    if not (stamped_mem used_constructors k) then begin
       let used = constructor_usages () in
-      Types.Uid.Tbl.add !used_constructors k
+      stamped_uid_add used_constructors k
         (add_constructor_usage used);
       if not (ty_name = "" || ty_name.[0] = '_')
       then
@@ -2186,9 +2250,15 @@ and store_constructor ~check type_decl type_id cstr_id cstr env =
               (constructor_usage_complaint ~rebind:false priv used));
     end;
   end);
+<<<<<<< HEAD
   Builtin_attributes.mark_alerts_used cstr.cstr_attributes;
   Builtin_attributes.mark_warn_on_literal_pattern_used
     cstr.cstr_attributes;
+||||||| fcc3157ab0
+=======
+  Builtin_attributes.mark_alerts_used cstr.cstr_attributes;
+  Builtin_attributes.mark_warn_on_literal_pattern_used cstr.cstr_attributes;
+>>>>>>> 501-plus-upstream-main-9fa77db
   let cda_shape = Shape.leaf cstr.cstr_uid in
   { env with
     constrs =
@@ -2207,9 +2277,9 @@ and store_label ~check type_decl type_id lbl_id lbl env =
     let loc = lbl.lbl_loc in
     let mut = lbl.lbl_mut in
     let k = lbl.lbl_uid in
-    if not (Types.Uid.Tbl.mem !used_labels k) then
+    if not (stamped_mem used_labels k) then
       let used = label_usages () in
-      Types.Uid.Tbl.add !used_labels k
+      stamped_uid_add used_labels k
         (add_label_usage used);
       if not (ty_name = "" || ty_name.[0] = '_' || name.[0] = '_')
       then !add_delayed_check_forward
@@ -2221,12 +2291,19 @@ and store_label ~check type_decl type_id lbl_id lbl env =
                      loc (Warnings.Unused_field(name, complaint)))
               (label_usage_complaint priv mut used))
   end);
+<<<<<<< HEAD
   Builtin_attributes.mark_alerts_used lbl.lbl_attributes;
   begin match lbl.lbl_mut with
     | Mutable _ ->
       Builtin_attributes.mark_deprecated_mutable_used lbl.lbl_attributes;
     | Immutable -> ()
   end;
+||||||| fcc3157ab0
+=======
+  Builtin_attributes.mark_alerts_used lbl.lbl_attributes;
+  if lbl.lbl_mut = Mutable then
+    Builtin_attributes.mark_deprecated_mutable_used lbl.lbl_attributes;
+>>>>>>> 501-plus-upstream-main-9fa77db
   { env with
     labels = TycompTbl.add lbl_id lbl env.labels;
   }
@@ -2236,7 +2313,7 @@ and store_type ~check ~long_path ~predef id info shape env =
   if check then
     check_usage loc id info.type_uid
       (fun s -> Warnings.Unused_type_declaration s)
-      !type_declarations;
+      type_declarations;
   let descrs, env =
     let path = Pident id in
     match info.type_kind with
@@ -2300,8 +2377,14 @@ and store_extension ~check ~rebind id addr ext shape env =
       cda_address = Some addr;
       cda_shape = shape }
   in
+<<<<<<< HEAD
   Builtin_attributes.mark_alerts_used ext.ext_attributes;
   Builtin_attributes.mark_warn_on_literal_pattern_used cstr.cstr_attributes;
+||||||| fcc3157ab0
+=======
+  Builtin_attributes.mark_alerts_used ext.ext_attributes;
+  Builtin_attributes.mark_warn_on_literal_pattern_used ext.ext_attributes;
+>>>>>>> 501-plus-upstream-main-9fa77db
   Builtin_attributes.warning_scope ext.ext_attributes (fun () ->
   if check && not loc.Location.loc_ghost &&
     Warnings.is_active (Warnings.Unused_extension ("", false, Unused))
@@ -2310,9 +2393,9 @@ and store_extension ~check ~rebind id addr ext shape env =
     let is_exception = Path.same ext.ext_type_path Predef.path_exn in
     let name = cstr.cstr_name in
     let k = cstr.cstr_uid in
-    if not (Types.Uid.Tbl.mem !used_constructors k) then begin
+    if not (stamped_mem used_constructors k) then begin
       let used = constructor_usages () in
-      Types.Uid.Tbl.add !used_constructors k
+      stamped_uid_add used_constructors k
         (add_constructor_usage used);
       !add_delayed_check_forward
          (fun () ->
@@ -2334,9 +2417,18 @@ and store_module ?(update_summary=true) ~check
   let open Subst.Lazy in
   let loc = md.md_loc in
   Option.iter
+<<<<<<< HEAD
     (fun f -> check_usage loc id md.md_uid f !module_declarations) check;
   Builtin_attributes.mark_alerts_used md.md_attributes;
   let alerts = Builtin_attributes.alerts_of_attrs md.md_attributes in
+||||||| fcc3157ab0
+    (fun f -> check_usage loc id md.mdl_uid f !module_declarations) check;
+  let alerts = Builtin_attributes.alerts_of_attrs md.mdl_attributes in
+=======
+    (fun f -> check_usage loc id md.mdl_uid f module_declarations) check;
+  Builtin_attributes.mark_alerts_used md.mdl_attributes;
+  let alerts = Builtin_attributes.alerts_of_attrs md.mdl_attributes in
+>>>>>>> 501-plus-upstream-main-9fa77db
   let comps =
     components_of_module ~alerts ~uid:md.md_uid
       env Subst.identity (Pident id) addr md.md_type shape
@@ -2357,7 +2449,12 @@ and store_module ?(update_summary=true) ~check
       short_paths_module id md comps env.short_paths_additions; }
 
 and store_modtype ?(update_summary=true) id info shape env =
+<<<<<<< HEAD
   Builtin_attributes.mark_alerts_used info.Subst.Lazy.mtd_attributes;
+||||||| fcc3157ab0
+=======
+  Builtin_attributes.mark_alerts_used info.Subst.Lazy.mtdl_attributes;
+>>>>>>> 501-plus-upstream-main-9fa77db
   let mtda = { mtda_declaration = info; mtda_shape = shape } in
   let summary =
     if not update_summary then env.summary
@@ -2418,7 +2515,7 @@ let components_of_functor_appl ~loc ~f_path ~f_comp ~arg env =
         (*???*)
         env Subst.identity p addr (Subst.Lazy.of_modtype mty) shape
     in
-    stamped_add f_comp.fcomp_cache arg comps;
+    stamped_path_add f_comp.fcomp_cache arg comps;
     comps
 
 (* Define forward functions *)
@@ -2500,9 +2597,31 @@ let add_module_lazy ~update_summary id presence mty env =
 let add_module ?arg ?shape id presence mty env =
   add_module_declaration ~check:false ?arg ?shape id presence (md mty) env
 
+<<<<<<< HEAD
 let add_local_constraint path info env =
   (* CR layouts: there should be a safety check for extension universe when the type's
      kind allows mode crossing *)
+||||||| fcc3157ab0
+let add_module_lazy ~update_summary id presence mty env =
+  let md = Subst.Lazy.{mdl_type = mty;
+                       mdl_attributes = [];
+                       mdl_loc = Location.none;
+                       mdl_uid = Uid.internal_not_actually_unique}
+  in
+  add_module_declaration_lazy ~update_summary id presence md env
+
+let add_local_type path info env =
+=======
+let add_module_lazy ~update_summary id presence mty env =
+  let md = Subst.Lazy.{mdl_type = mty;
+                       mdl_attributes = [];
+                       mdl_loc = Location.none;
+                       mdl_uid = Uid.internal_not_actually_unique}
+  in
+  add_module_declaration_lazy ~update_summary id presence md env
+
+let add_local_constraint path info env =
+>>>>>>> 501-plus-upstream-main-9fa77db
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
 
@@ -2671,9 +2790,17 @@ let enter_signature ?mod_shape ~scope sg env =
 let enter_signature_and_shape ~scope ~parent_shape mod_shape sg env =
   enter_signature_and_shape ~scope ~parent_shape (Some mod_shape) sg env
 
+<<<<<<< HEAD
 let add_value_lazy = add_value_lazy ?shape:None
 let add_value ?check ~mode id vd =
   add_value_lazy ?check ~mode id (Subst.Lazy.of_value_description vd)
+||||||| fcc3157ab0
+let add_value = add_value ?shape:None
+let add_type = add_type ?shape:None
+let add_extension = add_extension ?shape:None
+=======
+let add_value = add_value ?shape:None
+>>>>>>> 501-plus-upstream-main-9fa77db
 let add_class = add_class ?shape:None
 let add_cltype = add_cltype ?shape:None
 let add_modtype_lazy = add_modtype_lazy ?shape:None
@@ -2873,14 +3000,39 @@ let open_signature
   else open_signature None root env
 
 (* Read a signature from a file *)
+<<<<<<< HEAD
 let read_signature modname cmi ~add_binding =
   let mty = read_pers_mod modname cmi ~add_binding in
   Subst.Lazy.force_signature mty
 
 let register_parameter modname =
   Persistent_env.register_parameter !persistent_env modname
+||||||| fcc3157ab0
+let read_signature modname filename =
+  let mda = read_pers_mod modname filename in
+  let md = Subst.Lazy.force_module_decl mda.mda_declaration in
+  match md.md_type with
+  | Mty_signature sg -> sg
+  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_for_hole -> assert false
+=======
+let read_signature u =
+  let mda = read_pers_mod u in
+  let md = Subst.Lazy.force_module_decl mda.mda_declaration in
+  match md.md_type with
+  | Mty_signature sg -> sg
+  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_for_hole -> assert false
+>>>>>>> 501-plus-upstream-main-9fa77db
 
+<<<<<<< HEAD
 
+||||||| fcc3157ab0
+let is_identchar_latin1 = function
+  | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
+  | '\248'..'\255' | '\'' | '0'..'9' -> true
+  | _ -> false
+
+=======
+>>>>>>> 501-plus-upstream-main-9fa77db
 let unit_name_of_filename fn =
   match Filename.extension fn with
   | ".cmi" ->
@@ -2896,8 +3048,14 @@ let persistent_structures_of_dir dir =
   |> String.Set.of_seq
 
 (* Save a signature to a file *)
+<<<<<<< HEAD
 let save_signature_with_transform cmi_transform ~alerts sg modname kind
       cmi_info =
+||||||| fcc3157ab0
+let save_signature_with_transform cmi_transform ~alerts sg modname filename =
+=======
+let save_signature_with_transform cmi_transform ~alerts sg cmi_info =
+>>>>>>> 501-plus-upstream-main-9fa77db
   Btype.cleanup_abbrev ();
   Subst.reset_additional_action_type_id ();
   let sg = Subst.Lazy.of_signature sg
@@ -2905,21 +3063,64 @@ let save_signature_with_transform cmi_transform ~alerts sg modname kind
         (Subst.with_additional_action Prepare_for_saving Subst.identity)
   in
   let cmi =
+<<<<<<< HEAD
     Persistent_env.make_cmi !persistent_env modname kind sg alerts
+||||||| fcc3157ab0
+    Persistent_env.make_cmi !persistent_env modname sg alerts
+=======
+    Persistent_env.make_cmi !persistent_env
+      (Unit_info.Artifact.modname cmi_info) sg alerts
+>>>>>>> 501-plus-upstream-main-9fa77db
     |> cmi_transform in
+<<<<<<< HEAD
   let filename = Unit_info.Artifact.filename cmi_info in
   let pers_sig =
     Persistent_env.Persistent_signature.{ filename; cmi; visibility = Visible }
   in
   Persistent_env.save_cmi !persistent_env pers_sig;
+||||||| fcc3157ab0
+  let pm = save_sign_of_cmi
+      { Persistent_env.Persistent_signature.cmi; filename } in
+  Persistent_env.save_cmi !persistent_env
+    { Persistent_env.Persistent_signature.filename; cmi } pm;
+=======
+  let filename = Unit_info.Artifact.filename cmi_info in
+  let pers_sig =
+    Persistent_env.Persistent_signature.{ cmi; filename; visibility = Visible }
+  in
+  let pm = save_sign_of_cmi pers_sig in
+  Persistent_env.save_cmi !persistent_env pers_sig pm;
+>>>>>>> 501-plus-upstream-main-9fa77db
   cmi
 
+<<<<<<< HEAD
 let save_signature ~alerts sg modname cu cmi =
   save_signature_with_transform (fun cmi -> cmi) ~alerts sg modname cu cmi
+||||||| fcc3157ab0
+let save_signature ~alerts sg modname filename =
+  save_signature_with_transform (fun cmi -> cmi)
+    ~alerts sg modname filename
+=======
+let save_signature ~alerts sg cmi =
+  save_signature_with_transform (fun cmi -> cmi) ~alerts sg cmi
+>>>>>>> 501-plus-upstream-main-9fa77db
 
+<<<<<<< HEAD
 let save_signature_with_imports ~alerts sg modname cu cmi imports =
+||||||| fcc3157ab0
+let save_signature_with_imports ~alerts sg modname filename imports =
+=======
+let save_signature_with_imports ~alerts sg cmi imports =
+>>>>>>> 501-plus-upstream-main-9fa77db
   let with_imports cmi = { cmi with cmi_crcs = imports } in
+<<<<<<< HEAD
   save_signature_with_transform with_imports ~alerts sg modname cu cmi
+||||||| fcc3157ab0
+  save_signature_with_transform with_imports
+    ~alerts sg modname filename
+=======
+  save_signature_with_transform with_imports ~alerts sg cmi
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Make the initial environment, without language extensions *)
 let initial =
@@ -2931,6 +3132,7 @@ let initial =
 let add_type_long_path ~check ?shape id info env =
   add_type ~check ?shape ~predef:false ~long_path:true id info env
 
+<<<<<<< HEAD
 let add_type ~check ?shape id info env =
   add_type ~check ?shape ~predef:false ~long_path:false id info env
 
@@ -2956,23 +3158,30 @@ let add_language_extension_types env =
    environments may be inaccurate.
 *)
 let initial = add_language_extension_types initial
+||||||| fcc3157ab0
+let add_type ~check id info env =
+  add_type ~check ~predef:false ~long_path:false id info env
+=======
+let add_type ~check ?shape id info env =
+  add_type ~check ?shape ~predef:false ~long_path:false id info env
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Tracking usage *)
 
 let mark_module_used uid =
-  match Types.Uid.Tbl.find !module_declarations uid with
+  match Stamped_hashtable.find module_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_modtype_used _uid = ()
 
 let mark_value_used uid =
-  match Types.Uid.Tbl.find !value_declarations uid with
+  match Stamped_hashtable.find value_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_type_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
+  match Stamped_hashtable.find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
@@ -2982,24 +3191,24 @@ let mark_type_path_used env path =
   | exception Not_found -> ()
 
 let mark_constructor_used usage cd =
-  match Types.Uid.Tbl.find !used_constructors cd.cd_uid with
+  match stamped_find used_constructors cd.cd_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_extension_used usage ext =
-  match Types.Uid.Tbl.find !used_constructors ext.ext_uid with
+  match stamped_find used_constructors ext.ext_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_label_used usage ld =
-  match Types.Uid.Tbl.find !used_labels ld.ld_uid with
+  match stamped_find used_labels ld.ld_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_constructor_description_used usage env cstr =
   let ty_path = Btype.cstr_type_path cstr in
   mark_type_path_used env ty_path;
-  match Types.Uid.Tbl.find !used_constructors cstr.cstr_uid with
+  match stamped_find used_constructors cstr.cstr_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
@@ -3010,30 +3219,36 @@ let mark_label_description_used usage env lbl =
     | _ -> assert false
   in
   mark_type_path_used env ty_path;
-  match Types.Uid.Tbl.find !used_labels lbl.lbl_uid with
+  match stamped_find used_labels lbl.lbl_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_class_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
+  match stamped_find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_cltype_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
+  match stamped_find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let set_value_used_callback vd callback =
+<<<<<<< HEAD
   Types.Uid.Tbl.add !value_declarations vd.Subst.Lazy.val_uid callback
+||||||| fcc3157ab0
+  Types.Uid.Tbl.add !value_declarations vd.val_uid callback
+=======
+  stamped_uid_add value_declarations vd.val_uid callback
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let set_type_used_callback td callback =
   if Uid.for_actual_declaration td.type_uid then
     let old =
-      try Types.Uid.Tbl.find !type_declarations td.type_uid
+      try stamped_find type_declarations td.type_uid
       with Not_found -> ignore
     in
-    Types.Uid.Tbl.replace !type_declarations td.type_uid
+    Stamped_hashtable.replace type_declarations td.type_uid
       (fun () -> callback old)
 
 (* Lookup by name *)
@@ -3161,10 +3376,24 @@ let lookup_ident_module (type a) (load : a load) ~errors ~use ~loc s env =
       let name = s |> Compilation_unit.Name.of_string in
       match load with
       | Don't_load ->
+<<<<<<< HEAD
           check_pers_mod ~allow_hidden:false ~loc name;
           path, locks, (() : a)
+||||||| fcc3157ab0
+          check_pers_mod ~loc s;
+          path, (() : a)
+=======
+          check_pers_mod ~allow_hidden:false ~loc s;
+          path, (() : a)
+>>>>>>> 501-plus-upstream-main-9fa77db
       | Load -> begin
+<<<<<<< HEAD
           match find_pers_mod ~allow_hidden:false name with
+||||||| fcc3157ab0
+          match find_pers_mod s with
+=======
+          match find_pers_mod ~allow_hidden:false s with
+>>>>>>> 501-plus-upstream-main-9fa77db
           | mda ->
               use_module ~use ~loc path mda;
               path, locks, (mda : a)
@@ -3844,10 +4073,16 @@ let bound_module name env =
   | Error _ ->
       if Current_unit_name.is name then false
       else begin
+<<<<<<< HEAD
         match
           find_pers_mod ~allow_hidden:false
             (name |> Compilation_unit.Name.of_string)
         with
+||||||| fcc3157ab0
+        match find_pers_mod name with
+=======
+        match find_pers_mod ~allow_hidden:false name with
+>>>>>>> 501-plus-upstream-main-9fa77db
         | _ -> true
         | exception Not_found -> false
       end
@@ -4127,6 +4362,7 @@ let extract_instance_variables env =
        | Val_ivar _ -> name :: acc
        | _ -> acc) None env []
 
+<<<<<<< HEAD
 let string_of_escaping_context : escaping_context -> string =
   function
   | Letop -> "a letop"
@@ -4195,6 +4431,11 @@ let print_lock_item ppf (item, lid) =
 
 module Style = Misc.Style
 
+||||||| fcc3157ab0
+=======
+module Style = Misc.Style
+
+>>>>>>> 501-plus-upstream-main-9fa77db
 let report_lookup_error _loc env ppf = function
   | Unbound_value(lid, hint) -> begin
       fprintf ppf "Unbound value %a"
@@ -4258,9 +4499,18 @@ let report_lookup_error _loc env ppf = function
            "but modules are not module types"
     end
   | Unbound_cltype lid ->
+<<<<<<< HEAD
       fprintf ppf "Unbound class type %a"
         (Style.as_inline_code !print_longident) lid;
       spellcheck ppf extract_cltypes env lid
+||||||| fcc3157ab0
+      fprintf ppf "Unbound class type %a" !print_longident lid;
+      spellcheck ppf extract_cltypes env lid;
+=======
+      fprintf ppf "Unbound class type %a"
+        (Style.as_inline_code !print_longident) lid;
+      spellcheck ppf extract_cltypes env lid;
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Unbound_instance_variable s ->
       fprintf ppf "Unbound instance variable %a" Style.inline_code s;
       spellcheck_name ppf extract_instance_variables env s;
@@ -4310,6 +4560,7 @@ let report_lookup_error _loc env ppf = function
       in
       fprintf ppf
         "The module %a is an alias for module %a, which %s"
+<<<<<<< HEAD
         (Style.as_inline_code !print_longident) lid
         (Style.as_inline_code !print_path) p cause
   | Local_value_escaping (item, lid, context) ->
@@ -4352,6 +4603,12 @@ let report_lookup_error _loc env ppf = function
         (Style.as_inline_code !print_longident) lid
         (Jkind.Violation.report_with_offender
            ~offender:(fun ppf -> !print_type_expr ppf typ)) err
+||||||| fcc3157ab0
+        !print_longident lid !print_path p cause
+=======
+        (Style.as_inline_code !print_longident) lid
+        (Style.as_inline_code !print_path) p cause
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let report_error ppf = function
   | Missing_module(_, path1, path2) ->
@@ -4396,8 +4653,14 @@ let () =
 
 let check_state_consistency () =
   let missing modname =
+<<<<<<< HEAD
     let modname_as_string = Compilation_unit.Name.to_string modname in
     match Load_path.find_normalized (modname_as_string ^ ".cmi") with
+||||||| fcc3157ab0
+    match Load_path.find_uncap (modname ^ ".cmi") with
+=======
+    match Load_path.find_normalized (modname ^ ".cmi") with
+>>>>>>> 501-plus-upstream-main-9fa77db
     | _ -> false
     | exception Not_found -> true
   and found _modname filename ps_name =
@@ -4583,7 +4846,7 @@ and short_paths_functor_components_desc env mpath comp path =
             Subst.modtype (Rescope (Path.scope (Papply (mpath, path))))
               subst f.fcomp_res
           in
-          stamped_add f.fcomp_subst_cache path mty;
+          stamped_path_add f.fcomp_subst_cache path mty;
           mty
       in
       let loc = Location.(in_file !input_name) in
@@ -4693,3 +4956,10 @@ let short_paths env =
 
 let cleanup_functor_caches ~stamp =
   Stamped_hashtable.backtrack !stamped_changelog ~stamp
+
+let cleanup_usage_tables ~stamp =
+  Stamped_hashtable.backtrack value_declarations_changelog ~stamp;
+  Stamped_hashtable.backtrack type_declarations_changelog ~stamp;
+  Stamped_hashtable.backtrack module_declarations_changelog ~stamp;
+  Stamped_hashtable.backtrack used_constructors_changelog ~stamp;
+  Stamped_hashtable.backtrack used_labels_changelog ~stamp

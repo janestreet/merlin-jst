@@ -6,6 +6,7 @@ let include_dirs        = ref []
 let hidden_include_dirs = ref []
 let fast                = ref false
 let classic             = ref false
+let all_ppx             = ref []
 let principal           = ref false
 let real_paths          = ref true
 let recursive_types     = ref false
@@ -24,8 +25,13 @@ let allow_illegal_crossing = ref false
 
 let annotations         = ref false
 let binary_annotations  = ref true
+<<<<<<< HEAD
 let binary_annotations_cms  = ref false
 let store_occurrences   = ref true
+||||||| fcc3157ab0
+=======
+let store_occurrences   = ref true
+>>>>>>> 501-plus-upstream-main-9fa77db
 let print_types         = ref false
 let native_code         = ref false
 let error_size          = ref 500

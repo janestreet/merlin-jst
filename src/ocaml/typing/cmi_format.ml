@@ -162,8 +162,11 @@ let read_cmi_lazy filename =
       raise (Error e)
 
 let output_cmi filename oc cmi =
+  ignore (filename, oc, cmi); ""
+(*
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
+<<<<<<< HEAD
   let output_int64 oc n =
     let buf = Bytes.create 8 in
     Bytes.set_int64_ne buf 0 n;
@@ -187,6 +190,11 @@ let output_cmi filename oc cmi =
       header_sign = sign;
       header_params = cmi.cmi_params;
     };
+||||||| fcc3157ab0
+  output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
+=======
+  Marshal.(to_channel oc ((cmi.cmi_name, cmi.cmi_sign) : header) [Compression]);
+>>>>>>> 501-plus-upstream-main-9fa77db
   flush oc;
   let crc = Digest.file filename in
   let my_info =
@@ -200,6 +208,7 @@ let output_cmi filename oc cmi =
   output_value oc (crcs : crcs);
   output_value oc (cmi.cmi_flags : flags);
   crc
+*)
 
 let input_cmi ic = input_cmi_lazy ic |> force_cmi_infos
 let read_cmi filename = read_cmi_lazy filename |> force_cmi_infos
