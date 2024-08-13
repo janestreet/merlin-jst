@@ -170,7 +170,7 @@ let ident_of_payload = function
   | PStr[{pstr_desc=Pstr_eval({pexp_desc=Pexp_ident {txt=Lident id}},_)}] ->
      Some id
   | _ -> None
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 =======
 open Ast_helper
 
@@ -250,7 +250,7 @@ let register_attr current_phase name =
     if is_builtin_attr name.txt then
       Attribute_table.replace unused_attrs name ()
 
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
 
 let string_of_cst = function
   | Pconst_string(s, _, _) -> Some s
@@ -519,13 +519,13 @@ let warning_scope ?ppwarning attrs f =
 
 <<<<<<< HEAD
 let has_attribute nm attrs =
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 
 let warn_on_literal_pattern =
 =======
 
 let has_attribute nm attrs =
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
   List.exists
     (fun a ->
        if attr_equals_builtin a nm
@@ -557,7 +557,7 @@ let select_attribute p attributes =
       Some attr
   in
   attr
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 let immediate =
   List.exists
     (fun a -> match a.attr_name.txt with
@@ -567,7 +567,7 @@ let immediate =
 =======
 let warn_on_literal_pattern attrs =
   has_attribute "warn_on_literal_pattern" attrs
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
 
 <<<<<<< HEAD
 let when_attribute_is nms attr ~f =
@@ -608,7 +608,7 @@ let warn_on_literal_pattern attrs =
   has_attribute "warn_on_literal_pattern" attrs
 
 let explicit_arity attrs = has_attribute "explicit_arity" attrs
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 let immediate64 =
   List.exists
     (fun a -> match a.attr_name.txt with
@@ -621,7 +621,7 @@ let explicit_arity attrs = has_attribute "explicit_arity" attrs
 let immediate attrs = has_attribute "immediate" attrs
 
 let immediate64 attrs = has_attribute "immediate64" attrs
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
 
 (* The "ocaml.boxed (default)" and "ocaml.unboxed (default)"
    attributes cannot be input by the user, they are added by the
@@ -1126,7 +1126,7 @@ let get_tracing_probe_payload (payload : Parsetree.payload) =
     | _ -> Error ()
   in
   Ok { name; name_loc; enabled_at_init; arg }
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 let has_unboxed attr =
   List.exists (check ["ocaml.unboxed"; "unboxed"])
     attr
@@ -1135,4 +1135,4 @@ let has_boxed attr =
   List.exists (check ["ocaml.boxed"; "boxed"]) attr
 =======
 let has_boxed attrs = has_attribute "boxed" attrs
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main

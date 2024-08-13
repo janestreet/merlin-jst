@@ -18,6 +18,7 @@ open Lexing
 type t = Warnings.loc =
   { loc_start: position; loc_end: position; loc_ghost: bool }
 
+<<<<<<< HEAD
 let compare_position : position -> position -> int =
   fun
     { pos_fname = pos_fname_1
@@ -41,7 +42,16 @@ let compare_position : position -> position -> int =
     end
     | i -> i
 ;;
+||||||| 7b73c6aa3
+let in_file name =
+  let loc = { dummy_pos with pos_fname = name } in
+  { loc_start = loc; loc_end = loc; loc_ghost = true }
+;;
+=======
+let in_file = Warnings.ghost_loc_in_file
+>>>>>>> upstream/main
 
+<<<<<<< HEAD
 let compare
       { loc_start = loc_start_1
       ; loc_end = loc_end_1
@@ -63,6 +73,13 @@ let in_file = Warnings.ghost_loc_in_file
 
 let none = in_file "_none_"
 let is_none l = (l = none)
+||||||| 7b73c6aa3
+let none = in_file "_none_";;
+let is_none l = (l = none);;
+=======
+let none = in_file "_none_"
+let is_none l = (l = none)
+>>>>>>> upstream/main
 
 let curr lexbuf = {
   loc_start = lexbuf.lex_start_p;
@@ -77,12 +94,18 @@ let init lexbuf fname =
     pos_bol = 0;
     pos_cnum = 0;
   }
+<<<<<<< HEAD
 
 
 let ghostify l =
   if l.loc_ghost
   then l
   else { l with loc_ghost = true }
+||||||| 7b73c6aa3
+;;
+=======
+
+>>>>>>> upstream/main
 
 let symbol_rloc () = {
   loc_start = Parsing.symbol_start_pos ();
@@ -274,12 +297,12 @@ let print_filename ppf file =
  *)
 <<<<<<< HEAD
 let print_loc ~capitalize_first ppf loc =
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 let print_loc ppf loc =
 =======
 let print_loc ppf loc =
   (* setup_tags (); *)
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
   let file_valid = function
     | "_none_" ->
         (* This is a dummy placeholder, but we print it anyway to please editors
@@ -791,8 +814,13 @@ let batch_mode_printer : report_printer =
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
+<<<<<<< HEAD
+    separate_new_message ppf;
+||||||| 7b73c6aa3
+=======
     (* setup_tags (); *)
     separate_new_message ppf;
+>>>>>>> upstream/main
     (* Make sure we keep [num_loc_lines] updated.
         The tabulation box is here to give submessage the option
         to be aligned with the main message box
@@ -970,7 +998,46 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
 
+<<<<<<< HEAD
 module Style = Misc.Style
+
+let auto_include_alert lib =
+  let message = Format.asprintf "\
+    OCaml's lib directory layout changed in 5.0. The %a subdirectory has been \
+    automatically added to the search path, but you should add %a to the \
+    command-line to silence this alert (e.g. by adding %a to the list of \
+    libraries in your dune file, or adding %a to your %a file for \
+    ocamlbuild, or using %a for ocamlfind)."
+      Style.inline_code lib
+      Style.inline_code ("-I +" ^lib)
+      Style.inline_code lib
+      Style.inline_code ("use_"^lib)
+      Style.inline_code "_tags"
+      Style.inline_code ("-package " ^ lib) in
+  let alert =
+    {Warnings.kind="ocaml_deprecated_auto_include"; use=none; def=none;
+     message = Format.asprintf "@[@\n%a@]" Format.pp_print_text message}
+  in
+  prerr_alert none alert
+
+let deprecated_script_alert program =
+  let message = Format.asprintf "\
+    Running %a where the first argument is an implicit basename with no \
+    extension (e.g. %a) is deprecated. Either rename the script \
+    (%a) or qualify the basename (%a)"
+      Style.inline_code program
+      Style.inline_code (program ^ " script-file")
+      Style.inline_code (program ^ " script-file.ml")
+      Style.inline_code (program ^ " ./script-file")
+  in
+  let alert =
+    {Warnings.kind="ocaml_deprecated_cli"; use=none; def=none;
+     message = Format.asprintf "@[@\n%a@]" Format.pp_print_text message}
+  in
+  prerr_alert none alert
+
+||||||| 7b73c6aa3
+=======
 
 module Style = Misc.Style
 
@@ -1009,6 +1076,7 @@ let deprecated_script_alert program =
   in
   prerr_alert none alert
 
+>>>>>>> upstream/main
 (******************************************************************************)
 (* Reporting errors on exceptions *)
 

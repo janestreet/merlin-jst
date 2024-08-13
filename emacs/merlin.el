@@ -1791,17 +1791,10 @@ Empty string defaults to jumping to all these."
         (dolist (pos positions)
           (let* ((start (assoc 'start pos))
                  (end (assoc 'end pos))
-<<<<<<< HEAD
-                 (occ-buff (find-file-noselect (cdr (assoc 'file pos))))
-                 (marker (with-current-buffer occ-buff
-                          (copy-marker (merlin--point-of-pos start))))
-||||||| fcc3157ab0
-=======
                  (file (cdr (assoc 'file pos)))
                  (occ-buff (if file (find-file-noselect file) src-buff))
                  (marker (with-current-buffer occ-buff
                           (copy-marker (merlin--point-of-pos start))))
->>>>>>> 501-plus-upstream-main-9fa77db
                  (line (cdr (assoc 'line start)))
                  (start-buf-pos (with-current-buffer occ-buff
                                   (merlin--point-of-pos start)))
@@ -1817,15 +1810,7 @@ Empty string defaults to jumping to all these."
                                             marker
                                             start-buf-pos
                                             end-buf-pos
-<<<<<<< HEAD
                                             occ-buff))))
-
-||||||| fcc3157ab0
-                                            src-buff))))
-
-=======
-                                            occ-buff))))
->>>>>>> 501-plus-upstream-main-9fa77db
             ;; Insert the critical text properties that occur-mode
             ;; makes use of
             (add-text-properties start-offset
@@ -1842,20 +1827,6 @@ Empty string defaults to jumping to all these."
                        (or (not (equal line pending-line))
                            (not (equal previous-buf occ-buff))))
               (insert pending-lines-text))
-<<<<<<< HEAD
-
-            (when (not (equal previous-buf occ-buff))
-              (insert (propertize (format "Occurrences in buffer: %s"
-                                          ;(length lst)
-                                          occ-buff)
-                                  'font-lock-face
-                                    list-matching-lines-buffer-name-face
-                                  'read-only t
-                                  'occur-title occ-buff))
-              (insert "\n"))
-
-||||||| fcc3157ab0
-=======
 
             (when (not (equal previous-buf occ-buff))
               (insert (propertize (format "Occurrences in buffer %s:"
@@ -1867,7 +1838,6 @@ Empty string defaults to jumping to all these."
                                   'occur-title occ-buff))
               (insert "\n"))
 
->>>>>>> 501-plus-upstream-main-9fa77db
             (setq pending-line line)
             (setq previous-buf occ-buff)
             (setq pending-lines-text lines-text)))

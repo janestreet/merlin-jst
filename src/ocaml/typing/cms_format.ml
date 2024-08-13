@@ -105,8 +105,8 @@ let save_cms target modname binary_annots shape =
           else
             [| |]
          in
-         let cms_uid_to_loc, cms_uid_to_attributes = 
-           uid_tables_of_binary_annots binary_annots 
+         let cms_uid_to_loc, cms_uid_to_attributes =
+           uid_tables_of_binary_annots binary_annots
          in
          let cms = {
            cms_modname = modname;

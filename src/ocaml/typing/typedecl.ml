@@ -171,16 +171,8 @@ let add_type ~long_path ~check ?shape id decl env =
   Builtin_attributes.warning_scope ~ppwarning:false decl.type_attributes
     (fun () ->
        match long_path with
-<<<<<<< HEAD
        | true -> Env.add_type_long_path ?shape ~check id decl env
        | false -> Env.add_type ?shape ~check id decl env)
-||||||| fcc3157ab0
-       | true -> Env.add_type_long_path ~check id decl env
-       | false -> Env.add_type ~check id decl env)
-=======
-       | true -> Env.add_type_long_path ~check ?shape id decl env
-       | false -> Env.add_type ~check ?shape id decl env)
->>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Add a dummy type declaration to the environment, with the given arity.
    The [type_kind] is [Type_abstract], but there is a generic [type_manifest]
@@ -202,7 +194,6 @@ let enter_type ?abstract_abbrevs rec_flag env sdecl (id, uid) =
     | Asttypes.Recursive -> true
   in
   if not needed then env else
-<<<<<<< HEAD
   let arity = List.length sdecl.ptype_params in
   let path = Path.Pident id in
 
@@ -278,37 +269,14 @@ in
         Btype.newgenvar ?name jkind)
       sdecl.ptype_params
   in
-||||||| fcc3157ab0
-=======
-  let abstract_source, type_manifest =
-    match sdecl.ptype_manifest, abstract_abbrevs with
-    | None, _             -> Definition, None
-    | Some _, None        -> Definition, Some (Btype.newgenvar ())
-    | Some _, Some reason -> reason, None
-  in
->>>>>>> 501-plus-upstream-main-9fa77db
   let decl =
     { type_params;
       type_arity = arity;
-<<<<<<< HEAD
       type_kind = Type_abstract abstract_source;
       type_jkind;
       type_jkind_annotation;
-||||||| fcc3157ab0
-      type_kind = Type_abstract;
-=======
-      type_kind = Type_abstract abstract_source;
->>>>>>> 501-plus-upstream-main-9fa77db
       type_private = sdecl.ptype_private;
-<<<<<<< HEAD
       type_manifest;
-||||||| fcc3157ab0
-      type_manifest =
-        begin match sdecl.ptype_manifest with None -> None
-        | Some _ -> Some(Ctype.newvar ()) end;
-=======
-      type_manifest = type_manifest;
->>>>>>> 501-plus-upstream-main-9fa77db
       type_variance = Variance.unknown_signature ~injective:false ~arity;
       type_separability = Types.Separability.default_signature ~arity;
       type_is_newtype = false;
@@ -322,7 +290,6 @@ in
   in
   add_type ~long_path:true ~check:true id decl env
 
-<<<<<<< HEAD
 (* nroberts: The below [update_type] is deleted upstream in
    https://github.com/ocaml/ocaml/pull/12180 to stop ocamlc from looping on some
    type constraints. Our internal version records jkind constraints, and so we
@@ -359,19 +326,6 @@ let update_type temp_env env id loc =
       with Ctype.Unify err ->
         raise (Error(loc, Type_clash (env, err)))
 
-||||||| fcc3157ab0
-let update_type temp_env env id loc =
-  let path = Path.Pident id in
-  let decl = Env.find_type path temp_env in
-  match decl.type_manifest with None -> ()
-  | Some ty ->
-      let params = List.map (fun _ -> Ctype.newvar ()) decl.type_params in
-      try Ctype.unify env (Ctype.newconstr path params) ty
-      with Ctype.Unify err ->
-        raise (Error(loc, Type_clash (env, err)))
-
-=======
->>>>>>> 501-plus-upstream-main-9fa77db
 (* Determine if a type's values are represented by floats at run-time. *)
 (* CR layouts v2.5: Should we check for unboxed float here? Is a record with all
    unboxed floats the same as a float record?
@@ -498,18 +452,10 @@ let transl_labels ~new_var_jkind ~allow_unboxed env univars closed lbls kloc =
          let arg = Ast_helper.Typ.force_poly arg in
          let cty = transl_simple_type ~new_var_jkind env ?univars ~closed Mode.Alloc.Const.legacy arg in
          {ld_id = Ident.create_local name.txt;
-<<<<<<< HEAD
           ld_name = name;
           ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
           ld_mutable = mut;
           ld_modalities = modalities;
-||||||| fcc3157ab0
-          ld_name = name; ld_mutable = mut;
-=======
-          ld_name = name;
-          ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
-          ld_mutable = mut;
->>>>>>> 501-plus-upstream-main-9fa77db
           ld_type = cty; ld_loc = loc; ld_attributes = attrs}
       )
   in
@@ -519,14 +465,8 @@ let transl_labels ~new_var_jkind ~allow_unboxed env univars closed lbls kloc =
       (fun ld ->
          let ty = ld.ld_type.ctyp_type in
          let ty = match get_desc ty with Tpoly(t,[]) -> t | _ -> ty in
-<<<<<<< HEAD
          check_representable ~why:(Label_declaration ld.ld_id)
           ~allow_unboxed env ld.ld_loc kloc ty;
-||||||| fcc3157ab0
-         let ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
-         Env.register_uid ld_uid ld.ld_loc;
-=======
->>>>>>> 501-plus-upstream-main-9fa77db
          {Types.ld_id = ld.ld_id;
           ld_mutable = ld.ld_mutable;
           ld_modalities = ld.ld_modalities;
@@ -679,58 +619,7 @@ let make_constructor
       tvars, targs, Some tret_type, args, Some ret_type
       end
 
-<<<<<<< HEAD
 let verify_unboxed_attr unboxed_attr sdecl =
-||||||| fcc3157ab0
-let transl_declaration env sdecl (id, uid) =
-  (* Bind type parameters *)
-  Ctype.with_local_level begin fun () ->
-  TyVarEnv.reset();
-  let tparams = make_params env sdecl.ptype_params in
-  let params = List.map (fun (cty, _) -> cty.ctyp_type) tparams in
-  let cstrs = List.map
-    (fun (sty, sty', loc) ->
-      transl_simple_type env ~closed:false sty,
-      transl_simple_type env ~closed:false sty', loc)
-    sdecl.ptype_cstrs
-  in
-  let unboxed_attr = get_unboxed_from_attributes sdecl in
-=======
-
-let shape_map_labels =
-  List.fold_left (fun map { ld_id; ld_uid; _} ->
-    Shape.Map.add_label map ld_id ld_uid)
-    Shape.Map.empty
-
-let shape_map_cstrs =
-  List.fold_left (fun map { cd_id; cd_uid; cd_args; _ } ->
-    let cstr_shape_map =
-      let label_decls =
-        match cd_args with
-        | Cstr_tuple _ -> []
-        | Cstr_record ldecls -> ldecls
-      in
-      shape_map_labels label_decls
-    in
-    Shape.Map.add_constr map cd_id
-      @@ Shape.str ~uid:cd_uid cstr_shape_map)
-    (Shape.Map.empty)
-
-
-let transl_declaration env sdecl (id, uid) =
-  (* Bind type parameters *)
-  Ctype.with_local_level begin fun () ->
-  TyVarEnv.reset();
-  let tparams = make_params env sdecl.ptype_params in
-  let params = List.map (fun (cty, _) -> cty.ctyp_type) tparams in
-  let cstrs = List.map
-    (fun (sty, sty', loc) ->
-      transl_simple_type env ~closed:false sty,
-      transl_simple_type env ~closed:false sty', loc)
-    sdecl.ptype_cstrs
-  in
-  let unboxed_attr = get_unboxed_from_attributes sdecl in
->>>>>>> 501-plus-upstream-main-9fa77db
   begin match unboxed_attr with
   | (None | Some false) -> ()
   | Some true ->
@@ -909,15 +798,9 @@ let transl_declaration env sdecl (id, uid) =
   *)
   let (tkind, kind, jkind_default) =
     match sdecl.ptype_kind with
-<<<<<<< HEAD
       | Ptype_abstract ->
         Ttype_abstract, Type_abstract Definition,
         Jkind.Primitive.value ~why:Default_type_jkind
-||||||| fcc3157ab0
-      | Ptype_abstract -> Ttype_abstract, Type_abstract
-=======
-      | Ptype_abstract -> Ttype_abstract, Type_abstract Definition
->>>>>>> 501-plus-upstream-main-9fa77db
       | Ptype_variant scstrs ->
         if List.exists (fun cstr -> cstr.pcd_res <> None) scstrs then begin
           match cstrs with
@@ -955,15 +838,8 @@ let transl_declaration env sdecl (id, uid) =
           let tcstr =
             { cd_id = name;
               cd_name = scstr.pcd_name;
-<<<<<<< HEAD
               cd_vars = tvars;
               cd_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
-||||||| fcc3157ab0
-              cd_vars = scstr.pcd_vars;
-=======
-              cd_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
-              cd_vars = scstr.pcd_vars;
->>>>>>> 501-plus-upstream-main-9fa77db
               cd_args = targs;
               cd_res = tret_type;
               cd_loc = scstr.pcd_loc;
@@ -974,16 +850,8 @@ let transl_declaration env sdecl (id, uid) =
               cd_args = args;
               cd_res = ret_type;
               cd_loc = scstr.pcd_loc;
-<<<<<<< HEAD
               cd_attributes = attributes;
               cd_uid = tcstr.cd_uid }
-||||||| fcc3157ab0
-              cd_attributes = scstr.pcd_attributes;
-              cd_uid; }
-=======
-              cd_attributes = scstr.pcd_attributes;
-              cd_uid = tcstr.cd_uid; }
->>>>>>> 501-plus-upstream-main-9fa77db
           in
             tcstr, cstr
         in
@@ -1090,7 +958,6 @@ let transl_declaration env sdecl (id, uid) =
       in
       set_private_row env sdecl.ptype_loc p decl
     end;
-<<<<<<< HEAD
     let decl =
       {
         typ_id = id;
@@ -1114,43 +981,6 @@ let transl_declaration env sdecl (id, uid) =
       | Ttype_abstract | Ttype_open -> Shape.leaf uid
     in
     decl, typ_shape
-||||||| fcc3157ab0
-    {
-      typ_id = id;
-      typ_name = sdecl.ptype_name;
-      typ_params = tparams;
-      typ_type = decl;
-      typ_cstrs = cstrs;
-      typ_loc = sdecl.ptype_loc;
-      typ_manifest = tman;
-      typ_kind = tkind;
-      typ_private = sdecl.ptype_private;
-      typ_attributes = sdecl.ptype_attributes;
-    }
-=======
-    let decl =
-      {
-        typ_id = id;
-        typ_name = sdecl.ptype_name;
-        typ_params = tparams;
-        typ_type = decl;
-        typ_cstrs = cstrs;
-        typ_loc = sdecl.ptype_loc;
-        typ_manifest = tman;
-        typ_kind = tkind;
-        typ_private = sdecl.ptype_private;
-        typ_attributes = sdecl.ptype_attributes;
-      }
-    in
-    let typ_shape =
-      let uid = decl.typ_type.type_uid in
-      match decl.typ_kind with
-      | Ttype_variant cstrs -> Shape.str ~uid (shape_map_cstrs cstrs)
-      | Ttype_record labels -> Shape.str ~uid (shape_map_labels labels)
-      | Ttype_abstract | Ttype_open -> Shape.leaf uid
-    in
-    decl, typ_shape
->>>>>>> 501-plus-upstream-main-9fa77db
   end
 
 (* Generalize a type declaration *)
@@ -2268,19 +2098,10 @@ let transl_type_decl env rec_flag sdecl_list =
       Uid.mk ~current_unit:(Env.get_unit_name ())
     ) sdecl_list
   in
-<<<<<<< HEAD
   (* Translate declarations, using a temporary environment where abbreviations
      expand to a generic type variable. After that, we check the coherence of
      the translated declarations in the resulting new environment. *)
   let tdecls, decls, shapes, new_env, delayed_jkind_checks =
-||||||| fcc3157ab0
-  let tdecls, decls, new_env =
-=======
-  (* Translate declarations, using a temporary environment where abbreviations
-     expand to a generic type variable. After that, we check the coherence of
-     the translated declarations in the resulting new environment. *)
-  let tdecls, decls, shapes, new_env =
->>>>>>> 501-plus-upstream-main-9fa77db
     Ctype.with_local_level_iter ~post:generalize_decl begin fun () ->
       (* Enter types. *)
       let temp_env =
@@ -2330,7 +2151,6 @@ let transl_type_decl env rec_flag sdecl_list =
       (* Check for duplicates *)
       check_duplicates sdecl_list;
       (* Build the final env. *)
-<<<<<<< HEAD
       let new_env = add_types_to_env decls shapes env in
       (* Update stubs *)
       let delayed_jkind_checks =
@@ -2344,22 +2164,6 @@ let transl_type_decl env rec_flag sdecl_list =
               ids_list sdecl_list
       in
       ((tdecls, decls, shapes, new_env, delayed_jkind_checks), List.map snd decls)
-||||||| fcc3157ab0
-      let new_env = add_types_to_env decls env in
-      (* Update stubs *)
-      begin match rec_flag with
-      | Asttypes.Nonrecursive -> ()
-      | Asttypes.Recursive ->
-          List.iter2
-            (fun (id, _) sdecl ->
-              update_type temp_env new_env id sdecl.ptype_loc)
-            ids_list sdecl_list
-      end;
-      ((tdecls, decls, new_env), List.map snd decls)
-=======
-      let new_env = add_types_to_env decls shapes env in
-      ((tdecls, decls, shapes, new_env), List.map snd decls)
->>>>>>> 501-plus-upstream-main-9fa77db
     end
   in
   (* Check for ill-formed abbrevs *)
@@ -2386,7 +2190,6 @@ let transl_type_decl env rec_flag sdecl_list =
       (Path.Pident id)
       decl to_check)
     decls;
-<<<<<<< HEAD
   List.iter (fun (tdecl, _shape) ->
     check_abbrev_regularity ~abs_env new_env id_loc_list to_check tdecl) tdecls;
   (* Now that we've ruled out ill-formed types, we can perform the delayed
@@ -2429,16 +2232,6 @@ let transl_type_decl env rec_flag sdecl_list =
      do the defaulting first is actually unsound: the unification in
      check_constraints will succeed via mutation, be backtracked, and then
      perhaps a sort variable gets defaulted to value. Bad bad.) *)
-||||||| fcc3157ab0
-  List.iter
-    (check_abbrev_regularity ~orig_env:env new_env id_loc_list to_check) tdecls;
-  (* Check that all type variables are closed *)
-=======
-  List.iter (fun (tdecl, _shape) ->
-    check_abbrev_regularity ~abs_env new_env id_loc_list to_check tdecl)
-    tdecls;
-  (* Check that all type variables are closed *)
->>>>>>> 501-plus-upstream-main-9fa77db
   List.iter2
     (fun sdecl (tdecl, _shape) ->
       let decl = tdecl.typ_type in
@@ -2468,17 +2261,7 @@ let transl_type_decl env rec_flag sdecl_list =
   (* Check re-exportation, updating [type_jkind] from the manifest *)
   let decls = List.map2 (check_abbrev new_env) sdecl_list decls in
   (* Compute the final environment with variance and immediacy *)
-<<<<<<< HEAD
   let final_env = add_types_to_env decls shapes env in
-||||||| fcc3157ab0
-  let final_env = add_types_to_env decls env in
-  (* Check re-exportation *)
-  List.iter2 (check_abbrev final_env) sdecl_list decls;
-=======
-  let final_env = add_types_to_env decls shapes env in
-  (* Check re-exportation *)
-  List.iter2 (check_abbrev final_env) sdecl_list decls;
->>>>>>> 501-plus-upstream-main-9fa77db
   (* Keep original declaration *)
   let final_decls =
     List.map2
@@ -3290,18 +3073,10 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
   let (tman, man) =  match sdecl.ptype_manifest with
       None -> Misc.fatal_error "Typedecl.transl_with_constraint: no manifest"
     | Some sty ->
-<<<<<<< HEAD
       let cty =
         transl_simple_type ~new_var_jkind:Any env ~closed:no_row Mode.Alloc.Const.legacy sty
       in
       cty, cty.ctyp_type
-||||||| fcc3157ab0
-        let cty = transl_simple_type env ~closed:no_row sty in
-        Some cty, Some cty.ctyp_type
-=======
-        let cty = transl_simple_type env ~closed:no_row sty in
-        cty, cty.ctyp_type
->>>>>>> 501-plus-upstream-main-9fa77db
   in
   (* In the second part, we check the consistency between the two
      declarations and compute a "merged" declaration; we now need to
@@ -3334,30 +3109,14 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
   if arity_ok && not sig_decl_abstract
   && sdecl.ptype_private = Private then
     Location.deprecated loc "spurious use of private";
-<<<<<<< HEAD
   let type_kind, type_unboxed_default, type_jkind, type_jkind_annotation =
     if arity_ok then
       sig_decl.type_kind,
       sig_decl.type_unboxed_default,
       sig_decl.type_jkind,
       sig_decl.type_jkind_annotation
-||||||| fcc3157ab0
-  let type_kind, type_unboxed_default =
-    if arity_ok && man <> None then
-      sig_decl.type_kind, sig_decl.type_unboxed_default
-=======
-  let type_kind, type_unboxed_default =
-    if arity_ok then
-      sig_decl.type_kind, sig_decl.type_unboxed_default
->>>>>>> 501-plus-upstream-main-9fa77db
     else
-<<<<<<< HEAD
       Type_abstract Definition, false, sig_decl.type_jkind, None
-||||||| fcc3157ab0
-      Type_abstract, false
-=======
-      Type_abstract Definition, false
->>>>>>> 501-plus-upstream-main-9fa77db
   in
   let new_sig_decl =
     { type_params = params;
@@ -3434,7 +3193,6 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
   end
   ~post:(fun ttyp -> generalize_decl ttyp.typ_type)
 
-<<<<<<< HEAD
 (* A simplified version of [transl_with_constraint], for the case of packages.
    Package constraints are much simpler than normal with type constraints (e.g.,
    they can not have parameters and can only update abstract types.) *)
@@ -3460,36 +3218,6 @@ let transl_package_constraint ~loc ty =
     type_has_illegal_crossings = false;
   }
 
-||||||| fcc3157ab0
-=======
-(* A simplified version of [transl_with_constraint], for the case of packages.
-   Package constraints are much simpler than normal with type constraints (e.g.,
-   they can not have parameters and can only update abstract types.) *)
-let transl_package_constraint ~loc env ty =
-  let new_sig_decl =
-    { type_params = [];
-      type_arity = 0;
-      type_kind = Type_abstract Definition;
-      type_private = Public;
-      type_manifest = Some ty;
-      type_variance = [];
-      type_separability = [];
-      type_is_newtype = false;
-      type_expansion_scope = Btype.lowest_level;
-      type_loc = loc;
-      type_attributes = [];
-      type_immediate = Unknown;
-      type_unboxed_default = false;
-      type_uid = Uid.mk ~current_unit:(Env.get_unit_name ())
-    }
-  in
-  let new_type_immediate =
-    (* Typedecl_immediacy.compute_decl never raises *)
-    Typedecl_immediacy.compute_decl env new_sig_decl
-  in
-  { new_sig_decl with type_immediate = new_type_immediate }
-
->>>>>>> 501-plus-upstream-main-9fa77db
 (* Approximate a type declaration: just make all types abstract *)
 
 let abstract_type_decl ~injective ~jkind ~jkind_annotation ~params =
@@ -3498,15 +3226,9 @@ let abstract_type_decl ~injective ~jkind ~jkind_annotation ~params =
     let params = List.map Ctype.newvar params in
     { type_params = params;
       type_arity = arity;
-<<<<<<< HEAD
       type_kind = Type_abstract Definition;
       type_jkind = jkind;
       type_jkind_annotation = jkind_annotation;
-||||||| fcc3157ab0
-      type_kind = Type_abstract;
-=======
-      type_kind = Type_abstract Definition;
->>>>>>> 501-plus-upstream-main-9fa77db
       type_private = Public;
       type_manifest = None;
       type_variance = Variance.unknown_signature ~injective ~arity;
@@ -3568,17 +3290,8 @@ let explain_unbound_gen ppf tv tl typ kwd pr =
     Printtyp.prepare_for_printing [typ ti; ty0];
     fprintf ppf
       ".@ @[<hov2>In %s@ %a@;<1 -2>the variable %a is unbound@]"
-<<<<<<< HEAD
       kwd (Style.as_inline_code pr) ti
       (Style.as_inline_code Printtyp.prepared_type_expr) tv
-||||||| fcc3157ab0
-      kwd pr ti Printtyp.prepared_type_expr tv
-      (* kwd pr ti Printtyp.prepared_type_expr tv *)
-=======
-      kwd (Style.as_inline_code pr) ti
-      (Style.as_inline_code Printtyp.prepared_type_expr) tv
-      (* kwd pr ti Printtyp.prepared_type_expr tv *)
->>>>>>> 501-plus-upstream-main-9fa77db
   with Not_found -> ()
 
 let explain_unbound ppf tv tl typ kwd lab =
@@ -3909,22 +3622,12 @@ let report_error ppf = function
         Style.inline_code "[@@untagged]"
   | Cannot_unbox_or_untag_type Unboxed ->
       fprintf ppf "@[Don't know how to unbox this type.@ \
-<<<<<<< HEAD
                    Only %a, %a, %a, %a, vector primitives, and@ \
                    concrete unboxed types can be marked unboxed.@]"
         Style.inline_code "float"
         Style.inline_code "int32"
         Style.inline_code "int64"
         Style.inline_code "nativeint"
-||||||| fcc3157ab0
-                   Only float, int32, int64 and nativeint can be unboxed.@]"
-=======
-                   Only %a, %a, %a, and %a can be unboxed.@]"
-        Style.inline_code "float"
-        Style.inline_code "int32"
-        Style.inline_code "int64"
-        Style.inline_code "nativeint"
->>>>>>> 501-plus-upstream-main-9fa77db
   | Cannot_unbox_or_untag_type Untagged ->
       fprintf ppf "@[Don't know how to untag this type. Only %a@ \
                    and other immediate types can be untagged.@]"
@@ -3936,7 +3639,6 @@ let report_error ppf = function
          it should not occur deeply into its type.@]"
         Style.inline_code
         (match kind with Unboxed -> "@unboxed" | Untagged -> "@untagged")
-<<<<<<< HEAD
   | Jkind_mismatch_of_path (dpath,v) ->
     (* the type is always printed just above, so print out just the head of the
        path instead of something like [t/3] *)
@@ -4043,33 +3745,6 @@ let report_error ppf = function
             (Mixed_product_kind.to_plural_string mixed_product_kind)
             hint)
     end
-||||||| fcc3157ab0
-  | Immediacy (Typedecl_immediacy.Bad_immediacy_attribute violation) ->
-      fprintf ppf "@[%a@]" Format.pp_print_text
-        (match violation with
-         | Type_immediacy.Violation.Not_always_immediate ->
-             "Types marked with the immediate attribute must be \
-              non-pointer types like int or bool."
-         | Type_immediacy.Violation.Not_always_immediate_on_64bits ->
-             "Types marked with the immediate64 attribute must be \
-              produced using the Stdlib.Sys.Immediate64.Make functor.")
-=======
-  | Immediacy (Typedecl_immediacy.Bad_immediacy_attribute violation) ->
-      (match violation with
-       | Type_immediacy.Violation.Not_always_immediate ->
-           fprintf ppf
-             "@[Types@ marked@ with@ the@ immediate@ attribute@ must@ be@ \
-              non-pointer@ types@ like@ %a@ or@ %a.@]"
-             Style.inline_code "int"
-             Style.inline_code "bool"
-       | Type_immediacy.Violation.Not_always_immediate_on_64bits ->
-           fprintf ppf
-             "@[Types@ marked@ with@ the@ %a@ attribute@ must@ be@ \
-              produced@ using@ the@ %a@ functor.@]"
-             Style.inline_code "immediate64"
-             Style.inline_code "Stdlib.Sys.Immediate64.Make"
-      )
->>>>>>> 501-plus-upstream-main-9fa77db
   | Bad_unboxed_attribute msg ->
       fprintf ppf "@[This type cannot be unboxed because@ %s.@]" msg
   | Separability (Typedecl_separability.Non_separable_evar evar) ->
@@ -4099,7 +3774,6 @@ let report_error ppf = function
          which does not have a free row type variable.@]@,\
          @[<hv>@[@{<hint>Hint@}: If you intended to define a private \
          type abbreviation,@ \
-<<<<<<< HEAD
         write explicitly@]@;<1 2>%a@]"
         (Style.as_inline_code Printtyp.type_expr) ty
         (Style.as_inline_code pp_private) ty
@@ -4137,14 +3811,6 @@ let report_error ppf = function
   | Zero_alloc_attr_bad_user_arity ->
     fprintf ppf
       "@[Invalid zero_alloc attribute: arity must be greater than 0.@]"
-||||||| fcc3157ab0
-         write explicitly@]@;<1 2>private %a@]"
-        Printtyp.type_expr ty Printtyp.type_expr ty
-=======
-         write explicitly@]@;<1 2>%a@]"
-        (Style.as_inline_code Printtyp.type_expr) ty
-        (Style.as_inline_code pp_private) ty
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let () =
   Location.register_error_of_exn

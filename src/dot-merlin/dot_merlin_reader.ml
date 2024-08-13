@@ -76,16 +76,10 @@ module Cache = File_cache.Make (struct
             tell (`BH (String.drop 3 line))
           else if String.is_prefixed ~by:"S " line then
             tell (`S (String.drop 2 line))
-<<<<<<< HEAD
           else if String.is_prefixed ~by:"BH " line then
             tell (`BH (String.drop 3 line))
           else if String.is_prefixed ~by:"SH " line then
             tell (`SH (String.drop 3 line))
-||||||| fcc3157ab0
-=======
-          else if String.is_prefixed ~by:"SH " line then
-            tell (`SH (String.drop 3 line))
->>>>>>> 501-plus-upstream-main-9fa77db
           else if String.is_prefixed ~by:"SRC " line then
             tell (`S (String.drop 4 line))
           else if String.is_prefixed ~by:"CMI " line then
@@ -106,20 +100,12 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
-<<<<<<< HEAD
-          else if String.is_prefixed ~by:"UNIT_NAME " line then
-            tell (`UNIT_NAME (String.drop 10 line))
-          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
-            tell (`WRAPPING_PREFIX (String.drop 16 line))
-||||||| fcc3157ab0
-=======
           else if String.is_prefixed ~by:"SOURCE_ROOT " line then
             tell (`SOURCE_ROOT (String.drop 12 line))
           else if String.is_prefixed ~by:"UNIT_NAME " line then
             tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
             tell (`WRAPPING_PREFIX (String.drop 16 line))
->>>>>>> 501-plus-upstream-main-9fa77db
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then

@@ -570,18 +570,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Locate.get_doc ~config
         ~env ~local_defs ~comments ~pos (`User_input path)
 
-<<<<<<< HEAD
-  | Syntax_document pos ->
-    let typer = Mpipeline.typer_result pipeline in
-    let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let node = Mtyper.node_at typer pos in
-    let res = Syntax_doc.get_syntax_doc pos node in
-    (match res with
-    | Some res -> `Found res
-    | None -> `No_documentation)
-
-||||||| fcc3157ab0
-=======
   | Syntax_document pos ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -603,7 +591,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               (Option.get ppx_kind_with_attr))
     | None -> `No_ppx)
 
->>>>>>> 501-plus-upstream-main-9fa77db
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
@@ -851,22 +838,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let rec aux = function
       | [] -> raise Not_found
       | x :: xs ->
+          (* CR nroberts: upstream doesn't use hidden here *)
         try
-<<<<<<< HEAD
           find_in_path_normalized (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
-||||||| fcc3157ab0
-          find_in_path_uncap (Mconfig.source_path config) x
-=======
-          find_in_path_normalized (Mconfig.source_path config) x
->>>>>>> 501-plus-upstream-main-9fa77db
         with Not_found -> try
-<<<<<<< HEAD
+            (* CR nroberts: upstream doesn't use hidden here *)
             find_in_path_normalized (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
-||||||| fcc3157ab0
-            find_in_path_uncap (Mconfig.build_path config) x
-=======
-            find_in_path_normalized (Mconfig.build_path config) x
->>>>>>> 501-plus-upstream-main-9fa77db
           with Not_found ->
             aux xs
     in
@@ -904,6 +881,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let config = Mpipeline.final_config pipeline in
     let typer_result = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
+    (* CR nroberts: for liam; the diff is pretty trivial. *)
 <<<<<<< HEAD
     let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer_result pos) in
     let path =
@@ -920,7 +898,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | Error _ -> []
     in
     locs
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
     let enclosing = Mbrowse.enclosing pos [str] in
     let curr_node =
       let is_wildcard_pat = function
@@ -987,7 +965,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path
     in
     locs, status
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"

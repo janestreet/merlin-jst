@@ -61,7 +61,7 @@ let fmt_char_option f = function
 
 let fmt_constant f x =
   match x with
-  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m
+  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m;
   | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c)
   | Pconst_string (s, strloc, None) ->
       fprintf f "PConst_string(%S,%a,None)" s fmt_location strloc
@@ -271,7 +271,7 @@ and expression i ppf x =
       list i function_param ppf params;
       option i function_constraint ppf c;
       function_body i ppf body
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
       list i case ppf l;
   | Pexp_fun (l, eo, p, e) ->
       line i ppf "Pexp_fun\n";
@@ -283,7 +283,7 @@ and expression i ppf x =
       list i function_param ppf params;
       option i type_constraint ppf c;
       function_body i ppf body
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
   | Pexp_apply (e, l) ->
       line i ppf "Pexp_apply\n";
       expression i ppf e;
@@ -464,7 +464,7 @@ and mode_expression i ppf mode_annotations =
       line i ppf "mode_annotations %a" fmt_location mode_annotations.loc;
       list (i+1) string_loc ppf mode_annotations.txt
 
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 =======
 and function_param i ppf { pparam_desc = desc; pparam_loc = loc } =
   match desc with
@@ -496,7 +496,7 @@ and type_constraint i ppf constraint_ =
       option (i+1) core_type ppf ty1;
       core_type (i+1) ppf ty2
 
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_string_loc
        x.pval_name fmt_location x.pval_loc;
@@ -1106,6 +1106,12 @@ let interface ppf x = list 0 signature_item ppf x
 
 let implementation ppf x = list 0 structure_item ppf x
 
+<<<<<<< HEAD
 let top_phrase ppf x = toplevel_phrase 0 ppf x
 
 let constant = fmt_constant
+||||||| 7b73c6aa3
+let top_phrase ppf x = toplevel_phrase 0 ppf x;;
+=======
+let top_phrase ppf x = toplevel_phrase 0 ppf x
+>>>>>>> upstream/main

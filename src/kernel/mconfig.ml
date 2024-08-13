@@ -89,15 +89,9 @@ type merlin = {
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
-<<<<<<< HEAD
-  unit_name   : string option;
-  wrapping_prefix : string option;
-||||||| fcc3157ab0
-=======
   source_root : string option;
   unit_name   : string option;
   wrapping_prefix : string option;
->>>>>>> 501-plus-upstream-main-9fa77db
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -139,15 +133,9 @@ let dump_merlin x =
         ]) x.suffixes
     );
     "stdlib"       , Json.option Json.string x.stdlib;
-<<<<<<< HEAD
-    "unit_name"    , Json.option Json.string x.unit_name;
-    "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
-||||||| fcc3157ab0
-=======
     "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
->>>>>>> 501-plus-upstream-main-9fa77db
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -303,59 +291,7 @@ let get_external_config path t =
   | None -> t
   | Some (ctxt, config_path) ->
     let dot, failures = Mconfig_dot.get_config ctxt path in
-<<<<<<< HEAD
-    let merlin = t.merlin in
-    let merlin = {
-      merlin with
-      build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.source_path @ merlin.source_path;
-      hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
-      hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
-      cmi_path = dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.cmt_path @ merlin.cmt_path;
-      index_files = dot.index_files @ merlin.index_files;
-      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-      use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
-      extensions = dot.extensions @ merlin.extensions;
-      suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-      unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
-      wrapping_prefix =
-        if dot.wrapping_prefix = None
-        then merlin.wrapping_prefix
-        else dot.wrapping_prefix;
-      reader =
-        if dot.reader = []
-        then merlin.reader
-        else dot.reader;
-      flags_to_apply = dot.flags @ merlin.flags_to_apply;
-      failures = failures @ merlin.failures;
-      config_path = Some config_path;
-    } in
-||||||| fcc3157ab0
-    let merlin = t.merlin in
-    let merlin = {
-      merlin with
-      build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.source_path @ merlin.source_path;
-      cmi_path = dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.cmt_path @ merlin.cmt_path;
-      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-      use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
-      extensions = dot.extensions @ merlin.extensions;
-      suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-      reader =
-        if dot.reader = []
-        then merlin.reader
-        else dot.reader;
-      flags_to_apply = dot.flags @ merlin.flags_to_apply;
-      failures = failures @ merlin.failures;
-      config_path = Some config_path;
-    } in
-=======
     let merlin = merge_merlin_config dot t.merlin ~failures ~config_path in
->>>>>>> 501-plus-upstream-main-9fa77db
     normalize { t with merlin }
 
 let merlin_flags = [
@@ -530,12 +466,11 @@ let ocaml_ignored_flags = [
   "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
   "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
   "-no-strict-sequence"; "-no-unbox-free-vars-of-clos";
-<<<<<<< HEAD
-  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic";
+  "-no-unbox-specialised-args"; "-no-unboxed-types"; "-O2"; "-O3"; "-Oclassic";
   "-only-erasable-extensions"; "-opaque";
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
-  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
-  "-verbose"; "-where";
+  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures";
+  "-unboxed-types"; "-v"; "-verbose"; "-where";
   "-no-absname"; "-no-g"; "-safe-matching"; "-bin-annot-occurrences";
 
   (* flambda-backend specific *)
@@ -639,17 +574,6 @@ let ocaml_ignored_flags = [
   "-cfg-zero-alloc-checker";
   "-no-cfg-zero-alloc-checker";
   "-dcounters";
-||||||| fcc3157ab0
-  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
-  "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
-  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
-  "-verbose"; "-where";
-=======
-  "-no-unbox-specialised-args"; "-no-unboxed-types"; "-O2"; "-O3";
-  "-Oclassic"; "-opaque"; "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
-  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures";
-  "-unboxed-types"; "-v"; "-verbose"; "-where";
->>>>>>> 501-plus-upstream-main-9fa77db
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -660,8 +584,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-<<<<<<< HEAD
-  "-error-style"; "-dump-dir"; "-libloc";
+  "-error-style"; "-dump-dir"; "-cmi-file"; "-libloc";
 
   (* flambda-backend specific *)
   "-extension";
@@ -695,11 +618,6 @@ let ocaml_ignored_parametrized_flags = [
   "-zero-alloc-checker-details-cutoff";
   "-zero-alloc-checker-join";
   "-dgranularity";
-||||||| fcc3157ab0
-  "-error-style"; "-dump-dir";
-=======
-  "-error-style"; "-dump-dir"; "-cmi-file";
->>>>>>> 501-plus-upstream-main-9fa77db
 ]
 
 let ocaml_warnings_spec ~error =
@@ -932,15 +850,9 @@ let initial = {
     extensions  = [];
     suffixes    = [(".ml", ".mli"); (".re", ".rei")];
     stdlib      = None;
-<<<<<<< HEAD
-    unit_name   = None;
-    wrapping_prefix = None;
-||||||| fcc3157ab0
-=======
     source_root = None;
     unit_name   = None;
     wrapping_prefix = None;
->>>>>>> 501-plus-upstream-main-9fa77db
     reader      = [];
     protocol    = `Json;
     log_file    = None;

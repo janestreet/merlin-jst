@@ -306,7 +306,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       let locs = set_fname ~file:current_buffer_path def_loc :: locs in
       Ok { locs;  synced }
   | None -> Error "Could not find the definition [uid]"
-||||||| fcc3157ab0
+||||||| 7b73c6aa3
 =======
 open Std
 module Lid_set = Index_format.Lid_set
@@ -574,4 +574,4 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       let locs = set_fname ~file:current_buffer_path def_loc :: locs in
       { locs;  status }
   | None -> { locs = []; status = `No_def}
->>>>>>> 501-plus-upstream-main-9fa77db
+>>>>>>> upstream/main

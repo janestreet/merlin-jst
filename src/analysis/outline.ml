@@ -36,13 +36,7 @@ open Browse_raw
 open Browse_tree
 
 let id_of_patt = function
-<<<<<<< HEAD
   | { pat_desc = Tpat_var (id, _, _, _) ; _ } -> Some id
-||||||| fcc3157ab0
-  | { pat_desc = Tpat_var (id, _) ; _ } -> Some id
-=======
-  | { pat_desc = Tpat_var (id, _, _) ; _ } -> Some id
->>>>>>> 501-plus-upstream-main-9fa77db
   | _ -> None
 
 let mk ?(children=[]) ~location ~deprecated outline_kind outline_type id =

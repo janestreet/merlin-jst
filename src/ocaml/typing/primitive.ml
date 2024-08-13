@@ -20,21 +20,7 @@ open Parsetree
 
 type boxed_integer = Pnativeint | Pint32 | Pint64
 
-<<<<<<< HEAD
 type vec128_type = Int8x16 | Int16x8 | Int32x4 | Int64x2 | Float32x4 | Float64x2
-||||||| fcc3157ab0
-type native_repr =
-  | Same_as_ocaml_repr
-  | Unboxed_float
-  | Unboxed_integer of boxed_integer
-  | Untagged_int
-=======
-type native_repr =
-  | Same_as_ocaml_repr
-  | Unboxed_float
-  | Unboxed_integer of boxed_integer
-  | Untagged_immediate
->>>>>>> 501-plus-upstream-main-9fa77db
 
 type boxed_float = Pfloat64 | Pfloat32
 
@@ -83,23 +69,8 @@ type error =
 
 exception Error of Location.t * error
 
-<<<<<<< HEAD
 type value_check = Bad_attribute | Bad_layout | Ok_value
-||||||| fcc3157ab0
-let is_ocaml_repr = function
-  | Same_as_ocaml_repr -> true
-  | Unboxed_float
-  | Unboxed_integer _
-  | Untagged_int -> false
-=======
-let is_ocaml_repr = function
-  | Same_as_ocaml_repr -> true
-  | Unboxed_float
-  | Unboxed_integer _
-  | Untagged_immediate -> false
->>>>>>> 501-plus-upstream-main-9fa77db
 
-<<<<<<< HEAD
 let check_ocaml_value = function
   | _, Same_as_ocaml_repr Value -> Ok_value
   | _, Same_as_ocaml_repr _
@@ -108,35 +79,8 @@ let check_ocaml_value = function
   | _, Unboxed_vector _
   | _, Unboxed_integer _
   | _, Untagged_immediate -> Bad_attribute
-||||||| fcc3157ab0
-let is_unboxed = function
-  | Same_as_ocaml_repr
-  | Untagged_int -> false
-  | Unboxed_float
-  | Unboxed_integer _ -> true
-=======
-let is_unboxed = function
-  | Same_as_ocaml_repr
-  | Untagged_immediate -> false
-  | Unboxed_float
-  | Unboxed_integer _ -> true
->>>>>>> 501-plus-upstream-main-9fa77db
 
-<<<<<<< HEAD
 let is_builtin_prim_name name = String.length name > 0 && name.[0] = '%'
-||||||| fcc3157ab0
-let is_untagged = function
-  | Untagged_int -> true
-  | Same_as_ocaml_repr
-  | Unboxed_float
-  | Unboxed_integer _ -> false
-=======
-let is_untagged = function
-  | Untagged_immediate -> true
-  | Same_as_ocaml_repr
-  | Unboxed_float
-  | Unboxed_integer _ -> false
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let rec make_prim_repr_args arity x =
   if arity = 0 then
@@ -172,7 +116,6 @@ let parse_declaration valdecl ~native_repr_args ~native_repr_res ~is_layout_poly
         fatal_error "Primitive.parse_declaration"
   in
   let noalloc_attribute =
-<<<<<<< HEAD
     Attr_helper.has_no_payload_attribute "noalloc" valdecl.pval_attributes
   in
   let builtin_attribute =
@@ -184,12 +127,6 @@ let parse_declaration valdecl ~native_repr_args ~native_repr_res ~is_layout_poly
   let only_generative_effects_attribute =
     Attr_helper.has_no_payload_attribute "only_generative_effects"
       valdecl.pval_attributes
-||||||| fcc3157ab0
-    Attr_helper.has_no_payload_attribute ["noalloc"; "ocaml.noalloc"]
-      valdecl.pval_attributes
-=======
-    Attr_helper.has_no_payload_attribute "noalloc" valdecl.pval_attributes
->>>>>>> 501-plus-upstream-main-9fa77db
   in
   let is_builtin_prim = is_builtin_prim_name name in
   let prim_is_layout_poly =
@@ -353,7 +290,6 @@ let print p osig_val_decl =
     else
       attrs
   in
-<<<<<<< HEAD
   let attrs =
     if p.prim_is_layout_poly then
       oattr_layout_poly :: attrs
@@ -376,19 +312,6 @@ let print p osig_val_decl =
       if all_unboxed || not (is_unboxed (m, repr))
       then []
       else [oattr_unboxed])
-||||||| fcc3157ab0
-  let attr_of_native_repr = function
-    | Same_as_ocaml_repr -> None
-    | Unboxed_float
-    | Unboxed_integer _ -> if all_unboxed then None else Some oattr_unboxed
-    | Untagged_int -> if all_untagged then None else Some oattr_untagged
-=======
-  let attr_of_native_repr = function
-    | Same_as_ocaml_repr -> None
-    | Unboxed_float
-    | Unboxed_integer _ -> if all_unboxed then None else Some oattr_unboxed
-    | Untagged_immediate -> if all_untagged then None else Some oattr_untagged
->>>>>>> 501-plus-upstream-main-9fa77db
   in
   let type_attrs =
     List.map attrs_of_mode_and_repr p.prim_native_repr_args @
@@ -448,7 +371,6 @@ let equal_boxed_vector_size bi1 bi2 =
 
 let equal_native_repr nr1 nr2 =
   match nr1, nr2 with
-<<<<<<< HEAD
   | Repr_poly, Repr_poly -> true
   | Repr_poly, (Unboxed_float _ | Unboxed_integer _
                | Untagged_immediate | Unboxed_vector _ | Same_as_ocaml_repr _)
@@ -466,24 +388,8 @@ let equal_native_repr nr1 nr2 =
   | Unboxed_vector _,
     (Same_as_ocaml_repr _ | Unboxed_float _ | Untagged_immediate |
      Unboxed_integer _) -> false
-||||||| fcc3157ab0
-  | Same_as_ocaml_repr, Same_as_ocaml_repr -> true
-  | Same_as_ocaml_repr,
-    (Unboxed_float | Unboxed_integer _ | Untagged_int) -> false
-  | Unboxed_float, Unboxed_float -> true
-  | Unboxed_float,
-    (Same_as_ocaml_repr | Unboxed_integer _ | Untagged_int) -> false
-=======
-  | Same_as_ocaml_repr, Same_as_ocaml_repr -> true
-  | Same_as_ocaml_repr,
-    (Unboxed_float | Unboxed_integer _ | Untagged_immediate) -> false
-  | Unboxed_float, Unboxed_float -> true
-  | Unboxed_float,
-    (Same_as_ocaml_repr | Unboxed_integer _ | Untagged_immediate) -> false
->>>>>>> 501-plus-upstream-main-9fa77db
   | Unboxed_integer bi1, Unboxed_integer bi2 -> equal_boxed_integer bi1 bi2
   | Unboxed_integer _,
-<<<<<<< HEAD
     (Same_as_ocaml_repr _ | Unboxed_float _ | Untagged_immediate |
      Unboxed_vector _) -> false
   | Untagged_immediate, Untagged_immediate -> true
@@ -506,23 +412,11 @@ let equal_coeffects cf1 cf2 =
   | No_coeffects, Has_coeffects -> false
   | Has_coeffects, Has_coeffects -> true
   | Has_coeffects, No_coeffects -> false
-||||||| fcc3157ab0
-    (Same_as_ocaml_repr | Unboxed_float | Untagged_int) -> false
-  | Untagged_int, Untagged_int -> true
-  | Untagged_int,
-    (Same_as_ocaml_repr | Unboxed_float | Unboxed_integer _) -> false
-=======
-    (Same_as_ocaml_repr | Unboxed_float | Untagged_immediate) -> false
-  | Untagged_immediate, Untagged_immediate -> true
-  | Untagged_immediate,
-    (Same_as_ocaml_repr | Unboxed_float | Unboxed_integer _) -> false
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let native_name_is_external p =
   let nat_name = native_name p in
   nat_name <> "" && nat_name.[0] <> '%'
 
-<<<<<<< HEAD
 module Repr_check = struct
 
   type result =
@@ -851,15 +745,9 @@ let prim_can_contain_layout_any prim =
 
 module Style = Misc.Style
 
-||||||| fcc3157ab0
-=======
-module Style = Misc.Style
-
->>>>>>> 501-plus-upstream-main-9fa77db
 let report_error ppf err =
   match err with
   | Old_style_float_with_native_repr_attribute ->
-<<<<<<< HEAD
     Format.fprintf ppf "Cannot use %a in conjunction with %a/%a."
       Style.inline_code "float"
       Style.inline_code "[@unboxed]"
@@ -868,22 +756,12 @@ let report_error ppf err =
     Format.fprintf ppf "Cannot use %a in conjunction with \
                         types of non-value layouts."
       Style.inline_code "float"
-||||||| fcc3157ab0
-    Format.fprintf ppf "Cannot use \"float\" in conjunction with \
-                        [%@unboxed]/[%@untagged]."
-=======
-    Format.fprintf ppf "Cannot use %a in conjunction with %a/%a."
-      Style.inline_code "float"
-      Style.inline_code "[@unboxed]"
-      Style.inline_code  "[@untagged]"
->>>>>>> 501-plus-upstream-main-9fa77db
   | Old_style_noalloc_with_noalloc_attribute ->
     Format.fprintf ppf "Cannot use %a in conjunction with %a."
       Style.inline_code "noalloc"
       Style.inline_code "[@@noalloc]"
   | No_native_primitive_with_repr_attribute ->
     Format.fprintf ppf
-<<<<<<< HEAD
       "@[The native code version of the primitive is mandatory@ \
       when attributes %a or %a are present.@]"
       Style.inline_code "[@untagged]"
@@ -910,15 +788,6 @@ let report_error ppf err =
        The declaration contains argument/return types with the@ \
        wrong layout."
       name
-||||||| fcc3157ab0
-      "[@The native code version of the primitive is mandatory@ \
-       when attributes [%@untagged] or [%@unboxed] are present.@]"
-=======
-      "@[The native code version of the primitive is mandatory@ \
-       when attributes %a or %a are present.@]"
-      Style.inline_code "[@untagged]"
-      Style.inline_code "[@unboxed]"
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let () =
   Location.register_error_of_exn

@@ -46,15 +46,9 @@ type config = {
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
-<<<<<<< HEAD
-  unit_name    : string option;
-  wrapping_prefix : string option;
-||||||| fcc3157ab0
-=======
   source_root  : string option;
   unit_name    : string option;
   wrapping_prefix : string option;
->>>>>>> 501-plus-upstream-main-9fa77db
   reader       : string list;
   exclude_query_dir : bool;
   use_ppx_cache : bool;

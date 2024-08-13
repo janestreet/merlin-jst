@@ -34,16 +34,10 @@ val get_env : ?pos:Msource.position -> result -> Env.t
 
 val get_typedtree : result -> typedtree
 
-<<<<<<< HEAD
-val get_stamp : result -> int
-
-||||||| fcc3157ab0
-=======
 val get_index : result -> index_tbl
 
 val get_stamp : result -> int
 
->>>>>>> 501-plus-upstream-main-9fa77db
 val get_errors : result -> exn list
 
 val initial_env : result -> Env.t
