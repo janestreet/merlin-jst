@@ -19,10 +19,8 @@ available:
     "notifications": []
   }
 
-  $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
-  Loading the shapes for unit "A"
-  Shapes successfully loaded, looking for A.0
-  Found location: File "a.ml", line 1, characters 4-9
+  $ grep -A0 fall log 
+  [1]
 
   $ rm log
 
@@ -40,10 +38,8 @@ available:
     "notifications": []
   }
 
-  $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
-  Loading the shapes for unit "A"
-  Shapes successfully loaded, looking for A.0
-  Found location: File "a.ml", line 1, characters 4-9
+  $ grep -A0 fall log 
+  [1]
 
   $ rm log
 
@@ -65,7 +61,7 @@ In the absence of cmt though, fallbacking to the cmi loc makes sense:
     "notifications": []
   }
 
-  $ grep -A1 from_uid log | grep -v from_uid
-  No UID found, fallbacking to lookup location.
+  $ grep -A0 fall log
+  No definition uid, falling back to the declaration uid: A.0
 
   $ rm log

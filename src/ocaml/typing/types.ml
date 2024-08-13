@@ -185,7 +185,7 @@ module Variance = struct
     let mp =
       mem May_pos v1 && mem May_pos v2 || mem May_neg v1 && mem May_neg v2
     and mn =
-      mem May_pos v1 && mem May_neg v2 || mem May_pos v1 && mem May_neg v2
+      mem May_pos v1 && mem May_neg v2 || mem May_neg v1 && mem May_pos v2
     and mw = mem May_weak v1 && v2 <> null || v1 <> null && mem May_weak v2
     and inj = mem Inj v1 && mem Inj v2
     and pos = mem Pos v1 && mem Pos v2 || mem Neg v1 && mem Neg v2
@@ -249,10 +249,15 @@ type type_declaration =
 and type_decl_kind = (label_declaration, constructor_declaration) type_kind
 
 and ('lbl, 'cstr) type_kind =
-    Type_abstract
+    Type_abstract of type_origin
   | Type_record of 'lbl list * record_representation
   | Type_variant of 'cstr list * variant_representation
   | Type_open
+
+and type_origin =
+    Definition
+  | Rec_check_regularity
+  | Existential of string
 
 and record_representation =
     Record_regular                      (* All fields are boxed / tagged *)

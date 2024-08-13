@@ -35,12 +35,18 @@ type directive = Merlin_dot_protocol.directive
 type config = {
   build_path   : string list;
   source_path  : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path     : string list;
   cmt_path     : string list;
+  index_files  : string list;
   flags        : string list with_workdir list;
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
+  source_root  : string option;
+  unit_name    : string option;
+  wrapping_prefix : string option;
   reader       : string list;
   exclude_query_dir : bool;
   use_ppx_cache : bool;
@@ -48,13 +54,19 @@ type config = {
 
 let empty_config = {
   build_path   = [];
+  hidden_build_path =[];
+  hidden_source_path = [];
   source_path  = [];
   cmi_path     = [];
   cmt_path     = [];
+  index_files  = [];
   extensions   = [];
   suffixes     = [];
   flags        = [];
   stdlib       = None;
+  source_root  = None;
+  unit_name    = None;
+  wrapping_prefix = None;
   reader       = [];
   exclude_query_dir = false;
   use_ppx_cache = false;
@@ -235,8 +247,12 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
     function
     | `B path -> {config with build_path = path :: config.build_path}, errors
     | `S path -> {config with source_path = path :: config.source_path}, errors
+    | `BH path -> {config with hidden_build_path = path :: config.hidden_build_path}, errors
+    | `SH path -> {config with hidden_source_path = path :: config.hidden_source_path}, errors
     | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
     | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
+    | `INDEX file ->
+      {config with index_files = file :: config.index_files}, errors
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}, errors
     | `SUFFIX suffix ->
@@ -246,6 +262,12 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
       {config with flags = flags :: config.flags}, errors
     | `STDLIB path ->
       {config with stdlib = Some path}, errors
+    | `SOURCE_ROOT path ->
+      {config with source_root = Some path}, errors
+    | `UNIT_NAME name ->
+      {config with unit_name = Some name}, errors
+    | `WRAPPING_PREFIX prefix ->
+      {config with wrapping_prefix = Some prefix}, errors
     | `READER reader ->
       {config with reader}, errors
     | `EXCLUDE_QUERY_DIR ->
@@ -268,12 +290,18 @@ let postprocess_config config =
   {
     build_path   = clean config.build_path;
     source_path  = clean config.source_path;
+    hidden_build_path  = clean config.hidden_build_path;
+    hidden_source_path = clean config.hidden_source_path;
     cmi_path     = clean config.cmi_path;
     cmt_path     = clean config.cmt_path;
+    index_files  = clean config.index_files;
     extensions   = clean config.extensions;
     suffixes     = clean config.suffixes;
     flags        = clean config.flags;
     stdlib      = config.stdlib;
+    source_root = config.source_root;
+    unit_name   = config.unit_name;
+    wrapping_prefix = config.wrapping_prefix;
     reader      = config.reader;
     exclude_query_dir = config.exclude_query_dir;
     use_ppx_cache = config.use_ppx_cache;

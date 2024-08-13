@@ -153,7 +153,7 @@ If a string list, check only if the extension of the buffer-file-name
   "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-error-on-single-line nil
+(defcustom merlin-error-on-single-line t
   "Only highlight first line of multi-line error messages"
   :group 'merlin :type 'boolean)
 
@@ -193,6 +193,10 @@ a new window or not."
 (defcustom merlin-logfile nil
   "If non-nil, use this file for the log file (should be an absolute path)."
   :group 'merlin :type 'file)
+
+(defcustom merlin-cache-lifespan nil
+  "If non-nil, use this value for cache period (measured in minutes)."
+  :group 'merlin :type 'natnum)
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
@@ -550,6 +554,8 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
                   (cons "-flags" merlin-buffer-flags))
                 (when filename
                   (cons "-filename" filename))
+                (when merlin-cache-lifespan
+                  (cons "-cache-lifespan" (number-to-string merlin-cache-lifespan)))
                 args))
     ;; Log last commands
     (setq merlin-debug-last-commands
@@ -1778,37 +1784,33 @@ Empty string defaults to jumping to all these."
       (let ((inhibit-read-only t)
             (buffer-undo-list t)
             (pending-line)
-            (pending-lines-text))
+            (pending-lines-text)
+            (previous-buf))
         (erase-buffer)
         (occur-mode)
-        (insert (propertize (format "%d occurrences in buffer: %s"
-                                    (length lst)
-                                    src-buff)
-                            'font-lock-face list-matching-lines-buffer-name-face
-                            'read-only t
-                            'occur-title (get-buffer src-buff)))
-        (insert "\n")
         (dolist (pos positions)
-          (let* ((marker (cdr (assoc 'marker pos)))
-                 (start (assoc 'start pos))
+          (let* ((start (assoc 'start pos))
                  (end (assoc 'end pos))
+                 (file (cdr (assoc 'file pos)))
+                 (occ-buff (if file (find-file-noselect file) src-buff))
+                 (marker (with-current-buffer occ-buff
+                          (copy-marker (merlin--point-of-pos start))))
                  (line (cdr (assoc 'line start)))
-                 (start-buf-pos (with-current-buffer src-buff
+                 (start-buf-pos (with-current-buffer occ-buff
                                   (merlin--point-of-pos start)))
-                 (end-buf-pos (with-current-buffer src-buff
+                 (end-buf-pos (with-current-buffer occ-buff
                                 (merlin--point-of-pos end)))
                  (prefix-length 8)
                  (start-offset (+ prefix-length
                                   (cdr (assoc 'col start))))
                  (lines-text
-                  (if (equal line pending-line)
-                      pending-lines-text
+                  (if (and (equal line pending-line) occ-buff)
+                    pending-lines-text
                     (merlin--occurrence-text line
                                             marker
                                             start-buf-pos
                                             end-buf-pos
-                                            src-buff))))
-
+                                            occ-buff))))
             ;; Insert the critical text properties that occur-mode
             ;; makes use of
             (add-text-properties start-offset
@@ -1822,9 +1824,22 @@ Empty string defaults to jumping to all these."
             ;; found in order to accumulate multiple matches within
             ;; one line.
             (when (and pending-lines-text
-                       (not (equal line pending-line)))
+                       (or (not (equal line pending-line))
+                           (not (equal previous-buf occ-buff))))
               (insert pending-lines-text))
+
+            (when (not (equal previous-buf occ-buff))
+              (insert (propertize (format "Occurrences in buffer %s:"
+                                          ;(length lst)
+                                          occ-buff)
+                                  'font-lock-face
+                                    list-matching-lines-buffer-name-face
+                                  'read-only t
+                                  'occur-title occ-buff))
+              (insert "\n"))
+
             (setq pending-line line)
+            (setq previous-buf occ-buff)
             (setq pending-lines-text lines-text)))
 
         ;; Catch final pending text
@@ -1849,6 +1864,19 @@ Empty string defaults to jumping to all these."
   "List all occurrences of identifier under cursor in buffer."
   (interactive)
   (let ((r (merlin--occurrences)))
+    (when r
+      (if (listp r)
+          (merlin-occurrences-list r)
+        (error "%s" r)))))
+
+(defun merlin--project-occurrences ()
+  (merlin-call "occurrences" "-scope" "project" "-identifier-at"
+    (merlin-unmake-point (point))))
+
+(defun merlin-project-occurrences ()
+  "List all occurrences of identifier under cursor in buffer."
+  (interactive)
+  (let ((r (merlin--project-occurrences)))
     (when r
       (if (listp r)
           (merlin-occurrences-list r)

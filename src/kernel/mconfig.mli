@@ -4,6 +4,7 @@ open Std
 
 type ocaml = {
   include_dirs         : string list;
+  hidden_dirs          : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -29,11 +30,17 @@ val dump_ocaml : ocaml -> json
 type merlin = {
   build_path  : string list;
   source_path : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
+  index_files : string list;
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
+  source_root : string option;
+  unit_name   : string option;
+  wrapping_prefix : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -48,14 +55,15 @@ type merlin = {
   flags_applied : string list with_workdir list;
 
   failures : string list;
-  extension_to_reader : (string * string) list
+  extension_to_reader : (string * string) list;
+  cache_lifespan : int
 }
 
 val dump_merlin : merlin -> json
 
 (** {1 Some flags affecting queries} *)
 
-module Verbosity : sig 
+module Verbosity : sig
   type t = Smart | Lvl of int
 
   (** the default value for verbosity, i.e., [Lvl 0] *)
@@ -87,6 +95,10 @@ val initial : t
 
 val dump : t -> json
 
+val merge_merlin_config :
+  Mconfig_dot.config
+  -> merlin -> failures:(string list) -> config_path:string -> merlin
+
 val get_external_config : string -> t -> t
 
 val normalize : t -> t
@@ -107,6 +119,8 @@ val document_arguments : out_channel -> unit
 val source_path : t -> string list
 
 val build_path : t -> string list
+
+val hidden_build_path : t -> string list
 
 val cmt_path : t -> string list
 

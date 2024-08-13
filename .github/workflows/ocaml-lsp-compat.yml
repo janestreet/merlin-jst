@@ -4,7 +4,7 @@ name: Check ocaml-lsp compat
 # events but only for the master branch
 on:
   push:
-    branches: [ 500 ]
+    branches: [ master ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -14,7 +14,7 @@ on:
       - 'vim/**'
       - '**/emacs-lint.yml'
   pull_request:
-    branches: [ 500 ]
+    branches: [ master ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -34,25 +34,24 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - 5.0.x
+          - 5.2.x
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Check that Merlin and OCaml-LSP are co-installable
         run: |
-          opam depext conf-jq # opam depext bug
-          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/ocaml/ocaml-lsp.git
-          opam --cli=2.1 pin --with-version=dev --no-action .
-          opam install ocaml-lsp-server --with-test --ignore-constraints-on=merlin-lib
+          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/voodoos/ocaml-lsp.git#5.2-preview
+          opam --cli=2.1 pin --with-version=5.0-502 --no-action .
+          opam install ocaml-lsp-server --with-test --ignore-constraints-on=ocamlformat
 

@@ -28,7 +28,7 @@ module String = Misc.String
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
-type 'a usage_tbl = ('a -> unit) Types.Uid.Tbl.t
+type 'a usage_tbl = (Uid.t, ('a -> unit)) Stamped_hashtable.t
 (** This table is used to track usage of value declarations.
     A declaration is identified by its uid.
     The callback attached to a declaration is called whenever the value (or
@@ -36,16 +36,18 @@ type 'a usage_tbl = ('a -> unit) Types.Uid.Tbl.t
     (inclusion test between signatures, cf Includemod.value_descriptions, ...).
 *)
 
-let value_declarations  : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
-let type_declarations   : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
-let module_declarations : unit usage_tbl ref = s_table Types.Uid.Tbl.create 16
+let local_stamped n : Stamped_hashtable.changelog * ('a usage_tbl) =
+  let changelog = Stamped_hashtable.create_changelog () in
+  changelog, Stamped_hashtable.create changelog n
 
-let uid_to_loc : Location.t Types.Uid.Tbl.t ref =
-  s_table Types.Uid.Tbl.create 16
+let stamped_value_declarations = s_table local_stamped 32
+let value_declarations_changelog, value_declarations = !stamped_value_declarations
 
-let register_uid uid loc = Types.Uid.Tbl.add !uid_to_loc uid loc
+let stamped_type_declarations = s_table local_stamped 32
+let type_declarations_changelog, type_declarations = !stamped_type_declarations
 
-let get_uid_to_loc_tbl () = !uid_to_loc
+let stamped_module_declarations = s_table local_stamped 32
+let module_declarations_changelog, module_declarations = !stamped_module_declarations
 
 type constructor_usage = Positive | Pattern | Exported_private | Exported
 type constructor_usages =
@@ -81,8 +83,8 @@ let constructor_usage_complaint ~rebind priv cu
       | false, false, true -> Some Only_exported_private
     end
 
-let used_constructors : constructor_usage usage_tbl ref =
-  s_table Types.Uid.Tbl.create 16
+let stamped_used_constructors = s_table local_stamped 32
+let used_constructors_changelog, used_constructors = !stamped_used_constructors
 
 type label_usage =
     Projection | Mutation | Construct | Exported_private | Exported
@@ -131,8 +133,8 @@ let label_usage_complaint priv mut lu
       | true, false, _ -> Some Not_mutated
     end
 
-let used_labels : label_usage usage_tbl ref =
-  s_table Types.Uid.Tbl.create 16
+let stamped_used_labels = s_table local_stamped 32
+let used_labels_changelog, used_labels = !stamped_used_labels
 
 (** Map indexed by the name of module components. *)
 module NameMap = String.Map
@@ -516,7 +518,7 @@ let in_signature_flag = 0x01
 let stamped_changelog =
   s_table Stamped_hashtable.create_changelog ()
 
-let stamped_add table path value =
+let stamped_path_add table path value =
   let rec path_stamp = function
     | Pident id -> Ident.stamp id
     | Pdot (t, _) -> path_stamp t
@@ -527,11 +529,15 @@ let stamped_add table path value =
   let stamp = if stamp = 0 then None else Some stamp in
   Stamped_hashtable.add table ?stamp path value
 
-let stamped_mem table path =
-  Stamped_hashtable.mem table path
+let stamped_uid_add table uid value =
+  let stamp = Types.Uid.stamp_of_uid uid in
+  Stamped_hashtable.add table ?stamp uid value
 
-let stamped_find table path =
-  Stamped_hashtable.find table path
+let stamped_mem table value =
+  Stamped_hashtable.mem table value
+
+let stamped_find table value =
+  Stamped_hashtable.find table value
 
 let stamped_create n =
   Stamped_hashtable.create !stamped_changelog n
@@ -709,6 +715,11 @@ let error err = raise (Error err)
 let lookup_error loc env err =
   error (Lookup_error(loc, env, err))
 
+let same_type_declarations e1 e2 =
+  e1.types == e2.types &&
+  e1.modules == e2.modules &&
+  e1.local_constraints == e2.local_constraints
+
 let same_constr = ref (fun _ _ _ -> assert false)
 
 let check_well_formed_module = ref (fun _ -> assert false)
@@ -729,9 +740,12 @@ let check_shadowing env = function
   | `Label (Some (l1, l2))
     when not (!same_constr env l1.lbl_res l2.lbl_res) ->
       Some "label"
-  | `Value (Some _) -> Some "value"
+  | `Value (Some (Val_unbound _, _)) -> None
+  | `Value (Some (_, _)) -> Some "value"
   | `Type (Some _) -> Some "type"
-  | `Module (Some _) | `Component (Some _) -> Some "module"
+  | `Module (Some (Mod_unbound _, _)) -> None
+  | `Module (Some _) | `Component (Some _) ->
+      Some "module"
   | `Module_type (Some _) -> Some "module type"
   | `Class (Some _) -> Some "class"
   | `Class_type (Some _) -> Some "class type"
@@ -985,9 +999,9 @@ let imports () = Persistent_env.imports !persistent_env
 let import_crcs ~source crcs =
   Persistent_env.import_crcs !persistent_env ~source crcs
 
-let read_pers_mod modname filename =
+let read_pers_mod cmi =
   Persistent_env.read !persistent_env
-    read_sign_of_cmi short_paths_components modname filename
+    read_sign_of_cmi short_paths_components cmi
 
 let find_pers_mod name =
   Persistent_env.find !persistent_env
@@ -1008,12 +1022,11 @@ let register_import_as_opaque modname =
   Persistent_env.register_import_as_opaque !persistent_env modname
 
 let reset_declaration_caches () =
-  Types.Uid.Tbl.clear !value_declarations;
-  Types.Uid.Tbl.clear !type_declarations;
-  Types.Uid.Tbl.clear !module_declarations;
-  Types.Uid.Tbl.clear !used_constructors;
-  Types.Uid.Tbl.clear !used_labels;
-  Types.Uid.Tbl.clear !uid_to_loc;
+  Stamped_hashtable.clear value_declarations;
+  Stamped_hashtable.clear type_declarations;
+  Stamped_hashtable.clear module_declarations;
+  Stamped_hashtable.clear used_constructors;
+  Stamped_hashtable.clear used_labels;
   ()
 
 let reset_cache () =
@@ -1060,7 +1073,7 @@ let modtype_of_functor_appl fcomp p1 p2 =
           in
           Subst.modtype (Rescope scope) subst mty
         in
-        stamped_add fcomp.fcomp_subst_cache p2 mty;
+        stamped_path_add fcomp.fcomp_subst_cache p2 mty;
         mty
 
 let check_functor_appl
@@ -1080,7 +1093,7 @@ let find_ident_module id env =
   match find_same_module id env.modules with
   | Mod_local data -> data
   | Mod_unbound _ -> raise Not_found
-  | Mod_persistent -> find_pers_mod (Ident.name id)
+  | Mod_persistent -> find_pers_mod ~allow_hidden:true (Ident.name id)
 
 let rec find_module_components path env =
   match path with
@@ -1188,7 +1201,7 @@ let rec find_type_data path env =
   | decl ->
     {
       tda_declaration = decl;
-      tda_descriptions = Type_abstract;
+      tda_descriptions = Type_abstract (Btype.type_origin decl);
       tda_shape = Shape.leaf decl.type_uid;
     }
   | exception Not_found -> begin
@@ -1213,7 +1226,7 @@ and find_cstr path name env =
   match tda.tda_descriptions with
   | Type_variant (cstrs, _) ->
       List.find (fun cstr -> cstr.cstr_name = name) cstrs
-  | Type_record _ | Type_abstract | Type_open -> raise Not_found
+  | Type_record _ | Type_abstract _ | Type_open -> raise Not_found
 
 
 
@@ -1320,6 +1333,10 @@ let find_shape env (ns : Shape.Sig_component_kind.t) id =
   match ns with
   | Type ->
       (IdTbl.find_same id env.types).tda_shape
+  | Constructor ->
+      Shape.leaf ((TycompTbl.find_same id env.constrs).cda_description.cstr_uid)
+  | Label ->
+      Shape.leaf ((TycompTbl.find_same id env.labels).lbl_uid)
   | Extension_constructor ->
       (TycompTbl.find_same id env.constrs).cda_shape
   | Value ->
@@ -1440,7 +1457,7 @@ let find_type_expansion path env =
   let decl = find_type path env in
   match decl.type_manifest with
   | Some body when decl.type_private = Public
-              || decl.type_kind <> Type_abstract
+              || not (Btype.type_kind_is_abstract decl)
               || Btype.has_constr_row body ->
       (decl.type_params, body, decl.type_expansion_scope)
   (* The manifest type of Private abstract data types without
@@ -1860,7 +1877,7 @@ let rec components_of_module_maker
                         add_to_tbl descr.lbl_name descr c.comp_labels)
                     lbls;
                   Type_record (lbls, repr)
-              | Type_abstract -> Type_abstract
+              | Type_abstract r -> Type_abstract r
               | Type_open -> Type_open
             in
             let shape = Shape.proj cm_shape (Shape.Item.type_ id) in
@@ -1982,9 +1999,9 @@ and check_usage loc id uid warn tbl =
      Warnings.is_active (warn "")
   then begin
     let name = Ident.name id in
-    if Types.Uid.Tbl.mem tbl uid then ()
+    if stamped_mem tbl uid then ()
     else let used = ref false in
-    Types.Uid.Tbl.add tbl uid (fun () -> used := true);
+      stamped_uid_add tbl uid (fun () -> used := true);
     if not (name = "" || name.[0] = '_' || name.[0] = '#')
     then
       !add_delayed_check_forward
@@ -2003,8 +2020,9 @@ and check_value_name name loc =
 
 and store_value ?check id addr decl shape env =
   check_value_name (Ident.name id) decl.val_loc;
+  Builtin_attributes.mark_alerts_used decl.val_attributes;
   Option.iter
-    (fun f -> check_usage decl.val_loc id decl.val_uid f !value_declarations)
+    (fun f -> check_usage decl.val_loc id decl.val_uid f value_declarations)
     check;
   let vda =
     { vda_description = decl;
@@ -2025,9 +2043,9 @@ and store_constructor ~check type_decl type_id cstr_id cstr env =
     let loc = cstr.cstr_loc in
     let k = cstr.cstr_uid in
     let priv = type_decl.type_private in
-    if not (Types.Uid.Tbl.mem !used_constructors k) then begin
+    if not (stamped_mem used_constructors k) then begin
       let used = constructor_usages () in
-      Types.Uid.Tbl.add !used_constructors k
+      stamped_uid_add used_constructors k
         (add_constructor_usage used);
       if not (ty_name = "" || ty_name.[0] = '_')
       then
@@ -2041,6 +2059,8 @@ and store_constructor ~check type_decl type_id cstr_id cstr env =
               (constructor_usage_complaint ~rebind:false priv used));
     end;
   end);
+  Builtin_attributes.mark_alerts_used cstr.cstr_attributes;
+  Builtin_attributes.mark_warn_on_literal_pattern_used cstr.cstr_attributes;
   let cda_shape = Shape.leaf cstr.cstr_uid in
   { env with
     constrs =
@@ -2059,9 +2079,9 @@ and store_label ~check type_decl type_id lbl_id lbl env =
     let loc = lbl.lbl_loc in
     let mut = lbl.lbl_mut in
     let k = lbl.lbl_uid in
-    if not (Types.Uid.Tbl.mem !used_labels k) then
+    if not (stamped_mem used_labels k) then
       let used = label_usages () in
-      Types.Uid.Tbl.add !used_labels k
+      stamped_uid_add used_labels k
         (add_label_usage used);
       if not (ty_name = "" || ty_name.[0] = '_' || name.[0] = '_')
       then !add_delayed_check_forward
@@ -2073,6 +2093,9 @@ and store_label ~check type_decl type_id lbl_id lbl env =
                      loc (Warnings.Unused_field(name, complaint)))
               (label_usage_complaint priv mut used))
   end);
+  Builtin_attributes.mark_alerts_used lbl.lbl_attributes;
+  if lbl.lbl_mut = Mutable then
+    Builtin_attributes.mark_deprecated_mutable_used lbl.lbl_attributes;
   { env with
     labels = TycompTbl.add lbl_id lbl env.labels;
   }
@@ -2082,7 +2105,7 @@ and store_type ~check ~long_path ~predef id info shape env =
   if check then
     check_usage loc id info.type_uid
       (fun s -> Warnings.Unused_type_declaration s)
-      !type_declarations;
+      type_declarations;
   let descrs, env =
     let path = Pident id in
     match info.type_kind with
@@ -2102,7 +2125,7 @@ and store_type ~check ~long_path ~predef id info shape env =
           (fun env (lbl_id, lbl) ->
             store_label ~check info id lbl_id lbl env)
           env labels
-    | Type_abstract -> Type_abstract, env
+    | Type_abstract r -> Type_abstract r, env
     | Type_open -> Type_open, env
   in
   let tda =
@@ -2110,6 +2133,7 @@ and store_type ~check ~long_path ~predef id info shape env =
       tda_descriptions = descrs;
       tda_shape = shape }
   in
+  Builtin_attributes.mark_alerts_used info.type_attributes;
   { env with
     types = IdTbl.add id tda env.types;
     summary = Env_type(env.summary, id, info);
@@ -2125,7 +2149,7 @@ and store_type_infos ~tda_shape id info env =
   let tda =
     {
       tda_declaration = info;
-      tda_descriptions = Type_abstract;
+      tda_descriptions = Type_abstract (Btype.type_origin info);
       tda_shape
     }
   in
@@ -2145,6 +2169,8 @@ and store_extension ~check ~rebind id addr ext shape env =
       cda_address = Some addr;
       cda_shape = shape }
   in
+  Builtin_attributes.mark_alerts_used ext.ext_attributes;
+  Builtin_attributes.mark_warn_on_literal_pattern_used ext.ext_attributes;
   Builtin_attributes.warning_scope ext.ext_attributes (fun () ->
   if check && not loc.Location.loc_ghost &&
     Warnings.is_active (Warnings.Unused_extension ("", false, Unused))
@@ -2153,9 +2179,9 @@ and store_extension ~check ~rebind id addr ext shape env =
     let is_exception = Path.same ext.ext_type_path Predef.path_exn in
     let name = cstr.cstr_name in
     let k = cstr.cstr_uid in
-    if not (Types.Uid.Tbl.mem !used_constructors k) then begin
+    if not (stamped_mem used_constructors k) then begin
       let used = constructor_usages () in
-      Types.Uid.Tbl.add !used_constructors k
+      stamped_uid_add used_constructors k
         (add_constructor_usage used);
       !add_delayed_check_forward
          (fun () ->
@@ -2177,7 +2203,8 @@ and store_module ?(update_summary=true) ~check
   let open Subst.Lazy in
   let loc = md.mdl_loc in
   Option.iter
-    (fun f -> check_usage loc id md.mdl_uid f !module_declarations) check;
+    (fun f -> check_usage loc id md.mdl_uid f module_declarations) check;
+  Builtin_attributes.mark_alerts_used md.mdl_attributes;
   let alerts = Builtin_attributes.alerts_of_attrs md.mdl_attributes in
   let comps =
     components_of_module ~alerts ~uid:md.mdl_uid
@@ -2199,6 +2226,7 @@ and store_module ?(update_summary=true) ~check
       short_paths_module id md comps env.short_paths_additions; }
 
 and store_modtype ?(update_summary=true) id info shape env =
+  Builtin_attributes.mark_alerts_used info.Subst.Lazy.mtdl_attributes;
   let mtda = { mtda_declaration = info; mtda_shape = shape } in
   let summary =
     if not update_summary then env.summary
@@ -2210,6 +2238,7 @@ and store_modtype ?(update_summary=true) id info shape env =
       short_paths_module_type id info env.short_paths_additions; }
 
 and store_class id addr desc shape env =
+  Builtin_attributes.mark_alerts_used desc.cty_attributes;
   let clda =
     { clda_declaration = desc;
       clda_address = addr;
@@ -2220,6 +2249,7 @@ and store_class id addr desc shape env =
     summary = Env_class(env.summary, id, desc) }
 
 and store_cltype id desc shape env =
+  Builtin_attributes.mark_alerts_used desc.clty_attributes;
   let cltda = { cltda_declaration = desc; cltda_shape = shape } in
   { env with
     cltypes = IdTbl.add id cltda env.cltypes;
@@ -2259,7 +2289,7 @@ let components_of_functor_appl ~loc ~f_path ~f_comp ~arg env =
         (*???*)
         env Subst.identity p addr (Subst.Lazy.of_modtype mty) shape
     in
-    stamped_add f_comp.fcomp_cache arg comps;
+    stamped_path_add f_comp.fcomp_cache arg comps;
     comps
 
 (* Define forward functions *)
@@ -2340,7 +2370,7 @@ let add_module_lazy ~update_summary id presence mty env =
   in
   add_module_declaration_lazy ~update_summary id presence md env
 
-let add_local_type path info env =
+let add_local_constraint path info env =
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
 
@@ -2451,8 +2481,6 @@ let enter_signature_and_shape ~scope ~parent_shape mod_shape sg env =
   enter_signature_and_shape ~scope ~parent_shape (Some mod_shape) sg env
 
 let add_value = add_value ?shape:None
-let add_type = add_type ?shape:None
-let add_extension = add_extension ?shape:None
 let add_class = add_class ?shape:None
 let add_cltype = add_cltype ?shape:None
 let add_modtype = add_modtype ?shape:None
@@ -2646,29 +2674,19 @@ let open_signature
   else open_signature None root env
 
 (* Read a signature from a file *)
-let read_signature modname filename =
-  let mda = read_pers_mod modname filename in
+let read_signature u =
+  let mda = read_pers_mod u in
   let md = Subst.Lazy.force_module_decl mda.mda_declaration in
   match md.md_type with
   | Mty_signature sg -> sg
   | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_for_hole -> assert false
 
-let is_identchar_latin1 = function
-  | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
-  | '\248'..'\255' | '\'' | '0'..'9' -> true
-  | _ -> false
-
 let unit_name_of_filename fn =
   match Filename.extension fn with
-  | ".cmi" -> begin
-      let unit =
-        String.capitalize_ascii (Filename.remove_extension fn)
-      in
-      if Std.String.for_all is_identchar_latin1 unit then
-        Some unit
-      else
-        None
-    end
+  | ".cmi" ->
+      let modname = Unit_info.modname_from_source fn in
+      if Unit_info.is_unit_name modname then Some modname
+      else None
   | _ -> None
 
 let persistent_structures_of_dir dir =
@@ -2678,27 +2696,28 @@ let persistent_structures_of_dir dir =
   |> String.Set.of_seq
 
 (* Save a signature to a file *)
-let save_signature_with_transform cmi_transform ~alerts sg modname filename =
+let save_signature_with_transform cmi_transform ~alerts sg cmi_info =
   Btype.cleanup_abbrev ();
   Subst.reset_for_saving ();
   let sg = Subst.signature Make_local (Subst.for_saving Subst.identity) sg in
   let cmi =
-    Persistent_env.make_cmi !persistent_env modname sg alerts
+    Persistent_env.make_cmi !persistent_env
+      (Unit_info.Artifact.modname cmi_info) sg alerts
     |> cmi_transform in
-  let pm = save_sign_of_cmi
-      { Persistent_env.Persistent_signature.cmi; filename } in
-  Persistent_env.save_cmi !persistent_env
-    { Persistent_env.Persistent_signature.filename; cmi } pm;
+  let filename = Unit_info.Artifact.filename cmi_info in
+  let pers_sig =
+    Persistent_env.Persistent_signature.{ cmi; filename; visibility = Visible }
+  in
+  let pm = save_sign_of_cmi pers_sig in
+  Persistent_env.save_cmi !persistent_env pers_sig pm;
   cmi
 
-let save_signature ~alerts sg modname filename =
-  save_signature_with_transform (fun cmi -> cmi)
-    ~alerts sg modname filename
+let save_signature ~alerts sg cmi =
+  save_signature_with_transform (fun cmi -> cmi) ~alerts sg cmi
 
-let save_signature_with_imports ~alerts sg modname filename imports =
+let save_signature_with_imports ~alerts sg cmi imports =
   let with_imports cmi = { cmi with cmi_crcs = imports } in
-  save_signature_with_transform with_imports
-    ~alerts sg modname filename
+  save_signature_with_transform with_imports ~alerts sg cmi
 
 (* Make the initial environment *)
 let initial =
@@ -2707,28 +2726,28 @@ let initial =
     (add_extension ~check:false ~rebind:false)
     empty
 
-let add_type_long_path ~check id info env =
-  add_type ~check ~predef:false ~long_path:true id info env
+let add_type_long_path ~check ?shape id info env =
+  add_type ~check ?shape ~predef:false ~long_path:true id info env
 
-let add_type ~check id info env =
-  add_type ~check ~predef:false ~long_path:false id info env
+let add_type ~check ?shape id info env =
+  add_type ~check ?shape ~predef:false ~long_path:false id info env
 
 (* Tracking usage *)
 
 let mark_module_used uid =
-  match Types.Uid.Tbl.find !module_declarations uid with
+  match Stamped_hashtable.find module_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_modtype_used _uid = ()
 
 let mark_value_used uid =
-  match Types.Uid.Tbl.find !value_declarations uid with
+  match Stamped_hashtable.find value_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_type_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
+  match Stamped_hashtable.find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
@@ -2738,24 +2757,24 @@ let mark_type_path_used env path =
   | exception Not_found -> ()
 
 let mark_constructor_used usage cd =
-  match Types.Uid.Tbl.find !used_constructors cd.cd_uid with
+  match stamped_find used_constructors cd.cd_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_extension_used usage ext =
-  match Types.Uid.Tbl.find !used_constructors ext.ext_uid with
+  match stamped_find used_constructors ext.ext_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_label_used usage ld =
-  match Types.Uid.Tbl.find !used_labels ld.ld_uid with
+  match stamped_find used_labels ld.ld_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_constructor_description_used usage env cstr =
   let ty_path = Btype.cstr_type_path cstr in
   mark_type_path_used env ty_path;
-  match Types.Uid.Tbl.find !used_constructors cstr.cstr_uid with
+  match stamped_find used_constructors cstr.cstr_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
@@ -2766,30 +2785,30 @@ let mark_label_description_used usage env lbl =
     | _ -> assert false
   in
   mark_type_path_used env ty_path;
-  match Types.Uid.Tbl.find !used_labels lbl.lbl_uid with
+  match stamped_find used_labels lbl.lbl_uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_class_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
+  match stamped_find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_cltype_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
+  match stamped_find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let set_value_used_callback vd callback =
-  Types.Uid.Tbl.add !value_declarations vd.val_uid callback
+  stamped_uid_add value_declarations vd.val_uid callback
 
 let set_type_used_callback td callback =
   if Uid.for_actual_declaration td.type_uid then
     let old =
-      try Types.Uid.Tbl.find !type_declarations td.type_uid
+      try stamped_find type_declarations td.type_uid
       with Not_found -> ignore
     in
-    Types.Uid.Tbl.replace !type_declarations td.type_uid
+    Stamped_hashtable.replace type_declarations td.type_uid
       (fun () -> callback old)
 
 (* Lookup by name *)
@@ -2916,10 +2935,10 @@ let lookup_ident_module (type a) (load : a load) ~errors ~use ~loc s env =
   | Mod_persistent -> begin
       match load with
       | Don't_load ->
-          check_pers_mod ~loc s;
+          check_pers_mod ~allow_hidden:false ~loc s;
           path, (() : a)
       | Load -> begin
-          match find_pers_mod s with
+          match find_pers_mod ~allow_hidden:false s with
           | mda ->
               use_module ~use ~loc path mda;
               path, (mda : a)
@@ -3258,7 +3277,7 @@ let lookup_label ~errors ~use ~loc usage lid env =
 let lookup_all_labels_from_type ~use ~loc usage ty_path env =
   match find_type_descrs ty_path env with
   | exception Not_found -> []
-  | Type_variant _ | Type_abstract | Type_open -> []
+  | Type_variant _ | Type_abstract _ | Type_open -> []
   | Type_record (lbls, _) ->
       List.map
         (fun lbl ->
@@ -3280,7 +3299,7 @@ let lookup_constructor ~errors ~use ~loc usage lid env =
 let lookup_all_constructors_from_type ~use ~loc usage ty_path env =
   match find_type_descrs ty_path env with
   | exception Not_found -> []
-  | Type_record _ | Type_abstract | Type_open -> []
+  | Type_record _ | Type_abstract _ | Type_open -> []
   | Type_variant (cstrs, _) ->
       List.map
         (fun cstr ->
@@ -3424,7 +3443,7 @@ let bound_module name env =
   | exception Not_found ->
       if Current_unit_name.is name then false
       else begin
-        match find_pers_mod name with
+        match find_pers_mod ~allow_hidden:false name with
         | _ -> true
         | exception Not_found -> false
       end
@@ -3697,9 +3716,12 @@ let extract_instance_variables env =
        | Val_ivar _ -> name :: acc
        | _ -> acc) None env []
 
+module Style = Misc.Style
+
 let report_lookup_error _loc env ppf = function
   | Unbound_value(lid, hint) -> begin
-      fprintf ppf "Unbound value %a" !print_longident lid;
+      fprintf ppf "Unbound value %a"
+        (Style.as_inline_code !print_longident) lid;
       spellcheck ppf extract_values env lid;
       match hint with
       | No_hint -> ()
@@ -3708,90 +3730,101 @@ let report_lookup_error _loc env ppf = function
             Location.get_pos_info def_loc.Location.loc_start
           in
           fprintf ppf
-            "@.@[@{<hint>Hint@}: If this is a recursive definition,@ %s %i@]"
-            "you should add the 'rec' keyword on line"
+            "@.@[@{<hint>Hint@}: If this is a recursive definition,@ \
+             you should add the %a keyword on line %i@]"
+            Style.inline_code "rec"
             line
     end
   | Unbound_type lid ->
-      fprintf ppf "Unbound type constructor %a" !print_longident lid;
+      fprintf ppf "Unbound type constructor %a"
+        (Style.as_inline_code !print_longident) lid;
       spellcheck ppf extract_types env lid;
   | Unbound_module lid -> begin
-      fprintf ppf "Unbound module %a" !print_longident lid;
+      fprintf ppf "Unbound module %a"
+        (Style.as_inline_code !print_longident) lid;
        match find_modtype_by_name lid env with
       | exception Not_found -> spellcheck ppf extract_modules env lid;
       | _ ->
          fprintf ppf
            "@.@[@{<hint>Hint@}: There is a module type named %a, %s@]"
-           !print_longident lid
+           (Style.as_inline_code !print_longident) lid
            "but module types are not modules"
     end
   | Unbound_constructor lid ->
-      fprintf ppf "Unbound constructor %a" !print_longident lid;
+      fprintf ppf "Unbound constructor %a"
+        (Style.as_inline_code !print_longident) lid;
       spellcheck ppf extract_constructors env lid;
   | Unbound_label lid ->
-      fprintf ppf "Unbound record field %a" !print_longident lid;
+      fprintf ppf "Unbound record field %a"
+        (Style.as_inline_code !print_longident) lid;
       spellcheck ppf extract_labels env lid;
   | Unbound_class lid -> begin
-      fprintf ppf "Unbound class %a" !print_longident lid;
+      fprintf ppf "Unbound class %a"
+        (Style.as_inline_code !print_longident) lid;
       match find_cltype_by_name lid env with
       | exception Not_found -> spellcheck ppf extract_classes env lid;
       | _ ->
          fprintf ppf
            "@.@[@{<hint>Hint@}: There is a class type named %a, %s@]"
-           !print_longident lid
+           (Style.as_inline_code !print_longident) lid
            "but classes are not class types"
     end
   | Unbound_modtype lid -> begin
-      fprintf ppf "Unbound module type %a" !print_longident lid;
+      fprintf ppf "Unbound module type %a"
+        (Style.as_inline_code !print_longident) lid;
       match find_module_by_name lid env with
       | exception Not_found -> spellcheck ppf extract_modtypes env lid;
       | _ ->
          fprintf ppf
            "@.@[@{<hint>Hint@}: There is a module named %a, %s@]"
-           !print_longident lid
+           (Style.as_inline_code !print_longident) lid
            "but modules are not module types"
     end
   | Unbound_cltype lid ->
-      fprintf ppf "Unbound class type %a" !print_longident lid;
+      fprintf ppf "Unbound class type %a"
+        (Style.as_inline_code !print_longident) lid;
       spellcheck ppf extract_cltypes env lid;
   | Unbound_instance_variable s ->
-      fprintf ppf "Unbound instance variable %s" s;
+      fprintf ppf "Unbound instance variable %a" Style.inline_code s;
       spellcheck_name ppf extract_instance_variables env s;
   | Not_an_instance_variable s ->
-      fprintf ppf "The value %s is not an instance variable" s;
+      fprintf ppf "The value %a is not an instance variable"
+        Style.inline_code s;
       spellcheck_name ppf extract_instance_variables env s;
   | Masked_instance_variable lid ->
       fprintf ppf
         "The instance variable %a@ \
          cannot be accessed from the definition of another instance variable"
-        !print_longident lid
+        (Style.as_inline_code !print_longident) lid
   | Masked_self_variable lid ->
       fprintf ppf
         "The self variable %a@ \
          cannot be accessed from the definition of an instance variable"
-        !print_longident lid
+        (Style.as_inline_code !print_longident) lid
   | Masked_ancestor_variable lid ->
       fprintf ppf
         "The ancestor variable %a@ \
          cannot be accessed from the definition of an instance variable"
-        !print_longident lid
+       (Style.as_inline_code !print_longident) lid
   | Illegal_reference_to_recursive_module ->
      fprintf ppf "Illegal recursive module reference"
   | Structure_used_as_functor lid ->
       fprintf ppf "@[The module %a is a structure, it cannot be applied@]"
-        !print_longident lid
+        (Style.as_inline_code !print_longident) lid
   | Abstract_used_as_functor lid ->
       fprintf ppf "@[The module %a is abstract, it cannot be applied@]"
-        !print_longident lid
+        (Style.as_inline_code !print_longident) lid
   | Functor_used_as_structure lid ->
       fprintf ppf "@[The module %a is a functor, \
                    it cannot have any components@]" !print_longident lid
   | Abstract_used_as_structure lid ->
       fprintf ppf "@[The module %a is abstract, \
-                   it cannot have any components@]" !print_longident lid
+                   it cannot have any components@]"
+        (Style.as_inline_code !print_longident) lid
   | Generative_used_as_applicative lid ->
       fprintf ppf "@[The functor %a is generative,@ it@ cannot@ be@ \
-                   applied@ in@ type@ expressions@]" !print_longident lid
+                   applied@ in@ type@ expressions@]"
+        (Style.as_inline_code !print_longident) lid
   | Cannot_scrape_alias(lid, p) ->
       let cause =
         if Current_unit_name.is_path p then "is the current compilation unit"
@@ -3799,22 +3832,26 @@ let report_lookup_error _loc env ppf = function
       in
       fprintf ppf
         "The module %a is an alias for module %a, which %s"
-        !print_longident lid !print_path p cause
+        (Style.as_inline_code !print_longident) lid
+        (Style.as_inline_code !print_path) p cause
 
 let report_error ppf = function
   | Missing_module(_, path1, path2) ->
       fprintf ppf "@[@[<hov>";
       if Path.same path1 path2 then
-        fprintf ppf "Internal path@ %s@ is dangling." (Path.name path1)
+        fprintf ppf "Internal path@ %a@ is dangling."
+          Style.inline_code (Path.name path1)
       else
-        fprintf ppf "Internal path@ %s@ expands to@ %s@ which is dangling."
-          (Path.name path1) (Path.name path2);
-      fprintf ppf "@]@ @[%s@ %s@ %s.@]@]"
-        "The compiled interface for module" (Ident.name (Path.head path2))
+        fprintf ppf "Internal path@ %a@ expands to@ %a@ which is dangling."
+          Style.inline_code (Path.name path1)
+          Style.inline_code (Path.name path2);
+      fprintf ppf "@]@ @[%s@ %a@ %s.@]@]"
+        "The compiled interface for module"
+        Style.inline_code (Ident.name (Path.head path2))
         "was not found"
   | Illegal_value_name(_loc, name) ->
-      fprintf ppf "'%s' is not a valid value identifier."
-        name
+      fprintf ppf "%a is not a valid value identifier."
+       Style.inline_code name
   | Lookup_error(loc, t, err) -> report_lookup_error loc t ppf err
 
 let () =
@@ -3841,7 +3878,7 @@ let () =
 
 let check_state_consistency () =
   let missing modname =
-    match Load_path.find_uncap (modname ^ ".cmi") with
+    match Load_path.find_normalized (modname ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
   and found _modname filename ps_name _md =
@@ -3876,7 +3913,7 @@ let short_paths_type_desc decl =
     if ty.level <> Btype.generic_level then Fresh
     else begin
       match decl.type_private, decl.type_kind with
-      | Private, Type_abstract -> Fresh
+      | Private, Type_abstract _ -> Fresh
       | _, _ -> begin
         let params = List.map get_desc decl.type_params in
         match ty with
@@ -4025,7 +4062,7 @@ and short_paths_functor_components_desc env mpath comp path =
             Subst.modtype (Rescope (Path.scope (Papply (mpath, path))))
               subst f.fcomp_res
           in
-          stamped_add f.fcomp_subst_cache path mty;
+          stamped_path_add f.fcomp_subst_cache path mty;
           mty
       in
       let loc = Location.(in_file !input_name) in
@@ -4135,3 +4172,10 @@ let short_paths env =
 
 let cleanup_functor_caches ~stamp =
   Stamped_hashtable.backtrack !stamped_changelog ~stamp
+
+let cleanup_usage_tables ~stamp =
+  Stamped_hashtable.backtrack value_declarations_changelog ~stamp;
+  Stamped_hashtable.backtrack type_declarations_changelog ~stamp;
+  Stamped_hashtable.backtrack module_declarations_changelog ~stamp;
+  Stamped_hashtable.backtrack used_constructors_changelog ~stamp;
+  Stamped_hashtable.backtrack used_labels_changelog ~stamp

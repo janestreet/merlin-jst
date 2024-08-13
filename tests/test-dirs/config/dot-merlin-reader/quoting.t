@@ -14,8 +14,11 @@
   {
     "build_path": [],
     "source_path": [],
+    "hidden_build_path": [],
+    "hidden_source_path": [],
     "cmi_path": [],
     "cmt_path": [],
+    "index_files": [],
     "flags_applied": [
       {
         "workdir": "$TESTCASE_ROOT",
@@ -51,6 +54,9 @@
       }
     ],
     "stdlib": null,
+    "source_root": null,
+    "unit_name": null,
+    "wrapping_prefix": null,
     "reader": [],
     "protocol": "json",
     "log_file": null,
@@ -66,7 +72,8 @@
         "extension": ".rei",
         "reader": "reason"
       }
-    ]
+    ],
+    "cache_lifespan": "5"
   }
 
   $ rm .merlin

@@ -1,7 +1,7 @@
 if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 
 if !exists('g:merlin_python_version')
-  if has('python3')
+  if has('python3') || has('python3_dynamic')
     let g:merlin_python_version = 3
   elseif has('python') || has('python2')
     let g:merlin_python_version = 2
@@ -81,7 +81,7 @@ endif
 let s:current_dir=expand("<sfile>:p:h")
 silent! MerlinPy import sys, vim
 MerlinPy if not vim.eval("s:current_dir") in sys.path:
-\    sys.path.append(vim.eval("s:current_dir"))
+\    sys.path.insert(0, vim.eval("s:current_dir"))
 
 MerlinPy import merlin
 
@@ -481,16 +481,34 @@ endfunction
 function! merlin#Occurrences()
   let l:occurrences = []
   let l:pos = 0
-  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences"))
+  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences", False))
 
   if l:occurrences == []
     return
   endif
 
   call setloclist(0, l:occurrences)
-  execute ":ll! " . l:pos
+  if l:pos > 0
+    execute ":ll! " . l:pos
+  endif
   if g:merlin_display_occurrence_list
     lopen
+  endif
+endfunction
+
+function! merlin#OccurrencesProjectWide()
+  let l:occurrences = []
+  let l:pos = 0
+  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences", True))
+  if l:occurrences == []
+    return
+  endif
+  call setqflist(l:occurrences)
+  if l:pos > 0
+    execute ":cc! " . l:pos
+  endif
+  if g:merlin_display_occurrence_list
+    copen
   endif
 endfunction
 
@@ -662,20 +680,6 @@ function! merlin#setVisualSelection(a, b)
   call setpos("'b", markBSave)
 endfunction
 
-let s:phrase_counter = 0
-
-function! merlin#Phrase()
-  if s:phrase_counter
-      let s:phrase_counter = s:phrase_counter - 1
-  else
-    let [l1, c1] = getpos("'<")[1:2]
-    let [l2, c2] = getpos("'>")[1:2]
-    let s:phrase_counter = l2 - l1
-    MerlinPy merlin.vim_selectphrase("l1","c1","l2","c2")
-    call merlin#setVisualSelection([l1,c1],[l2,c2])
-  endif
-endfunction
-
 function! merlin#Register()
   if @% == ":merlin-type-history:"
     return
@@ -749,6 +753,8 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinOccurrences call merlin#Occurrences()
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesForward)  :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
+  " Project-wide occurrences
+  command! -buffer -nargs=0 MerlinOccurrencesProjectWide call merlin#OccurrencesProjectWide()
 
   " Rename
   command! -buffer -nargs=* MerlinRename call merlin#OccurrencesRename(<f-args>)
@@ -807,10 +813,6 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
 
-  """ 'semantic movement'  -----------------------------------------------------
-  " TODO: bind (,),{,} ?
-  command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
-
   """ Polarity search
   command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#PolaritySearch(0,<q-args>)
 
@@ -818,10 +820,6 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
   command! -buffer -nargs=0 MerlinDebugDisable call merlin#DebugDisable()
   command! -buffer -nargs=0 MerlinDebugEnable  call merlin#DebugEnable()
-
-  if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
-    vmap <silent><buffer> <TAB>         :<C-u>MerlinPhrase<return>
-  endif
 
   call merlin#LoadProject()
 endfunction

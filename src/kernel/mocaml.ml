@@ -46,7 +46,9 @@ let setup_reader_config config = (
 
 let setup_typer_config config = (
   setup_reader_config config;
-  Load_path.(init ~auto_include:no_auto_include (Mconfig.build_path config));
+  let visible = Mconfig.build_path config in
+  let hidden = Mconfig.hidden_build_path config in
+  Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
 )
 
 (** Switchable implementation of Oprint *)
@@ -110,5 +112,6 @@ let clear_caches () = (
 (* Flush cache *)
 let flush_caches ?older_than () = (
   Cmi_cache.flush ?older_than ();
-  Cmt_cache.flush ?older_than ()
+  Cmt_cache.flush ?older_than ();
+  Merlin_index_format.Index_cache.flush ?older_than ()
 )

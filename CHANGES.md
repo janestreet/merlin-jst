@@ -1,3 +1,103 @@
+unreleased
+==========
+
+  + merlin binary
+    - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
+      what to append to the current unit name in the presence of wrapping (#1788)
+    - Add `-unboxed-types` and `-no-unboxed-types` as ocaml ignored flags (#1795, fixes #1794)
+    - destruct: Refinement in the presence of optional arguments (#1800 #1807, fixes #1770)
+    - Implement new expand-node command for expanding PPX annotations (#1745)
+  + editor modes
+    - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
+    - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
+
+merlin 5.1
+==========
+Tue Jun 18 12:00:42 CEST 2024
+
+  + merlin binary
+    - Support project-wide occurrences queries using index files (#1766)
+      - The file format is described in library `Merlin_lib.index_format`
+      - Two new configuration directives are introduced:
+        - `SOURCE_ROOT` that is used to resolve relative paths found in the
+          indexes.
+        - `INDEX` that is used to declare the list of index files Merlin should
+          use when looking for occurrences.
+    - A new `UNIT_NAME` configuration directive that can be used to tell Merlin
+      the correct name of the current unit in the presence of wrapping (#1776)
+    - Perform incremental indexation of the buffer when typing. (#1777)
+    - `merlin-lib.commands`: Add a `find_command_opt`` alternative to
+      `find_command` that does not raise (#1778)
+    - Prevent uid clashes by not returning PWO for defs located in the current
+      interface file (#1781)
+    - Reset uid counters when restoring the typer cache so that uids are stable
+      across re-typing (#1779)
+    - Improve the behavior on occurrences when the cursor is on a label /
+      constructor declaration (#1785)
+  + editor modes
+    - emacs: add basic support for project-wide occurrences (#1766)
+    - vim: add basic support for project-wide occurrences (#1767, @Julow)
+
+merlin 5.0
+==========
+Fri May 17 19:59:42 CET 2024
+
+  + merlin binary
+    - Support for OCaml 5.2 (#1757)
+    - destruct: Removal of residual patterns (#1737, fixes #1560)
+    - Do not erase fields' names when destructing punned record fields (#1734,
+      fixes #1661)
+    - Ignore SIGPIPE in the Merlin server process (#1746)
+    - Fix lexing of quoted strings in comments (#1754, fixes #1753)
+    - Improve cursor position detection in longidents (#1756)
+    - Addition of a `merlin-lib.commands` library which disassociates the
+      execution of commands from the `new_protocol`, from the binary, allowing
+      it to be invoked from other projects (#1758)
+    - New occurrences backend: Don't index occurrences when `merlin.hide`
+      attribute is present. (#1768)
+    - Use the new `uid_to_decl` table in 5.2's cmt files to get documentation.
+      (#1773)
+
+merlin 4.14
+===========
+Thu Feb 22 14:00:42 CET 2024
+
+  + merlin binary
+    - Preliminary support for OCaml 5.2
+    - Some regressions in recovery and destruct are present.
+    - Add a "heap_mbytes" field to Merlin server responses to report heap usage (#1717)
+    - Add cache stats to telemetry (#1711)
+    - Add new SyntaxDocument command to find information about the node under the cursor (#1706)
+    - Fix `FLG -pp ppx.exe -as-pp/-dump-ast` use of invalid shell redirection when
+    direct process launch on Windows. (#1723, fixes #1722)
+    - Add a query_num field to the `ocamlmerlin` responses to detect server crashes (#1716)
+    - Jump to cases within a match statement (#1726)
+    - Jump to `module-type` (#1728, partially fixes #1656)
+    - Exposes stable functions for configuration handling and pattern variable
+      destruction. (#1730)
+  + editor modes
+    - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
+    - Fix merlinpp not using binary file open (#1725, fixes #1724)
+
+merlin 4.13.1
+=============
+Fri Dec  1 15:00:42 CET 2023
+
+  + merlin binary
+    - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
+    - Add `-cache-lifespan` flag, that sets cache invalidation period. (#1698,
+      #1705)
+    - Ignore the new 5.1 `cmi-file` flag instead of rejecting it (#1710, fixes
+      #1703)
+    - Fix Merlin locate not fallbacking on the correct file in case of ambiguity
+      (@goldfirere, #1699)
+    - Fix Merlin reporting errors provoked by the recovery itself (#1709, fixes
+      #1704)
+    - Add support for OCaml 5.1.1 (#1714)
+  + editor modes
+    - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+    - emacs: highlight only first error line by default (#1693, fixes #1663)
+
 merlin 4.12
 ===========
 Tue Sep 26 17:45:42 CEST 2023
@@ -122,12 +222,12 @@ Fri Feb 24 16:55:42 CEST 2023
       xref recognises operators and binding operators at the cursor position;
       bad locations are filtered out (#1385, fixes #1410, @mattiase)
   + test suite
-    - Add a test for incorrect alert defaults (#1559)
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
+    - Add a test for incorrect alert defaults (#1559)
 
 merlin 4.7.1
-==========
+============
 Thu Dec 13 11:49:42 CEST 2022
 
   + merlin binary
@@ -158,6 +258,10 @@ Thu Nov 24 17:49:42 CEST 2022
     - Allow program name customization when merlin is used as a library. (#1532)
   + editor modes
     - vim: load the plugin when necessary if it wasn't loaded before (#1511)
+    - emacs: xref works from context menus; better highlighting of xref
+      matches; xref recognises operators and binding operators at the
+      cursor position; bad locations are filtered out (#1385, fixes
+      #1410)
     - emacs: update CI for newer releases and fix some warnings (#1454,
       @mattiase)
   + test suite

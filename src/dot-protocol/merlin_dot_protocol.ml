@@ -31,12 +31,21 @@ open Merlin_utils.Std.Result
 
 module Directive = struct
   type include_path =
-    [ `B of string | `S of string | `CMI of string | `CMT of string ]
+    [ `B of string
+    | `S of string
+    | `BH of string
+    | `SH of string
+    | `CMI of string
+    | `CMT of string
+    | `INDEX of string]
 
   type no_processing_required =
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
+    | `SOURCE_ROOT of string
+    | `UNIT_NAME of string
+    | `WRAPPING_PREFIX of string
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
@@ -82,9 +91,15 @@ module Sexp = struct
       begin match tag with
         | "S" -> `S value
         | "B" -> `B value
+        | "SH" -> `SH value
+        | "BH" -> `BH value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
+        | "INDEX" -> `INDEX value
         | "STDLIB" -> `STDLIB value
+        | "SOURCE_ROOT" -> `SOURCE_ROOT value
+        | "UNIT_NAME" -> `UNIT_NAME value
+        | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
         | "FLG" ->
@@ -112,8 +127,14 @@ module Sexp = struct
         match t with
         | `B s -> ("B", single s)
         | `S s -> ("S", single s)
+        | `BH s -> ("BH", single s)
+        | `SH s -> ("SH", single s)
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
+        | `INDEX s -> ("INDEX", single s)
+        | `SOURCE_ROOT s -> ("SOURCE_ROOT", single s)
+        | `UNIT_NAME s -> ("UNIT_NAME", single s)
+        | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)

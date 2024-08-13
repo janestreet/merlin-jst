@@ -6,6 +6,7 @@ let {Logger. log} = Logger.for_section "Mconfig"
 
 type ocaml = {
   include_dirs         : string list;
+  hidden_dirs          : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -31,6 +32,7 @@ let dump_warnings st =
 
 let dump_ocaml x = `Assoc [
     "include_dirs"         , `List (List.map ~f:Json.string x.include_dirs);
+    "hidden_dirs"          , `List (List.map ~f:Json.string x.hidden_dirs);
     "no_std_include"       , `Bool x.no_std_include;
     "unsafe"               , `Bool x.unsafe;
     "classic"              , `Bool x.classic;
@@ -70,11 +72,17 @@ let marg_commandline f =
 type merlin = {
   build_path  : string list;
   source_path : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
+  index_files : string list;
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
+  source_root : string option;
+  unit_name   : string option;
+  wrapping_prefix : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -90,8 +98,9 @@ type merlin = {
   flags_applied : string list with_workdir list;
 
   failures : string list;
-  extension_to_reader : (string * string) list
+  extension_to_reader : (string * string) list;
 
+  cache_lifespan : int
 }
 
 let dump_merlin x =
@@ -101,8 +110,11 @@ let dump_merlin x =
   `Assoc [
     "build_path"   , `List (List.map ~f:Json.string x.build_path);
     "source_path"  , `List (List.map ~f:Json.string x.source_path);
+    "hidden_build_path" , `List (List.map ~f:Json.string x.hidden_build_path);
+    "hidden_source_path", `List (List.map ~f:Json.string x.hidden_source_path);
     "cmi_path"     , `List (List.map ~f:Json.string x.cmi_path);
     "cmt_path"     , `List (List.map ~f:Json.string x.cmt_path);
+    "index_files"  , `List (List.map ~f:Json.string x.index_files);
     "flags_applied", `List (List.map ~f:dump_flag_list x.flags_applied);
     "extensions"   , `List (List.map ~f:Json.string x.extensions);
     "suffixes"     , `List (
@@ -112,6 +124,9 @@ let dump_merlin x =
         ]) x.suffixes
     );
     "stdlib"       , Json.option Json.string x.stdlib;
+    "source_root"  , Json.option Json.string x.source_root;
+    "unit_name"    , Json.option Json.string x.unit_name;
+    "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -127,7 +142,8 @@ let dump_merlin x =
           "extension", `String suffix;
           "reader", `String reader;
         ]) x.extension_to_reader
-    )
+    );
+    "cache_lifespan"   , Json.string (string_of_int x.cache_lifespan)
   ]
 
 module Verbosity = struct
@@ -228,6 +244,37 @@ let rec normalize t =
   ) else
     normalize (normalize_step t)
 
+let merge_merlin_config dot merlin ~failures ~config_path =
+  { merlin with
+    build_path = dot.Mconfig_dot.build_path @ merlin.build_path;
+    source_path = dot.source_path @ merlin.source_path;
+    hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
+    hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
+    cmi_path = dot.cmi_path @ merlin.cmi_path;
+    cmt_path = dot.cmt_path @ merlin.cmt_path;
+    index_files = dot.index_files @ merlin.index_files;
+    exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+    use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
+    extensions = dot.extensions @ merlin.extensions;
+    suffixes = dot.suffixes @ merlin.suffixes;
+    stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+    source_root =
+      (if dot.source_root = None then merlin.source_root else dot.source_root);
+    unit_name =
+      (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
+    wrapping_prefix =
+      if dot.wrapping_prefix = None
+      then merlin.wrapping_prefix
+      else dot.wrapping_prefix;
+    reader =
+      if dot.reader = []
+      then merlin.reader
+      else dot.reader;
+    flags_to_apply = dot.flags @ merlin.flags_to_apply;
+    failures = failures @ merlin.failures;
+    config_path = Some config_path;
+  }
+
 let get_external_config path t =
   let path = Misc.canonicalize_filename path in
   let directory = Filename.dirname path in
@@ -235,26 +282,7 @@ let get_external_config path t =
   | None -> t
   | Some (ctxt, config_path) ->
     let dot, failures = Mconfig_dot.get_config ctxt path in
-    let merlin = t.merlin in
-    let merlin = {
-      merlin with
-      build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.source_path @ merlin.source_path;
-      cmi_path = dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.cmt_path @ merlin.cmt_path;
-      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-      use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
-      extensions = dot.extensions @ merlin.extensions;
-      suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-      reader =
-        if dot.reader = []
-        then merlin.reader
-        else dot.reader;
-      flags_to_apply = dot.flags @ merlin.flags_to_apply;
-      failures = failures @ merlin.failures;
-      config_path = Some config_path;
-    } in
+    let merlin = merge_merlin_config dot t.merlin ~failures ~config_path in
     normalize { t with merlin }
 
 let merlin_flags = [
@@ -271,6 +299,18 @@ let merlin_flags = [
     "<dir> Add <dir> to merlin source path"
   );
   (
+    "-hidden-build-path",
+    marg_path (fun dir merlin ->
+        {merlin with hidden_build_path = dir :: merlin.hidden_build_path}),
+    "<dir> Add <dir> to merlin hidden build path"
+  );
+  (
+    "-hidden-source-path",
+    marg_path (fun dir merlin ->
+        {merlin with hidden_source_path = dir :: merlin.hidden_source_path}),
+    "<dir> Add <dir> to merlin hidden source path"
+  );
+  (
     "-cmi-path",
     marg_path (fun dir merlin ->
         {merlin with cmi_path = dir :: merlin.cmi_path}),
@@ -281,6 +321,12 @@ let merlin_flags = [
     marg_path (fun dir merlin ->
         {merlin with cmt_path = dir :: merlin.cmt_path}),
     "<dir> Add <dir> to merlin cmt path"
+  );
+  (
+    "-index-file",
+    marg_path (fun file merlin ->
+        {merlin with index_files = file :: merlin.index_files}),
+    "<file> Add <file> to the index files used by merlin"
   );
   (
     "-reader",
@@ -357,6 +403,15 @@ let merlin_flags = [
     "<path> Change path of ocaml standard library"
   );
   (
+    "-cache-lifespan",
+    Marg.param "int" (fun prot merlin ->
+        try {merlin with cache_lifespan = (int_of_string prot)}
+        with _ -> invalid_arg "Valid value is int";
+      ),
+    "Change file cache retention period. It's measured in minutes. \
+      Default value is 5."
+  );
+  (
     (* Legacy support for janestreet. Ignored. To be removed soon. *)
     "-attributes-allowed",
     Marg.unit_ignore,
@@ -402,10 +457,10 @@ let ocaml_ignored_flags = [
   "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
   "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
   "-no-strict-sequence"; "-no-unbox-free-vars-of-clos";
-  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
-  "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
-  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
-  "-verbose"; "-where";
+  "-no-unbox-specialised-args"; "-no-unboxed-types"; "-O2"; "-O3";
+  "-Oclassic"; "-opaque"; "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
+  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures";
+  "-unboxed-types"; "-v"; "-verbose"; "-where";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -416,7 +471,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style"; "-dump-dir";
+  "-error-style"; "-dump-dir"; "-cmi-file";
 ]
 
 let ocaml_warnings_spec ~error =
@@ -443,6 +498,13 @@ let ocaml_flags = [
     marg_path (fun dir ocaml ->
         {ocaml with include_dirs = dir :: ocaml.include_dirs}),
     "<dir> Add <dir> to the list of include directories"
+  );
+  (
+    "-H",
+    marg_path (fun dir ocaml ->
+        {ocaml with hidden_dirs = dir :: ocaml.hidden_dirs}),
+    "<dir>  Add <dir> to the list of \"hidden\" include directories\n\
+    \ (Like -I, but the program can not directly reference these dependencies)"
   );
   (
     "-nostdlib",
@@ -576,6 +638,7 @@ let ocaml_flags = [
 let initial = {
   ocaml = {
     include_dirs         = [];
+    hidden_dirs          = [];
     no_std_include       = false;
     unsafe               = false;
     classic              = false;
@@ -595,11 +658,17 @@ let initial = {
   merlin = {
     build_path  = [];
     source_path = [];
+    hidden_build_path  = [];
+    hidden_source_path = [];
     cmi_path    = [];
     cmt_path    = [];
+    index_files = [];
     extensions  = [];
     suffixes    = [(".ml", ".mli"); (".re", ".rei")];
     stdlib      = None;
+    source_root = None;
+    unit_name   = None;
+    wrapping_prefix = None;
     reader      = [];
     protocol    = `Json;
     log_file    = None;
@@ -615,6 +684,7 @@ let initial = {
 
     failures = [];
     extension_to_reader = [(".re","reason");(".rei","reason")];
+    cache_lifespan = 5;
   };
   query = {
     filename = "*buffer*";
@@ -707,7 +777,8 @@ let source_path config =
   List.concat
     [[config.query.directory];
      stdlib;
-     config.merlin.source_path]
+     config.merlin.source_path;
+     config.merlin.hidden_source_path]
   |> List.filter_dup
 
 let build_path config = (
@@ -739,6 +810,9 @@ let build_path config = (
   result'
 )
 
+let hidden_build_path config =
+  config.merlin.hidden_build_path @ config.ocaml.hidden_dirs
+
 let cmt_path config = (
   let dirs =
     match config.ocaml.threads with
@@ -749,6 +823,7 @@ let cmt_path config = (
   let dirs =
     config.merlin.cmt_path @
     config.merlin.build_path @
+    config.merlin.hidden_build_path @
     dirs
   in
   let stdlib = stdlib config in
@@ -771,4 +846,12 @@ let global_modules ?(include_current=false) config = (
 
 let filename t = t.query.filename
 
-let unitname t = Misc.unitname t.query.filename
+let unitname t =
+  match t.merlin.unit_name with
+  | Some name -> Misc.unitname name
+  | None ->
+    let basename = Misc.unitname t.query.filename in
+    begin match t.merlin.wrapping_prefix with
+    | Some prefix -> prefix ^ basename
+    | None -> basename
+    end
