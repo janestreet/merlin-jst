@@ -590,7 +590,6 @@ end
 module E = struct
   (* Value expressions for the core language *)
 
-<<<<<<< HEAD
   module C = Jane_syntax.Comprehensions
   module IA = Jane_syntax.Immutable_arrays
   module L = Jane_syntax.Layouts
@@ -692,40 +691,6 @@ module E = struct
 
   let map sub
         ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as exp) =
-||||||| 7b73c6aa3
-  let map sub {pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} =
-=======
-  let map_function_param sub { pparam_loc = loc; pparam_desc = desc } =
-    let loc = sub.location sub loc in
-    let desc =
-      match desc with
-      | Pparam_val (lab, def, p) ->
-          Pparam_val
-            (lab,
-             map_opt (sub.expr sub) def,
-             sub.pat sub p)
-      | Pparam_newtype ty ->
-          Pparam_newtype (map_loc sub ty)
-    in
-    { pparam_loc = loc; pparam_desc = desc }
-
-  let map_function_body sub body =
-    match body with
-    | Pfunction_body e ->
-        Pfunction_body (sub.expr sub e)
-    | Pfunction_cases (cases, loc, attributes) ->
-        let cases = sub.cases sub cases in
-        let loc = sub.location sub loc in
-        let attributes = sub.attributes sub attributes in
-        Pfunction_cases (cases, loc, attributes)
-
-  let map_constraint sub c =
-    match c with
-    | Pconstraint ty -> Pconstraint (sub.typ sub ty)
-    | Pcoerce (ty1, ty2) -> Pcoerce (map_opt (sub.typ sub) ty1, sub.typ sub ty2)
-
-  let map sub {pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} =
->>>>>>> upstream/main
     let open Exp in
     let loc = sub.location sub loc in
     match Jane_syntax.Expression.of_ast exp with
@@ -742,24 +707,11 @@ module E = struct
     | Pexp_let (r, vbs, e) ->
         let_ ~loc ~attrs r (List.map (sub.value_binding sub) vbs)
           (sub.expr sub e)
-<<<<<<< HEAD
     | Pexp_function (ps, c, b) ->
       function_ ~loc ~attrs
         (List.map (map_function_param sub) ps)
         (map_opt (map_function_constraint sub) c)
         (map_function_body sub b)
-||||||| 7b73c6aa3
-    | Pexp_fun (lab, def, p, e) ->
-        fun_ ~loc ~attrs lab (map_opt (sub.expr sub) def) (sub.pat sub p)
-          (sub.expr sub e)
-    | Pexp_function pel -> function_ ~loc ~attrs (sub.cases sub pel)
-=======
-    | Pexp_function (ps, c, b) ->
-      function_ ~loc ~attrs
-        (List.map (map_function_param sub) ps)
-        (map_opt (map_constraint sub) c)
-        (map_function_body sub b)
->>>>>>> upstream/main
     | Pexp_apply (e, l) ->
         apply ~loc ~attrs (sub.expr sub e) (List.map (map_snd (sub.expr sub)) l)
     | Pexp_match (e, pel) ->
@@ -1169,7 +1121,6 @@ let default_mapper =
          | PTyp x -> PTyp (this.typ this x)
          | PPat (x, g) -> PPat (this.pat this x, map_opt (this.expr this) g)
       );
-<<<<<<< HEAD
 
     jkind_annotation = (fun this ->
       let open Jane_syntax in
@@ -1220,25 +1171,6 @@ let default_mapper =
       (fun this -> function
          | Ptop_def s -> Ptop_def (this.structure this s)
          | Ptop_dir d -> Ptop_dir (this.toplevel_directive this d) );
-||||||| 7b73c6aa3
-=======
-
-    directive_argument =
-      (fun this a ->
-         { pdira_desc= a.pdira_desc
-         ; pdira_loc= this.location this a.pdira_loc} );
-
-    toplevel_directive =
-      (fun this d ->
-         { pdir_name= map_loc this d.pdir_name
-         ; pdir_arg= map_opt (this.directive_argument this) d.pdir_arg
-         ; pdir_loc= this.location this d.pdir_loc } );
-
-    toplevel_phrase =
-      (fun this -> function
-         | Ptop_def s -> Ptop_def (this.structure this s)
-         | Ptop_dir d -> Ptop_dir (this.toplevel_directive this d) );
->>>>>>> upstream/main
   }
 
 let extension_of_error {kind; main; sub} =
@@ -1397,7 +1329,6 @@ module PpxContext = struct
       | "hidden_include_dirs" ->
           Clflags.hidden_include_dirs := get_list get_string payload
       | "load_path" ->
-<<<<<<< HEAD
           (* Duplicates Compmisc.auto_include, since we can't reference Compmisc
              from this module. *)
           (* let auto_include find_in_dir fn =
@@ -1411,24 +1342,6 @@ module PpxContext = struct
             get_pair (get_list get_string) (get_list get_string) payload
           in
           Load_path.(init ~auto_include:no_auto_include ~visible ~hidden)
-||||||| 7b73c6aa3
-          Load_path.init (get_list get_string payload)
-=======
-          (* Duplicates Compmisc.auto_include, since we can't reference Compmisc
-             from this module. *)
-          (* let auto_include find_in_dir fn =
-            if !Clflags.no_std_include then
-              raise Not_found
-            else
-              let alert = Location.auto_include_alert in
-              Load_path.auto_include_otherlibs alert find_in_dir fn
-          in *)
-          let visible, hidden =
-            get_pair (get_list get_string) (get_list get_string) payload
-          in
-          let auto_include = Load_path.no_auto_include in
-          Load_path.init ~auto_include ~visible ~hidden
->>>>>>> upstream/main
       | "open_modules" ->
           Clflags.open_modules := get_list get_string payload
       | "for_package" ->

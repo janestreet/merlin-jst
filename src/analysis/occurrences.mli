@@ -1,4 +1,4 @@
-type res = { locs: Warnings.loc list; synced: bool }
+type t = { locs: Warnings.loc list; status: Query_protocol.occurrences_status }
 
 val locs_of
   : config:Mconfig.t
@@ -7,4 +7,4 @@ val locs_of
   -> pos:Lexing.position
   -> scope:[`Project | `Buffer]
   -> string
-  -> (res, string) result
+  -> t

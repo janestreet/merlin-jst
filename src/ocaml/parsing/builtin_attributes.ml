@@ -15,7 +15,6 @@
 
 open Asttypes
 open Parsetree
-<<<<<<< HEAD
 open Ast_helper
 
 
@@ -170,87 +169,6 @@ let ident_of_payload = function
   | PStr[{pstr_desc=Pstr_eval({pexp_desc=Pexp_ident {txt=Lident id}},_)}] ->
      Some id
   | _ -> None
-||||||| 7b73c6aa3
-=======
-open Ast_helper
-
-
-module Attribute_table = Hashtbl.Make (struct
-  type t = string with_loc
-
-  let hash : t -> int = Hashtbl.hash
-  let equal : t -> t -> bool = (=)
-end)
-let unused_attrs = Attribute_table.create 128
-let mark_used t = Attribute_table.remove unused_attrs t
-
-(* [attr_order] is used to issue unused attribute warnings in the order the
-   attributes occur in the file rather than the random order of the hash table
-*)
-let attr_order a1 a2 =
-  match String.compare a1.loc.loc_start.pos_fname a2.loc.loc_start.pos_fname
-  with
-  | 0 -> Int.compare a1.loc.loc_start.pos_cnum a2.loc.loc_start.pos_cnum
-  | n -> n
-
-let warn_unused () =
-  let keys = List.of_seq (Attribute_table.to_seq_keys unused_attrs) in
-  let keys = List.sort attr_order keys in
-  List.iter (fun sloc ->
-    Location.prerr_warning sloc.loc (Warnings.Misplaced_attribute sloc.txt))
-    keys
-
-(* These are the attributes that are tracked in the builtin_attrs table for
-   misplaced attribute warnings. *)
-let builtin_attrs =
-  [ "alert"
-  ; "boxed"
-  ; "deprecated"
-  ; "deprecated_mutable"
-  ; "explicit_arity"
-  ; "immediate"
-  ; "immediate64"
-  ; "inline"
-  ; "inlined"
-  ; "noalloc"
-  ; "poll"
-  ; "ppwarning"
-  ; "specialise"
-  ; "specialised"
-  ; "tailcall"
-  ; "tail_mod_cons"
-  ; "unboxed"
-  ; "untagged"
-  ; "unrolled"
-  ; "warnerror"
-  ; "warning"
-  ; "warn_on_literal_pattern"
-  ]
-
-let builtin_attrs =
-  let tbl = Hashtbl.create 128 in
-  List.iter (fun attr -> Hashtbl.add tbl attr ()) builtin_attrs;
-  tbl
-
-let drop_ocaml_attr_prefix s =
-  let len = String.length s in
-  if String.starts_with ~prefix:"ocaml." s && len > 6 then
-    String.sub s 6 (len - 6)
-  else
-    s
-
-let is_builtin_attr s = Hashtbl.mem builtin_attrs (drop_ocaml_attr_prefix s)
-
-type current_phase = Parser | Invariant_check
-
-let register_attr current_phase name =
-  match current_phase with
-  | Parser when !Clflags.all_ppx <> [] -> ()
-  | Parser | Invariant_check ->
-    if is_builtin_attr name.txt then
-      Attribute_table.replace unused_attrs name ()
-
->>>>>>> upstream/main
 
 let string_of_cst = function
   | Pconst_string(s, _, _) -> Some s
@@ -517,15 +435,7 @@ let warning_scope ?ppwarning attrs f =
     Warnings.restore prev;
     raise exn
 
-<<<<<<< HEAD
 let has_attribute nm attrs =
-||||||| 7b73c6aa3
-
-let warn_on_literal_pattern =
-=======
-
-let has_attribute nm attrs =
->>>>>>> upstream/main
   List.exists
     (fun a ->
        if attr_equals_builtin a nm
@@ -545,7 +455,6 @@ let select_attributes actions attrs =
       actions
   ) attrs
 
-<<<<<<< HEAD
 let select_attribute p attributes =
   let attributes = select_attributes p attributes in
   let attr =
@@ -557,19 +466,7 @@ let select_attribute p attributes =
       Some attr
   in
   attr
-||||||| 7b73c6aa3
-let immediate =
-  List.exists
-    (fun a -> match a.attr_name.txt with
-       | "ocaml.immediate"|"immediate" -> true
-       | _ -> false
-    )
-=======
-let warn_on_literal_pattern attrs =
-  has_attribute "warn_on_literal_pattern" attrs
->>>>>>> upstream/main
 
-<<<<<<< HEAD
 let when_attribute_is nms attr ~f =
   if List.mem attr.attr_name.txt nms then begin
     mark_used attr.attr_name;
@@ -608,20 +505,6 @@ let warn_on_literal_pattern attrs =
   has_attribute "warn_on_literal_pattern" attrs
 
 let explicit_arity attrs = has_attribute "explicit_arity" attrs
-||||||| 7b73c6aa3
-let immediate64 =
-  List.exists
-    (fun a -> match a.attr_name.txt with
-       | "ocaml.immediate64"|"immediate64" -> true
-       | _ -> false
-    )
-=======
-let explicit_arity attrs = has_attribute "explicit_arity" attrs
-
-let immediate attrs = has_attribute "immediate" attrs
-
-let immediate64 attrs = has_attribute "immediate64" attrs
->>>>>>> upstream/main
 
 (* The "ocaml.boxed (default)" and "ocaml.unboxed (default)"
    attributes cannot be input by the user, they are added by the
@@ -632,7 +515,6 @@ let immediate64 attrs = has_attribute "immediate64" attrs
 
 let has_unboxed attrs = has_attribute "unboxed" attrs
 
-<<<<<<< HEAD
 let has_boxed attrs = has_attribute "boxed" attrs
 
 let parse_empty_payload attr =
@@ -1126,13 +1008,3 @@ let get_tracing_probe_payload (payload : Parsetree.payload) =
     | _ -> Error ()
   in
   Ok { name; name_loc; enabled_at_init; arg }
-||||||| 7b73c6aa3
-let has_unboxed attr =
-  List.exists (check ["ocaml.unboxed"; "unboxed"])
-    attr
-
-let has_boxed attr =
-  List.exists (check ["ocaml.boxed"; "boxed"]) attr
-=======
-let has_boxed attrs = has_attribute "boxed" attrs
->>>>>>> upstream/main

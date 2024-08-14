@@ -708,21 +708,13 @@ let module_type_declarations id {Err.got=d1 ; expected=d2} =
 
 let interface_mismatch ppf (diff: _ Err.diff) =
   Format.fprintf ppf
-<<<<<<< HEAD
     "The implementation %a@ does not match the interface %a:@ "
     Style.inline_code diff.got Style.inline_code diff.expected
 
 let parameter_mismatch ppf (diff: _ Err.diff) =
   Format.fprintf ppf
-    "The argument module %s@ does not match the parameter signature %s:@ "
-    diff.got diff.expected
-||||||| fcc3157ab0
-    "The implementation %s@ does not match the interface %s:@ "
-    diff.got diff.expected
-=======
-    "The implementation %a@ does not match the interface %a:@ "
+    "The argument module %a@ does not match the parameter signature %a:@ "
     Style.inline_code diff.got Style.inline_code diff.expected
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let compilation_unit_mismatch comparison ppf diff =
   match (comparison : Err.compilation_unit_comparison) with

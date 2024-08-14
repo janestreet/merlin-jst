@@ -69,15 +69,9 @@ type iterator = {
   signature_item_jane_syntax: iterator -> Jane_syntax.Signature_item.t -> unit;
   structure: iterator -> structure -> unit;
   structure_item: iterator -> structure_item -> unit;
-<<<<<<< HEAD
   structure_item_jane_syntax: iterator -> Jane_syntax.Structure_item.t -> unit;
   toplevel_directive: iterator -> toplevel_directive -> unit;
   toplevel_phrase: iterator -> toplevel_phrase -> unit;
-||||||| 7b73c6aa3
-=======
-  toplevel_directive: iterator -> toplevel_directive -> unit;
-  toplevel_phrase: iterator -> toplevel_phrase -> unit;
->>>>>>> upstream/main
   typ: iterator -> core_type -> unit;
   typ_jane_syntax: iterator -> Jane_syntax.Core_type.t -> unit;
   typ_mode_syntax : iterator -> Jane_syntax.Mode_expr.t -> core_type -> unit;
@@ -495,7 +489,6 @@ let iter_constant = ()
 module E = struct
   (* Value expressions for the core language *)
 
-<<<<<<< HEAD
   module C = Jane_syntax.Comprehensions
   module IA = Jane_syntax.Immutable_arrays
   module L = Jane_syntax.Layouts
@@ -586,37 +579,6 @@ module E = struct
 
   let iter sub
       ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as expr)=
-||||||| 7b73c6aa3
-  let iter sub {pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} =
-=======
-  let iter_function_param sub { pparam_loc = loc; pparam_desc = desc } =
-    sub.location sub loc;
-    match desc with
-    | Pparam_val (_lab, def, p) ->
-        iter_opt (sub.expr sub) def;
-        sub.pat sub p
-    | Pparam_newtype ty ->
-        iter_loc sub ty
-
-  let iter_body sub body =
-    match body with
-    | Pfunction_body e ->
-        sub.expr sub e
-    | Pfunction_cases (cases, loc, attrs) ->
-        sub.cases sub cases;
-        sub.location sub loc;
-        sub.attributes sub attrs
-
-  let iter_constraint sub constraint_ =
-    match constraint_ with
-    | Pconstraint ty ->
-        sub.typ sub ty
-    | Pcoerce (ty1, ty2) ->
-        iter_opt (sub.typ sub) ty1;
-        sub.typ sub ty2
-
-  let iter sub {pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} =
->>>>>>> upstream/main
     sub.location sub loc;
     match Jane_syntax.Expression.of_ast expr with
     | Some (jexp, attrs) ->
@@ -630,23 +592,10 @@ module E = struct
     | Pexp_let (_r, vbs, e) ->
         List.iter (sub.value_binding sub) vbs;
         sub.expr sub e
-<<<<<<< HEAD
     | Pexp_function (params, constraint_, body) ->
         List.iter (iter_function_param sub) params;
         iter_opt (iter_function_constraint sub) constraint_;
         iter_function_body sub body
-||||||| 7b73c6aa3
-    | Pexp_fun (_lab, def, p, e) ->
-        iter_opt (sub.expr sub) def;
-        sub.pat sub p;
-        sub.expr sub e
-    | Pexp_function pel -> sub.cases sub pel
-=======
-    | Pexp_function (params, constraint_, body) ->
-        List.iter (iter_function_param sub) params;
-        iter_opt (iter_constraint sub) constraint_;
-        iter_body sub body
->>>>>>> upstream/main
     | Pexp_apply (e, l) ->
         sub.expr sub e; List.iter (iter_snd (sub.expr sub)) l
     | Pexp_match (e, pel) ->
@@ -961,7 +910,6 @@ let default_iterator =
 
 
     value_binding =
-<<<<<<< HEAD
       (fun this ({pvb_pat; pvb_expr; pvb_attributes; pvb_loc; pvb_constraint} as pvb) ->
          let modes, pvb_attributes =
           Jane_syntax.Mode_expr.maybe_of_attrs pvb_attributes
@@ -971,11 +919,6 @@ let default_iterator =
             let pvb = {pvb with pvb_attributes} in
             this.value_binding_mode_syntax this modes pvb
          | None ->
-||||||| 7b73c6aa3
-      (fun this {pvb_pat; pvb_expr; pvb_attributes; pvb_loc} ->
-=======
-      (fun this {pvb_pat; pvb_expr; pvb_attributes; pvb_loc; pvb_constraint} ->
->>>>>>> upstream/main
          this.pat this pvb_pat;
          this.expr this pvb_expr;
          Option.iter (function
@@ -1055,7 +998,6 @@ let default_iterator =
          | PTyp x -> this.typ this x
          | PPat (x, g) -> this.pat this x; iter_opt (this.expr this) g
       );
-<<<<<<< HEAD
 
     jkind_annotation =
       (fun this -> function
@@ -1087,25 +1029,4 @@ let default_iterator =
          | Ptop_def s -> this.structure this s
          | Ptop_dir d -> this.toplevel_directive this d
       );
-||||||| 7b73c6aa3
-=======
-
-    directive_argument =
-      (fun this a ->
-         this.location this a.pdira_loc
-      );
-
-    toplevel_directive =
-      (fun this d ->
-         iter_loc this d.pdir_name;
-         iter_opt (this.directive_argument this) d.pdir_arg;
-         this.location this d.pdir_loc
-      );
-
-    toplevel_phrase =
-      (fun this -> function
-         | Ptop_def s -> this.structure this s
-         | Ptop_dir d -> this.toplevel_directive this d
-      );
->>>>>>> upstream/main
   }

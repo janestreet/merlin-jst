@@ -546,7 +546,6 @@ and ('lbl, 'cstr) type_kind =
   | Type_variant of 'cstr list * variant_representation
   | Type_open
 
-<<<<<<< HEAD
 (* CR layouts: after removing the void translation from lambda, we could get rid of
    this src_index / runtime_tag distinction.  But I am leaving it in because it
    may not be long before we need it again.
@@ -588,14 +587,6 @@ and type_origin =
   | Rec_check_regularity       (* See Typedecl.transl_type_decl *)
   | Existential of string
 
-||||||| fcc3157ab0
-=======
-and type_origin =
-    Definition
-  | Rec_check_regularity       (* See Typedecl.transl_type_decl *)
-  | Existential of string
-
->>>>>>> 501-plus-upstream-main-9fa77db
 and record_representation =
   | Record_unboxed
   | Record_inlined of tag * constructor_representation * variant_representation

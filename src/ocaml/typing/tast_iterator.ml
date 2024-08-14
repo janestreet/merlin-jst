@@ -194,8 +194,6 @@ let constructor_decl sub x =
   sub.location sub x.cd_loc;
   sub.attributes sub x.cd_attributes;
   iter_loc sub x.cd_name;
-  (* CR nroberts: probably this should have a location... *)
-  List.iter (iter_loc sub) x.cd_vars;
   constructor_args sub x.cd_args;
   Option.iter (sub.typ sub) x.cd_res
 
@@ -241,8 +239,7 @@ let extension_constructor sub ec =
   sub.attributes sub ext_attributes;
   iter_loc sub ext_name;
   match ext_kind with
-  | Text_decl (ids, ctl, cto) ->
-      List.iter (iter_loc sub) ids;
+  | Text_decl (_, ctl, cto) ->
       constructor_args sub ctl;
       Option.iter (sub.typ sub) cto
   | Text_rebind (_, lid) -> iter_loc sub lid

@@ -58,17 +58,7 @@ type out_value =
   | Oval_variant of string * out_value option
   | Oval_lazy of out_value
 
-<<<<<<< HEAD
 type out_modality_legacy = Ogf_global
-||||||| fcc3157ab0
-type out_type_param = string * (Asttypes.variance * Asttypes.injectivity)
-=======
-type out_type_param = {
-    ot_non_gen: bool;
-    ot_name: string;
-    ot_variance: Asttypes.variance * Asttypes.injectivity
-}
->>>>>>> 501-plus-upstream-main-9fa77db
 
 type out_modality_new = string
 
@@ -137,15 +127,9 @@ and out_type =
   | Otyp_abstract
   | Otyp_open
   | Otyp_alias of {non_gen:bool; aliased:out_type; alias:string}
-<<<<<<< HEAD
   | Otyp_arrow of arg_label * out_arg_mode * out_type * out_ret_mode * out_type
   (* INVARIANT: the [out_ret_mode] is [Orm_not_arrow] unless the RHS [out_type]
     is [Otyp_arrow] *)
-||||||| fcc3157ab0
-  | Otyp_arrow of string * out_type * out_type
-=======
-  | Otyp_arrow of Asttypes.arg_label * out_type * out_type
->>>>>>> 501-plus-upstream-main-9fa77db
   | Otyp_class of out_ident * out_type list
   | Otyp_constr of out_ident * out_type list
   | Otyp_manifest of out_type * out_type
@@ -175,13 +159,7 @@ and out_variant =
 
 type out_class_type =
   | Octy_constr of out_ident * out_type list
-<<<<<<< HEAD
   | Octy_arrow of arg_label * out_type * out_class_type
-||||||| fcc3157ab0
-  | Octy_arrow of string * out_type * out_class_type
-=======
-  | Octy_arrow of Asttypes.arg_label * out_type * out_class_type
->>>>>>> 501-plus-upstream-main-9fa77db
   | Octy_signature of out_type option * out_class_sig_item list
 and out_class_sig_item =
   | Ocsg_constraint of out_type * out_type
