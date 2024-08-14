@@ -104,7 +104,7 @@ type syntax_doc_result =
     documentation : string 
 }
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 type syntax_doc_result =
 {
@@ -120,7 +120,7 @@ type ppxed_source =
   attr_end : Lexing.position;
 }
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -174,7 +174,7 @@ type _ t =
     -> [ `Found of syntax_doc_result
        | `No_documentation
        ] t
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   | Syntax_document
     : Msource.position
@@ -186,7 +186,7 @@ type _ t =
     -> [ `Found of ppxed_source
        | `No_ppx
        ] t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position

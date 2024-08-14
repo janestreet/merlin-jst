@@ -19,7 +19,6 @@ type pers_flags =
   | Rectypes
   | Alerts of alerts
   | Opaque
-<<<<<<< HEAD
 
 type kind =
   | Normal of {
@@ -48,10 +47,6 @@ type kind =
   expensive. On 32 bits architectures, this imposes a constraint on the size of
   .cmi files. *)
 module Serialized = Types.Make_wrapped(struct type 'a t = int end)
-||||||| 7b73c6aa3f
-  | Unsafe_string
-=======
->>>>>>> upstream/main
 
 (* these type abbreviations are not exported;
    they are used to provide consistency across
@@ -195,11 +190,11 @@ let output_cmi filename oc cmi =
       header_sign = sign;
       header_params = cmi.cmi_params;
     };
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
 =======
   Marshal.(to_channel oc ((cmi.cmi_name, cmi.cmi_sign) : header) [Compression]);
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   flush oc;
   let crc = Digest.file filename in
   let my_info =

@@ -86,7 +86,7 @@ and strengthen_lazy_sig' ~aliasable sg p =
   | (Sig_value(_, _, _) as sigelt) :: rem ->
       sigelt :: strengthen_lazy_sig' ~aliasable rem p
   | Sig_type(id, {type_kind=Type_abstract _}, _, _) :: rem
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | (SigL_value(_, _, _) as sigelt) :: rem ->
       sigelt :: strengthen_lazy_sig' ~aliasable env rem p
   | SigL_type(id, {type_kind=Type_abstract}, _, _) :: rem
@@ -94,7 +94,7 @@ and strengthen_lazy_sig' ~aliasable sg p =
   | (SigL_value(_, _, _) as sigelt) :: rem ->
       sigelt :: strengthen_lazy_sig' ~aliasable env rem p
   | SigL_type(id, {type_kind=Type_abstract _}, _, _) :: rem
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     when Btype.is_row_name (Ident.name id) ->
       strengthen_lazy_sig' ~aliasable rem p
   | Sig_type(id, decl, rs, vis) :: rem ->

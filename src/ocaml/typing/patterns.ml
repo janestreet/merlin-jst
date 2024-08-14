@@ -82,13 +82,13 @@ module General = struct
 <<<<<<< HEAD
     | `Var of Ident.t * string loc * Uid.t * Mode.Value.l
     | `Alias of pattern * Ident.t * string loc * Uid.t * Mode.Value.l
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | `Var of Ident.t * string loc
     | `Alias of pattern * Ident.t * string loc
 =======
     | `Var of Ident.t * string loc * Uid.t
     | `Alias of pattern * Ident.t * string loc * Uid.t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   ]
   type pattern = view pattern_data
 
@@ -100,7 +100,7 @@ module General = struct
        `Var (id, str, uid, mode)
     | Tpat_alias (p, id, str, uid, mode) ->
        `Alias (p, id, str, uid, mode)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_var (id, str) ->
        `Var (id, str)
     | Tpat_alias (p, id, str) ->
@@ -110,7 +110,7 @@ module General = struct
        `Var (id, str, uid)
     | Tpat_alias (p, id, str, uid) ->
        `Alias (p, id, str, uid)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Tpat_constant cst ->
        `Constant cst
     | Tpat_tuple ps ->
@@ -133,13 +133,13 @@ module General = struct
 <<<<<<< HEAD
     | `Var (id, str, uid, mode) -> Tpat_var (id, str, uid, mode)
     | `Alias (p, id, str, uid, mode) -> Tpat_alias (p, id, str, uid, mode)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | `Var (id, str) -> Tpat_var (id, str)
     | `Alias (p, id, str) -> Tpat_alias (p, id, str)
 =======
     | `Var (id, str, uid) -> Tpat_var (id, str, uid)
     | `Alias (p, id, str, uid) -> Tpat_alias (p, id, str, uid)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | `Constant cst -> Tpat_constant cst
     | `Tuple ps -> Tpat_tuple ps
     | `Construct (cstr, cst_descr, args) ->
@@ -159,11 +159,11 @@ module General = struct
     match p.pat_desc with
 <<<<<<< HEAD
     | `Alias (p, _, _, _, _) -> strip_vars (view p)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | `Alias (p, _, _) -> strip_vars (view p)
 =======
     | `Alias (p, _, _, _) -> strip_vars (view p)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | `Var _ -> { p with pat_desc = `Any }
     | #Half_simple.view as view -> { p with pat_desc = view }
 end

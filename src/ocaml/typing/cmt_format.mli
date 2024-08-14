@@ -68,11 +68,11 @@ type cmt_infos = {
 <<<<<<< HEAD
   cmt_ident_occurrences :
     (Longident.t Location.loc * Shape_reduce.result) array
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   cmt_ident_occurrences :
     (Longident.t Location.loc * Shape_reduce.result) list
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 }
 
 type error =
@@ -99,12 +99,12 @@ val save_cmt :
 <<<<<<< HEAD
   Unit_info.Artifact.t ->
   Compilation_unit.t ->  (* module name *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   string ->  (* filename.cmt to generate *)
   string ->  (* module name *)
 =======
   Unit_info.Artifact.t ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   binary_annots ->
   Env.t -> (* initial env *)
   Cmi_format.cmi_infos_lazy option -> (* if a .cmi was generated *)
@@ -133,10 +133,10 @@ val iter_declarations
     -> f:(Shape.Uid.t -> Typedtree.item_declaration -> unit)
     -> unit
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
 =======
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 (*
 
   val is_magic_number : string -> bool

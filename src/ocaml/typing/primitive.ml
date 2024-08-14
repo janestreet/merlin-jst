@@ -22,7 +22,7 @@ type boxed_integer = Pnativeint | Pint32 | Pint64
 
 <<<<<<< HEAD
 type vec128_type = Int8x16 | Int16x8 | Int32x4 | Int64x2 | Float32x4 | Float64x2
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 type native_repr =
   | Same_as_ocaml_repr
   | Unboxed_float
@@ -34,7 +34,7 @@ type native_repr =
   | Unboxed_float
   | Unboxed_integer of boxed_integer
   | Untagged_immediate
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 type boxed_float = Pfloat64 | Pfloat32
 
@@ -85,7 +85,7 @@ exception Error of Location.t * error
 
 <<<<<<< HEAD
 type value_check = Bad_attribute | Bad_layout | Ok_value
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let is_ocaml_repr = function
   | Same_as_ocaml_repr -> true
   | Unboxed_float
@@ -97,7 +97,7 @@ let is_ocaml_repr = function
   | Unboxed_float
   | Unboxed_integer _
   | Untagged_immediate -> false
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let check_ocaml_value = function
@@ -108,7 +108,7 @@ let check_ocaml_value = function
   | _, Unboxed_vector _
   | _, Unboxed_integer _
   | _, Untagged_immediate -> Bad_attribute
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let is_unboxed = function
   | Same_as_ocaml_repr
   | Untagged_int -> false
@@ -120,11 +120,11 @@ let is_unboxed = function
   | Untagged_immediate -> false
   | Unboxed_float
   | Unboxed_integer _ -> true
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let is_builtin_prim_name name = String.length name > 0 && name.[0] = '%'
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let is_untagged = function
   | Untagged_int -> true
   | Same_as_ocaml_repr
@@ -136,7 +136,7 @@ let is_untagged = function
   | Same_as_ocaml_repr
   | Unboxed_float
   | Unboxed_integer _ -> false
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let rec make_prim_repr_args arity x =
   if arity = 0 then
@@ -184,12 +184,12 @@ let parse_declaration valdecl ~native_repr_args ~native_repr_res ~is_layout_poly
   let only_generative_effects_attribute =
     Attr_helper.has_no_payload_attribute "only_generative_effects"
       valdecl.pval_attributes
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     Attr_helper.has_no_payload_attribute ["noalloc"; "ocaml.noalloc"]
       valdecl.pval_attributes
 =======
     Attr_helper.has_no_payload_attribute "noalloc" valdecl.pval_attributes
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   let is_builtin_prim = is_builtin_prim_name name in
   let prim_is_layout_poly =
@@ -376,7 +376,7 @@ let print p osig_val_decl =
       if all_unboxed || not (is_unboxed (m, repr))
       then []
       else [oattr_unboxed])
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let attr_of_native_repr = function
     | Same_as_ocaml_repr -> None
     | Unboxed_float
@@ -388,7 +388,7 @@ let print p osig_val_decl =
     | Unboxed_float
     | Unboxed_integer _ -> if all_unboxed then None else Some oattr_unboxed
     | Untagged_immediate -> if all_untagged then None else Some oattr_untagged
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   let type_attrs =
     List.map attrs_of_mode_and_repr p.prim_native_repr_args @
@@ -466,7 +466,7 @@ let equal_native_repr nr1 nr2 =
   | Unboxed_vector _,
     (Same_as_ocaml_repr _ | Unboxed_float _ | Untagged_immediate |
      Unboxed_integer _) -> false
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Same_as_ocaml_repr, Same_as_ocaml_repr -> true
   | Same_as_ocaml_repr,
     (Unboxed_float | Unboxed_integer _ | Untagged_int) -> false
@@ -480,7 +480,7 @@ let equal_native_repr nr1 nr2 =
   | Unboxed_float, Unboxed_float -> true
   | Unboxed_float,
     (Same_as_ocaml_repr | Unboxed_integer _ | Untagged_immediate) -> false
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Unboxed_integer bi1, Unboxed_integer bi2 -> equal_boxed_integer bi1 bi2
   | Unboxed_integer _,
 <<<<<<< HEAD
@@ -506,7 +506,7 @@ let equal_coeffects cf1 cf2 =
   | No_coeffects, Has_coeffects -> false
   | Has_coeffects, Has_coeffects -> true
   | Has_coeffects, No_coeffects -> false
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     (Same_as_ocaml_repr | Unboxed_float | Untagged_int) -> false
   | Untagged_int, Untagged_int -> true
   | Untagged_int,
@@ -516,7 +516,7 @@ let equal_coeffects cf1 cf2 =
   | Untagged_immediate, Untagged_immediate -> true
   | Untagged_immediate,
     (Same_as_ocaml_repr | Unboxed_float | Unboxed_integer _) -> false
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let native_name_is_external p =
   let nat_name = native_name p in
@@ -851,11 +851,11 @@ let prim_can_contain_layout_any prim =
 
 module Style = Misc.Style
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 module Style = Misc.Style
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 let report_error ppf err =
   match err with
   | Old_style_float_with_native_repr_attribute ->
@@ -868,7 +868,7 @@ let report_error ppf err =
     Format.fprintf ppf "Cannot use %a in conjunction with \
                         types of non-value layouts."
       Style.inline_code "float"
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     Format.fprintf ppf "Cannot use \"float\" in conjunction with \
                         [%@unboxed]/[%@untagged]."
 =======
@@ -876,7 +876,7 @@ let report_error ppf err =
       Style.inline_code "float"
       Style.inline_code "[@unboxed]"
       Style.inline_code  "[@untagged]"
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Old_style_noalloc_with_noalloc_attribute ->
     Format.fprintf ppf "Cannot use %a in conjunction with %a."
       Style.inline_code "noalloc"
@@ -910,7 +910,7 @@ let report_error ppf err =
        The declaration contains argument/return types with the@ \
        wrong layout."
       name
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       "[@The native code version of the primitive is mandatory@ \
        when attributes [%@untagged] or [%@unboxed] are present.@]"
 =======
@@ -918,7 +918,7 @@ let report_error ppf err =
        when attributes %a or %a are present.@]"
       Style.inline_code "[@untagged]"
       Style.inline_code "[@unboxed]"
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let () =
   Location.register_error_of_exn

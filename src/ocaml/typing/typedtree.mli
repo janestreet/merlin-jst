@@ -44,10 +44,10 @@ type constant =
   | Const_unboxed_int32 of int32
   | Const_unboxed_int64 of int64
   | Const_unboxed_nativeint of nativeint
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 module Uid = Shape.Uid
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Value expressions for the core language *)
 
@@ -124,21 +124,21 @@ and 'k pattern_desc =
         (** _ *)
 <<<<<<< HEAD
   | Tpat_var : Ident.t * string loc * Uid.t * Mode.Value.l -> value pattern_desc
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_var : Ident.t * string loc -> value pattern_desc
 =======
   | Tpat_var : Ident.t * string loc * Uid.t -> value pattern_desc
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         (** x *)
   | Tpat_alias :
 <<<<<<< HEAD
       value general_pattern * Ident.t * string loc * Uid.t * Mode.Value.l
         -> value pattern_desc
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       value general_pattern * Ident.t * string loc -> value pattern_desc
 =======
       value general_pattern * Ident.t * string loc * Uid.t -> value pattern_desc
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         (** P as a *)
   | Tpat_constant : constant -> value pattern_desc
         (** 1, 'a', "true", 1.0, 1l, 1L, 1n *)
@@ -235,7 +235,7 @@ and exp_extra =
   | Texp_newtype of string * Jkind.annotation option
         (** fun (type t : immediate) ->  *)
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_newtype of string
         (** fun (type t) ->  *)
   | Texp_newtype' of Ident.t * label loc
@@ -243,7 +243,7 @@ and exp_extra =
   | Texp_newtype of string
         (** fun (type t) ->  *)
   | Texp_newtype' of Ident.t * label loc * Uid.t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   (** merlin-specific: keep enough information to correctly implement
       occurrences for local-types.
       Merlin typechecker uses [Texp_newtype'] constructor, while upstream
@@ -314,7 +314,7 @@ and expression_desc =
   | Texp_apply of
       expression * (arg_label * apply_arg) list * apply_position *
         Mode.Locality.l * Zero_alloc.assume option
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_function of { arg_label : arg_label; param : Ident.t;
       cases : value case list; partial : partial; }
         (** [Pexp_fun] and [Pexp_function] both translate to [Texp_function].
@@ -341,7 +341,7 @@ and expression_desc =
         saturated with n arguments.
     *)
   | Texp_apply of expression * (arg_label * expression option) list
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         (** E0 ~l1:E1 ... ~ln:En
 
             The expression can be Omitted if the expression is abstracted over
@@ -654,13 +654,7 @@ and function_body =
 *)
 
 and record_label_definition =
-<<<<<<< HEAD
   | Kept of Types.type_expr * Types.mutability * unique_use
-||||||| 7b73c6aa3f
-  | Kept of Types.type_expr
-=======
-  | Kept of Types.type_expr * mutable_flag
->>>>>>> upstream/main
   | Overridden of Longident.t loc * expression
 
 and binding_op =
@@ -831,10 +825,10 @@ and value_binding =
 <<<<<<< HEAD
     vb_rec_kind: Value_rec_types.recursive_binding_kind;
     vb_sort: Jkind.sort;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     vb_rec_kind: Value_rec_types.recursive_binding_kind;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     vb_attributes: attributes;
     vb_loc: Location.t;
   }
@@ -1007,11 +1001,11 @@ and core_type_desc =
   | Ttyp_class of Path.t * Longident.t loc * core_type list
 <<<<<<< HEAD
   | Ttyp_alias of core_type * string loc option * Jkind.annotation option
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Ttyp_alias of core_type * string
 =======
   | Ttyp_alias of core_type * string loc
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Ttyp_variant of row_field list * closed_flag * label list option
   | Ttyp_poly of (string * Jkind.annotation option) list * core_type
   | Ttyp_package of package_type
@@ -1020,10 +1014,10 @@ and core_type_desc =
   | Ttyp_call_pos
       (** [Ttyp_call_pos] represents the type of the value of a Position
           argument ([lbl:[%call_pos] -> ...]). *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   | Ttyp_open of Path.t * Longident.t loc * core_type
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 and package_type = {
   pack_path : Path.t;
@@ -1091,12 +1085,12 @@ and label_declaration =
      ld_uid: Uid.t;
      ld_mutable: Types.mutability;
      ld_modalities: Mode.Modality.Value.Const.t;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
      ld_mutable: mutable_flag;
 =======
      ld_uid: Uid.t;
      ld_mutable: mutable_flag;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
      ld_type: core_type;
      ld_loc: Location.t;
      ld_attributes: attributes;
@@ -1109,12 +1103,12 @@ and constructor_declaration =
 <<<<<<< HEAD
      cd_uid: Uid.t;
      cd_vars: (string * Jkind.annotation option) list;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
      cd_vars: string loc list;
 =======
      cd_uid: Uid.t;
      cd_vars: string loc list;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
      cd_args: constructor_arguments;
      cd_res: core_type option;
      cd_loc: Location.t;
@@ -1319,12 +1313,12 @@ val let_bound_idents_with_modes_sorts_and_checks:
   value_binding list
   -> (Ident.t * (Location.t * Mode.Value.l * Jkind.sort) list
               * Zero_alloc.t) list
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     value_binding list -> (Ident.t * string loc * Types.type_expr) list
 =======
     value_binding list ->
     (Ident.t * string loc * Types.type_expr * Types.Uid.t) list
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (** Alpha conversion of patterns *)
 val alpha_pat:
@@ -1340,18 +1334,17 @@ val pat_bound_idents_full:
 <<<<<<< HEAD
   Jkind.sort -> 'k general_pattern
   -> (Ident.t * string loc * Types.type_expr * Types.Uid.t * Jkind.sort) list
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   'k general_pattern -> (Ident.t * string loc * Types.type_expr) list
 =======
   'k general_pattern ->
   (Ident.t * string loc * Types.type_expr * Types.Uid.t) list
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (** Splits an or pattern into its value (left) and exception (right) parts. *)
 val split_pattern:
   computation general_pattern -> pattern option * pattern option
 
-<<<<<<< HEAD
 (** Whether an expression looks nice as the subject of a sentence in a error
     message. *)
 val exp_is_nominal : expression -> bool
@@ -1359,13 +1352,6 @@ val exp_is_nominal : expression -> bool
 (** Calculates the syntactic arity of a function based on its parameters and body. *)
 val function_arity : function_param list -> function_body -> int
 
-||||||| 7b73c6aa3f
-=======
-(** Whether an expression looks nice as the subject of a sentence in a error
-    message. *)
-val exp_is_nominal : expression -> bool
-
->>>>>>> upstream/main
 (* Merlin specific *)
 
 val unpack_functor_me : module_expr -> functor_parameter * module_expr

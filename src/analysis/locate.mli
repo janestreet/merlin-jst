@@ -34,8 +34,9 @@ module Artifact : sig
 
   val impl_shape : t -> Shape.t option
 end
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 module Namespace : sig
+  type all = Namespace.t
   type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
 end
 =======
@@ -64,7 +65,7 @@ val find_source
   -> string
   -> [> `File_not_found of string
       | `Found of string * Location.t ]
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 val log : 'a Logger.printf
 
@@ -130,12 +131,12 @@ val get_doc
   -> [ `User_input of string
 <<<<<<< HEAD
       | `Completion_entry of Env_lookup.Namespace.t * Path.t * Location.t ]
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
      | `Completion_entry of
-        Namespaced_path.Namespace.t * Path.t * Location.t ]
+         Namespace.all * Path.t * Location.t ]
 =======
      | `Completion_entry of Env_lookup.Namespace.t * Path.t * Location.t ]
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string

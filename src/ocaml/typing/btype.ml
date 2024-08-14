@@ -136,7 +136,7 @@ let type_origin decl =
   match decl.type_kind with
   | Type_abstract origin -> origin
   | Type_variant _ | Type_record _ | Type_open -> Definition
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 let type_kind_is_abstract decl =
   match decl.type_kind with Type_abstract _ -> true | _ -> false
@@ -144,7 +144,7 @@ let type_origin decl =
   match decl.type_kind with
   | Type_abstract origin -> origin
   | Type_variant _ | Type_record _ | Type_open -> Definition
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let dummy_method = "*dummy method*"
 

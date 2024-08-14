@@ -81,11 +81,11 @@ type cmt_infos = {
 <<<<<<< HEAD
   cmt_ident_occurrences :
     (Longident.t Location.loc * Shape_reduce.result) array
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   cmt_ident_occurrences :
     (Longident.t Location.loc * Shape_reduce.result) list
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 }
 
 type error =
@@ -406,7 +406,7 @@ let index_occurrences binary_annots =
   iter_on_annots (iter_on_occurrences ~f) binary_annots;
   Array.of_list !index
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (* Every typedtree node with a located longident corresponding to user-facing
    syntax should be indexed. *)
@@ -642,7 +642,7 @@ let index_occurrences binary_annots =
   iter_on_annots (iter_on_occurrences ~f) binary_annots;
   !index
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 exception Error of error
 
 let input_cmt ic = (input_value ic : cmt_infos)
@@ -711,11 +711,11 @@ let record_value_dependency _vd1 _vd2 = ()
 
 <<<<<<< HEAD
 let save_cmt target cu binary_annots initial_env cmi shape =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let save_cmt filename modname binary_annots sourcefile initial_env cmi shape =
 =======
 let save_cmt target binary_annots initial_env cmi shape =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   if !Clflags.binary_annotations && not !Clflags.print_types then begin
     Misc.output_to_file_via_temporary
        ~mode:[Open_binary] (Unit_info.Artifact.filename target)
@@ -735,7 +735,7 @@ let save_cmt target binary_annots initial_env cmi shape =
          in
          let cmt_annots = clear_env binary_annots in
          let cmt_uid_to_decl = index_declarations cmt_annots in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
          let sourcefile = Unit_info.Artifact.source_file target in
          let cmt_ident_occurrences =
@@ -746,7 +746,7 @@ let save_cmt target binary_annots initial_env cmi shape =
          in
          let cmt_annots = clear_env binary_annots in
          let cmt_uid_to_decl = index_declarations cmt_annots in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
          let source_digest = Option.map ~f:Digest.file sourcefile in
          let compare_imports import1 import2 =
            let modname1 = Import_info.name import1 in
@@ -762,13 +762,13 @@ let save_cmt target binary_annots initial_env cmi shape =
 <<<<<<< HEAD
            cmt_modname = cu;
            cmt_annots;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
            cmt_modname = modname;
            cmt_annots = clear_env binary_annots;
 =======
            cmt_modname = Unit_info.Artifact.modname target;
            cmt_annots;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
            cmt_value_dependencies = !value_deps;
            cmt_comments = [];
            cmt_args = Sys.argv;

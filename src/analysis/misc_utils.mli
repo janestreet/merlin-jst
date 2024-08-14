@@ -31,7 +31,7 @@ val loc_of_decl : uid:Shape.Uid.t -> Typedtree.item_declaration -> string Locati
 
 (* [is_current_unit cu] returns true if [cu] is the current compilation unit *)
 val is_current_unit : string -> bool
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 
 (** [parse_identifier] attempts to re-parse a longident so that we get
@@ -53,4 +53,4 @@ val loc_of_decl :
   uid:Shape.Uid.t ->
   Typedtree.item_declaration ->
   string Location.loc option
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

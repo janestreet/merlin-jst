@@ -68,13 +68,13 @@ module General : sig
 <<<<<<< HEAD
     | `Var of Ident.t * string loc * Uid.t * Mode.Value.l
     | `Alias of pattern * Ident.t * string loc * Uid.t * Mode.Value.l
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | `Var of Ident.t * string loc
     | `Alias of pattern * Ident.t * string loc
 =======
     | `Var of Ident.t * string loc * Uid.t
     | `Alias of pattern * Ident.t * string loc * Uid.t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   ]
   type pattern = view pattern_data
 

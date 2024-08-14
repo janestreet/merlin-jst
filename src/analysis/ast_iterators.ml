@@ -50,7 +50,7 @@ let iter_on_usages ~f (local_defs : Mtyper.typedtree) =
   begin match local_defs with
   | `Interface signature -> iter.signature iter signature
   | `Implementation structure -> iter.structure iter structure end
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 open Std
 open Typedtree
@@ -197,4 +197,4 @@ let iter_on_usages ~f (local_defs : Mtyper.typedtree) =
 let iterator_on_usages ~f =
   let occ_iter = Cmt_format.iter_on_occurrences ~f in
   iter_only_visible occ_iter
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

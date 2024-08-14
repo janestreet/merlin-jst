@@ -1484,7 +1484,7 @@ let is_valid_class_expr idlist ce =
   match Env.unguarded (class_expr Return ce) idlist with
   | [] -> true
   | _ :: _ -> false
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (**************************************************************************)
 (*                                                                        *)
@@ -2907,4 +2907,4 @@ let is_valid_class_expr idlist ce =
   match Env.unguarded (class_expr Return ce) idlist with
   | [] -> true
   | _ :: _ -> false
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

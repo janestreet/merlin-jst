@@ -24,7 +24,7 @@
   (applies_to
     in-implicit-trans-dep
     in-generated-file))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 
 (cram
@@ -34,4 +34,4 @@
 (subdir
  version
  (rule (action (with-stdout-to dune.txt (run dune --version)))))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

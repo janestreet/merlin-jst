@@ -404,10 +404,10 @@ module MenhirInterpreter : sig
 <<<<<<< HEAD
     | N_reversed_nonempty_llist_comprehension_clause_ : (Jane_syntax.Comprehensions.clause list) nonterminal
     | N_reversed_nonempty_concat_fun_param_as_list_ : (Parsetree.function_param list) nonterminal
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     | N_reversed_nonempty_concat_fun_param_as_list_ : (Parsetree.function_param list) nonterminal
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
     | N_reversed_labeled_tuple_pattern_pattern_no_exn_ : (Asttypes.closed_flag * (string option * Parsetree.pattern) list) nonterminal
     | N_reversed_labeled_tuple_pattern_pattern_ : (Asttypes.closed_flag * (string option * Parsetree.pattern) list) nonterminal
@@ -446,11 +446,11 @@ module MenhirInterpreter : sig
 <<<<<<< HEAD
     | N_optional_atat_modalities_expr : (Parsetree.modality Location.loc list) nonterminal
     | N_option_type_constraint_ : (Parsetree.type_constraint option) nonterminal
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | N_option_type_constraint_ : ((Parsetree.core_type option * Parsetree.core_type option) option) nonterminal
 =======
     | N_option_type_constraint_ : (Parsetree.type_constraint option) nonterminal
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | N_option_preceded_EQUAL_seq_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_pattern__ : (Parsetree.pattern option) nonterminal
     | N_option_preceded_EQUAL_module_type__ : (Parsetree.module_type option) nonterminal
@@ -498,11 +498,11 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
 <<<<<<< HEAD
     | N_mk_longident_mod_ext_longident___anonymous_50_ : (Longident.t) nonterminal
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | N_mk_longident_mod_ext_longident___anonymous_41_ : (Longident.t) nonterminal
 =======
     | N_mk_longident_mod_ext_longident___anonymous_43_ : (Longident.t) nonterminal
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_LIDENT_ : (Longident.t) nonterminal
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
@@ -530,7 +530,6 @@ module MenhirInterpreter : sig
     | N_let_pattern : (Parsetree.pattern * Parsetree.mode_expression) nonterminal
     | N_let_bindings_no_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
-<<<<<<< HEAD
     | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression *
   Parsetree.value_constraint option * Parsetree.attribute list) nonterminal
     | N_let_binding_body : ((Parsetree.pattern * Parsetree.expression *
@@ -540,19 +539,6 @@ module MenhirInterpreter : sig
     | N_labeled_tuple_pat_element_list_pattern_ : ((string option * Parsetree.pattern) list) nonterminal
     | N_labeled_simple_pattern : (Parsetree.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Parsetree.arg_label * Parsetree.expression) nonterminal
-||||||| 7b73c6aa3f
-    | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression) nonterminal
-    | N_let_binding_body : (Parsetree.pattern * Parsetree.expression * bool) nonterminal
-    | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
-    | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
-=======
-    | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression *
-  Parsetree.value_constraint option) nonterminal
-    | N_let_binding_body : (Parsetree.pattern * Parsetree.expression *
-  Parsetree.value_constraint option * bool) nonterminal
-    | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
-    | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
->>>>>>> upstream/main
     | N_label_longident : (Longident.t) nonterminal
     | N_label_let_pattern : (string * Parsetree.pattern * Parsetree.mode_expression) nonterminal
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal

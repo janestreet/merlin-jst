@@ -67,6 +67,9 @@ module Naming_context: sig
   val enable: bool -> unit
   (** When contextual names are enabled, the mapping between identifiers
       and names is ensured to be one-to-one. *)
+
+  val reset: unit -> unit
+  (** Reset the naming context *)
 end
 
 (** The [Conflicts] module keeps track of conflicts arising when attributing
@@ -187,20 +190,11 @@ val prepared_constructor : formatter -> constructor_declaration -> unit
 val constructor : formatter -> constructor_declaration -> unit
 val tree_of_type_declaration:
     Ident.t -> type_declaration -> rec_status -> out_sig_item
-<<<<<<< HEAD
 val add_type_declaration_to_preparation :
   Ident.t -> type_declaration -> unit
 val prepared_type_declaration: Ident.t -> formatter -> type_declaration -> unit
 val type_declaration:
   Ident.t -> formatter -> type_declaration -> unit
-||||||| 7b73c6aa3f
-val type_declaration: Ident.t -> formatter -> type_declaration -> unit
-=======
-val add_type_declaration_to_preparation :
-  Ident.t -> type_declaration -> unit
-val prepared_type_declaration: Ident.t -> formatter -> type_declaration -> unit
-val type_declaration: Ident.t -> formatter -> type_declaration -> unit
->>>>>>> upstream/main
 val tree_of_extension_constructor:
     Ident.t -> extension_constructor -> ext_status -> out_sig_item
 val add_extension_constructor_to_preparation :

@@ -116,7 +116,6 @@ type t =
   | Missing_mli                             (* 70 *)
   | Unused_tmc_attribute                    (* 71 *)
   | Tmc_breaks_tailcall                     (* 72 *)
-<<<<<<< HEAD
   | Generative_application_expects_unit     (* 73 *)
   | Incompatible_with_upstream of upstream_compat_warning (* 187 *)
   | Unerasable_position_argument            (* 188 *)
@@ -124,11 +123,6 @@ type t =
   | Probe_name_too_long of string           (* 190 *)
   | Unchecked_zero_alloc_attribute          (* 199 *)
   | Unboxing_impossible                     (* 210 *)
-||||||| 7b73c6aa3f
-;;
-=======
-  | Generative_application_expects_unit     (* 73 *)
->>>>>>> upstream/main
 
 (* If you remove a warning, leave a hole in the numbering.  NEVER change
    the numbers of existing warnings.
@@ -209,7 +203,6 @@ let number = function
   | Missing_mli -> 70
   | Unused_tmc_attribute -> 71
   | Tmc_breaks_tailcall -> 72
-<<<<<<< HEAD
   | Generative_application_expects_unit -> 73
   | Incompatible_with_upstream _ -> 187
   | Unerasable_position_argument -> 188
@@ -217,24 +210,13 @@ let number = function
   | Probe_name_too_long _ -> 190
   | Unchecked_zero_alloc_attribute -> 199
   | Unboxing_impossible -> 210
-||||||| 7b73c6aa3f
-=======
-  | Generative_application_expects_unit -> 73
->>>>>>> upstream/main
 ;;
 (* DO NOT REMOVE the ;; above: it is used by
    the testsuite/ests/warnings/mnemonics.mll test to determine where
    the  definition of the number function above ends *)
 
-<<<<<<< HEAD
 let last_warning_number = 250
 ;;
-||||||| 7b73c6aa3f
-let last_warning_number = 72
-;;
-=======
-let last_warning_number = 73
->>>>>>> upstream/main
 
 type description =
   { number : int;
@@ -566,7 +548,6 @@ let descriptions = [
   { number = 72;
     names = ["tmc-breaks-tailcall"];
     description = "A tail call is turned into a non-tail call \
-<<<<<<< HEAD
                    by the @tail_mod_cons transformation.";
     since = since 4 14 };
   { number = 73;
@@ -600,17 +581,6 @@ let descriptions = [
     names = ["unboxing-impossible"];
     description = "The parameter or return value corresponding @unboxed attribute cannot be unboxed.";
     since = since 4 14 };
-||||||| 7b73c6aa3f
-                   by the @tail_mod_cons transformation." };
-=======
-                   by the @tail_mod_cons transformation.";
-    since = since 4 14 };
-  { number = 73;
-    names = ["generative-application-expects-unit"];
-    description = "A generative functor is applied to an empty structure \
-                   (struct end) rather than to ().";
-    since = since 5 1 };
->>>>>>> upstream/main
 ]
 
 let name_to_number =
@@ -1120,15 +1090,8 @@ let message = function
       Printf.sprintf "expected %s"
         (if b then "tailcall" else "non-tailcall")
   | Fragile_literal_pattern ->
-<<<<<<< HEAD
       let ref_manual = [ 13; 5; 3 ] in
       Format.asprintf
-||||||| 7b73c6aa3f
-      Printf.sprintf
-=======
-      let[@manual.ref "ss:warn52"] ref_manual = [ 13; 5; 3 ] in
-      Format.asprintf
->>>>>>> upstream/main
         "Code should not depend on the actual values of\n\
          this constructor's arguments. They are only for information\n\
          and may change in future versions. %a"
@@ -1145,12 +1108,7 @@ let message = function
   | Inlining_impossible reason ->
       Printf.sprintf "Cannot inline: %s" reason
   | Ambiguous_var_in_pattern_guard vars ->
-<<<<<<< HEAD
       let ref_manual = [ 13; 5; 4 ] in
-||||||| 7b73c6aa3f
-=======
-      let[@manual.ref "ss:warn57"] ref_manual = [ 13; 5; 4 ] in
->>>>>>> upstream/main
       let vars = List.sort String.compare vars in
       let vars_explanation =
         let in_different_places =
@@ -1230,7 +1188,6 @@ let message = function
        Please either mark the called function with the [@tail_mod_cons]\n\
        attribute, or mark this call with the [@tailcall false] attribute\n\
        to make its non-tailness explicit."
-<<<<<<< HEAD
   | Generative_application_expects_unit ->
       "A generative functor\n\
        should be applied to '()'; using '(struct end)' is deprecated."
@@ -1269,12 +1226,6 @@ let message = function
       Printf.sprintf
         "This [@unboxed] attribute cannot be used.\n\
          The type of this value does not allow unboxing."
-||||||| 7b73c6aa3f
-=======
-  | Generative_application_expects_unit ->
-      "A generative functor\n\
-       should be applied to '()'; using '(struct end)' is deprecated."
->>>>>>> upstream/main
 ;;
 
 let nerrors = ref 0

@@ -212,18 +212,7 @@ let type_open_ ?used_slot ?toplevel ovf env loc lid =
 
 let initial_env ~loc ~initially_opened_module
     ~open_implicit_modules =
-<<<<<<< HEAD
   let env = Lazy.force Env.initial in
-||||||| 7b73c6aa3f
-  let env =
-    if safe_string then
-      Env.initial_safe_string
-    else
-      Env.initial_unsafe_string
-  in
-=======
-  let env = Env.initial in
->>>>>>> upstream/main
   let open_module env m =
     let open Asttypes in
     let lid = {loc; txt = Longident.parse m } in
@@ -573,7 +562,6 @@ let params_are_constrained =
        | _ -> true
   in
   loop
-<<<<<<< HEAD
 
 let rec remove_modality_and_zero_alloc_variables_sg env ~zap_modality sg =
   let sg_item = function
@@ -628,10 +616,6 @@ and remove_modality_and_zero_alloc_variables_mty env ~zap_modality mty =
       in
       Mty_strengthen (mty, path, alias)
   | Mty_for_hole -> mty
-||||||| 7b73c6aa3f
-;;
-=======
->>>>>>> upstream/main
 
 type with_info =
   | With_type of Parsetree.type_declaration
@@ -689,11 +673,11 @@ let merge_constraint initial_env loc sg lid constr =
             type_kind = Type_abstract Definition;
             type_jkind = Jkind.Primitive.value ~why:(Unknown "merge_constraint");
             type_jkind_annotation = None;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             type_kind = Type_abstract;
 =======
             type_kind = Type_abstract Definition;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             type_private = Private;
             type_manifest = None;
             type_variance =
@@ -797,7 +781,7 @@ let merge_constraint initial_env loc sg lid constr =
         let tdecl = { tdecl with type_manifest = None } in
         return ~ghosts ~replace_by:(Some(Sig_type(id, tdecl, rs, priv)))
           (Pident id, lid, None)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     | Sig_type(id, sig_decl, rs, priv), [s], With_type_package cty
       when Ident.name id = s ->
@@ -813,7 +797,7 @@ let merge_constraint initial_env loc sg lid constr =
         let tdecl = { tdecl with type_manifest = None } in
         return ~ghosts ~replace_by:(Some(Sig_type(id, tdecl, rs, priv)))
           (Pident id, lid, None)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Sig_modtype(id, mtd, priv), [s],
       (With_modtype mty | With_modtypesubst mty)
       when Ident.name id = s ->
@@ -913,7 +897,7 @@ let merge_constraint initial_env loc sg lid constr =
               match constr with
               | With_typesubst sdecl -> sdecl
               | _ -> assert false
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     let sg =
     match tcstr with
     | (_, _, Twith_typesubst tdecl) ->
@@ -943,7 +927,7 @@ let merge_constraint initial_env loc sg lid constr =
             let replacement, _ =
               try Env.find_type_by_name lid.txt initial_env
               with Not_found -> assert false
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             in
 <<<<<<< HEAD
             match type_decl_is_alias sdecl with
@@ -965,7 +949,7 @@ let merge_constraint initial_env loc sg lid constr =
           let sub = List.fold_left how_to_extend_subst sub !real_ids in
           Some sub
       | (_, _, Some (Twith_modsubst (real_path, _))) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             fun s path -> Subst.add_type_path path replacement s
          | None ->
             let body = Option.get tdecl.typ_type.type_manifest in
@@ -1023,7 +1007,7 @@ let merge_constraint initial_env loc sg lid constr =
        Subst.signature Make_local sub sg
     | (_, _, Some (Twith_modtypesubst tmty)) ->
         let add s p = Subst.add_modtype_path p tmty.mty_type s in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         let sub = Subst.change_locs Subst.identity loc in
         let sub =
           List.fold_left
@@ -1799,13 +1783,13 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
 <<<<<<< HEAD
 and transl_signature ?(keep_warnings = false) ?(toplevel = false)
     env sig_acc (sg : Parsetree.signature) =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
 and transl_signature ?(keep_warnings = false) env sg =
 =======
 
 and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   let names = Signature_names.create () in
 <<<<<<< HEAD
 
@@ -1905,7 +1889,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
                   ~params
                   ~body:(Option.get td.typ_type.type_manifest)
                   Subst.identity
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let rec transl_sig env sg =
     match sg with
       [] -> [], [], env
@@ -2056,7 +2040,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
                       Subst.identity
                   in
                   Some (`Substituted_away subst)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
               in
 <<<<<<< HEAD
               Some (`Substituted_away subst)
@@ -2111,7 +2095,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
           match pmd.pmd_name.txt with
           | None -> None, env
           | Some name ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
               Signature_names.check_type ?info names td.typ_loc td.typ_id;
               Env.register_uid td.typ_type.type_uid td.typ_loc
             ) decls;
@@ -2365,7 +2349,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
               | Mty_alias _ -> Mp_absent
               | _ -> Mp_present
             in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             let id, newenv =
               Env.enter_module_declaration ~scope name pres md env
             in
@@ -2546,7 +2530,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
               (List.rev_append new_types sig_type_include_functor)
               srem
         | exception exn ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             let info =
               `Substituted_away (Subst.add_module id path Subst.identity)
             in
@@ -2575,12 +2559,12 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
             let (trem, rem, final_env) = transl_sig newenv srem in
             (mksig sig_item env loc :: trem, rem, final_env)
           | exception exn ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             Msupport.raise_error exn;
 <<<<<<< HEAD
             transl_sig env sig_items sig_type sig_type_include_functor srem
       end
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             transl_sig env srem
           end
         | Psig_recmodule sdecls ->
@@ -2706,7 +2690,6 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
               Signature_names.check_type names loc cls.cls_obj_id;
               Signature_names.check_class names loc cls.cls_id;
               Signature_names.check_class_type names loc cls.cls_ty_id;
-              Signature_names.check_type names loc cls.cls_typesharp_id;
               Env.register_uid cls.cls_decl.cty_uid cls.cls_decl.cty_loc;
             ) classes;
             res
@@ -2718,8 +2701,8 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
                 let open Typeclass in
                 [Sig_class(cls.cls_id, cls.cls_decl, rs, Exported);
                  Sig_class_type(cls.cls_ty_id, cls.cls_ty_decl, rs, Exported);
-                 Sig_type(cls.cls_obj_id, cls.cls_obj_abbr, rs, Exported);
-                 Sig_type(cls.cls_typesharp_id, cls.cls_abbr, rs, Exported)]
+                 Sig_type(cls.cls_obj_id, cls.cls_obj_abbr, rs, Exported)
+                ]
               ) classes [rem]
               |> List.flatten
             in
@@ -2742,7 +2725,6 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
               let loc = decl.clsty_id_loc.Location.loc in
               Signature_names.check_class_type names loc decl.clsty_ty_id;
               Signature_names.check_type names loc decl.clsty_obj_id;
-              Signature_names.check_type names loc decl.clsty_typesharp_id;
               Env.register_uid
                 decl.clsty_ty_decl.clty_uid
                 decl.clsty_ty_decl.clty_loc;
@@ -2757,8 +2739,6 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
                 [Sig_class_type(decl.clsty_ty_id, decl.clsty_ty_decl, rs,
                                 Exported);
                  Sig_type(decl.clsty_obj_id, decl.clsty_obj_abbr, rs, Exported);
-                 Sig_type(decl.clsty_typesharp_id, decl.clsty_abbr, rs,
-                          Exported)
                 ]
               ) classes [rem]
               |> List.flatten
@@ -2977,7 +2957,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
             Msupport.raise_error
               (Error_forward (Builtin_attributes.error_of_extension ext));
             transl_sig env srem
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   Msupport.with_saved_types
     ?warning_attribute:(if keep_warnings then None else Some [])
@@ -3125,31 +3105,13 @@ let path_of_module mexp =
 (* Check that all core type schemes in a structure
    do not contain non-generalized type variable *)
 
-<<<<<<< HEAD
 let rec nongen_modtype env f = function
     Mty_ident _ -> None
   | Mty_alias _ -> None
   | Mty_for_hole -> None
-||||||| 7b73c6aa3f
-let rec nongen_modtype env = function
-    Mty_ident _ -> false
-  | Mty_alias _ -> false
-  | Mty_for_hole -> false
-=======
-let rec nongen_modtype env = function
-    Mty_ident _ -> None
-  | Mty_alias _ -> None
-  | Mty_for_hole -> None
->>>>>>> upstream/main
   | Mty_signature sg ->
       let env = Env.add_signature sg env in
-<<<<<<< HEAD
       List.find_map (nongen_signature_item env f) sg
-||||||| 7b73c6aa3f
-      List.exists (nongen_signature_item env) sg
-=======
-      List.find_map (nongen_signature_item env) sg
->>>>>>> upstream/main
   | Mty_functor(arg_opt, body) ->
       let env =
         match arg_opt with
@@ -3161,7 +3123,6 @@ let rec nongen_modtype env = function
       nongen_modtype env f body
   | Mty_strengthen (mty,_ ,_) -> nongen_modtype env f mty
 
-<<<<<<< HEAD
 and nongen_signature_item env f = function
   | Sig_value(_id, desc, _) ->
       f env desc.val_type
@@ -3178,29 +3139,6 @@ let check_nongen_modtype env loc mty =
       in
       raise(Error(loc, env, error))
     )
-||||||| 7b73c6aa3f
-and nongen_signature_item env = function
-    Sig_value(_id, desc, _) -> Ctype.nongen_schema env desc.val_type
-  | Sig_module(_id, _, md, _, _) -> nongen_modtype env md.md_type
-  | _ -> false
-=======
-and nongen_signature_item env = function
-  | Sig_value(_id, desc, _) ->
-      Ctype.nongen_vars_in_schema env desc.val_type
-      |> Option.map (fun vars -> (vars, desc))
-  | Sig_module(_id, _, md, _, _) -> nongen_modtype env md.md_type
-  | _ -> None
-
-let check_nongen_modtype env loc mty =
-  nongen_modtype env mty
-  |> Option.iter (fun (vars, item) ->
-      let vars = Btype.TypeSet.elements vars in
-      let error =
-        Non_generalizable_module { vars; item; mty }
-      in
-      raise(Error(loc, env, error))
-    )
->>>>>>> upstream/main
 
 let check_nongen_signature_item env sig_item =
   match sig_item with
@@ -3488,7 +3426,6 @@ type application_summary = {
   arg: argument_summary option (* None for () *)
 }
 
-<<<<<<< HEAD
 let simplify_app_summary app_view = match app_view.arg with
   | None ->
     Includemod.Error.Unit, Mty_signature []
@@ -3523,24 +3460,6 @@ let maybe_infer_modalities ~loc ~env ~md_mode ~mode =
     end;
     Mode.Modality.Value.id
   end
-||||||| 7b73c6aa3f
-let simplify_app_summary app_view =
-  let mty = app_view.arg.mod_type in
-  match app_view.arg_is_syntactic_unit , app_view.arg_path with
-  | true,   _ -> Includemod.Error.Unit, mty
-  | false, Some p -> Includemod.Error.Named p, mty
-  | false, None -> Includemod.Error.Anonymous, mty
-=======
-let simplify_app_summary app_view = match app_view.arg with
-  | None ->
-    Includemod.Error.Unit, Mty_signature []
-  | Some arg ->
-    let mty = arg.arg.mod_type in
-    match arg.is_syntactic_unit , arg.path with
-    | true , _      -> Includemod.Error.Empty_struct, mty
-    | false, Some p -> Includemod.Error.Named p, mty
-    | false, None   -> Includemod.Error.Anonymous, mty
->>>>>>> upstream/main
 
 let rec type_module ?(alias=false) sttn funct_body anchor env smod =
   (* Merlin: when we start typing a module we don't want to include potential
@@ -3769,19 +3688,9 @@ and type_application loc strengthen funct_body env smod =
     (type_one_application ~ctx:(loc, sfunct, funct, args) funct_body env)
     (funct, funct_shape) args
 
-<<<<<<< HEAD
 and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
     funct_body env (funct, funct_shape) app_view =
   match Mtype.scrape_alias env funct.mod_type with
-||||||| 7b73c6aa3f
-and type_one_application ~ctx:(apply_loc,md_f,args)
-    funct_body env (funct, funct_shape)  app_view =
-  match Env.scrape_alias env funct.mod_type with
-=======
-and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
-    funct_body env (funct, funct_shape) app_view =
-  match Env.scrape_alias env funct.mod_type with
->>>>>>> upstream/main
   | Mty_functor (Unit, mty_res) ->
       begin match app_view.arg with
         | None -> ()
@@ -3798,24 +3707,14 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
             raise (Error (app_view.f_loc, env, Apply_generative));
       end;
       if funct_body && Mtype.contains_type env funct.mod_type then
-<<<<<<< HEAD
         raise (Error (apply_loc, env, Not_allowed_in_functor_body));
       { mod_desc = Tmod_apply_unit funct;
-||||||| 7b73c6aa3f
-        raise (Error (apply_loc, env, Not_allowed_in_functor_body));
-      { mod_desc = Tmod_apply(funct, app_view.arg, Tcoerce_none);
-=======
-        Msupport.raise_error
-          (Error (apply_loc, env, Not_allowed_in_functor_body));
-      { mod_desc = Tmod_apply_unit funct;
->>>>>>> upstream/main
         mod_type = mty_res;
         mod_env = env;
         mod_attributes = app_view.attributes;
         mod_loc = funct.mod_loc },
       Shape.app funct_shape ~arg:Shape.dummy_mod
   | Mty_functor (Named (param, mty_param), mty_res) as mty_functor ->
-<<<<<<< HEAD
       let apply_error () =
         let args = List.map simplify_app_summary args in
         let mty_f = md_f.mod_type in
@@ -3836,52 +3735,11 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
           funct_shape
       | { loc = app_loc; attributes = app_attributes;
           arg = Some { shape = arg_shape; path = arg_path; arg } } ->
-||||||| 7b73c6aa3f
-=======
-      let apply_error () =
-        let args = List.map simplify_app_summary args in
-        let mty_f = md_f.mod_type in
-        let app_name = match sfunct.pmod_desc with
-          | Pmod_ident l -> Includemod.Named_leftmost_functor l.txt
-          | _ -> Includemod.Anonymous_functor
-        in
-        Includemod.Apply_error {loc=apply_loc;env;app_name;mty_f;args}
-      in
-      begin match app_view with
-      | { arg = None; loc = app_loc; attributes = app_attributes; _ } ->
-          Msupport.raise_error (apply_error ());
-          { mod_desc = Tmod_apply_unit(funct);
-            mod_type = mty_res;
-            mod_env = env;
-            mod_attributes = app_attributes;
-            mod_loc = app_loc },
-      funct_shape
-      | { loc = app_loc; attributes = app_attributes;
-          arg = Some { shape = arg_shape; path = arg_path; arg } } ->
->>>>>>> upstream/main
       let coercion =
-<<<<<<< HEAD
         try Includemod.modtypes
               ~loc:arg.mod_loc ~mark:Mark_both env arg.mod_type mty_param
         with Includemod.Error _ ->
           Msupport.raise_error (apply_error ());
-||||||| 7b73c6aa3f
-        try
-          Includemod.modtypes
-            ~loc:app_view.arg.mod_loc ~mark:Mark_both env
-            app_view.arg.mod_type mty_param
-        with Includemod.Error msg ->
-          let _args = List.map simplify_app_summary args in
-          let _mty_f = md_f.mod_type in
-          let _lid_app = None in
-          Msupport.raise_error(
-            Error(app_view.arg.mod_loc, env, Not_included msg));
-=======
-        try Includemod.modtypes
-          ~loc:arg.mod_loc ~mark:Mark_both env arg.mod_type mty_param
-        with Includemod.Error _ ->
-          Msupport.raise_error (apply_error ());
->>>>>>> upstream/main
           Tcoerce_none
       in
       let mty_appl =
@@ -3907,17 +3765,9 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
                     "the signature of this functor application" mty_res;
                   try Mtype.nondep_supertype env [param] mty_res
                   with Ctype.Nondep_cannot_erase _ ->
-<<<<<<< HEAD
                     let error = Cannot_eliminate_dependency
                                   (Functor_applied, mty_functor) in
                     raise (Error(app_loc, parent_env, error))
-||||||| 7b73c6aa3f
-                    let error = Cannot_eliminate_dependency mty_functor in
-                    raise (Error(app_view.loc, parent_env, error))
-=======
-                    let error = Cannot_eliminate_dependency mty_functor in
-                    raise (Error(app_loc, parent_env, error))
->>>>>>> upstream/main
             in
             (* TODO(merlin): we could perhaps log the "fatal error" cases...
                not sure it's worth the effort. *)
@@ -3951,11 +3801,11 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
       raise(Error(app_view.f_loc, env, Cannot_scrape_alias path))
 <<<<<<< HEAD
   | Mty_ident _ | Mty_signature _ | Mty_strengthen _ | Mty_for_hole ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | _ ->
 =======
   | Mty_ident _ | Mty_signature _ | Mty_for_hole  ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       let args = List.map simplify_app_summary args in
       let mty_f = md_f.mod_type in
       let app_name = match sfunct.pmod_desc with
@@ -4116,7 +3966,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         let defs = match rec_flag with
           | Recursive -> Typecore.annotate_recursive_bindings env defs
           | Nonrecursive -> defs
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
           Typecore.type_binding env rec_flag sdefs in
         let () = if rec_flag = Recursive then
           Typecore.check_recursive_bindings env defs
@@ -4125,7 +3975,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         let defs = match rec_flag with
           | Recursive -> Typecore.annotate_recursive_bindings env defs
           | Nonrecursive -> defs
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         in
         (* Note: Env.find_value does not trigger the value_used event. Values
            will be marked as being used during the signature inclusion test. *)
@@ -4168,7 +4018,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
                   val_zero_alloc = zero_alloc;
                   val_modalities = modalities }
               in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             (fun (acc, shape_map) (id, { Asttypes.loc; _ }, _typ)->
               Signature_names.check_value names loc id;
               let vd =  Env.find_value (Pident id) newenv in
@@ -4177,7 +4027,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
             (fun (acc, shape_map) (id, { Asttypes.loc; _ }, _typ, _uid)->
               Signature_names.check_value names loc id;
               let vd =  Env.find_value (Pident id) newenv in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
               Sig_value(id, vd, Exported) :: acc,
               Shape.Map.add_value shape_map id vd.val_uid
             )
@@ -4475,13 +4325,13 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
         if Option.is_some toplevel
         || not (Warnings.is_active (Misplaced_attribute "")) then
           Builtin_attributes.mark_alert_used x;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         Builtin_attributes.warning_attribute x;
 =======
         Builtin_attributes.warning_attribute x;
         if toplevel || not (Warnings.is_active (Misplaced_attribute "")) then
           Builtin_attributes.mark_alert_used x;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         Tstr_attribute x, [], shape_map, env
   in
   let toplevel_sig =
@@ -4549,7 +4399,7 @@ let merlin_type_structure env sig_acc str =
 let type_structure env = type_structure false None env []
 let merlin_transl_signature env sig_acc sg = transl_signature ~keep_warnings:true env sig_acc sg
 let transl_signature ?toplevel env sg = transl_signature env [] sg ?toplevel
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let type_structure = type_structure false None
 let merlin_transl_signature env sg = transl_signature ~keep_warnings:true env sg
 let transl_signature env sg = transl_signature env sg
@@ -4557,7 +4407,7 @@ let transl_signature env sg = transl_signature env sg
 let type_structure = type_structure false None
 let merlin_transl_signature env sg = transl_signature ~keep_warnings:true env sg
 let transl_signature ~toplevel env sg = transl_signature ~toplevel env sg
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Normalize types in a signature *)
 
@@ -4597,7 +4447,6 @@ let type_module_type_of env smod =
   in
   let mty = Mtype.scrape_for_type_of ~remove_aliases env tmty.mod_type in
   (* PR#5036: must not contain non-generalized type variables *)
-<<<<<<< HEAD
   check_nongen_modtype env smod.pmod_loc mty;
   (* for [module type of], we zap to identity modality for best legacy
   compatibility *)
@@ -4605,12 +4454,6 @@ let type_module_type_of env smod =
     remove_modality_and_zero_alloc_variables_mty env
       ~zap_modality:Mode.Modality.Value.zap_to_id mty
   in
-||||||| 7b73c6aa3f
-  if nongen_modtype env mty then
-    raise(Error(smod.pmod_loc, env, Non_generalizable_module mty));
-=======
-  check_nongen_modtype env smod.pmod_loc mty;
->>>>>>> upstream/main
   tmty, mty
 
 (* For Typecore *)
@@ -4653,7 +4496,6 @@ let lookup_type_in_sig sg =
 
 let type_package env m p fl =
   (* Same as Pexp_letmodule *)
-<<<<<<< HEAD
   (* remember original level *)
   let outer_scope = Ctype.get_current_level () in
   let modl, scope =
@@ -4667,25 +4509,6 @@ let type_package env m p fl =
     end
   in
   Mtype.lower_nongen outer_scope modl.mod_type;
-||||||| 7b73c6aa3f
-  (* remember original level *)
-  Ctype.begin_def ();
-  let context = Typetexp.narrow () in
-  let modl, _mod_shape = type_module env m in
-  let scope = Ctype.create_scope () in
-  Typetexp.widen context;
-=======
-  let modl, scope =
-    Typetexp.TyVarEnv.with_local_scope begin fun () ->
-      (* type the module and create a scope in a raised level *)
-      Ctype.with_local_level begin fun () ->
-        let modl, _mod_shape = type_module env m in
-        let scope = Ctype.create_scope () in
-        modl, scope
-      end
-    end
-  in
->>>>>>> upstream/main
   let fl', env =
     match fl with
     | [] -> [], env
@@ -4850,7 +4673,7 @@ let type_implementation target modulename initial_env ast =
     Cms_format.save_cms (Unit_info.cms target) modulename
       annots shape;
   in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let type_implementation sourcefile outputprefix modulename initial_env ast =
 =======
 let type_implementation target initial_env ast =
@@ -4860,7 +4683,7 @@ let type_implementation target initial_env ast =
       annots initial_env cmi shape;
     (* gen_annot target annots; *)
   in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   Cmt_format.clear ();
   Cms_format.clear ();
   Misc.try_finally (fun () ->
@@ -4879,7 +4702,7 @@ let type_implementation target initial_env ast =
       let shape = Shape.set_uid_if_none shape uid in
       if !Clflags.binary_annotations_cms then
         cms_register_toplevel_struct_attributes ~sourcefile ~uid ast;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       let (str, sg, names, shape, finalenv) =
         type_structure initial_env ast in
       let shape =
@@ -4893,7 +4716,7 @@ let type_implementation target initial_env ast =
         let id = Ident.create_persistent @@ Unit_info.modname target in
         Shape.set_uid_if_none shape (Uid.of_compilation_unit_id id)
       in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       let simple_sg = Signature_names.simplify finalenv names sg in
       if !Clflags.print_types then begin
         remove_mode_and_jkind_variables finalenv sg;
@@ -4907,11 +4730,11 @@ let type_implementation target initial_env ast =
 <<<<<<< HEAD
         Typecore.optimise_allocations ();
         let shape = Shape_reduce.local_reduce Env.empty shape in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         let shape = Shape.local_reduce shape in
 =======
         let shape = Shape_reduce.local_reduce Env.empty shape in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         Printtyp.wrap_printing_env ~error:false initial_env
           (fun () -> fprintf std_formatter "%a@."
               (Printtyp.printed_signature @@ Unit_info.source_file target)
@@ -4935,9 +4758,21 @@ let type_implementation target initial_env ast =
         if !Clflags.cmi_file <> None
         || Sys.file_exists source_intf then begin
           let compiled_intf_file =
+||||||| fcc3157ab0
+        let sourceintf =
+          Filename.remove_extension sourcefile ^ !Config.interface_suffix in
+        if !Clflags.cmi_file <> None || Sys.file_exists sourceintf then begin
+          let intf_file =
+=======
+        let source_intf = Unit_info.mli_from_source target in
+        if !Clflags.cmi_file <> None
+        || Sys.file_exists source_intf then begin
+          let compiled_intf_file =
+>>>>>>> 501-plus-upstream-main-9fa77db
             match !Clflags.cmi_file with
             | Some cmi_file -> Unit_info.Artifact.from_filename cmi_file
             | None ->
+<<<<<<< HEAD
               let basename = import |> Compilation_unit.Name.to_string in
               let cmi_file =
                 try
@@ -4947,7 +4782,20 @@ let type_implementation target initial_env ast =
                         Interface_not_compiled source_intf))
               in
               Unit_info.Artifact.from_filename cmi_file
+||||||| fcc3157ab0
+              (try
+                Load_path.find_uncap (modulename ^ ".cmi")
+              with Not_found ->
+                raise(Error(Location.in_file sourcefile, Env.empty,
+                      Interface_not_compiled sourceintf)))
+            | Some cmi_file -> cmi_file
+=======
+                try Unit_info.find_normalized_cmi target with Not_found ->
+                  raise(Error(Location.in_file sourcefile, Env.empty,
+                              Interface_not_compiled source_intf))
+>>>>>>> 501-plus-upstream-main-9fa77db
           in
+<<<<<<< HEAD
           let dclsig =
             Env.read_signature import compiled_intf_file ~add_binding:false
           in
@@ -4959,31 +4807,11 @@ let type_implementation target initial_env ast =
             error (Inconsistent_argument_types
                      { new_arg_type = arg_type; old_source_file = source_intf;
                        old_arg_type = arg_type_from_cmi });
-||||||| 7b73c6aa3f
-        let sourceintf =
-          Filename.remove_extension sourcefile ^ !Config.interface_suffix in
-        if Sys.file_exists sourceintf then begin
-          let intf_file =
-            try
-              Load_path.find_uncap (modulename ^ ".cmi")
-            with Not_found ->
-              raise(Error(Location.in_file sourcefile, Env.empty,
-                          Interface_not_compiled sourceintf)) in
+||||||| fcc3157ab0
           let dclsig = Env.read_signature modulename intf_file in
 =======
-        let source_intf = Unit_info.mli_from_source target in
-        if !Clflags.cmi_file <> None
-        || Sys.file_exists source_intf then begin
-          let compiled_intf_file =
-            match !Clflags.cmi_file with
-            | Some cmi_file -> Unit_info.Artifact.from_filename cmi_file
-            | None ->
-                try Unit_info.find_normalized_cmi target with Not_found ->
-                  raise(Error(Location.in_file sourcefile, Env.empty,
-                              Interface_not_compiled source_intf))
-          in
           let dclsig = Env.read_signature compiled_intf_file in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
           let coercion, shape =
             Includemod.compunit initial_env ~mark:Mark_positive
 <<<<<<< HEAD
@@ -5000,12 +4828,12 @@ let type_implementation target initial_env ast =
              ([Tcoerce_primitive] is a pain in particular). *)
           let argument_interface =
             check_argument_type_if_given initial_env source_intf dclsig arg_type
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
               sourcefile sg intf_file dclsig shape
 =======
               sourcefile sg source_intf
               dclsig shape
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
           in
           Typecore.force_delayed_checks ();
           Typecore.optimise_allocations ();
@@ -5016,12 +4844,12 @@ let type_implementation target initial_env ast =
           let annots = Cmt_format.Implementation str in
 <<<<<<< HEAD
           save_cmt_and_cms target annots initial_env None (Some shape);
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
           Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
             annots (Some sourcefile) initial_env None (Some shape);
 =======
           save_cmt target annots initial_env None (Some shape);
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
           { structure = str;
             coercion;
             shape;
@@ -5064,22 +4892,22 @@ let type_implementation target initial_env ast =
 <<<<<<< HEAD
               Env.save_signature ~alerts simple_sg name kind
                 (Unit_info.cmi target)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
               Env.save_signature ~alerts
                 simple_sg modulename (outputprefix ^ ".cmi")
 =======
               Env.save_signature ~alerts simple_sg (Unit_info.cmi target)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             in
             let annots = Cmt_format.Implementation str in
 <<<<<<< HEAD
             save_cmt_and_cms target annots initial_env (Some cmi) (Some shape)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
               annots (Some sourcefile) initial_env (Some cmi) (Some shape);
 =======
             save_cmt target annots initial_env (Some cmi) (Some shape)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
           end;
           { structure = str;
             coercion;
@@ -5097,12 +4925,12 @@ let type_implementation target initial_env ast =
         in
 <<<<<<< HEAD
         save_cmt_and_cms target annots initial_env None None
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
           annots (Some sourcefile) initial_env None None;
 =======
         save_cmt target annots initial_env None None
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       )
 
 <<<<<<< HEAD
@@ -5111,7 +4939,7 @@ let save_signature target modname tsg initial_env cmi =
     (Cmt_format.Interface tsg) initial_env (Some cmi) None;
   Cms_format.save_cms  (Unit_info.cmsi target) modname
     (Cmt_format.Interface tsg) None
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let save_signature modname tsg outputprefix source_file initial_env cmi =
   Cmt_format.save_cmt  (outputprefix ^ ".cmti") modname
     (Cmt_format.Interface tsg) (Some source_file) initial_env (Some cmi) None
@@ -5119,7 +4947,7 @@ let save_signature modname tsg outputprefix source_file initial_env cmi =
 let save_signature target tsg initial_env cmi =
   Cmt_format.save_cmt (Unit_info.cmti target)
     (Cmt_format.Interface tsg) initial_env (Some cmi) None
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let cms_register_toplevel_signature_attributes ~sourcefile ~uid ast =
@@ -5154,7 +4982,7 @@ let type_interface ~sourcefile modulename env ast =
 
 let transl_signature env ast =
   transl_signature ~toplevel:false env ast
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let type_interface env ast =
   transl_signature env ast
 =======
@@ -5163,7 +4991,7 @@ let type_interface env ast =
 
 let transl_signature env ast =
   transl_signature ~toplevel:false env ast
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
@@ -5201,11 +5029,11 @@ let package_signatures units =
 
 <<<<<<< HEAD
 let package_units initial_env objfiles target_cmi modulename =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let package_units initial_env objfiles cmifile modulename =
 =======
 let package_units initial_env objfiles target_cmi =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   (* Read the signatures of the units *)
   let units =
     List.map
@@ -5226,27 +5054,27 @@ let package_units initial_env objfiles target_cmi =
          in
          if Unit_info.is_cmi artifact &&
             not(Mtype.no_code_needed_sig (Lazy.force Env.initial) sg)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
          let pref = chop_extensions f in
          let modname = String.capitalize_ascii(Filename.basename pref) in
          let sg = Env.read_signature modname (pref ^ ".cmi") in
          if Filename.check_suffix f ".cmi" &&
-            not(Mtype.no_code_needed_sig Env.initial_safe_string sg)
+            not(Mtype.no_code_needed_sig Env.initial sg)
 =======
          let artifact = Unit_info.Artifact.from_filename f in
          let sg = Env.read_signature (Unit_info.companion_cmi artifact) in
          if Unit_info.is_cmi artifact &&
             not(Mtype.no_code_needed_sig Env.initial sg)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
          then raise(Error(Location.none, Env.empty,
                           Implementation_is_required f));
 <<<<<<< HEAD
          Compilation_unit.name modname, sg)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
          (modname, Env.read_signature modname (pref ^ ".cmi")))
 =======
          Unit_info.Artifact.modname artifact, sg)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       objfiles in
   (* Compute signature of packaged unit *)
   Ident.reinit();
@@ -5254,13 +5082,13 @@ let package_units initial_env objfiles target_cmi =
   (* Compute the shape of the package *)
 <<<<<<< HEAD
   let pack_uid = Uid.of_compilation_unit_id modulename in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let prefix = Filename.remove_extension cmifile in
   let pack_uid = Uid.of_compilation_unit_id (Ident.create_persistent prefix) in
 =======
   let prefix = Unit_info.Artifact.prefix target_cmi in
   let pack_uid = Uid.of_compilation_unit_id (Ident.create_persistent prefix) in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   let shape =
     List.fold_left (fun map (name, _sg) ->
       let name = Compilation_unit.Name.to_string name in
@@ -5280,11 +5108,11 @@ let package_units initial_env objfiles target_cmi =
 <<<<<<< HEAD
     let name = Compilation_unit.name modulename in
     let dclsig = Env.read_signature name target_cmi ~add_binding:false in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     let dclsig = Env.read_signature modulename cmifile in
 =======
     let dclsig = Env.read_signature target_cmi in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     let cc, _shape =
       Includemod.compunit initial_env ~mark:Mark_both
         "(obtained by packing)" sg mli dclsig shape
@@ -5294,13 +5122,13 @@ let package_units initial_env objfiles target_cmi =
       (Cmt_format.Packed (sg, objfiles)) initial_env  None (Some shape);
     Cms_format.save_cms  (Unit_info.companion_cms target_cmi) modulename
       (Cmt_format.Packed (sg, objfiles)) (Some shape);
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     Cmt_format.save_cmt  (prefix ^ ".cmt") modulename
       (Cmt_format.Packed (sg, objfiles)) None initial_env  None (Some shape);
 =======
     Cmt_format.save_cmt (Unit_info.companion_cmt target_cmi)
       (Cmt_format.Packed (sg, objfiles)) initial_env  None (Some shape);
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     cc
   end else begin
     (* Determine imports *)
@@ -5322,12 +5150,12 @@ let package_units initial_env objfiles target_cmi =
         Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
 <<<<<<< HEAD
           sg name kind target_cmi (Array.of_list imports)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
           sg modulename
           (prefix ^ ".cmi") imports
 =======
           sg target_cmi imports
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       in
 <<<<<<< HEAD
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
@@ -5335,7 +5163,7 @@ let package_units initial_env objfiles target_cmi =
         (Cmt_format.Packed (sign, objfiles)) initial_env (Some cmi) (Some shape);
       Cms_format.save_cms (Unit_info.companion_cms target_cmi)  modulename
         (Cmt_format.Packed (sign, objfiles)) (Some shape);
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
         (Cmt_format.Packed (cmi.Cmi_format.cmi_sign, objfiles)) None initial_env
         (Some cmi) (Some shape);
@@ -5343,7 +5171,7 @@ let package_units initial_env objfiles target_cmi =
       Cmt_format.save_cmt (Unit_info.companion_cmt target_cmi)
         (Cmt_format.Packed (cmi.Cmi_format.cmi_sign, objfiles)) initial_env
         (Some cmi) (Some shape);
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     end;
     Tcoerce_none
   end
@@ -5380,12 +5208,12 @@ let report_error ~loc _env = function
            %s.@]"
         (Style.as_inline_code modtype) mty
         hint
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
            Please bind the argument to a module identifier.@]" modtype mty
 =======
          Please bind the argument to a module identifier.@]"
         (Style.as_inline_code modtype) mty
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Signature_expected ->
       Location.errorf ~loc "This module type is not a signature"
   | Structure_expected mty ->
@@ -5408,12 +5236,12 @@ let report_error ~loc _env = function
   | Recursive_include_functor ->
       Location.errorf ~loc
         "@[Including a functor is not supported in recursive module signatures @]"
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         "@[This module is not a structure; it has type@ %a" modtype mty
 =======
         "@[This module is not a structure; it has type@ %a"
         (Style.as_inline_code modtype) mty
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | With_no_component lid ->
       Location.errorf ~loc
         "@[The signature constrained by %a has no component named %a@]"
@@ -5478,25 +5306,13 @@ let report_error ~loc _env = function
       Location.errorf ~loc
         "@[Multiple definition of the %s name %a.@ \
          Names must be unique in a given structure or signature.@]"
-<<<<<<< HEAD
         (Sig_component_kind.to_string kind) Style.inline_code name
   | Non_generalizable { vars; expression } ->
       let manual_ref = [ 6; 1; 2 ] in
       prepare_for_printing vars;
       add_type_to_preparation expression;
-||||||| 7b73c6aa3f
-        (Sig_component_kind.to_string kind) name
-  | Non_generalizable typ ->
-=======
-        (Sig_component_kind.to_string kind) Style.inline_code name
-  | Non_generalizable { vars; expression } ->
-      let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2 ] in
-      prepare_for_printing vars;
-      add_type_to_preparation expression;
->>>>>>> upstream/main
       Location.errorf ~loc
         "@[The type of this expression,@ %a,@ \
-<<<<<<< HEAD
          contains the non-generalizable type variable(s): %a.@ %a@]"
         (Style.as_inline_code prepared_type_scheme) expression
         (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
@@ -5517,32 +5333,6 @@ let report_error ~loc _env = function
         ]
       in
       Location.errorf ~loc ~sub
-||||||| 7b73c6aa3f
-           contains type variables that cannot be generalized@]" type_scheme typ
-  | Non_generalizable_module mty ->
-      Location.errorf ~loc
-=======
-         contains the non-generalizable type variable(s): %a.@ %a@]"
-        (Style.as_inline_code prepared_type_scheme) expression
-        (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
-           (Style.as_inline_code prepared_type_scheme)) vars
-        Misc.print_see_manual manual_ref
-  | Non_generalizable_module { vars; mty; item } ->
-      let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2 ] in
-      prepare_for_printing vars;
-      add_type_to_preparation item.val_type;
-      let sub =
-        [ Location.msg ~loc:item.val_loc
-            "The type of this value,@ %a,@ \
-             contains the non-generalizable type variable(s) %a."
-            (Style.as_inline_code prepared_type_scheme)
-            item.val_type
-            (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
-               @@ Style.as_inline_code prepared_type_scheme) vars
-        ]
-      in
-      Location.errorf ~loc ~sub
->>>>>>> upstream/main
         "@[The type of this module,@ %a,@ \
          contains non-generalizable type variable(s).@ %a@]"
         modtype mty
@@ -5712,7 +5502,7 @@ let report_error ~loc _env = function
         "This value is %a, but expected to be %a because it is inside a module."
         (Style.as_inline_code (Mode.Value.Const.print_axis ax)) left
         (Style.as_inline_code (Mode.Value.Const.print_axis ax)) right
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         "The module type@ %s@ is not a valid type for a packed module:@ \
          it is defined as a local substitution for a non-path module type."
         (Path.name p)
@@ -5722,7 +5512,7 @@ let report_error ~loc _env = function
          for an anonymous module type.@ %a"
         Style.inline_code (Path.name p)
         Misc.print_see_manual manual_ref
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let report_error env ~loc err =
   Printtyp.wrap_printing_env_error env

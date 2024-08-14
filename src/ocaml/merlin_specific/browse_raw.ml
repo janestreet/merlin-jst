@@ -320,11 +320,11 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
 <<<<<<< HEAD
   | Tpat_alias (p,_,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
 =======
   | Tpat_alias (p,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps ->
@@ -361,11 +361,11 @@ let of_function_param (param : Typedtree.function_param) =
       of_pattern pat ** of_expression expr
 
 let of_expression_desc loc = function
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let of_expression_desc loc = function
 =======
 let rec of_expression_desc loc = function
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ | Texp_src_pos | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
@@ -379,7 +379,7 @@ let rec of_expression_desc loc = function
     in
     list_fold of_function_param params ** body
   | Texp_apply (e,ls,_,_, _) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_function { cases; _ } ->
     list_fold of_case cases
   | Texp_apply (e,ls) ->
@@ -387,7 +387,7 @@ let rec of_expression_desc loc = function
   | Texp_function (params, body) ->
     list_fold of_function_param params ** of_function_body body
   | Texp_apply (e,ls) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     of_expression e **
     list_fold (function
         | (_,Omitted _) -> id_fold
@@ -403,16 +403,8 @@ let rec of_expression_desc loc = function
     list_fold (fun (_lbl, e) -> of_expression e) es
   | Texp_construct (_,_,es,_) | Texp_array (_,_,es,_) ->
     list_fold of_expression es
-<<<<<<< HEAD
   | Texp_variant (_,Some (e,_))
   | Texp_assert (e, _) | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
-||||||| 7b73c6aa3f
-  | Texp_variant (_,Some e)
-  | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
-=======
-  | Texp_variant (_,Some e)
-  | Texp_assert (e, _) | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
->>>>>>> upstream/main
     of_expression e
   | Texp_record { fields; extended_expression } ->
     option_fold of_expression extended_expression **
@@ -629,12 +621,12 @@ and of_core_type_desc = function
 <<<<<<< HEAD
   | Ttyp_var _ | Ttyp_call_pos -> id_fold
   | Ttyp_open (_,_,ct) -> of_core_type ct
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Ttyp_any | Ttyp_var _ -> id_fold
 =======
   | Ttyp_any | Ttyp_var _ -> id_fold
   | Ttyp_open (_,_,ct) -> of_core_type ct
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts ->
@@ -885,19 +877,19 @@ let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; _ } =
       fake_path lid_loc cstr_res cstr_name
 <<<<<<< HEAD
     | Tpat_var (id, {Location. loc; txt},_,_) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_var (id, {Location. loc; txt}) ->
 =======
     | Tpat_var (id, {Location. loc; txt}, _uid) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
 <<<<<<< HEAD
     | Tpat_alias (_,id,loc,_,_) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_alias (_,id,loc) ->
 =======
     | Tpat_alias (_,id,loc, _uid) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
     | _ -> []
   in
@@ -968,11 +960,11 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
       match extra with
 <<<<<<< HEAD
       | Texp_newtype' (id, label_loc, _, _) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       | Texp_newtype' (id, label_loc) ->
 =======
       | Texp_newtype' (id, label_loc, _) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         let path = Path.Pident id in
         let lid = Longident.Lident (label_loc.txt) in
         (mkloc path label_loc.loc, Some lid) :: acc

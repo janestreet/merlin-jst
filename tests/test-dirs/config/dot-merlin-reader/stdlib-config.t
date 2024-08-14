@@ -24,7 +24,7 @@ The STDLIB directive in .merlin takes priority over -ocamllib-path
 
   $ echo | ocamlmerlin single dump-configuration -ocamllib-path /stdlib-from-flag -filename test.ml 2> /dev/null | jq '.value.merlin.stdlib'
   "/stdlib-from-.merlin"
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 The STDLIB directive in .merlin is respected
   $ cat > .merlin <<EOF
@@ -47,4 +47,4 @@ The STDLIB directive in .merlin takes priority over -ocamllib-path
 
   $ echo | $MERLIN single dump-configuration -ocamllib-path /stdlib-from-flag -filename test.ml 2> /dev/null | jq '.value.merlin.stdlib'
   "/stdlib-from-.merlin"
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

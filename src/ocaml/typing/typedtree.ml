@@ -87,19 +87,19 @@ and 'k pattern_desc =
   | Tpat_any : value pattern_desc
 <<<<<<< HEAD
   | Tpat_var : Ident.t * string loc * Uid.t * Mode.Value.l -> value pattern_desc
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_var : Ident.t * string loc -> value pattern_desc
 =======
   | Tpat_var : Ident.t * string loc * Uid.t -> value pattern_desc
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_alias :
 <<<<<<< HEAD
       value general_pattern * Ident.t * string loc * Uid.t * Mode.Value.l -> value pattern_desc
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       value general_pattern * Ident.t * string loc -> value pattern_desc
 =======
       value general_pattern * Ident.t * string loc * Uid.t -> value pattern_desc
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_constant : constant -> value pattern_desc
   | Tpat_tuple : (string option * value general_pattern) list -> value pattern_desc
   | Tpat_construct :
@@ -149,13 +149,13 @@ and arg_label = Types.arg_label =
   | Labelled of string
   | Optional of string
   | Position of string
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_newtype of string
   | Texp_newtype' of Ident.t * label loc
 =======
   | Texp_newtype of string
   | Texp_newtype' of Ident.t * label loc * Uid.t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 and expression_desc =
     Texp_ident of
@@ -176,7 +176,7 @@ and expression_desc =
       expression * (arg_label * apply_arg) list * apply_position *
         Mode.Locality.l * Zero_alloc.assume option
   | Texp_match of expression * Jkind.sort * computation case list * partial
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_function of { arg_label : arg_label; param : Ident.t;
       cases : value case list; partial : partial; }
   | Texp_apply of expression * (arg_label * expression option) list
@@ -185,7 +185,7 @@ and expression_desc =
   | Texp_function of function_param list * function_body
   | Texp_apply of expression * (arg_label * expression option) list
   | Texp_match of expression * computation case list * partial
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Texp_try of expression * value case list
   | Texp_tuple of (string option * expression) list * Mode.Alloc.r
   | Texp_construct of
@@ -338,7 +338,7 @@ and function_cases =
     fc_attributes: attributes;
   }
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 and function_param =
   {
@@ -365,15 +365,9 @@ and function_body =
         attributes: attributes;
       }
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 and record_label_definition =
-<<<<<<< HEAD
   | Kept of Types.type_expr * mutability * unique_use
-||||||| 7b73c6aa3f
-  | Kept of Types.type_expr
-=======
-  | Kept of Types.type_expr * mutable_flag
->>>>>>> upstream/main
   | Overridden of Longident.t loc * expression
 
 and binding_op =
@@ -535,10 +529,10 @@ and value_binding =
 <<<<<<< HEAD
     vb_rec_kind: Value_rec_types.recursive_binding_kind;
     vb_sort: Jkind.sort;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     vb_rec_kind: Value_rec_types.recursive_binding_kind;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     vb_attributes: attributes;
     vb_loc: Location.t;
   }
@@ -698,21 +692,21 @@ and core_type_desc =
   | Ttyp_class of Path.t * Longident.t loc * core_type list
 <<<<<<< HEAD
   | Ttyp_alias of core_type * string loc option * Jkind.annotation option
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Ttyp_alias of core_type * string
 =======
   | Ttyp_alias of core_type * string loc
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Ttyp_variant of row_field list * closed_flag * label list option
   | Ttyp_poly of (string * Jkind.annotation option) list * core_type
   | Ttyp_package of package_type
 <<<<<<< HEAD
   | Ttyp_open of Path.t * Longident.t loc * core_type
   | Ttyp_call_pos
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   | Ttyp_open of Path.t * Longident.t loc * core_type
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 and package_type = {
   pack_path : Path.t;
@@ -779,12 +773,12 @@ and label_declaration =
      ld_uid: Uid.t;
      ld_mutable: mutability;
      ld_modalities: Modality.Value.Const.t;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
      ld_mutable: mutable_flag;
 =======
      ld_uid: Uid.t;
      ld_mutable: mutable_flag;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
      ld_type: core_type;
      ld_loc: Location.t;
      ld_attributes: attribute list;
@@ -797,12 +791,12 @@ and constructor_declaration =
 <<<<<<< HEAD
      cd_uid: Uid.t;
      cd_vars: (string * Jkind.annotation option) list;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
      cd_vars: string loc list;
 =======
      cd_uid: Uid.t;
      cd_vars: string loc list;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
      cd_args: constructor_arguments;
      cd_res: core_type option;
      cd_loc: Location.t;
@@ -991,13 +985,13 @@ let shallow_iter_pattern_desc
 <<<<<<< HEAD
   | Tpat_alias(p, _, _, _, _) -> f.f p
   | Tpat_tuple patl -> List.iter (fun (_, p) -> f.f p) patl
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias(p, _, _) -> f.f p
   | Tpat_tuple patl -> List.iter f.f patl
 =======
   | Tpat_alias(p, _, _, _) -> f.f p
   | Tpat_tuple patl -> List.iter f.f patl
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_construct(_, _, patl, _) -> List.iter f.f patl
   | Tpat_variant(_, pat, _) -> Option.iter f.f pat
   | Tpat_record (lbl_pat_list, _) ->
@@ -1019,13 +1013,13 @@ let shallow_map_pattern_desc
 <<<<<<< HEAD
   | Tpat_alias (p1, id, s, uid, m) ->
       Tpat_alias (f.f p1, id, s, uid, m)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias (p1, id, s) ->
       Tpat_alias (f.f p1, id, s)
 =======
   | Tpat_alias (p1, id, s, uid) ->
       Tpat_alias (f.f p1, id, s, uid)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_tuple pats ->
       Tpat_tuple (List.map (fun (label, pat) -> label, f.f pat) pats)
   | Tpat_record (lpats, closed) ->
@@ -1090,7 +1084,7 @@ let rec iter_bound_idents
   | Tpat_var (id, s, uid, _mode) ->
      f (id,s,pat.pat_type, uid)
   | Tpat_alias(p, id, s, uid, _mode) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_var (id,s) ->
      f (id,s,pat.pat_type)
   | Tpat_alias(p, id, s) ->
@@ -1098,7 +1092,7 @@ let rec iter_bound_idents
   | Tpat_var (id, s, uid) ->
      f (id,s,pat.pat_type, uid)
   | Tpat_alias(p, id, s, uid) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       iter_bound_idents f p;
       f (id,s,pat.pat_type, uid)
   | Tpat_or(p1, _, _) ->
@@ -1171,11 +1165,11 @@ let rev_pat_bound_idents_full sort pat =
 let rev_only_idents idents_full =
 <<<<<<< HEAD
   List.rev_map (fun (id,_,_,_,_) -> id) idents_full
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   List.rev_map (fun (id,_,_) -> id) idents_full
 =======
   List.rev_map (fun (id,_,_,_) -> id) idents_full
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let rev_only_idents_and_types idents_full =
   List.rev_map (fun (id,_,ty,_,_) -> (id,ty)) idents_full
@@ -1252,36 +1246,36 @@ let rec alpha_pat
   = fun env p -> match p.pat_desc with
 <<<<<<< HEAD
   | Tpat_var (id, s, uid, mode) -> (* note the ``Not_found'' case *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_var (id, s) -> (* note the ``Not_found'' case *)
 =======
   | Tpat_var (id, s, uid) -> (* note the ``Not_found'' case *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       {p with pat_desc =
 <<<<<<< HEAD
        try Tpat_var (alpha_var env id, s, uid, mode) with
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
        try Tpat_var (alpha_var env id, s) with
 =======
        try Tpat_var (alpha_var env id, s, uid) with
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
        | Not_found -> Tpat_any}
 <<<<<<< HEAD
   | Tpat_alias (p1, id, s, uid, mode) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias (p1, id, s) ->
 =======
   | Tpat_alias (p1, id, s, uid) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       let new_p : k general_pattern =  alpha_pat env p1 in
       begin try
 <<<<<<< HEAD
         {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s, uid, mode)}
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s)}
 =======
         {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s, uid)}
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       with
       | Not_found -> new_p
       end
@@ -1323,7 +1317,6 @@ let split_pattern pat =
   in
   split_pattern pat
 
-<<<<<<< HEAD
 (* Expressions are considered nominal if they can be used as the subject of a
    sentence or action. In practice, we consider that an expression is nominal
    if they satisfy one of:
@@ -1342,25 +1335,6 @@ let rec exp_is_nominal exp =
   | _ -> false
 
 
-||||||| 7b73c6aa3f
-=======
-(* Expressions are considered nominal if they can be used as the subject of a
-   sentence or action. In practice, we consider that an expression is nominal
-   if they satisfy one of:
-   - Similar to an identifier: words separated by '.' or '#'.
-   - Do not contain spaces when printed.
-  *)
-let rec exp_is_nominal exp =
-  match exp.exp_desc with
-  | _ when exp.exp_attributes <> [] -> false
-  | Texp_ident _ | Texp_instvar _ | Texp_constant _
-  | Texp_variant (_, None)
-  | Texp_construct (_, _, []) ->
-      true
-  | Texp_field (parent, _, _) | Texp_send (parent, _) -> exp_is_nominal parent
-  | _ -> false
-
->>>>>>> upstream/main
 (* Merlin specific *)
 
 let unpack_functor_me me =

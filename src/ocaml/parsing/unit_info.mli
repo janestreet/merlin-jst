@@ -161,7 +161,7 @@ val is_cmi: Artifact.t -> bool
     name [modname u].
     @raise Not_found if no such cmi exists *)
 val find_normalized_cmi: t -> Artifact.t
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (**************************************************************************)
 (*                                                                        *)
@@ -322,4 +322,4 @@ val is_cmi: Artifact.t -> bool
     name [modname u].
     @raise Not_found if no such cmi exists *)
 val find_normalized_cmi: t -> Artifact.t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

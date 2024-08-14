@@ -80,12 +80,12 @@ Test finding occurrences of and-based binding operator, from reified syntax:
 <<<<<<< HEAD
 FIXME --  some locs are inexact
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 FIXME -- this doesn't find anything right now
 Test finding occurrences of let-based binding operator, from operator syntax:
 
 =======
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   $ $MERLIN single occurrences -identifier-at 4:0 ./issue1398.ml < ./issue1398.ml
   {
     "class": "return",
@@ -122,7 +122,7 @@ Test finding occurrences of let-based binding operator, from operator syntax:
         }
       }
     ],
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     "value": [],
 =======
     "value": [
@@ -157,19 +157,19 @@ Test finding occurrences of let-based binding operator, from operator syntax:
         }
       }
     ],
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     "notifications": []
   }
 
 <<<<<<< HEAD
 FIXME --  some locs are inexact
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 FIXME -- this doesn't find anything right now
 Test finding occurrences of and-based binding operator, from operator syntax:
 
 =======
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   $ $MERLIN single occurrences -identifier-at 4:12 ./issue1398.ml < ./issue1398.ml
   {
     "class": "return",
@@ -206,7 +206,7 @@ Test finding occurrences of and-based binding operator, from operator syntax:
         }
       }
     ],
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     "value": [],
 =======
     "value": [
@@ -241,6 +241,6 @@ Test finding occurrences of and-based binding operator, from operator syntax:
         }
       }
     ],
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     "notifications": []
   }

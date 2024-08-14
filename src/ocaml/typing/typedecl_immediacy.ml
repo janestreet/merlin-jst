@@ -29,14 +29,15 @@ let compute_decl env tdecl =
     | None -> Type_immediacy.Unknown
     | Some argrepr -> Ctype.immediacy env argrepr
     end
-  | (Type_variant (_ :: _ as cstrs, _), _) ->
+  | (Type_variant (cstrs, _), _) ->
     if not (List.exists (fun c -> c.Types.cd_args <> Types.Cstr_tuple []) cstrs)
     then
       Type_immediacy.Always
     else
       Type_immediacy.Unknown
-  | (Type_abstract, Some(typ)) -> Ctype.immediacy env typ
-  | (Type_abstract, None) -> Type_immediacy.of_attributes tdecl.type_attributes
+  | (Type_abstract _, Some(typ)) -> Ctype.immediacy env typ
+  | (Type_abstract _, None) ->
+      Type_immediacy.of_attributes tdecl.type_attributes
   | _ -> Type_immediacy.Unknown
 
 let property : (Type_immediacy.t, unit) Typedecl_properties.property =

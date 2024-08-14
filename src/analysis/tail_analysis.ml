@@ -81,13 +81,13 @@ let expr_entry_points = function
   | Texp_function {body = Tfunction_body expr; _} -> [Expression expr]
   | Texp_function {body = Tfunction_cases {fc_cases; _}; _} ->
     List.map fc_cases ~f:(fun c -> Case c)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_function {cases; _} -> List.map cases ~f:(fun c -> Case c)
 =======
   (* FIXME This was broken with the upgrade to 5.2
      It seems like that feature was already broket before that upgrade. *)
   (* | Texp_function (cases, _) -> List.map cases ~f:(fun c -> Case c) *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | _ -> []
 
 let entry_points = function

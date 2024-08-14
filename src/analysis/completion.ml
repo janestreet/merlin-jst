@@ -662,13 +662,13 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
                     try
 <<<<<<< HEAD
                       let _, lbl_arg, lbl_res = Ctype.instance_label ~fixed:false lbl in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
                       let _, lbl_arg, lbl_res = Ctype.instance_label false lbl in
 =======
                       let _, lbl_arg, lbl_res =
                         Ctype.instance_label ~fixed:false lbl
                       in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
                       begin try
                           Ctype.unify_var env ty lbl_res;
                         with _ -> ()

@@ -228,7 +228,7 @@ let get_syntax_doc cursor_loc node : syntax_info =
           documentation = syntax_doc_url "firstclassmodules.html";
         }
   | _ -> None
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 open Browse_raw
 
@@ -459,4 +459,4 @@ let get_syntax_doc cursor_loc node : syntax_info =
           documentation = syntax_doc_url "firstclassmodules.html";
         }
   | _ -> None
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

@@ -275,7 +275,7 @@ let mkexp_desc_type_constraint e t =
   match t with
   | Pconstraint t -> Pexp_constraint(e, t)
   | Pcoerce(t1, t2)  -> Pexp_coerce(e, t1, t2)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let mkexp_constraint ~loc e (t1, t2) =
   match t1, t2 with
   | Some t, None -> mkexp ~loc (Pexp_constraint(e, t))
@@ -289,7 +289,7 @@ let mkexp_desc_constraint e t =
 
 let mkexp_constraint ~loc e t =
   mkexp ~loc (mkexp_desc_constraint e t)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let mkexp_type_constraint ?(ghost=false) ~loc e t =
   let desc = mkexp_desc_type_constraint e t in
@@ -308,7 +308,6 @@ let mkpat_opt_constraint ~loc p = function
 (*let syntax_error () =
   raise Syntaxerr.Escape_error*)
 
-<<<<<<< HEAD
 let removed_string_set loc =
   raise_error Syntaxerr.(Error(Syntaxerr.Removed_string_set(make_loc loc)))
 
@@ -326,11 +325,6 @@ let pexp_ltuple loc args =
   Jane_syntax.Labeled_tuples.expr_of
     ~loc:(make_loc loc)
     args
-||||||| 7b73c6aa3f
-=======
-let removed_string_set loc =
-  raise_error Syntaxerr.(Error(Syntaxerr.Removed_string_set(make_loc loc)))
->>>>>>> upstream/main
 
 (* Using the function [not_expecting] in a semantic action means that this
    syntactic form is recognized by the parser but is in fact incorrect. This
@@ -842,7 +836,7 @@ let mkfunction ~loc ~attrs params body_constraint body =
             attrs
     end
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (* If all the parameters are [Pparam_newtype x], then return [Some xs] where
    [xs] is the corresponding list of values [x]. This function is optimized for
@@ -902,7 +896,7 @@ let mkfunction params body_constraint body =
       | Some newtypes ->
           mkghost_newtype_function_body newtypes body_constraint body_exp
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 (* Alternatively, we could keep the generic module type in the Parsetree
    and extract the package type during type-checking. In that case,
    the assertions below should be turned into explicit checks. *)
@@ -1253,11 +1247,11 @@ The precedences must be listed from low to high.
 %nonassoc SEMI                          /* below EQUAL ({lbl=...; lbl=...}) */
 <<<<<<< HEAD
 %nonassoc LET FOR               /* above SEMI ( ...; let ... in ...) */
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 %nonassoc LET LET_LWT                   /* above SEMI ( ...; let ... in ...) */
 =======
 %nonassoc LET                           /* above SEMI ( ...; let ... in ...) */
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 /* below BAR  (match ... with ...) */
 %nonassoc AND             /* above WITH (module rec A: SIG with ... and ...) */
@@ -1482,7 +1476,7 @@ reversed_nonempty_concat(X):
   xs = rev(reversed_nonempty_concat(X))
     { xs }
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (* [reversed_nonempty_concat(X)] recognizes a nonempty sequence of [X]s (each of
    which is a list), and produces an OCaml list of their concatenation in
@@ -1505,7 +1499,7 @@ reversed_nonempty_concat(X):
   xs = rev(reversed_nonempty_concat(X))
     { xs }
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 (* [reversed_separated_nonempty_llist(separator, X)] recognizes a nonempty list
    of [X]s, separated with [separator]s, and produces an OCaml list in reverse
    order -- that is, the last element in the input text appears first in this
@@ -2814,7 +2808,7 @@ fun_seq_expr:
   | fun_expr    %prec below_SEMI  { $1 }
   | fun_expr SEMI                 { $1 }
   | mkexp(fun_expr SEMI seq_expr
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 seq_expr:
   | expr        %prec below_SEMI  { $1 }
   | expr SEMI                     { $1 }
@@ -2852,7 +2846,7 @@ fun_seq_expr:
   | fun_expr    %prec below_SEMI  { $1 }
   | fun_expr SEMI                 { $1 }
   | mkexp(fun_expr SEMI seq_expr
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     { Pexp_sequence($1, $3) })
     { $1 }
   | fun_expr SEMI PERCENT attr_id seq_expr
@@ -3042,14 +3036,14 @@ let_pattern [@recovery default_pattern_and_mode ()]:
   | or_function(fun_expr) { $1 }
 ;
 %inline fun_expr_attrs:
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 %inline expr_attrs:
 =======
 %public %inline expr:
   | or_function(fun_expr) { $1 }
 ;
 %inline fun_expr_attrs:
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | LET MODULE ext_attributes mkrhs(module_name) module_binding_body IN seq_expr
       { Pexp_letmodule($4, $5, (merloc $endpos($6) $7)), $3 }
   | LET EXCEPTION ext_attributes let_exception_declaration IN seq_expr
@@ -3059,7 +3053,7 @@ let_pattern [@recovery default_pattern_and_mode ()]:
         let od = Opn.mk $5 ~override:$3 ~loc:open_loc in
         Pexp_open(od, (merloc $endpos($6) $7)), $4 }
 <<<<<<< HEAD
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | FUNCTION ext_attributes match_cases
       { Pexp_function $3, $2 }
   | FUN ext_attributes labeled_simple_pattern fun_def
@@ -3074,7 +3068,7 @@ let_pattern [@recovery default_pattern_and_mode ()]:
       { let body_constraint = Option.map (fun x -> Pconstraint x) $4 in
         mkfunction $3 body_constraint $6, $2
       }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | MATCH ext_attributes seq_expr WITH match_cases
       { Pexp_match($3, $5), $2 }
   | TRY ext_attributes seq_expr WITH match_cases
@@ -3119,7 +3113,7 @@ let_pattern [@recovery default_pattern_and_mode ()]:
       { mkexp ~loc:$sloc (Pexp_variant($1, Some $2)) }
   | e1 = fun_expr op = op(infix_operator) e2 = expr
       { mkexp ~loc:$sloc (mkinfix e1 op e2) }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       { Pexp_variant($1, Some $2) }
   | e1 = expr op = op(infix_operator) e2 = expr
       { mkinfix e1 op e2 }
@@ -3135,7 +3129,7 @@ let_pattern [@recovery default_pattern_and_mode ()]:
       { mkuminus ~oploc:$loc($1) $1 $2 }
   | additive expr %prec prec_unary_plus
       { mkuplus ~oploc:$loc($1) $1 $2 }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 ;
 
 %public simple_expr:
@@ -3425,42 +3419,34 @@ labeled_simple_expr:
 ;
 let_binding_body_no_punning:
     let_ident strict_binding
-<<<<<<< HEAD
       { ($1, $2, None, []) }
   | modes0 = optional_mode_expr_legacy let_ident constraint_ EQUAL seq_expr
       (* CR zqian: modes are duplicated, and one of them needs to be made ghost
          to make internal tools happy. We should try to avoid that. *)
       { let v = $2 in (* PR#7344 *)
         let typ, modes1 = $3 in
-||||||| 7b73c6aa3f
-      { ($1, $2) }
-  | let_ident type_constraint EQUAL seq_expr
-      { let v = $1 in (* PR#7344 *)
-=======
-      { ($1, $2, None) }
-  | let_ident type_constraint EQUAL seq_expr
-      { let v = $1 in (* PR#7344 *)
->>>>>>> upstream/main
         let t =
 <<<<<<< HEAD
           Option.map (function
           | Pconstraint t ->
-             Pvc_constraint { locally_abstract_univars = []; typ=t }
-          | Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
-          ) typ
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
           match $2 with
-            Some t, None -> t
-          | _, Some t -> t
-          | _ -> assert false
+            Some t, None ->
 =======
           match $2 with
             Pconstraint t ->
+>>>>>>> 501-plus-upstream-main-9fa77db
              Pvc_constraint { locally_abstract_univars = []; typ=t }
-          | Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
->>>>>>> upstream/main
-        in
 <<<<<<< HEAD
+          | Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
+          ) typ
+||||||| fcc3157ab0
+          | ground, Some coercion -> Pvc_coercion { ground; coercion}
+          | _ -> assert false
+=======
+          | Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
+>>>>>>> 501-plus-upstream-main-9fa77db
+        in
         let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
         let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
         let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $5 in
@@ -3504,38 +3490,7 @@ let_binding_body_no_punning:
         let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost exp in
         (ghpat ~loc (Ppat_constraint($1, poly)), exp, None, let_binding_mode_attrs modes)
        }
-||||||| 7b73c6aa3f
-        let loc = Location.(t.ptyp_loc.loc_start, t.ptyp_loc.loc_end) in
-        let typ = ghtyp ~loc (Ptyp_poly([],t)) in
-        let patloc = ($startpos($1), $endpos($2)) in
-        (ghpat ~loc:patloc (Ppat_constraint(v, typ)),
-         mkexp_constraint ~loc:$sloc $4 $2) }
-  | let_ident COLON poly(core_type) EQUAL seq_expr
-      { let patloc = ($startpos($1), $endpos($3)) in
-        (ghpat ~loc:patloc
-           (Ppat_constraint($1, ghtyp ~loc:($loc($3)) $3)),
-         $5) }
-  | let_ident COLON TYPE lident_list DOT core_type EQUAL seq_expr
-      { let exp, poly =
-          wrap_type_annotation ~loc:$sloc $4 $6 $8 in
-        let loc = ($startpos($1), $endpos($6)) in
-        (ghpat ~loc (Ppat_constraint($1, poly)), exp) }
-=======
-        (v, $4, Some t)
-        }
-  | let_ident COLON poly(core_type) EQUAL seq_expr
-    {
-      let t = ghtyp ~loc:($loc($3)) $3 in
-      ($1, $5, Some (Pvc_constraint { locally_abstract_univars = []; typ=t }))
-    }
-  | let_ident COLON TYPE lident_list DOT core_type EQUAL seq_expr
-    { let constraint' =
-        Pvc_constraint { locally_abstract_univars=$4; typ = $6}
-      in
-      ($1, $8, Some constraint') }
->>>>>>> upstream/main
   | pattern_no_exn EQUAL seq_expr
-<<<<<<< HEAD
       { ($1, $3, None, []) }
   | simple_pattern_not_ident pvc_modes EQUAL seq_expr
       {
@@ -3552,35 +3507,13 @@ let_binding_body_no_punning:
       { let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
         ($2, mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost ($5 modes_ghost), None,
          let_binding_mode_attrs modes) }
-||||||| 7b73c6aa3f
-      { ($1, $3) }
-  | simple_pattern_not_ident COLON core_type EQUAL seq_expr
-      { let loc = ($startpos($1), $endpos($3)) in
-        (ghpat ~loc (Ppat_constraint($1, $3)), $5) }
-=======
-      { ($1, $3, None) }
-  | simple_pattern_not_ident COLON core_type EQUAL seq_expr
-      { ($1, $5, Some(Pvc_constraint { locally_abstract_univars=[]; typ=$3 })) }
->>>>>>> upstream/main
 ;
 let_binding_body:
   | let_binding_body_no_punning
-<<<<<<< HEAD
       { let p,e,c,attrs = $1 in (p,e,c,false), attrs }
-||||||| 7b73c6aa3f
-      { let p,e = $1 in (p,e,false) }
-=======
-      { let p,e,c = $1 in (p,e,c,false) }
->>>>>>> upstream/main
 /* BEGIN AVOID */
   | val_ident %prec below_HASH
-<<<<<<< HEAD
       { (mkpatvar ~loc:$loc $1, ghexpvar ~loc:$loc $1, None, true), [] }
-||||||| 7b73c6aa3f
-      { (mkpatvar ~loc:$loc $1, mkexpvar ~loc:$loc $1, true) }
-=======
-      { (mkpatvar ~loc:$loc $1, mkexpvar ~loc:$loc $1, None, true) }
->>>>>>> upstream/main
   (* The production that allows puns is marked so that [make list-parse-errors]
      does not attempt to exploit it. That would be problematic because it
      would then generate bindings such as [let x], which are rejected by the
@@ -3643,7 +3576,7 @@ letop_bindings:
 ;
 <<<<<<< HEAD
 strict_binding_modes:
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 fun_binding:
     strict_binding
       { $1 }
@@ -3653,7 +3586,7 @@ fun_binding:
 strict_binding:
 =======
 strict_binding:
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     EQUAL seq_expr
 <<<<<<< HEAD
       { fun _ -> $2 }
@@ -3687,7 +3620,7 @@ fun_body:
       }
   | fun_seq_expr
       { Pfunction_body $1 }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       { $2 }
   | labeled_simple_pattern fun_binding
       { let (l, o, p) = $1 in ghexp ~loc:$sloc (Pexp_fun(l, o, p, $2)) }
@@ -3712,7 +3645,7 @@ fun_body:
       }
   | fun_seq_expr
       { Pfunction_body $1 }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 ;
 %inline match_cases:
   xs = preceded_or_separated_nonempty_llist(BAR, match_case)
@@ -3758,7 +3691,7 @@ fun_param_as_list:
             pparam_desc = Pparam_val (a, b, c)
           }
         ]
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 fun_def:
     MINUSGREATER seq_expr
       { (merloc $endpos($1) $2) }
@@ -3783,13 +3716,13 @@ fun_def:
       {
        let (l,o,p) = $1 in
        ghexp ~loc:$sloc (Pexp_fun(l, o, p, $2))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       }
 ;
 <<<<<<< HEAD
 fun_params:
   | nonempty_concat(fun_param_as_list) { $1 }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 %inline expr_comma_list:
   es = separated_nontrivial_llist(COMMA, expr)
     { es }
@@ -3821,7 +3754,7 @@ fun_params:
 %inline expr_comma_list:
   es = separated_nontrivial_llist(COMMA, expr)
     { es }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 ;
 
 (* Parsing labeled tuple expressions
@@ -4716,7 +4649,7 @@ with_type_binder:
       { ($2, None) }
     | LPAREN QUOTE tyvar=mkrhs(ident) COLON jkind=jkind_annotation RPAREN
       { (tyvar, Some jkind) }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 %inline typevar:
   QUOTE mkrhs(ident)
     { $2 }
@@ -4724,7 +4657,7 @@ with_type_binder:
 %inline typevar:
   QUOTE ident
     { mkrhs $2 $sloc }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 ;
 %inline typevar_list:
   (* : (string with_loc * jkind_annotation option) list *)
@@ -4783,11 +4716,11 @@ alias_type:
   | mktyp(
 <<<<<<< HEAD
       ty = alias_type AS QUOTE tyvar = mkrhs(ident)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       ty = alias_type AS QUOTE tyvar = ident
 =======
       ty = alias_type AS tyvar = typevar
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         { Ptyp_alias(ty, tyvar) }
    )
    { $1 }
@@ -5113,7 +5046,7 @@ atomic_type:
     | tys = actual_type_parameters
       tid = mkrhs(type_unboxed_longident)
         { unboxed_type $loc(tid) tid.txt tys }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   )
   { $1 }
@@ -5141,7 +5074,7 @@ atomic_type:
       tys = actual_type_parameters
       tid = mkrhs(type_longident)
         { Ptyp_constr (tid, tys) }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | tys = actual_type_parameters
       HASH
       cid = mkrhs(clty_longident)
@@ -5183,13 +5116,13 @@ atomic_type:
   | LPAREN
     tys = separated_nontrivial_llist(COMMA, one_type_parameter_of_several)
     RPAREN
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       { [ty] }
   | LPAREN tys = separated_nontrivial_llist(COMMA, core_type) RPAREN
 =======
       { [ ty ] }
   | LPAREN tys = separated_nontrivial_llist(COMMA, core_type) RPAREN
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       { tys }
 
 (* Layout annotations on type expressions typically require parens, as in [('a :
@@ -5719,7 +5652,7 @@ attr_payload:
     { Fake.Meta.uncode $startpos $endpos $2 }
 ;
 <<<<<<< HEAD
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
 (* Lwt *)
 %public structure_item:
@@ -5770,5 +5703,5 @@ lwt_bindings:
 
 =======
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 %%

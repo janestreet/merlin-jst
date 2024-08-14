@@ -329,7 +329,7 @@ and expression_desc =
         when [body = Pfunction_cases [ p1 -> e1; ...; pm -> em ]]
       [C] represents a type constraint or coercion placed immediately before the
       arrow, e.g. [fun P1 ... Pn : ty -> ...] when [C = Some (Pconstraint ty)].
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Pexp_function of case list  (** [function P1 -> E1 | ... | Pn -> En] *)
   | Pexp_fun of arg_label * expression option * pattern * expression
       (** [Pexp_fun(lbl, exp0, P, E1)] represents:
@@ -354,13 +354,13 @@ and expression_desc =
         when [body = Pfunction_body E]
       - [fun P1 ... Pn -> function p1 -> e1 | ... | pm -> em]
         when [body = Pfunction_cases [ p1 -> e1; ...; pm -> em ]]
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
       A function must have parameters. [Pexp_function (params, _, body)] must
       have non-empty [params] or a [Pfunction_cases _] body.
   *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
            Notes:
            - If [E0] is provided, only
              {{!Asttypes.arg_label.Optional}[Optional]} is allowed.
@@ -376,7 +376,7 @@ and expression_desc =
       A function must have parameters. [Pexp_function (params, _, body)] must
       have non-empty [params] or a [Pfunction_cases _] body.
   *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Pexp_apply of expression * (arg_label * expression) list
       (** [Pexp_apply(E0, [(l1, E1) ; ... ; (ln, En)])]
             represents [E0 ~l1:E1 ... ~ln:En]
@@ -564,7 +564,7 @@ and function_constraint =
   }
 (** See the comment on {{!expression_desc.Pexp_function}[Pexp_function]}. *)
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 and function_param_desc =
   | Pparam_val of arg_label * expression option * pattern
@@ -626,7 +626,7 @@ and type_constraint =
   | Pcoerce of core_type option * core_type
 (** See the comment on {{!expression_desc.Pexp_function}[Pexp_function]}. *)
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 (** {2 Value descriptions} *)
 
 and value_description =

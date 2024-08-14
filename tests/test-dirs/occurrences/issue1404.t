@@ -86,12 +86,12 @@ locate position 2:1 returns the definition of [(+)]
 <<<<<<< HEAD
       "line": 339,
       "col": 9
-||||||| 7b73c6aa3f
-      "line": 347,
+||||||| fcc3157ab0
+      "line": 335,
       "col": 0
 =======
       "line": 335,
       "col": 9
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     }
   }

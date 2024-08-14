@@ -47,12 +47,12 @@ type merlin = {
 <<<<<<< HEAD
   unit_name   : string option;
   wrapping_prefix : string option;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   source_root : string option;
   unit_name   : string option;
   wrapping_prefix : string option;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;

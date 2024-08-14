@@ -92,12 +92,12 @@ type merlin = {
 <<<<<<< HEAD
   unit_name   : string option;
   wrapping_prefix : string option;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   source_root : string option;
   unit_name   : string option;
   wrapping_prefix : string option;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -142,12 +142,12 @@ let dump_merlin x =
 <<<<<<< HEAD
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -332,7 +332,7 @@ let get_external_config path t =
       failures = failures @ merlin.failures;
       config_path = Some config_path;
     } in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     let merlin = t.merlin in
     let merlin = {
       merlin with
@@ -355,7 +355,7 @@ let get_external_config path t =
     } in
 =======
     let merlin = merge_merlin_config dot t.merlin ~failures ~config_path in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     normalize { t with merlin }
 
 let merlin_flags = [
@@ -639,7 +639,7 @@ let ocaml_ignored_flags = [
   "-cfg-zero-alloc-checker";
   "-no-cfg-zero-alloc-checker";
   "-dcounters";
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
@@ -649,7 +649,7 @@ let ocaml_ignored_flags = [
   "-Oclassic"; "-opaque"; "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures";
   "-unboxed-types"; "-v"; "-verbose"; "-where";
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -695,11 +695,11 @@ let ocaml_ignored_parametrized_flags = [
   "-zero-alloc-checker-details-cutoff";
   "-zero-alloc-checker-join";
   "-dgranularity";
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   "-error-style"; "-dump-dir";
 =======
   "-error-style"; "-dump-dir"; "-cmi-file";
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 ]
 
 let ocaml_warnings_spec ~error =
@@ -935,12 +935,12 @@ let initial = {
 <<<<<<< HEAD
     unit_name   = None;
     wrapping_prefix = None;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     source_root = None;
     unit_name   = None;
     wrapping_prefix = None;
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     reader      = [];
     protocol    = `Json;
     log_file    = None;

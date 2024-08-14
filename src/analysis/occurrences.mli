@@ -9,7 +9,7 @@ val locs_of
   -> scope:[`Project | `Buffer]
   -> string
   -> (res, string) result
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 type t = { locs: Warnings.loc list; status: Query_protocol.occurrences_status }
 
@@ -21,4 +21,4 @@ val locs_of
   -> scope:[`Project | `Buffer]
   -> string
   -> t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

@@ -430,7 +430,7 @@ module Utils = struct
         match try_one file with
         | Some _ as f -> f
         | None -> Option.bind ~f:try_one (File.to_legacy file)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         let fname = File.with_ext ~src_suffix_pair file in
         try Some (Misc.find_in_path_uncap ?fallback path fname)
         with Not_found -> None
@@ -438,7 +438,7 @@ module Utils = struct
         let fname = File.with_ext ~src_suffix_pair file in
         try Some (Misc.find_in_path_normalized ?fallback path fname)
         with Not_found -> None
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       in
       try
         Some (List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search)
@@ -452,13 +452,13 @@ module Utils = struct
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config @ Mconfig.hidden_source_path config
         | CMT _ | CMTI _         -> Mconfig.build_path config @ Mconfig.hidden_build_path config
         | CMS _ | CMSI _         -> Mconfig.build_path config @ Mconfig.hidden_build_path config
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
         | CMT _ | CMTI _         -> Mconfig.build_path config
 =======
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
         | CMT _ | CMTI _         -> Mconfig.cmt_path config
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 end
 
 let move_to filename artifact =
@@ -494,7 +494,7 @@ let load_cmt ~config ?with_fallback:(_ = true) comp_unit =
   Preferences.set config.ml_or_mli;
   let file = Preferences.build comp_unit in
   match Utils.find_file ~config:config.mconfig ~with_fallback:true file with
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
 let load_cmt ~config comp_unit ml_or_mli =
   Preferences.set ml_or_mli;
@@ -509,7 +509,7 @@ let load_cmt ~config ?(with_fallback = true) comp_unit =
     Preferences.build comp_unit
   in
   match Utils.find_file ~config:config.mconfig ~with_fallback file with
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Some path ->
     let artifact = Artifact.read path in
     let source_file = Artifact.sourcefile artifact in
@@ -551,7 +551,7 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
    [Option.equal] because [Std.Option] doesn't have it so the patch would be
    less local in order to add a module alias before [open Std]. *)
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
   let module Shape_reduce =
     Shape.Make_reduce (struct
@@ -680,7 +680,7 @@ let path_and_loc_from_label desc env =
   | _ -> assert false
 
 =======
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 type find_source_result =
   | Found of string
   | Not_found of File.t
@@ -848,9 +848,9 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       end
     | _ -> log ~title "Failed to load the cmt file"; `None
   end
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 module Namespace = struct
-  type under_type = [ `Constr | `Labels ]
+  type all = Namespace.t
 =======
 (** [find_loc_of_uid] uid's location are given by tables stored int he cmt files
   for external compilation units or computed by Merlin for the current buffer.
@@ -886,7 +886,7 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       end
     | _ -> log ~title "Failed to load the cmt file"; `None
   end
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let find_loc_of_comp_unit ~config uid comp_unit =
   let title = "find_loc_of_comp_unit" in
@@ -938,17 +938,15 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   log ~title:"shape_of_path" "reduced: %a"
     Logger.fmt (fun fmt -> Shape_reduce.print_result fmt reduced);
   reduced
-||||||| 7b73c6aa3f
-  type inferred =
-    [ t
-    | `This_label of Types.label_description
-    | `This_cstr of Types.constructor_description ]
+||||||| fcc3157ab0
+  type t =(* TODO: share with [Namespace.t] *)
+    [ `Type | `Mod | `Modtype | `Vals | under_type ]
 =======
 let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   let namespace = decl.namespace in
   let module Reduce = Shape_reduce.Make (struct
       let fuel = 10
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let rec uid_of_result ~traverse_aliases = function
@@ -967,18 +965,11 @@ let rec uid_of_result ~traverse_aliases = function
       Some uid, approximated
   | Approximated _ | Unresolved _ | Internal_error_missing_uid ->
       None, true
-||||||| 7b73c6aa3f
-  let from_context : Context.t -> inferred list = function
-    | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
-    | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
-    | Expr | Constant ->
-      [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
-    | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
-    | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
-    | Label lbl     -> [ `This_label lbl ]
-    | Module_path   -> [ `Mod ]
-    | Constructor (c, _) -> [ `This_cstr c ]
-end
+||||||| fcc3157ab0
+  type inferred =
+    [ t
+    | `This_label of Types.label_description
+    | `This_cstr of Types.constructor_description ]
 =======
       let read_unit_shape ~unit_name =
           log ~title:"read_unit_shape" "inspecting %s" unit_name;
@@ -1003,7 +994,7 @@ end
   log ~title:"shape_of_path" "reduced: %a"
     Logger.fmt (fun fmt -> Shape_reduce.print_result fmt reduced);
   reduced
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 (** This is the main function here *)
@@ -1061,8 +1052,18 @@ let from_path ~config ~env ~local_defs ~decl path =
         decl_uid = decl.uid;
         file; location; approximated }
     | `File_not_found _ as otherwise -> otherwise
-||||||| 7b73c6aa3f
-module Env_lookup : sig
+||||||| fcc3157ab0
+  let from_context : Context.t -> inferred list = function
+    | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
+    | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Expr | Constant ->
+      [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+    | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+    | Label lbl     -> [ `This_label lbl ]
+    | Module_path   -> [ `Mod ]
+    | Constructor (c, _) -> [ `This_cstr c ]
+end
 =======
 let rec uid_of_result ~traverse_aliases = function
   | Shape_reduce.Resolved uid ->
@@ -1083,14 +1084,16 @@ let rec uid_of_result ~traverse_aliases = function
       Some uid, approximated
   | Approximated _ | Unresolved _ | Internal_error_missing_uid ->
       None, true
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let from_longident ~config ~env ~local_defs nss ident =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
+module Env_lookup : sig
+
   val loc
     : Path.t
-    -> Namespaced_path.Namespace.t
+    -> Namespace.all
     -> Env.t
     -> (Location.t * Shape.Uid.t * Shape.Sig_component_kind.t) option
 
@@ -1102,7 +1105,7 @@ let from_longident ~config ~env ~local_defs nss ident =
 
 end = struct
 
-  let loc path (namespace : Namespaced_path.Namespace.t) env =
+  let loc path (namespace : Namespace.all) env =
     try
       Some (
         match namespace with
@@ -1257,7 +1260,7 @@ let from_path ~config ~env ~local_defs ~decl path =
     | `File_not_found _ as otherwise -> otherwise
 
 let from_longident ~config ~env ~local_defs nss ident =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   let str_ident =
     try String.concat ~sep:"." (Longident.flatten ident)
     with _-> "Not a flat longident"
@@ -1272,7 +1275,7 @@ let from_path ~config ~env ~local_defs ~namespace path =
   match Env_lookup.loc path namespace env with
   | None -> `Not_in_env (Path.name path)
   | Some decl -> from_path ~config ~env ~local_defs ~decl path
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   if Utils.is_builtin_path path then
     `Builtin
   else
@@ -1290,7 +1293,7 @@ let from_path ~config ~env ~local_defs ~namespace path =
   match Env_lookup.by_path path namespace env with
   | None -> `Not_in_env (Path.name path)
   | Some decl -> from_path ~config ~env ~local_defs ~decl path
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let infer_namespace ?namespaces ~pos lid browse is_label =
   match namespaces with
@@ -1368,7 +1371,7 @@ let find_doc_attributes_in_typedtree ~config ~comp_unit uid =
       | None -> `No_documentation
     end
   | Error _ -> `No_documentation
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 (** When we look for docstring in external compilation unit we can perform
     a uid-based search and return the attached comment in the attributes.
     This is a more sound way to get documentation than resorting on the
@@ -1552,7 +1555,7 @@ let find_uid_doc_in_cmt cmt_infos uid =
         | `No_documentation -> `Found_decl (uid, decl, cmt_infos.cmt_comments)
         end
     end
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let doc_from_uid ~config ~loc uid =
   begin match uid with
@@ -1569,7 +1572,7 @@ let doc_from_uid ~config ~loc uid =
             (* We fallback on the legacy heuristic to handle some unproper
                doc placement. See test [unattached-comment.t] *)
             `Found_loc loc)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Some (Shape.Uid.Item { comp_unit; _ } as uid)
   | Some (Shape.Uid.Compilation_unit comp_unit as uid)
       when Env.get_unit_name () <> comp_unit ->
@@ -1596,7 +1599,7 @@ let doc_from_uid ~config ~loc uid =
       log ~title:"doc_from_uid" "Cmt loaded for %s" (Option.value ~default:"<>" cmt_infos.cmt_sourcefile);
       find_uid_doc_in_cmt cmt_infos uid
       end
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | _ ->
     (* Uid based search doesn't works in the current CU since Merlin's parser
        does not attach doc comments to the typedtree *)
@@ -1633,7 +1636,7 @@ let doc_from_comment_list ~after_only ~buffer_comments loc =
 
 <<<<<<< HEAD
 let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let get_doc ~config ~env ~local_defs ~comments ~pos =
 =======
 (* Get doc relies on different heuristics depending on the situation:
@@ -1645,7 +1648,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   - If the uid-based search failed we fallback on the [doc_from_comment_list]
     heuristic that uses location to select comments in a list. *)
 let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   File_switching.reset ();
   fun path ->
   let_ref last_location Location.none @@ fun () ->
@@ -1659,12 +1662,12 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
       let from_path =
         from_path ~config ~env ~local_defs ~namespace path
       in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       let from_path = from_path ~config ~env ~namespace `MLI path in
 =======
 
       let from_path = from_path ~config ~env ~local_defs ~namespace path in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       begin match from_path with
       | `Found { uid; location = loc; _ } ->
         doc_from_uid ~config ~loc uid
@@ -1698,7 +1701,7 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
 <<<<<<< HEAD
       doc_from_comment_list ~local_defs ~buffer_comments:comments loc
   | `Builtin _ ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       doc_from_comment_list ~local_defs ~buffer_comments:comments loc
   | `Builtin ->
 =======
@@ -1715,7 +1718,7 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
       in
       doc_from_comment_list ~after_only ~buffer_comments:comments loc
   | `Builtin _ ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     begin match path with
     | `User_input path -> `Builtin path
     | `Completion_entry (_, path, _) -> `Builtin (Path.name path)

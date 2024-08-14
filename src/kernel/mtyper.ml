@@ -91,7 +91,7 @@ type result = {
     | `Implementation of
         (Parsetree.structure_item, Typedtree.structure_item) item list
   ];
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   typedtree : [
     | `Interface of
         (Parsetree.signature_item, Typedtree.signature_item) item list
@@ -104,7 +104,7 @@ type result = {
   typedtree : typedtree_items;
   index : (Shape.Uid.t * Longident.t Location.loc, unit) Stamped_hashtable.t;
   cache_stat : typer_cache_stats
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 }
 
 let initial_env res = res.initial_env
@@ -176,23 +176,23 @@ let type_implementation config caught parsetree =
 <<<<<<< HEAD
   let env', sg', snap', stamp', warn' = match prefix with
     | [] -> (env0, [], snap0, stamp0, Warnings.backup ())
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let env', snap', stamp', warn' = match prefix with
     | [] -> (env0, snap0, stamp0, Warnings.backup ())
 =======
   let env', snap', stamp', uid_stamp', warn' = match prefix with
     | [] -> (env, snapshot, ident_stamp, uid_stamp, Warnings.backup ())
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
 <<<<<<< HEAD
       (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_warnings)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       (x.part_env, x.part_snapshot, x.part_stamp, x.part_warnings)
 =======
       (x.part_env, x.part_snapshot, x.part_stamp, x.part_uid, x.part_warnings)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   Btype.backtrack snap';
   Warnings.restore warn';
@@ -201,7 +201,7 @@ let type_implementation config caught parsetree =
   let suffix = type_structure caught env' sg' parsetree in
   return_and_cache
     (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let suffix = type_structure caught env' parsetree in
   return_and_cache
     (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix))
@@ -219,7 +219,7 @@ let type_implementation config caught parsetree =
   let value = `Implementation (List.rev_append prefix suffix) in
   return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index },
   cache_stats
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let type_interface config caught parsetree =
   let { env; snapshot; ident_stamp; uid_stamp; value = prefix; index; _ } =
@@ -233,23 +233,23 @@ let type_interface config caught parsetree =
 <<<<<<< HEAD
   let env', sg', snap', stamp', warn' = match prefix with
     | [] -> (env0, [], snap0, stamp0, Warnings.backup ())
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let env', snap', stamp', warn' = match prefix with
     | [] -> (env0, snap0, stamp0, Warnings.backup ())
 =======
   let env', snap', stamp', uid_stamp', warn' = match prefix with
     | [] -> (env, snapshot, ident_stamp, uid_stamp, Warnings.backup ())
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
 <<<<<<< HEAD
       (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_warnings)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       (x.part_env, x.part_snapshot, x.part_stamp, x.part_warnings)
 =======
       (x.part_env, x.part_snapshot, x.part_stamp, x.part_uid, x.part_warnings)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   Btype.backtrack snap';
   Warnings.restore warn';
@@ -258,7 +258,7 @@ let type_interface config caught parsetree =
   let suffix = type_signature caught env' sg' parsetree in
   return_and_cache
     (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   let suffix = type_signature caught env' parsetree in
   return_and_cache
     (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix))
@@ -276,7 +276,7 @@ let type_interface config caught parsetree =
   let value = `Interface (List.rev_append prefix suffix) in
   return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index},
   cache_stats
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let run config parsetree =
   if not (Env.check_state_consistency ()) then (
@@ -299,7 +299,7 @@ let run config parsetree =
   Typecore.reset_delayed_checks ();
 <<<<<<< HEAD
   { config; initial_env; initial_snapshot; initial_stamp; stamp; typedtree }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   { config; initial_env; initial_snapshot; initial_stamp; typedtree }
 =======
   {
@@ -313,7 +313,7 @@ let run config parsetree =
     index = cached_result.index;
     cache_stat;
   }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let get_env ?pos:_ t =
   Option.value ~default:t.initial_env (
@@ -353,13 +353,13 @@ let get_typedtree t =
 <<<<<<< HEAD
 let get_stamp t = t.stamp
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 let get_index t = t.index
 
 let get_stamp t = t.stamp
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 let node_at ?(skip_recovered=false) t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   log ~title:"node_at" "Node: %s" (Mbrowse.print () node);

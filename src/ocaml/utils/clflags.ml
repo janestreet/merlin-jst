@@ -1,15 +1,7 @@
-<<<<<<< HEAD
 type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
 
 (** {0 OCaml compiler compatible command-line parameters} *)
 let cmi_file = ref None
-||||||| 7b73c6aa3f
-(** {0 OCaml compiler compatible command-line parameters} *)
-
-=======
-(** {0 OCaml compiler compatible command-line parameters} *)
-let cmi_file = ref None
->>>>>>> upstream/main
 let include_dirs        = ref []
 let hidden_include_dirs = ref []
 let fast                = ref false
@@ -36,10 +28,10 @@ let binary_annotations  = ref true
 <<<<<<< HEAD
 let binary_annotations_cms  = ref false
 let store_occurrences   = ref true
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 let store_occurrences   = ref true
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 let print_types         = ref false
 let native_code         = ref false
 let error_size          = ref 500

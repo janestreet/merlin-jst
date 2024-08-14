@@ -63,43 +63,8 @@ val type_open:
    Longident.t Asttypes.loc -> Path.t * Env.t)
     ref
 
-module TyVarEnv : sig
-  (* this is just the subset of [TyVarEnv] that is needed outside
-     of [Typetexp]. See the ml file for more. *)
-
-  val reset : unit -> unit
-  (** removes all type variables from scope *)
-
-  val with_local_scope : (unit -> 'a) -> 'a
-  (** Evaluate in a narrowed type-variable scope *)
-
-  type poly_univars
-  val make_poly_univars : string list -> poly_univars
-    (** remember that a list of strings connotes univars; this must
-        always be paired with a [check_poly_univars]. *)
-
-  val check_poly_univars :
-     Env.t -> Location.t -> poly_univars -> type_expr list
-    (** Verify that the given univars are universally quantified,
-       and return the list of variables. The type in which the
-       univars are used must be generalised *)
-
-  val instance_poly_univars :
-     Env.t -> Location.t -> poly_univars -> type_expr list
-    (** Same as [check_poly_univars], but instantiates the resulting
-       type scheme (i.e. variables become Tvar rather than Tunivar) *)
-
-end
-
-(* Forward declaration, to be filled in by Typemod.type_open *)
-val type_open:
-  (?used_slot:bool ref -> Asttypes.override_flag -> Env.t -> Location.t ->
-   Longident.t Asttypes.loc -> Path.t * Env.t)
-    ref
-
 val valid_tyvar_name : string -> bool
 
-<<<<<<< HEAD
 (** [transl_label lbl ty] produces a Typedtree argument label for an argument
     with label [lbl] and type [ty].
 
@@ -143,34 +108,10 @@ val transl_label_from_pat :
    constrain the type parameters to representable jkinds unnecessarily while maintaining
    the most amount of backwards compatibility. It is for this reason, the left hand side
    of a constraint is typed using [Any] while the right hand side uses [Sort]. *)
-||||||| 7b73c6aa3f
-type poly_univars
-val make_poly_univars : string list -> poly_univars
-  (* Create a set of univars with given names *)
-val check_poly_univars :
-   Env.t -> Location.t -> poly_univars -> type_expr list
-  (* Verify that the given univars are universally quantified,
-     and return the list of variables. The type in which the
-     univars are used must be generalised *)
-val instance_poly_univars :
-   Env.t -> Location.t -> poly_univars -> type_expr list
-  (* Same as [check_poly_univars], but instantiates the resulting
-     type scheme (i.e. variables become Tvar rather than Tunivar) *)
-
-=======
->>>>>>> upstream/main
 val transl_simple_type:
-<<<<<<< HEAD
         Env.t -> new_var_jkind:jkind_initialization_choice
         -> ?univars:TyVarEnv.poly_univars -> closed:bool -> Alloc.Const.t
         -> Parsetree.core_type -> Typedtree.core_type
-||||||| 7b73c6aa3f
-        Env.t -> ?univars:poly_univars -> bool -> Parsetree.core_type
-        -> Typedtree.core_type
-=======
-        Env.t -> ?univars:TyVarEnv.poly_univars -> closed:bool
-        -> Parsetree.core_type -> Typedtree.core_type
->>>>>>> upstream/main
 val transl_simple_type_univars:
         Env.t -> Parsetree.core_type -> Typedtree.core_type
 val transl_simple_type_delayed
@@ -188,19 +129,11 @@ val transl_type_param:
 (* the Path.t above is of the type/class whose param we are processing;
    the level defaults to the current level *)
 
-<<<<<<< HEAD
 val get_type_param_jkind: Path.t -> Parsetree.core_type -> jkind
 val get_type_param_name: Parsetree.core_type -> string option
 
 val get_alloc_mode : Parsetree.core_type -> Alloc.Const.t
 
-||||||| 7b73c6aa3f
-type variable_context
-val narrow: unit -> variable_context
-val widen: variable_context -> unit
-
-=======
->>>>>>> upstream/main
 exception Already_bound
 
 type value_loc =

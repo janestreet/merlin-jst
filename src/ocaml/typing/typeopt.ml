@@ -171,12 +171,12 @@ let classify env ty sort : classification =
 
 <<<<<<< HEAD
 let array_type_kind ~elt_sort env loc ty =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 (*
 let array_type_kind env ty =
 =======
 let array_type_kind env ty =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   match scrape_poly env ty with
   | Tconstr(p, [elt_ty], _)
     when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
@@ -211,12 +211,12 @@ let array_pattern_kind pat elt_sort =
   array_type_kind
     ~elt_sort:(Some elt_sort)
     pat.pat_env pat.pat_loc pat.pat_type
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
 =======
 (*
 let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let bigarray_decode_type env ty tbl dfl =
   match scrape env ty with
@@ -764,7 +764,7 @@ let function_arg_layout env loc sort ty =
   match is_function_type env ty with
   | Some (arg_type, _) -> layout env loc sort arg_type
   | None -> Misc.fatal_error "function_arg_layout called on non-function type"
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let value_kind env ty =
   let ty = scrape_ty env ty in
   if is_immediate (Ctype.immediacy env ty) then Pintval
@@ -803,7 +803,7 @@ let value_kind env ty =
     | _ ->
         Pgenval
   end
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 *)
 
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.

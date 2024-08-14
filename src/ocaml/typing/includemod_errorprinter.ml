@@ -716,13 +716,13 @@ let parameter_mismatch ppf (diff: _ Err.diff) =
   Format.fprintf ppf
     "The argument module %s@ does not match the parameter signature %s:@ "
     diff.got diff.expected
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     "The implementation %s@ does not match the interface %s:@ "
     diff.got diff.expected
 =======
     "The implementation %a@ does not match the interface %a:@ "
     Style.inline_code diff.got Style.inline_code diff.expected
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let compilation_unit_mismatch comparison ppf diff =
   match (comparison : Err.compilation_unit_comparison) with

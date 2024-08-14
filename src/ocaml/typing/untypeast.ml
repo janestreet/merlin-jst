@@ -350,12 +350,12 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
 <<<<<<< HEAD
     | { pat_extra=[Tpat_unpack, _, _attrs];
         pat_desc = Tpat_var (_,name, _, _); _ } ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | { pat_extra=[Tpat_unpack, _, _attrs]; pat_desc = Tpat_var (_,name); _ } ->
 =======
     | { pat_extra=[Tpat_unpack, _, _attrs];
         pat_desc = Tpat_var (_,name, _); _ } ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         Ppat_unpack { name with txt = Some name.txt }
     | { pat_extra=[Tpat_type (_path, lid), _, _attrs]; _ } ->
         Ppat_type (map_loc sub lid)
@@ -367,11 +367,11 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
       Tpat_any -> Ppat_any
 <<<<<<< HEAD
     | Tpat_var (id, name,_,_) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_var (id, name) ->
 =======
     | Tpat_var (id, name, _) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         begin
           match (Ident.name id).[0] with
             'A'..'Z' ->
@@ -386,21 +386,21 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
      *)
 <<<<<<< HEAD
     | Tpat_alias ({pat_desc = Tpat_any; pat_loc}, _id, name, _uid, _mode)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_alias ({pat_desc = Tpat_any; pat_loc}, _id, name)
 =======
     | Tpat_alias ({pat_desc = Tpat_any; pat_loc}, _id, name, _)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
          when pat_loc = pat.pat_loc ->
        Ppat_var name
 
 <<<<<<< HEAD
     | Tpat_alias (pat, _id, name, _uid, _mode) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_alias (pat, _id, name) ->
 =======
     | Tpat_alias (pat, _id, name, _) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         Ppat_alias (sub.pat sub pat, name)
     | Tpat_constant cst ->
       begin match constant cst with
@@ -495,13 +495,13 @@ let exp_extra sub (extra, loc, attrs) sexp =
         Jane_syntax.Modes.expr_of ~loc
           (Coerce (modes, sexp))
         |> add_jane_syntax_attributes
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Texp_newtype s -> Pexp_newtype (mkloc s loc, sexp)
     | Texp_newtype' (_id, label_loc) -> Pexp_newtype (label_loc, sexp)
 =======
     | Texp_newtype s -> Pexp_newtype (mkloc s loc, sexp)
     | Texp_newtype' (_id, label_loc, _) -> Pexp_newtype (label_loc, sexp)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   Exp.mk ~loc ~attrs:!attrs desc
 
@@ -643,7 +643,7 @@ let expression sub exp =
         Pexp_function (params, constraint_, body)
     | Texp_apply (exp, list, _, _, _) ->
         let list = List.map (fun (arg_label, arg) -> label arg_label, arg) list in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
     (* Pexp_function can't have a label, so we split in 3 cases. *)
     (* One case, no guard: It's a fun. *)
@@ -709,7 +709,7 @@ let expression sub exp =
         in
         Pexp_function (params, constraint_, body)
     | Texp_apply (exp, list) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         Pexp_apply (sub.expr sub exp,
           List.fold_right (fun (label, arg) list ->
               match arg with
@@ -1186,10 +1186,10 @@ let core_type sub ct =
     | Ttyp_open (_path, mod_ident, t) -> Ptyp_open (mod_ident, sub.typ sub t)
     | Ttyp_call_pos ->
         Ptyp_extension call_pos_extension
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     | Ttyp_open (_path, mod_ident, t) -> Ptyp_open (mod_ident, sub.typ sub t)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   in
   Typ.mk ~loc ~attrs:!attrs desc
 
@@ -1197,11 +1197,11 @@ let class_structure sub cs =
   let rec remove_self = function
 <<<<<<< HEAD
     | { pat_desc = Tpat_alias (p, id, _s, _uid, _mode) }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | { pat_desc = Tpat_alias (p, id, _s) }
 =======
     | { pat_desc = Tpat_alias (p, id, _s, _) }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       when string_is_prefix "selfpat-" (Ident.name id) ->
         remove_self p
     | p -> p
@@ -1233,11 +1233,11 @@ let object_field sub {of_loc; of_desc; of_attributes;} =
 and is_self_pat = function
 <<<<<<< HEAD
   | { pat_desc = Tpat_alias(_pat, id, _, _uid, _mode) } ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | { pat_desc = Tpat_alias(_pat, id, _) } ->
 =======
   | { pat_desc = Tpat_alias(_pat, id, _, _) } ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       string_is_prefix "self-" (Ident.name id)
   | _ -> false
 
@@ -1260,7 +1260,7 @@ let remove_fun_self exp =
        | _, _ -> { exp with exp_desc = Texp_function { fun_ with params } })
   | e -> e
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (* [Typeclass] adds a [self] parameter to initializers and methods that isn't
    present in the source program.
@@ -1277,7 +1277,7 @@ let remove_fun_self exp =
      | _, _ -> { exp with exp_desc = Texp_function (params, body) })
   | e -> e
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 let class_field sub cf =
   let loc = sub.location sub cf.cf_loc in
   let attrs = sub.attributes sub cf.cf_attributes in

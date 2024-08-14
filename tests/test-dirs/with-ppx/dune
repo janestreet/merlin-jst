@@ -19,10 +19,10 @@
   issue1671-string
   parsetree-cache
   typed-holes))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
  (applies_to issue1660-deriving-compare issue1671-string)
  (enabled_if (= %{env:MERLIN_TESTS=default} all)))
 =======
  (applies_to :whole_subtree)
  (enabled_if (= %{env:MERLIN_TESTS=default} all)))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

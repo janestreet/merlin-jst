@@ -134,9 +134,9 @@ let rec gen_patterns ?(recurse=true) env type_expr =
                   ~allow_recursive_equations:true
               in
               Ctype.unify_gadt pattern_env type_expr typ
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
               Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive:true (* really? *)
+                ~allow_recursive_equations:true (* really? *)
                 (ref env) type_expr typ
 =======
               let pattern_env = Ctype.Pattern_env.make env
@@ -144,7 +144,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
                 ~allow_recursive_equations:true
               in
               Ctype.unify_gadt pattern_env type_expr typ
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             );
             true
           with Ctype.Unify _trace -> false
@@ -222,11 +222,11 @@ let rec needs_parentheses = function
            binding. *)
 <<<<<<< HEAD
       | Texp_function { body = Tfunction_body _ ; _ }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       | Texp_function {cases = [ _ ]; _ }
 =======
       | Texp_function (_, Tfunction_body _)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         (* The assumption here is that we're not in a [function ... | ...]
             situation but either in [fun param] or [let name param]. *)
         ->
@@ -323,7 +323,7 @@ let collect_function_pattern loc param_pattern =
     raise (Not_allowed "value_binding")
 
 let rec get_every_pattern loc = function
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let rec get_every_pattern = function
 =======
 let collect_every_pattern_for_expression parent =
@@ -370,7 +370,7 @@ let collect_function_pattern loc param_pattern =
     raise (Not_allowed "value_binding")
 
 let rec get_every_pattern loc = function
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | [] -> assert false
   | parent :: parents ->
     match parent with
@@ -380,13 +380,13 @@ let rec get_every_pattern loc = function
 <<<<<<< HEAD
       get_every_pattern loc parents
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _, _, _) ; _}
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       get_every_pattern parents
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
 =======
       get_every_pattern loc parents
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       when Ident.name id = "*type-error*" ->
       raise (Ill_typed)
 <<<<<<< HEAD
@@ -405,7 +405,7 @@ let rec get_every_pattern loc = function
           (* In function body *)
           collect_every_pattern_for_expression parent
       end
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     | Expression { exp_desc = Typedtree.Texp_function (params, _body); _ } ->
       (* So we need to deal with the case where we're either in the body of a
@@ -422,7 +422,7 @@ let rec get_every_pattern loc = function
           (* In function body *)
           collect_every_pattern_for_expression parent
       end
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Expression _ ->
       (* We are on the right node *)
       collect_every_pattern_for_expression parent
@@ -437,11 +437,11 @@ let rec destructible patt =
   | Tpat_any | Tpat_var _ -> true
 <<<<<<< HEAD
   | Tpat_alias (p, _, _, _, _)  -> destructible p
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias (p, _, _)  -> destructible p
 =======
   | Tpat_alias (p, _, _, _)  -> destructible p
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | _ -> false
 
 
@@ -478,13 +478,13 @@ let rec subst_patt initial ~by patt =
 <<<<<<< HEAD
   | Tpat_alias (p,x,y,uid,m) ->
     { patt with pat_desc = Tpat_alias (f p, x, y, uid, m) }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias (p,x,y) ->
     { patt with pat_desc = Tpat_alias (f p, x, y) }
 =======
   | Tpat_alias (p,x,y,uid) ->
     { patt with pat_desc = Tpat_alias (f p, x, y,uid) }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
   | Tpat_construct (lid, cd, lst, lco) ->
@@ -513,13 +513,13 @@ let rec rm_sub patt sub =
 <<<<<<< HEAD
   | Tpat_alias (p,x,y,uid,m) ->
     { patt with pat_desc = Tpat_alias (f p, x, y,uid,m)  }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Tpat_alias (p,x,y) ->
     { patt with pat_desc = Tpat_alias (f p, x, y)  }
 =======
   | Tpat_alias (p,x,y,uid) ->
     { patt with pat_desc = Tpat_alias (f p, x, y,uid)  }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
   | Tpat_construct (lid, cd, lst, lco) ->
@@ -547,14 +547,14 @@ let rec qualify_constructors ~unmangling_tables f pat  =
 <<<<<<< HEAD
     | Tpat_alias (p, id, loc, uid, m) -> Tpat_alias (qualify_constructors f p, id, loc, uid, m)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(fun (lbl, p) -> lbl, qualify_constructors f p))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Tpat_alias (p, id, loc) -> Tpat_alias (qualify_constructors f p, id, loc)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
 =======
     | Tpat_alias (p, id, loc, uid) ->
       Tpat_alias (qualify_constructors f p, id, loc, uid)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Tpat_record (labels, closed) ->
       let labels =
         let open Longident in
@@ -625,11 +625,11 @@ let find_branch patterns sub =
       | Tpat_variant (_, None, _) -> false
 <<<<<<< HEAD
       | Tpat_alias (p,_,_,_,_)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       | Tpat_alias (p,_,_)
 =======
       | Tpat_alias (p,_,_,_)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       | Tpat_variant (_, Some p, _)
       | Tpat_lazy p ->
         is_sub_patt p ~sub
@@ -650,7 +650,24 @@ let find_branch patterns sub =
   in
   aux [] patterns
 
-<<<<<<< HEAD
+(* In the presence of record punning fields, the definition must be
+   reconstructed with the label. ie: [{a; b}] with destruction on [a]
+   becomes [{a = destruct_result; b}]. *)
+let find_field_name_for_punned_field patt = function
+  | Pattern {pat_desc = Tpat_record (fields, _); _} :: _ ->
+    List.find_opt ~f:(fun (_, _, opat) ->
+        let ppat_loc = patt.Typedtree.pat_loc
+        and opat_loc = opat.Typedtree.pat_loc in
+        Int.equal (Location_aux.compare ppat_loc opat_loc) 0
+      ) fields |> Option.map ~f:(fun (_, label, _) -> label)
+  | _ -> None
+
+let print_pretty ?punned_field config source subject =
+  let result = Mreader.print_pretty config source subject in
+  match punned_field with
+  | None -> result
+  | Some label ->
+    label.Types.lbl_name ^ " = " ^ result
 
 (* conversion from Typedtree.pattern to Parsetree.pattern list *)
 module Conv = struct
@@ -673,12 +690,19 @@ module Conv = struct
       match pat.pat_desc with
         Tpat_or (pa,pb,_) ->
           mkpat (Ppat_or (loop pa, loop pb))
+<<<<<<< HEAD
       | Tpat_var (_, ({txt="*extension*"; _} as nm), _, _) -> (* PR#7330 *)
+||||||| fcc3157ab0
+      | Tpat_var (_, ({txt="*extension*"; _} as nm)) -> (* PR#7330 *)
+=======
+      | Tpat_var (_, ({txt="*extension*"; _} as nm), _) -> (* PR#7330 *)
+>>>>>>> 501-plus-upstream-main-9fa77db
           mkpat (Ppat_var nm)
       | Tpat_any
       | Tpat_var _ ->
           mkpat Ppat_any
       | Tpat_constant c ->
+<<<<<<< HEAD
           begin match Untypeast.constant c with
             | `Jane_syntax c ->
                 Jane_syntax.Layouts.pat_of (Lpat_constant c)
@@ -686,6 +710,13 @@ module Conv = struct
             | `Parsetree c -> mkpat (Ppat_constant c)
           end
       | Tpat_alias (p,_,_,_,_) -> loop p
+||||||| fcc3157ab0
+          mkpat (Ppat_constant (Untypeast.constant c))
+      | Tpat_alias (p,_,_) -> loop p
+=======
+          mkpat (Ppat_constant (Untypeast.constant c))
+      | Tpat_alias (p,_,_,_) -> loop p
+>>>>>>> 501-plus-upstream-main-9fa77db
       | Tpat_tuple lst ->
           let lst = List.map ~f:(fun (lbl, p) -> lbl, loop p) lst in
           Jane_syntax.Labeled_tuples.pat_of (lst, Closed)
@@ -764,6 +795,7 @@ let remove_non_applied_optional_args (Parsetree.{ pexp_desc; _} as base_expr) =
     { base_expr with pexp_desc }
   | _ -> base_expr
 
+<<<<<<< HEAD
 let destruct_expression loc config source parents expr =
   let ty = expr.Typedtree.exp_type in
   let pexp =
@@ -891,122 +923,10 @@ let rec destruct_record config source selected_node = function
     raise (Not_allowed (string_of_node selected_node))
 
 and node config source selected_node parents =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let rec node config source selected_node parents =
   let open Extend_protocol.Reader in
 =======
-(* In the presence of record punning fields, the definition must be
-   reconstructed with the label. ie: [{a; b}] with destruction on [a]
-   becomes [{a = destruct_result; b}]. *)
-let find_field_name_for_punned_field patt = function
-  | Pattern {pat_desc = Tpat_record (fields, _); _} :: _ ->
-    List.find_opt ~f:(fun (_, _, opat) ->
-        let ppat_loc = patt.Typedtree.pat_loc
-        and opat_loc = opat.Typedtree.pat_loc in
-        Int.equal (Location_aux.compare ppat_loc opat_loc) 0
-      ) fields |> Option.map ~f:(fun (_, label, _) -> label)
-  | _ -> None
-
-let print_pretty ?punned_field config source subject =
-  let result = Mreader.print_pretty config source subject in
-  match punned_field with
-  | None -> result
-  | Some label ->
-    label.Types.lbl_name ^ " = " ^ result
-
-(* conversion from Typedtree.pattern to Parsetree.pattern list *)
-module Conv = struct
-  open Asttypes
-  open Types
-  open Typedtree
-  open Parsetree
-  let mkpat desc = Ast_helper.Pat.mk desc
-
-  let name_counter = ref 0
-  let fresh name =
-    let current = !name_counter in
-    name_counter := !name_counter + 1;
-    "#$" ^ name ^ Int.to_string current
-
-  let conv typed =
-    let constrs = Hashtbl.create 7 in
-    let labels = Hashtbl.create 7 in
-    let rec loop pat =
-      match pat.pat_desc with
-        Tpat_or (pa,pb,_) ->
-          mkpat (Ppat_or (loop pa, loop pb))
-      | Tpat_var (_, ({txt="*extension*"; _} as nm), _) -> (* PR#7330 *)
-          mkpat (Ppat_var nm)
-      | Tpat_any
-      | Tpat_var _ ->
-          mkpat Ppat_any
-      | Tpat_constant c ->
-          mkpat (Ppat_constant (Untypeast.constant c))
-      | Tpat_alias (p,_,_,_) -> loop p
-      | Tpat_tuple lst ->
-          mkpat (Ppat_tuple (List.map ~f:loop lst))
-      | Tpat_construct (cstr_lid, cstr, lst, _) ->
-          let id = fresh cstr.cstr_name in
-          let lid = { cstr_lid with txt = Longident.Lident id } in
-          Hashtbl.add constrs id cstr;
-          let arg =
-            match List.map ~f:loop lst with
-            | []  -> None
-            | [p] -> Some ([], p)
-            | lst -> Some ([], mkpat (Ppat_tuple lst))
-          in
-          mkpat (Ppat_construct(lid, arg))
-      | Tpat_variant(label,p_opt,_row_desc) ->
-          let arg = Option.map ~f:loop p_opt in
-          mkpat (Ppat_variant(label, arg))
-      | Tpat_record (subpatterns, _closed_flag) ->
-          let fields =
-            List.map
-              ~f:(fun (_, lbl, p) ->
-                let id = fresh lbl.lbl_name in
-                Hashtbl.add labels id lbl;
-                (mknoloc (Longident.Lident id), loop p))
-              subpatterns
-          in
-          mkpat (Ppat_record (fields, Open))
-      | Tpat_array lst ->
-          mkpat (Ppat_array (List.map ~f:loop lst))
-      | Tpat_lazy p ->
-          mkpat (Ppat_lazy (loop p))
-    in
-    let ps = loop typed in
-    (ps, constrs, labels)
-end
-
-let need_recover_labeled_args = function
-  | Parsetree.Pexp_construct ({loc; txt = Longident.Lident ctor}, Some e) ->
-    (* If the internal construction is ghosted, then the expression must be
-       re-labelled. *)
-    if String.equal "Some" ctor && loc.loc_ghost then Some e else None
-  | _ -> None
-
-let remove_non_applied_optional_args (Parsetree.{ pexp_desc; _} as base_expr) =
-  (* Fix the behaviour described here
-     https://github.com/ocaml/merlin/issues/1770 *)
-  match pexp_desc with
-  | Parsetree.Pexp_apply (expr, args) ->
-    let args = List.concat_map ~f:(fun (label, (expr : Parsetree.expression)) ->
-      match label, expr.pexp_loc.loc_ghost, expr.pexp_desc with
-      | Asttypes.Optional _, true,
-        Pexp_construct ({ txt = Longident.Lident "None"; _ }, _) ->
-        []
-      | Asttypes.Optional str, false, exp_desc ->
-        (match need_recover_labeled_args exp_desc with
-          | Some e ->  [(Asttypes.Labelled str, e)]
-          | None ->  [(label, expr)]
-        )
-      | _ -> [(label, expr)]
-    ) args
-    in
-    let pexp_desc = Parsetree.Pexp_apply (expr, args) in
-    { base_expr with pexp_desc }
-  | _ -> base_expr
-
 let destruct_expression loc config source parents expr =
   let ty = expr.Typedtree.exp_type in
   let pexp =
@@ -1135,7 +1055,7 @@ let rec destruct_record config source selected_node = function
     raise (Not_allowed (string_of_node selected_node))
 
 and node config source selected_node parents =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   let loc = Mbrowse.node_loc selected_node in
   match selected_node with
   | Record_field (`Expression _, _, _) ->

@@ -13,7 +13,7 @@
   -open
   Merlin_utils)
  (libraries ocaml_parsing ocaml_typing ocaml_utils merlin_utils))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (library
  (name merlin_index_format)
@@ -25,4 +25,4 @@
   -open Ocaml_utils
   -open Merlin_utils)
  (libraries ocaml_parsing ocaml_typing ocaml_utils merlin_utils))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

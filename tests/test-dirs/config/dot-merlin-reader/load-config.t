@@ -65,7 +65,7 @@ but we want to observe the stdlib being configured via the STDLIB directive.
   }
 
   $ rm .merlin
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 This test comes from: https://github.com/janestreet/merlin-jst/pull/59
 
@@ -135,4 +135,4 @@ This test comes from: https://github.com/janestreet/merlin-jst/pull/59
   }
 
   $ rm .merlin
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

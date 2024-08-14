@@ -59,14 +59,14 @@ val tyvar_of_name : string -> string
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 val tyvar_of_name : string -> string
   (** Turn a type variable name into a valid identifier, taking care of the
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 val tyvar: Format.formatter -> string -> unit
 <<<<<<< HEAD
   (** Print a type variable name as a valid identifier, taking care of the
@@ -76,14 +76,14 @@ val tyvar: Format.formatter -> string -> unit
 val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
 
 val mode : Format.formatter -> Jane_syntax.Mode_expr.Const.t -> unit
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   (** Print a type variable name, taking care of the special treatment
       required for the single quote character in second position. *)
 =======
   (** Print a type variable name as a valid identifier, taking care of the
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* merlin *)
 val case_list : Format.formatter -> Parsetree.case list -> unit

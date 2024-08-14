@@ -88,7 +88,7 @@ let is_current_unit comp_unit =
   | Some current_unit ->
     String.equal (Compilation_unit.name_as_string current_unit) comp_unit
   | None -> false
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 
 let parse_identifier (config, source) pos =
@@ -136,4 +136,4 @@ let loc_of_decl ~uid =
   | Module_substitution msd -> Some msd.ms_name
   | Class cd -> Some cd.ci_id_name
   | Class_type ctd -> Some ctd.ci_id_name
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

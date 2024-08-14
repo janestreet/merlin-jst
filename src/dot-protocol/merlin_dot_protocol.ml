@@ -39,7 +39,7 @@ module Directive = struct
     | `CMI of string
     | `CMT of string
     | `INDEX of string ]
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     [ `B of string | `S of string | `CMI of string | `CMT of string ]
 =======
     [ `B of string
@@ -49,7 +49,7 @@ module Directive = struct
     | `CMI of string
     | `CMT of string
     | `INDEX of string]
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
   type no_processing_required =
     [ `EXT of string list
@@ -58,12 +58,12 @@ module Directive = struct
 <<<<<<< HEAD
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     | `SOURCE_ROOT of string
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
@@ -118,12 +118,12 @@ module Sexp = struct
 <<<<<<< HEAD
         | "UNIT_NAME" -> `UNIT_NAME value
         | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
         | "SOURCE_ROOT" -> `SOURCE_ROOT value
         | "UNIT_NAME" -> `UNIT_NAME value
         | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
         | "FLG" ->
@@ -159,13 +159,13 @@ module Sexp = struct
         | `INDEX s -> ("INDEX", single s)
         | `UNIT_NAME s -> ("UNIT_NAME", single s)
         | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
         | `INDEX s -> ("INDEX", single s)
         | `SOURCE_ROOT s -> ("SOURCE_ROOT", single s)
         | `UNIT_NAME s -> ("UNIT_NAME", single s)
         | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)

@@ -112,11 +112,19 @@ type existential_restriction =
   | In_class_def (** or in [class c = let ... in ...] *)
   | In_self_pattern (** or in self pattern *)
 
+<<<<<<< HEAD
 type module_patterns_restriction =
   | Modules_allowed of { scope: int }
   | Modules_rejected
   | Modules_ignored
 
+||||||| fcc3157ab0
+type module_patterns_restriction =
+  | Modules_allowed of { scope : int }
+  | Modules_rejected
+
+=======
+>>>>>>> 501-plus-upstream-main-9fa77db
 val type_binding:
         Env.t -> rec_flag ->
           ?force_toplevel:bool ->

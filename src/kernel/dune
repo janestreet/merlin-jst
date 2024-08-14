@@ -42,7 +42,7 @@
   unix
   str)
  (foreign_stubs (language c) (names float32)))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   -open Ocaml_utils
   -open Merlin_utils
   -open Ocaml_parsing
@@ -50,8 +50,9 @@
   -open Ocaml_typing
   -open Merlin_specific
   -open Merlin_extend)
- (libraries merlin_config os_ipc ocaml_parsing ocaml_preprocess ocaml_typing ocaml_utils
-            merlin_extend merlin_specific merlin_utils merlin_dot_protocol))
+ (libraries merlin_config os_ipc ocaml_parsing ocaml_preprocess ocaml_typing
+            ocaml_utils merlin_extend merlin_specific merlin_utils
+            merlin_dot_protocol unix str))
 =======
   -open Ocaml_utils
   -open Merlin_utils
@@ -63,7 +64,7 @@
  (libraries merlin_config os_ipc ocaml_parsing ocaml_preprocess ocaml_typing
             ocaml_utils merlin_extend merlin_specific merlin_utils
             merlin_dot_protocol merlin_index_format unix str))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (rule
  (targets standard_library.ml)

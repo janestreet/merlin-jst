@@ -37,7 +37,7 @@ val in_namespaces
     -> Longident.t
     -> Env.t
     -> (Path.t * item) option
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (** Provides tools to lookup items in the typing environment.
 
@@ -87,4 +87,4 @@ val by_longident
   -> Longident.t
   -> Env.t
   -> (Path.t * item) option
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

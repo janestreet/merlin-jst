@@ -46,11 +46,11 @@ val cmt_magic_number: string
 <<<<<<< HEAD
 val cms_magic_number: string
         (* Magic number for compiled shapes files *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 val index_magic_number: string
         (* Magic number for index files *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 val max_tag: int
         (* Biggest tag that can be stored in the header of a regular block. *)

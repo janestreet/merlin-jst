@@ -218,7 +218,7 @@ let print_type_with_decl ~verbosity env ppf typ =
       in
 <<<<<<< HEAD
       let is_abstract = Btype.type_kind_is_abstract decl in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       let is_abstract =
         match decl.Types.type_kind with
         | Types.Type_abstract -> true
@@ -230,7 +230,7 @@ let print_type_with_decl ~verbosity env ppf typ =
         | Types.Type_abstract _ -> true
         | _ -> false
       in
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       (* Print expression only if it is parameterized or abstract *)
       let print_expr = is_abstract || params <> [] in
       if print_expr then

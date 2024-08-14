@@ -146,7 +146,7 @@ module Exp:
     val function_ : ?loc:loc -> ?attrs:attrs -> function_param list
                    -> function_constraint option -> function_body
                    -> expression
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     val fun_: ?loc:loc -> ?attrs:attrs -> arg_label -> expression option
               -> pattern -> expression -> expression
     val function_: ?loc:loc -> ?attrs:attrs -> case list -> expression
@@ -154,7 +154,7 @@ module Exp:
     val function_ : ?loc:loc -> ?attrs:attrs -> function_param list
                    -> type_constraint option -> function_body
                    -> expression
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     val apply: ?loc:loc -> ?attrs:attrs -> expression
                -> (arg_label * expression) list -> expression
     val match_: ?loc:loc -> ?attrs:attrs -> expression -> case list

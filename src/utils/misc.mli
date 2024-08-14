@@ -70,21 +70,18 @@ val reraise_preserving_backtrace : exn -> (unit -> unit) -> 'a
 (** {1 List operations} *)
 
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
-<<<<<<< HEAD
        (** [map_end f l t] is [map f l @ t], just more efficient. *)
 
+<<<<<<< HEAD
 val rev_map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
        (** [rev_map_end f l t] is [map f (rev l) @ t], just more efficient. *)
 
-||||||| 7b73c6aa3f
-        (* [map_end f l t] is [map f l @ t], just more efficient. *)
+||||||| fcc3157ab0
 =======
-       (** [map_end f l t] is [map f l @ t], just more efficient. *)
-
 val rev_map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
        (** [map_end f l t] is [map f (rev l) @ t], just more efficient. *)
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 val map_left_right: ('a -> 'b) -> 'a list -> 'b list
        (** Like [List.map], with guaranteed left-to-right evaluation order *)
 
@@ -122,9 +119,9 @@ val find_in_path: string list -> string -> string
        (** Search a file in a list of directories. *)
 
 val find_in_path_rel: string list -> string -> string
-<<<<<<< HEAD
        (** Search a relative file in a list of directories. *)
 
+<<<<<<< HEAD
 (** Normalize file name [Foo.ml] to [foo.ml] *)
 val normalized_unit_filename: string -> string
 
@@ -132,16 +129,12 @@ val find_in_path_normalized: ?fallback:string -> string list -> string -> string
 (** Same as {!find_in_path_rel} , but search also for normalized unit filename,
     i.e. if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml] to
     match. *)
-
-||||||| 7b73c6aa3f
-        (* Search a relative file in a list of directories. *)
+||||||| fcc3157ab0
 val find_in_path_uncap: ?fallback:string -> string list -> string -> string
-        (* Same, but search also for uncapitalized name, i.e.
-           if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
-           to match. *)
+       (** Same, but search also for uncapitalized name, i.e.
+           if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml]
+            to match. *)
 =======
-       (** Search a relative file in a list of directories. *)
-
  (** Normalize file name [Foo.ml] to [foo.ml] *)
 val normalized_unit_filename: string -> string
 
@@ -150,8 +143,8 @@ val find_in_path_normalized: ?fallback:string -> string list -> string -> string
     i.e. if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml] to
     match. *)
 
+>>>>>>> 501-plus-upstream-main-9fa77db
 
->>>>>>> upstream/main
 val canonicalize_filename : ?cwd:string -> string -> string
         (* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)
 
@@ -461,7 +454,6 @@ module Style : sig
   val set_tag_handling : Format.formatter -> unit
   (* adds functions to support color tags to the given formatter. *)
 end
-<<<<<<< HEAD
 
 val print_see_manual : Format.formatter -> int list -> unit
 (** See manual section *)
@@ -475,9 +467,3 @@ val output_of_print :
 val is_print_longer_than: int -> (Format.formatter -> unit) -> bool
 (** Returns [true] if the printed string is longer than the given integer. Stops
     early if so. Spaces and newlines are counted, but indentation is not. *)
-||||||| 7b73c6aa3f
-=======
-
-val print_see_manual : Format.formatter -> int list -> unit
-(** See manual section *)
->>>>>>> upstream/main

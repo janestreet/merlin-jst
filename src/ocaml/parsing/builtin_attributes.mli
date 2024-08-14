@@ -17,10 +17,10 @@
 
 <<<<<<< HEAD
     - ocaml.afl_inst_ratio
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     - ocaml.deprecated
 =======
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     - ocaml.alert
     - ocaml.boxed
     - ocaml.deprecated
@@ -29,10 +29,10 @@
     - ocaml.explicit_arity
     - ocaml.flambda_o3
     - ocaml.flambda_oclassic
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     - ocaml.explicit_arity
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     - ocaml.immediate
     - ocaml.immediate64
     - ocaml.inline
@@ -134,7 +134,7 @@ val warn_unchecked_zero_alloc_attribute : unit -> unit
 
 (** {2 Helpers for alert and warning attributes} *)
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (** {2 Attribute tracking for warning 53} *)
 
@@ -203,7 +203,7 @@ val mark_deprecated_mutable_used : Parsetree.attributes -> unit
 
 (** {2 Helpers for alert and warning attributes} *)
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 val check_alerts: Location.t -> Parsetree.attributes -> string -> unit
 val check_alerts_inclusion:
   def:Location.t -> use:Location.t -> Location.t -> Parsetree.attributes ->
@@ -276,7 +276,7 @@ val warn_on_literal_pattern: Parsetree.attributes -> bool
 val explicit_arity: Parsetree.attributes -> bool
 
 <<<<<<< HEAD
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
 val immediate: Parsetree.attributes -> bool
 val immediate64: Parsetree.attributes -> bool
@@ -285,7 +285,7 @@ val immediate64: Parsetree.attributes -> bool
 val immediate: Parsetree.attributes -> bool
 val immediate64: Parsetree.attributes -> bool
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 val has_unboxed: Parsetree.attributes -> bool
 val has_boxed: Parsetree.attributes -> bool
 

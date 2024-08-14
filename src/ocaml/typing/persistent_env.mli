@@ -25,7 +25,6 @@ module Consistbl : module type of struct
 end
 
 type error =
-<<<<<<< HEAD
   | Illegal_renaming of Compilation_unit.Name.t * Compilation_unit.Name.t * filepath
   | Inconsistent_import of Compilation_unit.Name.t * filepath * filepath
   | Need_recursive_types of Compilation_unit.Name.t
@@ -39,16 +38,6 @@ type error =
       { imported : Compilation_unit.Name.t;
         parameter : Compilation_unit.Name.t;
   }
-||||||| 7b73c6aa3f
-  | Illegal_renaming of modname * modname * filepath
-  | Inconsistent_import of modname * filepath * filepath
-  | Need_recursive_types of modname
-  | Depend_on_unsafe_string_unit of modname
-=======
-  | Illegal_renaming of modname * modname * filepath
-  | Inconsistent_import of modname * filepath * filepath
-  | Need_recursive_types of modname
->>>>>>> upstream/main
 
 exception Error of error
 
@@ -61,13 +50,13 @@ module Persistent_signature : sig
       cmi : Cmi_format.cmi_infos_lazy;
       visibility : Load_path.visibility
     }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       cmi : Cmi_format.cmi_infos }
 =======
       cmi : Cmi_format.cmi_infos;
       visibility : Load_path.visibility
     }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
@@ -75,11 +64,11 @@ module Persistent_signature : sig
 <<<<<<< HEAD
   val load :
     (allow_hidden:bool -> unit_name:Compilation_unit.Name.t -> t option) ref
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   val load : (unit_name:string -> t option) ref
 =======
   val load : (allow_hidden:bool -> unit_name:string -> t option) ref
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 end
 
 type can_load_cmis =
@@ -102,7 +91,7 @@ type address =
   | Aunit of Compilation_unit.t
   | Alocal of Ident.t
   | Adot of address * int
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 val read : 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> modname -> filepath -> 'a
@@ -116,7 +105,7 @@ val read : 'a t -> (Persistent_signature.t -> 'a)
 val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> modname -> 'a
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 type 'a sig_reader =
   Subst.Lazy.signature
@@ -154,7 +143,7 @@ val register_parameter : 'a t -> Compilation_unit.Name.t -> unit
 (* [is_parameter_import penv md] checks if [md] is a parameter. Raises a fatal
    error if the module has not been imported. *)
 val is_parameter_import : 'a t -> Compilation_unit.Name.t -> bool
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 val check : 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> modname -> unit
@@ -162,7 +151,7 @@ val check : 'a t -> (Persistent_signature.t -> 'a)
 val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> modname -> unit
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* [looked_up penv md] checks if one has already tried
    to read the signature for [md] in the environment

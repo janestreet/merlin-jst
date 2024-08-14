@@ -40,13 +40,12 @@ type iterator =
     extension_constructor: iterator -> extension_constructor -> unit;
 <<<<<<< HEAD
     jkind_annotation: iterator -> Jkind.annotation -> unit;
-    location: iterator -> Location.t -> unit;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     include_declaration: iterator -> include_declaration -> unit;
     include_description: iterator -> include_description -> unit;
+>>>>>>> 501-plus-upstream-main-9fa77db
     location: iterator -> Location.t -> unit;
->>>>>>> upstream/main
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
     module_declaration: iterator -> module_declaration -> unit;

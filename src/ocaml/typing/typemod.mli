@@ -42,13 +42,13 @@ val type_implementation:
 <<<<<<< HEAD
   Unit_info.t -> Compilation_unit.t -> Env.t ->
   Parsetree.structure -> Typedtree.implementation
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   string -> string -> string -> Env.t ->
   Parsetree.structure -> Typedtree.implementation
 =======
   Unit_info.t -> Env.t -> Parsetree.structure ->
   Typedtree.implementation
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 val type_interface:
   sourcefile:string -> Compilation_unit.t -> Env.t ->
   Parsetree.signature -> Typedtree.signature
@@ -72,23 +72,23 @@ val save_signature:
 <<<<<<< HEAD
   Unit_info.t -> Compilation_unit.t -> Typedtree.signature ->
   Env.t -> Cmi_format.cmi_infos_lazy -> unit
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   string -> Typedtree.signature -> string -> string ->
   Env.t -> Cmi_format.cmi_infos -> unit
 =======
   Unit_info.t -> Typedtree.signature -> Env.t ->
   Cmi_format.cmi_infos -> unit
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 val package_units:
 <<<<<<< HEAD
   Env.t -> string list -> Unit_info.Artifact.t -> Compilation_unit.t
   -> Typedtree.module_coercion
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   Env.t -> string list -> string -> string -> Typedtree.module_coercion
 =======
   Env.t -> string list -> Unit_info.Artifact.t -> Typedtree.module_coercion
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Should be in Envaux, but it breaks the build of the debugger *)
 val initial_env:

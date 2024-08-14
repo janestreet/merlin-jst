@@ -37,13 +37,13 @@ val get_typedtree : result -> typedtree
 <<<<<<< HEAD
 val get_stamp : result -> int
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 val get_index : result -> index_tbl
 
 val get_stamp : result -> int
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 val get_errors : result -> exn list
 
 val initial_env : result -> Env.t

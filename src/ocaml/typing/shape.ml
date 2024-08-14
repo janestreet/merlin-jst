@@ -187,11 +187,11 @@ end
 type var = Ident.t
 <<<<<<< HEAD
 type t = { hash:int; uid: Uid.t option; desc: desc; approximated: bool }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 type t = { uid: Uid.t option; desc: desc }
 =======
 type t = { uid: Uid.t option; desc: desc; approximated: bool }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 and desc =
   | Var of var
   | Abs of var * t
@@ -241,11 +241,11 @@ and equal t1 t2 =
   else equal_desc t1.desc t2.desc
 
 let print fmt t =
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let print fmt =
 =======
 let print fmt t =
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   let print_uid_opt =
     Format.pp_print_option (fun fmt -> Format.fprintf fmt "<%a>" Uid.print)
   in
@@ -323,7 +323,7 @@ let hash_app = 6
 let hash_comp_unit = 7
 let hash_alias = 8
 let hash_error = 9
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   Format.fprintf fmt"@[%a@]@;" aux
 =======
   if t.approximated then
@@ -334,7 +334,7 @@ let hash_error = 9
 let rec strip_head_aliases = function
   | { desc = Alias t; _ } -> strip_head_aliases t
   | t -> t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let fresh_var ?(name="shape-var") uid =
   let var = Ident.create_local name in
@@ -342,11 +342,11 @@ let fresh_var ?(name="shape-var") uid =
   var, { uid = Some uid; desc = Var var;
          hash = Hashtbl.hash (hash_var, uid, var);
          approximated = false }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   var, { uid = Some uid; desc = Var var }
 =======
   var, { uid = Some uid; desc = Var var; approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let for_unnamed_functor_param = Ident.create_local "()"
 
@@ -355,22 +355,22 @@ let var uid id =
   { uid = Some uid; desc = Var id;
     hash = Hashtbl.hash (hash_var, uid, id);
     approximated = false }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   { uid = Some uid; desc = Var id }
 =======
   { uid = Some uid; desc = Var id; approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let abs ?uid var body =
 <<<<<<< HEAD
   { uid; desc = Abs (var, body);
     hash = Hashtbl.hash (hash_abs, uid, body.hash);
     approximated = false }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   { uid; desc = Abs (var, body) }
 =======
   { uid; desc = Abs (var, body); approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let str ?uid map =
 <<<<<<< HEAD
@@ -379,14 +379,14 @@ let str ?uid map =
   in
   { uid; desc = Struct map; hash = Hashtbl.hash (hash_struct, uid, h);
     approximated = false }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   { uid; desc = Struct map }
 =======
   { uid; desc = Struct map; approximated = false }
 
 let alias ?uid t =
   { uid; desc = Alias t; approximated = false}
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let alias ?uid t =
@@ -404,7 +404,7 @@ let leaf uid = leaf' (Some uid)
 let approx t = { t with approximated = true}
 
 let set_approximated ~approximated t = { t with approximated}
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let leaf uid =
   { uid = Some uid; desc = Leaf }
 =======
@@ -412,7 +412,7 @@ let leaf uid =
   { uid = Some uid; desc = Leaf; approximated = false }
 
 let approx t = { t with approximated = true}
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let proj ?uid t item =
   match t.desc with
@@ -428,11 +428,11 @@ let proj ?uid t item =
 <<<<<<< HEAD
       { uid; desc = Proj (t, item);
         hash = Hashtbl.hash (hash_proj, t.hash, item); approximated = false }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       { uid; desc = Proj (t, item) }
 =======
       { uid; desc = Proj (t, item); approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let app ?uid f ~arg =
 <<<<<<< HEAD
@@ -444,11 +444,11 @@ let comp_unit ?uid s =
         approximated = false }
 
 let no_fuel_left ?uid s = { s with uid }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       { uid; desc = App (f, arg) }
 =======
   { uid; desc = App (f, arg); approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let decompose_abs t =
   match t.desc with
@@ -468,7 +468,7 @@ let of_path ~find_shape ~namespace path =
       M.t.lbl
     Path of label of inline record:
       M.t.C.lbl *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 module Make_reduce(Params : sig
   type env
   val fuel : int
@@ -762,7 +762,7 @@ let of_path ~find_shape ~namespace path =
       M.t.lbl
     Path of label of inline record:
       M.t.C.lbl *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   let rec aux : Sig_component_kind.t -> Path.t -> t = fun ns -> function
     | Pident id -> find_shape ns id
 <<<<<<< HEAD
@@ -774,7 +774,7 @@ let of_path ~find_shape ~namespace path =
         | _ -> Module
       in
       proj (aux namespace path) (name, ns)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     | Pdot (path, name) -> proj (aux Module path) (name, ns)
 =======
     | Pdot (path, name) ->
@@ -785,7 +785,7 @@ let of_path ~find_shape ~namespace path =
           | _ -> Module
         in
         proj (aux namespace path) (name, ns)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | Papply (p1, p2) -> app (aux Module p1) ~arg:(aux Module p2)
     | Pextra_ty (path, extra) -> begin
         match extra with
@@ -798,21 +798,21 @@ let of_path ~find_shape ~namespace path =
 let for_persistent_unit s =
 <<<<<<< HEAD
   comp_unit ~uid:(Compilation_unit s) s
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   { uid = Some (Uid.of_compilation_unit_id (Ident.create_persistent s));
     desc = Comp_unit s }
 =======
   { uid = Some (Uid.of_compilation_unit_id (Ident.create_persistent s));
     desc = Comp_unit s; approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 <<<<<<< HEAD
 let leaf_for_unpack = leaf' None
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let leaf_for_unpack = { uid = None; desc = Leaf }
 =======
 let leaf_for_unpack = { uid = None; desc = Leaf; approximated = false }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let set_uid_if_none t uid =
   match t.uid with

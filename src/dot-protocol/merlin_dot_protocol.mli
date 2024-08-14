@@ -58,12 +58,12 @@ module Directive : sig
 <<<<<<< HEAD
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     | `SOURCE_ROOT of string
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR

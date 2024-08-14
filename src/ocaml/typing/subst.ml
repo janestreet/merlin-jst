@@ -321,7 +321,7 @@ let apply_type_function params args body =
     copy body)
 
 <<<<<<< HEAD
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 let ctype_apply_env_empty = ref (fun _ -> assert false)
 =======
 let apply_type_function params args body =
@@ -386,7 +386,7 @@ let apply_type_function params args body =
     in
     copy body)
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 (* Similar to [Ctype.nondep_type_rec]. *)
 let rec typexp copy_scope s ty =
@@ -914,16 +914,8 @@ and subst_lazy_modtype scoping s = function
           begin match p with
           | Pident _ -> Mty_ident p
           | Pdot(p, n) ->
-<<<<<<< HEAD
              Mty_ident(Pdot(module_path s p, n))
           | Papply _ | Pextra_ty _ ->
-||||||| 7b73c6aa3f
-             MtyL_ident(Pdot(module_path s p, n))
-          | Papply _ ->
-=======
-             MtyL_ident(Pdot(module_path s p, n))
-          | Papply _ | Pextra_ty _ ->
->>>>>>> upstream/main
              fatal_error "Subst.modtype"
           end
       end

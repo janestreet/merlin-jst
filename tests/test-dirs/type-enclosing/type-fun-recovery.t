@@ -205,7 +205,7 @@
     "type": "int",
     "tail": "no"
   }
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 1. Here the expected type `int` is not even a function
   $ cat >test.ml <<'EOF'
@@ -430,4 +430,4 @@
     "type": "int",
     "tail": "no"
   }
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

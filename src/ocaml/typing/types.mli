@@ -588,16 +588,15 @@ and type_origin =
   | Rec_check_regularity       (* See Typedecl.transl_type_decl *)
   | Existential of string
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 and type_origin =
     Definition
   | Rec_check_regularity       (* See Typedecl.transl_type_decl *)
   | Existential of string
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 and record_representation =
-<<<<<<< HEAD
   | Record_unboxed
   | Record_inlined of tag * constructor_representation * variant_representation
   (* For an inlined record, we record the representation of the variant that
@@ -613,20 +612,6 @@ and record_representation =
   (* The record contains a mix of values and unboxed elements. The block
      is tagged such that polymorphic operations will not work.
   *)
-||||||| 7b73c6aa3f
-    Record_regular                      (* All fields are boxed / tagged *)
-  | Record_float                        (* All fields are floats *)
-  | Record_unboxed of bool    (* Unboxed single-field record, inlined or not *)
-  | Record_inlined of int               (* Inlined record *)
-  | Record_extension of Path.t          (* Inlined record under extension *)
-=======
-    Record_regular                      (* All fields are boxed / tagged *)
-  | Record_float                        (* All fields are floats *)
-  | Record_unboxed of bool    (* Unboxed single-field record, inlined or not *)
-  | Record_inlined of int               (* Inlined record *)
-  | Record_extension of Path.t          (* Inlined record under extension *)
-                             (* The argument is the path of the extension *)
->>>>>>> upstream/main
 
 and variant_representation =
   | Variant_unboxed

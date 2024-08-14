@@ -329,7 +329,7 @@ module Gen = struct
 <<<<<<< HEAD
       fun env label ty : (Asttypes.arg_label * _ * _) ->
         let open Ast_helper in
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
       fun env label ty ->
         let open Asttypes in
 =======
@@ -343,7 +343,7 @@ module Gen = struct
           }
         in
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         match label with
 <<<<<<< HEAD
         (* Pun for labelled arguments *)
@@ -357,7 +357,7 @@ module Gen = struct
             Labelled s, Pat.var (Location.mknoloc s), s
         | Optional s ->
             Optional s, Pat.var (Location.mknoloc s), s
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         | Labelled s | Optional s ->
             (* Pun for labelled arguments *)
             Ast_helper.Pat.var ( Location.mknoloc s), s
@@ -365,7 +365,7 @@ module Gen = struct
         | Labelled s | Optional s ->
             (* Pun for labelled arguments *)
             make_param label (Ast_helper.Pat.var (Location.mknoloc s)), s
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         | Nolabel -> begin match get_desc ty with
 <<<<<<< HEAD
           | Tpoly (poly, []) ->
@@ -375,7 +375,7 @@ module Gen = struct
                     Nolabel, Pat.var (Location.mknoloc name), name
                 | _ -> Nolabel, Pat.any (), "_" end
           | _ -> Nolabel, Pat.any (), "_" end
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
           | Tconstr (path, _, _) ->
             let name = uniq_name env (Path.last path) in
             Ast_helper.Pat.var (Location.mknoloc name), name
@@ -385,7 +385,7 @@ module Gen = struct
             let name = uniq_name env (Path.last path) in
             make_param label (Ast_helper.Pat.var (Location.mknoloc name)), name
           | _ ->  make_param label (Ast_helper.Pat.any ()), "_" end
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
     in
 
     let constructor env type_expr path constrs =
@@ -567,7 +567,7 @@ module Gen = struct
                     [ param ]
                     None
                     (Pfunction_body expr))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         | Tarrow (label, tyleft, tyright, _) ->
           let argument, name = make_arg env label tyleft in
           let value_description = {
@@ -605,7 +605,7 @@ module Gen = struct
           let exps = arrow_rhs env body_type in
           List.map exps ~f:(fun e ->
             Ast_helper.Exp.function_ arguments None (Pfunction_body e))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         | Ttuple types ->
           let choices =
             List.map types ~f:(fun (lbl, ty) ->
@@ -668,11 +668,11 @@ end
 let needs_parentheses e = match e.Parsetree.pexp_desc with
 <<<<<<< HEAD
   | Pexp_function (_, _, Pfunction_body _)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Pexp_fun _
 =======
   | Pexp_function _
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Pexp_lazy _
   | Pexp_apply _
   | Pexp_variant (_, Some _)

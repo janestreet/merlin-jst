@@ -26,7 +26,7 @@ type recursive_binding_kind =
 | Dynamic
   (** Bindings for which pre-allocation is not possible.
       The expression is not allowed to refer to any recursive variable. *)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (**************************************************************************)
 (*                                                                        *)
@@ -55,4 +55,4 @@ type recursive_binding_kind =
     | Dynamic
       (** Bindings for which pre-allocation is not possible.
           The expression is not allowed to refer to any recursive variable. *)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

@@ -23,20 +23,10 @@
 open Parsetree
 open Format
 
-<<<<<<< HEAD
 val interface : formatter -> signature_item list -> unit
 val implementation : formatter -> structure_item list -> unit
 val top_phrase : formatter -> toplevel_phrase -> unit
 val constant: formatter -> constant -> unit
-||||||| 7b73c6aa3f
-val interface : formatter -> signature_item list -> unit;;
-val implementation : formatter -> structure_item list -> unit;;
-val top_phrase : formatter -> toplevel_phrase -> unit;;
-=======
-val interface : formatter -> signature_item list -> unit
-val implementation : formatter -> structure_item list -> unit
-val top_phrase : formatter -> toplevel_phrase -> unit
->>>>>>> upstream/main
 
 val expression: int -> formatter -> expression -> unit
 val pattern: int -> formatter -> pattern -> unit

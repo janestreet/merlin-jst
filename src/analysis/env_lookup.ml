@@ -158,7 +158,7 @@ let in_namespaces (nss : Namespace.inferred list) ident env =
       Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid)
       Logger.fmt (fun fmt -> Location.print_loc fmt loc);
     Some (path, { uid = decl_uid; loc; namespace })
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 open! Std
 let {Logger. log} = Logger.for_section "env-lookup"
@@ -318,4 +318,4 @@ let by_longident (nss : Namespace.inferred list) ident env =
       Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid)
       Logger.fmt (fun fmt -> Location.print_loc fmt loc);
     Some (path, { uid = decl_uid; loc; namespace })
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

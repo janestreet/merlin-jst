@@ -300,14 +300,14 @@ and mixed_product_shape =
     flat_suffix : flat_element array;
   }
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 and type_origin =
     Definition
   | Rec_check_regularity
   | Existential of string
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 and record_representation =
   | Record_unboxed
   | Record_inlined of tag * constructor_representation * variant_representation

@@ -122,7 +122,7 @@ module Typ = struct
         | Ptyp_alias(core_type, alias) ->
             check_variable var_names alias.loc alias.txt;
             Ptyp_alias(loop core_type, alias)
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
         | Ptyp_alias(core_type, string) ->
             check_variable var_names t.ptyp_loc string;
             Ptyp_alias(loop core_type, string)
@@ -130,7 +130,7 @@ module Typ = struct
         | Ptyp_alias(core_type, alias) ->
             check_variable var_names alias.loc alias.txt;
             Ptyp_alias(loop core_type, alias)
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         | Ptyp_variant(row_field_list, flag, lbl_lst_option) ->
             Ptyp_variant(List.map loop_row_field row_field_list,
                          flag, lbl_lst_option)

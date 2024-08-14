@@ -1795,13 +1795,13 @@ Empty string defaults to jumping to all these."
                  (occ-buff (find-file-noselect (cdr (assoc 'file pos))))
                  (marker (with-current-buffer occ-buff
                           (copy-marker (merlin--point-of-pos start))))
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
                  (file (cdr (assoc 'file pos)))
                  (occ-buff (if file (find-file-noselect file) src-buff))
                  (marker (with-current-buffer occ-buff
                           (copy-marker (merlin--point-of-pos start))))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
                  (line (cdr (assoc 'line start)))
                  (start-buf-pos (with-current-buffer occ-buff
                                   (merlin--point-of-pos start)))
@@ -1820,12 +1820,12 @@ Empty string defaults to jumping to all these."
 <<<<<<< HEAD
                                             occ-buff))))
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
                                             src-buff))))
 
 =======
                                             occ-buff))))
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             ;; Insert the critical text properties that occur-mode
             ;; makes use of
             (add-text-properties start-offset
@@ -1854,7 +1854,7 @@ Empty string defaults to jumping to all these."
                                   'occur-title occ-buff))
               (insert "\n"))
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 
             (when (not (equal previous-buf occ-buff))
@@ -1867,7 +1867,7 @@ Empty string defaults to jumping to all these."
                                   'occur-title occ-buff))
               (insert "\n"))
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
             (setq pending-line line)
             (setq previous-buf occ-buff)
             (setq pending-lines-text lines-text)))

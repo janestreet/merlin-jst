@@ -36,13 +36,12 @@ type iterator =
     extension_constructor: iterator -> extension_constructor -> unit;
 <<<<<<< HEAD
     jkind_annotation: iterator -> Jkind.annotation -> unit;
-    location: iterator -> Location.t -> unit;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     include_declaration: iterator -> include_declaration -> unit;
     include_description: iterator -> include_description -> unit;
+>>>>>>> 501-plus-upstream-main-9fa77db
     location: iterator -> Location.t -> unit;
->>>>>>> upstream/main
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
     module_declaration: iterator -> module_declaration -> unit;
@@ -115,7 +114,6 @@ let module_declaration sub md =
   iter_loc sub md_name;
   sub.module_type sub md_type
 
-<<<<<<< HEAD
 let module_substitution sub ms =
   let {ms_loc; ms_name; ms_txt; ms_attributes; _} = ms in
   sub.item_declaration sub (Module_substitution ms);
@@ -136,28 +134,12 @@ let str_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
   sub.attributes sub incl_attributes;
   sub.module_expr sub incl_mod;
   include_kind sub incl_kind
-||||||| 7b73c6aa3f
-let include_infos f {incl_mod; _} = f incl_mod
-=======
-let module_substitution sub ms =
-  let {ms_loc; ms_name; ms_txt; ms_attributes; _} = ms in
-  sub.item_declaration sub (Module_substitution ms);
-  sub.location sub ms_loc;
-  sub.attributes sub ms_attributes;
-  iter_loc sub ms_name;
-  iter_loc sub ms_txt
-
-let include_infos sub f {incl_loc; incl_mod; incl_attributes; _} =
-  sub.location sub incl_loc;
-  sub.attributes sub incl_attributes;
-  f incl_mod
 
 let include_description sub incl =
   include_infos sub (sub.module_type sub) incl
 
 let include_declaration sub incl =
   include_infos sub (sub.module_expr sub) incl
->>>>>>> upstream/main
 
 let class_type_declaration sub x =
   sub.item_declaration sub (Class_type x);
@@ -171,13 +153,7 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   sub.location sub str_loc;
   sub.env sub str_env;
   match str_desc with
-<<<<<<< HEAD
   | Tstr_eval   (exp, _, attrs) -> sub.expr sub exp; sub.attributes sub attrs
-||||||| 7b73c6aa3f
-  | Tstr_eval   (exp, _) -> sub.expr sub exp
-=======
-  | Tstr_eval   (exp, attrs) -> sub.expr sub exp; sub.attributes sub attrs
->>>>>>> upstream/main
   | Tstr_value  (rec_flag, list) -> sub.value_bindings sub (rec_flag, list)
   | Tstr_primitive v -> sub.value_description sub v
   | Tstr_type (rec_flag, list) -> sub.type_declarations sub (rec_flag, list)
@@ -189,18 +165,15 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_class list ->
       List.iter (fun (cls,_) -> sub.class_declaration sub cls) list
   | Tstr_class_type list ->
+      List.iter (fun (_, s, cltd) ->
+        iter_loc sub s; sub.class_type_declaration sub cltd) list
 <<<<<<< HEAD
-      List.iter (fun (_, s, cltd) ->
-        iter_loc sub s; sub.class_type_declaration sub cltd) list
   | Tstr_include incl -> str_include_infos sub incl
-||||||| 7b73c6aa3f
-      List.iter (fun (_, _, cltd) -> sub.class_type_declaration sub cltd) list
-  | Tstr_include incl -> include_infos (sub.module_expr sub) incl
+||||||| fcc3157ab0
+  | Tstr_include incl -> include_infos sub (sub.module_expr sub) incl
 =======
-      List.iter (fun (_, s, cltd) ->
-        iter_loc sub s; sub.class_type_declaration sub cltd) list
   | Tstr_include incl -> sub.include_declaration sub incl
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tstr_open od -> sub.open_declaration sub od
   | Tstr_attribute attr -> sub.attribute sub attr
 
@@ -214,6 +187,12 @@ let value_description sub x =
 <<<<<<< HEAD
 let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; ld_modalities = _} as ld) =
   sub.item_declaration sub (Label ld);
+||||||| fcc3157ab0
+let label_decl sub {ld_loc; ld_name; ld_type; ld_attributes; _} =
+=======
+let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; _} as ld) =
+  sub.item_declaration sub (Label ld);
+>>>>>>> 501-plus-upstream-main-9fa77db
   sub.location sub ld_loc;
   sub.attributes sub ld_attributes;
   iter_loc sub ld_name;
@@ -222,22 +201,11 @@ let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; ld_modalities = _}
 let field_decl sub {ca_loc; ca_type; ca_modalities = _} =
   sub.location sub ca_loc;
   sub.typ sub ca_type
-||||||| 7b73c6aa3f
-let label_decl sub {ld_type; _} = sub.typ sub ld_type
-=======
-let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; _} as ld) =
-  sub.item_declaration sub (Label ld);
-  sub.location sub ld_loc;
-  sub.attributes sub ld_attributes;
-  iter_loc sub ld_name;
-  sub.typ sub ld_type
->>>>>>> upstream/main
 
 let constructor_args sub = function
   | Cstr_tuple l -> List.iter (field_decl sub) l
   | Cstr_record l -> List.iter (label_decl sub) l
 
-<<<<<<< HEAD
 let constructor_decl sub x =
   sub.item_declaration sub (Constructor x);
   sub.location sub x.cd_loc;
@@ -245,20 +213,6 @@ let constructor_decl sub x =
   iter_loc sub x.cd_name;
   constructor_args sub x.cd_args;
   Option.iter (sub.typ sub) x.cd_res
-||||||| 7b73c6aa3f
-let constructor_decl sub {cd_args; cd_res; _} =
-  constructor_args sub cd_args;
-  Option.iter (sub.typ sub) cd_res
-=======
-let constructor_decl sub x =
-  sub.item_declaration sub (Constructor x);
-  sub.location sub x.cd_loc;
-  sub.attributes sub x.cd_attributes;
-  iter_loc sub x.cd_name;
-  List.iter (iter_loc sub) x.cd_vars;
-  constructor_args sub x.cd_args;
-  Option.iter (sub.typ sub) x.cd_res
->>>>>>> upstream/main
 
 let type_kind sub = function
   | Ttype_abstract -> ()
@@ -302,8 +256,7 @@ let extension_constructor sub ec =
   sub.attributes sub ext_attributes;
   iter_loc sub ext_name;
   match ext_kind with
-  | Text_decl (ids, ctl, cto) ->
-      List.iter (iter_loc sub) ids;
+  | Text_decl (_, ctl, cto) ->
       constructor_args sub ctl;
       Option.iter (sub.typ sub) cto
   | Text_rebind (_, lid) -> iter_loc sub lid
@@ -328,43 +281,31 @@ let pat
   | Tpat_any  -> ()
 <<<<<<< HEAD
   | Tpat_var (_, s, _, _) -> iter_loc sub s
-||||||| 7b73c6aa3f
-  | Tpat_var _ -> ()
+||||||| fcc3157ab0
+  | Tpat_var (_, s) -> iter_loc sub s
 =======
   | Tpat_var (_, s, _) -> iter_loc sub s
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_constant _ -> ()
-<<<<<<< HEAD
   | Tpat_tuple l -> List.iter (fun (_, p) -> sub.pat sub p) l
   | Tpat_construct (lid, _, l, vto) ->
       iter_loc sub lid;
-||||||| 7b73c6aa3f
-  | Tpat_tuple l -> List.iter (sub.pat sub) l
-  | Tpat_construct (_, _, l, vto) ->
-=======
-  | Tpat_tuple l -> List.iter (sub.pat sub) l
-  | Tpat_construct (lid, _, l, vto) ->
-      iter_loc sub lid;
->>>>>>> upstream/main
       List.iter (sub.pat sub) l;
       Option.iter (fun (ids, ct) ->
         List.iter (iter_loc sub) ids; sub.typ sub ct) vto
   | Tpat_variant (_, po, _) -> Option.iter (sub.pat sub) po
-<<<<<<< HEAD
   | Tpat_record (l, _) ->
       List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
+<<<<<<< HEAD
   | Tpat_array (_, _, l) -> List.iter (sub.pat sub) l
   | Tpat_alias (p, _, s, _, _) -> sub.pat sub p; iter_loc sub s
-||||||| 7b73c6aa3f
-  | Tpat_record (l, _) -> List.iter (fun (_, _, i) -> sub.pat sub i) l
+||||||| fcc3157ab0
   | Tpat_array l -> List.iter (sub.pat sub) l
-  | Tpat_alias (p, _, _) -> sub.pat sub p
+  | Tpat_alias (p, _, s) -> sub.pat sub p; iter_loc sub s
 =======
-  | Tpat_record (l, _) ->
-      List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
   | Tpat_array l -> List.iter (sub.pat sub) l
   | Tpat_alias (p, _, s, _) -> sub.pat sub p; iter_loc sub s
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_lazy p -> sub.pat sub p
   | Tpat_value p -> sub.pat sub (p :> pattern)
   | Tpat_exception p -> sub.pat sub p
@@ -411,23 +352,7 @@ let function_body sub body =
       sub.attributes sub fc_attributes;
       sub.env sub fc_env
 
-let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
-  let extra x = extra sub x in
-  sub.location sub exp_loc;
-  sub.attributes sub exp_attributes;
-  List.iter (fun (e, loc, _) -> extra e; sub.location sub loc) exp_extra;
-||||||| 7b73c6aa3f
-let expr sub {exp_extra; exp_desc; exp_env; _} =
-  let extra = function
-    | Texp_constraint cty -> sub.typ sub cty
-    | Texp_coerce (cty1, cty2) ->
-        Option.iter (sub.typ sub) cty1;
-        sub.typ sub cty2
-    | Texp_newtype _ -> ()
-    | Texp_newtype' _ -> ()
-    | Texp_poly cto -> Option.iter (sub.typ sub) cto
-  in
-  List.iter (fun (e, _, _) -> extra e) exp_extra;
+||||||| fcc3157ab0
 =======
 let extra sub = function
   | Texp_constraint cty -> sub.typ sub cty
@@ -457,21 +382,15 @@ let function_body sub body =
       Option.iter (extra sub) exp_extra;
       sub.attributes sub attributes
 
+>>>>>>> 501-plus-upstream-main-9fa77db
 let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   let extra x = extra sub x in
   sub.location sub exp_loc;
   sub.attributes sub exp_attributes;
   List.iter (fun (e, loc, _) -> extra e; sub.location sub loc) exp_extra;
->>>>>>> upstream/main
   sub.env sub exp_env;
   match exp_desc with
-<<<<<<< HEAD
   | Texp_ident (_, lid, _, _, _)  -> iter_loc sub lid
-||||||| 7b73c6aa3f
-  | Texp_ident _  -> ()
-=======
-  | Texp_ident (_, lid, _)  -> iter_loc sub lid
->>>>>>> upstream/main
   | Texp_constant _ -> ()
   | Texp_let (rec_flag, list, exp) ->
       sub.value_bindings sub (rec_flag, list);
@@ -481,7 +400,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
       List.iter (function_param sub) params;
       function_body sub body
   | Texp_apply (exp, list, _, _, _) ->
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
   | Texp_function {cases; _} ->
      List.iter (sub.case sub) cases
   | Texp_apply (exp, list) ->
@@ -490,7 +409,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
       List.iter (function_param sub) params;
       function_body sub body
   | Texp_apply (exp, list) ->
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
       sub.expr sub exp;
       List.iter (function
         | (_, Arg (exp, _)) -> sub.expr sub exp
@@ -502,45 +421,22 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_try (exp, cases) ->
       sub.expr sub exp;
       List.iter (sub.case sub) cases
-<<<<<<< HEAD
   | Texp_tuple (list, _) -> List.iter (fun (_,e) -> sub.expr sub e) list
   | Texp_construct (lid, _, args, _) ->
       iter_loc sub lid;
       List.iter (sub.expr sub) args
   | Texp_variant (_, expo) -> Option.iter (fun (expr, _) -> sub.expr sub expr) expo
-||||||| 7b73c6aa3f
-  | Texp_tuple list -> List.iter (sub.expr sub) list
-  | Texp_construct (_, _, args) -> List.iter (sub.expr sub) args
-  | Texp_variant (_, expo) -> Option.iter (sub.expr sub) expo
-=======
-  | Texp_tuple list -> List.iter (sub.expr sub) list
-  | Texp_construct (lid, _, args) ->
-      iter_loc sub lid;
-      List.iter (sub.expr sub) args
-  | Texp_variant (_, expo) -> Option.iter (sub.expr sub) expo
->>>>>>> upstream/main
   | Texp_record { fields; extended_expression; _} ->
       Array.iter (function
         | _, Kept _ -> ()
         | _, Overridden (lid, exp) -> iter_loc sub lid; sub.expr sub exp)
         fields;
       Option.iter (sub.expr sub) extended_expression;
-<<<<<<< HEAD
   | Texp_field (exp, lid, _, _) ->
       iter_loc sub lid;
       sub.expr sub exp
   | Texp_setfield (exp1, _, lid, _, exp2) ->
       iter_loc sub lid;
-||||||| 7b73c6aa3f
-  | Texp_field (exp, _, _) -> sub.expr sub exp
-  | Texp_setfield (exp1, _, _, exp2) ->
-=======
-  | Texp_field (exp, lid, _) ->
-      iter_loc sub lid;
-      sub.expr sub exp
-  | Texp_setfield (exp1, lid, _, exp2) ->
-      iter_loc sub lid;
->>>>>>> upstream/main
       sub.expr sub exp1;
       sub.expr sub exp2
   | Texp_array (_, _, list, _) -> List.iter (sub.expr sub) list
@@ -585,18 +481,6 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_setinstvar (_, _, s, exp) ->
       iter_loc sub s;
       sub.expr sub exp
-<<<<<<< HEAD
-||||||| 7b73c6aa3f
-  | Texp_new _ -> ()
-  | Texp_instvar _ -> ()
-  | Texp_setinstvar (_, _, _, exp) ->sub.expr sub exp
-=======
-  | Texp_new (_, lid, _) -> iter_loc sub lid
-  | Texp_instvar (_, _, s) -> iter_loc sub s
-  | Texp_setinstvar (_, _, s, exp) ->
-      iter_loc sub s;
-      sub.expr sub exp
->>>>>>> upstream/main
   | Texp_override (_, list) ->
       List.iter (fun (_, s, e) -> iter_loc sub s; sub.expr sub e) list
   | Texp_letmodule (_, s, _, mexpr, exp) ->
@@ -639,7 +523,6 @@ let signature sub {sig_items; sig_final_env; _} =
   sub.env sub sig_final_env;
   List.iter (sub.signature_item sub) sig_items
 
-<<<<<<< HEAD
 let sig_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
   sub.location sub incl_loc;
   sub.attributes sub incl_attributes;
@@ -648,12 +531,6 @@ let sig_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
 
 let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   sub.location sub sig_loc;
-||||||| 7b73c6aa3f
-let signature_item sub {sig_desc; sig_env; _} =
-=======
-let signature_item sub {sig_loc; sig_desc; sig_env; _} =
-  sub.location sub sig_loc;
->>>>>>> upstream/main
   sub.env sub sig_env;
   match sig_desc with
   | Tsig_value v -> sub.value_description sub v
@@ -668,11 +545,11 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_modtypesubst x -> sub.module_type_declaration sub x
 <<<<<<< HEAD
   | Tsig_include incl -> sig_include_infos sub incl
-||||||| 7b73c6aa3f
-  | Tsig_include incl -> include_infos (sub.module_type sub) incl
+||||||| fcc3157ab0
+  | Tsig_include incl -> include_infos sub (sub.module_type sub) incl
 =======
   | Tsig_include incl -> sub.include_description sub incl
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Tsig_class list -> List.iter (sub.class_description sub) list
   | Tsig_class_type list -> List.iter (sub.class_type_declaration sub) list
   | Tsig_open od -> sub.open_description sub od
@@ -845,37 +722,17 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
   | Ttyp_arrow (_, ct1, ct2) ->
       sub.typ sub ct1;
       sub.typ sub ct2
-<<<<<<< HEAD
   | Ttyp_tuple list -> List.iter (fun (_, t) -> sub.typ sub t) list
   | Ttyp_constr (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
-||||||| 7b73c6aa3f
-  | Ttyp_tuple list -> List.iter (sub.typ sub) list
-  | Ttyp_constr (_, _, list) ->  List.iter (sub.typ sub) list
-=======
-  | Ttyp_tuple list -> List.iter (sub.typ sub) list
-  | Ttyp_constr (_, lid, list) ->
-      iter_loc sub lid;
-      List.iter (sub.typ sub) list
->>>>>>> upstream/main
   | Ttyp_object (list, _) -> List.iter (sub.object_field sub) list
-<<<<<<< HEAD
   | Ttyp_class (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
   | Ttyp_alias (ct, _, jkind) ->
       sub.typ sub ct;
       Option.iter (sub.jkind_annotation sub) jkind
-||||||| 7b73c6aa3f
-  | Ttyp_class (_, _, list) -> List.iter (sub.typ sub) list
-  | Ttyp_alias (ct, _) -> sub.typ sub ct
-=======
-  | Ttyp_class (_, lid, list) ->
-      iter_loc sub lid;
-      List.iter (sub.typ sub) list
-  | Ttyp_alias (ct, _) -> sub.typ sub ct
->>>>>>> upstream/main
   | Ttyp_variant (list, _, _) -> List.iter (sub.row_field sub) list
   | Ttyp_poly (vars, ct) ->
       List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
@@ -886,12 +743,12 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       iter_loc sub mod_ident;
       sub.typ sub t
   | Ttyp_call_pos -> ()
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   | Ttyp_open (_, mod_ident, t) ->
       iter_loc sub mod_ident;
       sub.typ sub t
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
 let class_structure sub {cstr_self; cstr_fields; _} =
   sub.pat sub cstr_self;
@@ -949,11 +806,11 @@ let jkind_annotation sub (_, l) = iter_loc sub l
 
 let item_declaration _sub _ = ()
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 let item_declaration _sub _ = ()
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 let default_iterator =
   {
     attribute;
@@ -974,13 +831,12 @@ let default_iterator =
     extension_constructor;
 <<<<<<< HEAD
     jkind_annotation;
-    location;
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
     include_description;
     include_declaration;
+>>>>>>> 501-plus-upstream-main-9fa77db
     location;
->>>>>>> upstream/main
     module_binding;
     module_coercion;
     module_declaration;

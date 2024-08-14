@@ -21,7 +21,7 @@ type array_kind =
     Pgenarray | Paddrarray | Pintarray | Pfloatarray
   | Punboxedfloatarray of unboxed_float
   | Punboxedintarray of unboxed_integer
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
 (* The lambda representation is of no interest for Merlin, but some types are
    used by [value_rec_check]. *)
@@ -32,4 +32,4 @@ type immediate_or_pointer =
 
 type array_kind =
   Pgenarray | Paddrarray | Pintarray | Pfloatarray
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db

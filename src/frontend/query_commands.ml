@@ -580,7 +580,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some res -> `Found res
     | None -> `No_documentation)
 
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 =======
   | Syntax_document pos ->
     let typer = Mpipeline.typer_result pipeline in
@@ -603,7 +603,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               (Option.get ppx_kind_with_attr))
     | None -> `No_ppx)
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
@@ -854,19 +854,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         try
 <<<<<<< HEAD
           find_in_path_normalized (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
           find_in_path_uncap (Mconfig.source_path config) x
 =======
           find_in_path_normalized (Mconfig.source_path config) x
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
         with Not_found -> try
 <<<<<<< HEAD
             find_in_path_normalized (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
             find_in_path_uncap (Mconfig.build_path config) x
 =======
             find_in_path_normalized (Mconfig.build_path config) x
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
           with Not_found ->
             aux xs
     in
@@ -920,7 +920,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | Error _ -> []
     in
     locs
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
     let enclosing = Mbrowse.enclosing pos [str] in
     let curr_node =
       let is_wildcard_pat = function
@@ -987,7 +987,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path
     in
     locs, status
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"

@@ -58,13 +58,13 @@
 
   $ $OCAMLC -c -bin-annot record.ml
 <<<<<<< HEAD
-||||||| 7b73c6aa3f
+||||||| fcc3157ab0
 
 FIXME: Merlin looks for the Uid of the label in Record's `uid_to_loc` table but
 doesn't find it. We need a compiler fix for this, see #1505.
 =======
 
->>>>>>> upstream/main
+>>>>>>> 501-plus-upstream-main-9fa77db
   $ $MERLIN single locate -look-for mli -position 2:24 \
   > -filename ./other_module.ml < ./other_module.ml | jq '.value'
   {
