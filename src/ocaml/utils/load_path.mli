@@ -22,10 +22,16 @@
     doesn't change during the execution of the compiler.
 *)
 
+<<<<<<< HEAD
 (* CR aodintsov/mshinwell: merge the remaining flambda-backend changes
    upstream *)
 
 val add_dir : hidden:bool -> string -> unit
+||||||| 7b73c6aa3f
+val add_dir : string -> unit
+=======
+val add_dir : hidden:bool -> string -> unit
+>>>>>>> upstream/main
 (** Add a directory to the end of the load path (i.e. at lowest priority.) *)
 
 val remove_dir : string -> unit
@@ -38,6 +44,7 @@ module Dir : sig
   type t
   (** Represent one directory in the load path. *)
 
+<<<<<<< HEAD
   val create : hidden:bool -> string -> t
 
   val basenames : t -> string list
@@ -68,6 +75,53 @@ val init :
     calling [alert lib]. *)
 
 val get_path_list : unit -> string list
+||||||| 7b73c6aa3f
+val get_paths : unit -> string list
+=======
+  val create : hidden:bool -> string -> t
+
+  val path : t -> string
+
+  val files : t -> string list
+  (** All the files in that directory. This doesn't include files in
+      sub-directories of this directory. *)
+
+  val hidden : t -> bool
+  (** If the modules in this directory should not be bound in the initial
+      scope *)
+
+  val find : t -> string -> string option
+  (** [find dir fn] returns the full path to [fn] in [dir]. *)
+
+  val find_normalized : t -> string -> string option
+  (** As {!find}, but search also for uncapitalized name, i.e. if name is
+      Foo.ml, either /path/Foo.ml or /path/foo.ml may be returned. *)
+end
+
+type auto_include_callback =
+  (Dir.t -> string -> string option) -> string -> string
+(** The type of callback functions on for [init ~auto_include] *)
+
+val no_auto_include : auto_include_callback
+(** No automatic directory inclusion: misses in the load path raise [Not_found]
+    as normal. *)
+
+val init :
+  auto_include:auto_include_callback -> visible:string list ->
+  hidden:string list -> unit
+(** [init ~visible ~hidden] is the same as
+    [reset ();
+     List.iter add_dir (List.rev hidden);
+     List.iter add_dir (List.rev visible)] *)
+
+(* val auto_include_otherlibs :
+  config:Mconfig.t -> (string -> unit) -> auto_include_callback *)
+(** [auto_include_otherlibs alert] is a callback function to be passed to
+    {!Load_path.init} and automatically adds [-I +lib] to the load path after
+    calling [alert lib]. *)
+
+val get_path_list : unit -> string list
+>>>>>>> upstream/main
 (** Return the list of directories passed to [add_dir] so far. *)
 
 type paths =

@@ -44,8 +44,15 @@ type merlin = {
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
+<<<<<<< HEAD
   unit_name   : string option;
   wrapping_prefix : string option;
+||||||| 7b73c6aa3f
+=======
+  source_root : string option;
+  unit_name   : string option;
+  wrapping_prefix : string option;
+>>>>>>> upstream/main
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -60,7 +67,8 @@ type merlin = {
   flags_applied : string list with_workdir list;
 
   failures : string list;
-  extension_to_reader : (string * string) list
+  extension_to_reader : (string * string) list;
+  cache_lifespan : int
 }
 
 val dump_merlin : merlin -> json
@@ -98,6 +106,10 @@ type t = {
 val initial : t
 
 val dump : t -> json
+
+val merge_merlin_config :
+  Mconfig_dot.config
+  -> merlin -> failures:(string list) -> config_path:string -> merlin
 
 val get_external_config : string -> t -> t
 

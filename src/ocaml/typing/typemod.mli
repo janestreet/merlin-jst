@@ -39,8 +39,16 @@ val type_toplevel_phrase:
   Typedtree.structure * Types.signature * (* Signature_names.t * *) Shape.t *
   Env.t
 val type_implementation:
+<<<<<<< HEAD
   Unit_info.t -> Compilation_unit.t -> Env.t ->
   Parsetree.structure -> Typedtree.implementation
+||||||| 7b73c6aa3f
+  string -> string -> string -> Env.t ->
+  Parsetree.structure -> Typedtree.implementation
+=======
+  Unit_info.t -> Env.t -> Parsetree.structure ->
+  Typedtree.implementation
+>>>>>>> upstream/main
 val type_interface:
   sourcefile:string -> Compilation_unit.t -> Env.t ->
   Parsetree.signature -> Typedtree.signature
@@ -61,12 +69,26 @@ val modtype_of_package:
 val path_of_module : Typedtree.module_expr -> Path.t option
 
 val save_signature:
+<<<<<<< HEAD
   Unit_info.t -> Compilation_unit.t -> Typedtree.signature ->
   Env.t -> Cmi_format.cmi_infos_lazy -> unit
+||||||| 7b73c6aa3f
+  string -> Typedtree.signature -> string -> string ->
+  Env.t -> Cmi_format.cmi_infos -> unit
+=======
+  Unit_info.t -> Typedtree.signature -> Env.t ->
+  Cmi_format.cmi_infos -> unit
+>>>>>>> upstream/main
 
 val package_units:
+<<<<<<< HEAD
   Env.t -> string list -> Unit_info.Artifact.t -> Compilation_unit.t
   -> Typedtree.module_coercion
+||||||| 7b73c6aa3f
+  Env.t -> string list -> string -> string -> Typedtree.module_coercion
+=======
+  Env.t -> string list -> Unit_info.Artifact.t -> Typedtree.module_coercion
+>>>>>>> upstream/main
 
 (* Should be in Envaux, but it breaks the build of the debugger *)
 val initial_env:

@@ -1,3 +1,17 @@
+⚠️ Default branch recently renamed to `main`
+=======================
+You can update your local clones using the following procedure:
+```
+git branch -m master main
+git fetch origin
+git branch -u origin/main main
+git remote set-head origin -a
+```
+Where `origin` is the name of the upstream remote.
+
+----
+
+
 ![merlin completion in vim](https://github.com/ocaml/merlin/wiki/vim_complete.png)
 
 [Merlin](https://ocaml.github.io/merlin/) is an editor service that provides modern IDE features for OCaml.
@@ -178,9 +192,19 @@ If you're a Merlin user and depend on our public API, we recommend that you cont
 Next Steps
 ==========
 
+<<<<<<< HEAD
 To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file
 unless your project is built using dune.
 Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin.
+||||||| 7b73c6aa3f
+To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file, 
+unless your project is built using Dune.
+Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin. 
+=======
+To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file,
+unless your project is built using Dune.
+Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin.
+>>>>>>> upstream/main
 
 Read more in the [wiki](https://github.com/ocaml/merlin/wiki) to learn how to make full use of Merlin in your projects.
 

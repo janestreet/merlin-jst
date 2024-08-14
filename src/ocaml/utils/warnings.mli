@@ -120,6 +120,7 @@ type t =
   | Missing_mli                             (* 70 *)
   | Unused_tmc_attribute                    (* 71 *)
   | Tmc_breaks_tailcall                     (* 72 *)
+<<<<<<< HEAD
   | Generative_application_expects_unit     (* 73 *)
 (* Flambda_backend specific warnings: numbers should go down from 199 *)
   | Incompatible_with_upstream of upstream_compat_warning (* 187 *)
@@ -128,6 +129,11 @@ type t =
   | Probe_name_too_long of string           (* 190 *)
   | Unchecked_zero_alloc_attribute          (* 199 *)
   | Unboxing_impossible                     (* 210 *)
+||||||| 7b73c6aa3f
+;;
+=======
+  | Generative_application_expects_unit     (* 73 *)
+>>>>>>> upstream/main
 
 type alert = {kind:string; message:string; def:loc; use:loc}
 

@@ -106,6 +106,13 @@ let type_legacy_sort ~why env _loc ty =
   | Ok sort -> sort
   | Error _ -> Misc.fatal_error "merlin-jst: a representable layout is required here"
 
+let maybe_pointer_type env ty =
+  let ty = scrape_ty env ty in
+  if is_immediate (Ctype.immediacy env ty) then Immediate
+  else Pointer
+
+let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
+
 type classification =
   | Int   (* any immediate type *)
   | Float
@@ -162,7 +169,14 @@ let classify env ty sort : classification =
     (* raise (Error (loc, Unsupported_sort Void)) *)
     Misc.fatal_error "merlin-jst: void encountered in classify"
 
+<<<<<<< HEAD
 let array_type_kind ~elt_sort env loc ty =
+||||||| 7b73c6aa3f
+(*
+let array_type_kind env ty =
+=======
+let array_type_kind env ty =
+>>>>>>> upstream/main
   match scrape_poly env ty with
   | Tconstr(p, [elt_ty], _)
     when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
@@ -191,11 +205,18 @@ let array_kind exp elt_sort =
     ~elt_sort:(Some elt_sort)
     exp.exp_env exp.exp_loc exp.exp_type
 
+<<<<<<< HEAD
 (*
 let array_pattern_kind pat elt_sort =
   array_type_kind
     ~elt_sort:(Some elt_sort)
     pat.pat_env pat.pat_loc pat.pat_type
+||||||| 7b73c6aa3f
+let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
+=======
+(*
+let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
+>>>>>>> upstream/main
 
 let bigarray_decode_type env ty tbl dfl =
   match scrape env ty with
@@ -233,6 +254,7 @@ let bigarray_type_kind_and_layout env typ =
   | _ ->
       (Pbigarray_unknown, Pbigarray_unknown_layout)
 
+<<<<<<< HEAD
 let value_kind_of_value_jkind jkind =
   let const_jkind = Jkind.default_to_value_and_get jkind in
   let externality_upper_bound =
@@ -742,6 +764,46 @@ let function_arg_layout env loc sort ty =
   match is_function_type env ty with
   | Some (arg_type, _) -> layout env loc sort arg_type
   | None -> Misc.fatal_error "function_arg_layout called on non-function type"
+||||||| 7b73c6aa3f
+let value_kind env ty =
+  let ty = scrape_ty env ty in
+  if is_immediate (Ctype.immediacy env ty) then Pintval
+  else begin
+    match get_desc ty with
+    | Tconstr(p, _, _) when Path.same p Predef.path_float ->
+        Pfloatval
+    | Tconstr(p, _, _) when Path.same p Predef.path_int32 ->
+        Pboxedintval Pint32
+    | Tconstr(p, _, _) when Path.same p Predef.path_int64 ->
+        Pboxedintval Pint64
+    | Tconstr(p, _, _) when Path.same p Predef.path_nativeint ->
+        Pboxedintval Pnativeint
+    | _ ->
+        Pgenval
+  end
+
+let function_return_value_kind env ty =
+  match is_function_type env ty with
+  | Some (_lhs, rhs) -> value_kind env rhs
+  | None -> Pgenval
+=======
+let value_kind env ty =
+  let ty = scrape_ty env ty in
+  if is_immediate (Ctype.immediacy env ty) then Pintval
+  else begin
+    match get_desc ty with
+    | Tconstr(p, _, _) when Path.same p Predef.path_float ->
+        Pfloatval
+    | Tconstr(p, _, _) when Path.same p Predef.path_int32 ->
+        Pboxedintval Pint32
+    | Tconstr(p, _, _) when Path.same p Predef.path_int64 ->
+        Pboxedintval Pint64
+    | Tconstr(p, _, _) when Path.same p Predef.path_nativeint ->
+        Pboxedintval Pnativeint
+    | _ ->
+        Pgenval
+  end
+>>>>>>> upstream/main
 *)
 
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.

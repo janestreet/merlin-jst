@@ -319,6 +319,7 @@ We try several places in the identifier to check the result stability
       {
         "start": {
           "line": 2,
+<<<<<<< HEAD
           "col": 18
         },
         "end": {
@@ -343,13 +344,40 @@ We try several places in the identifier to check the result stability
       {
         "start": {
           "line": 2,
+||||||| 7b73c6aa3f
+          "col": 18
+        },
+        "end": {
+          "line": 5,
+          "col": 17
+        },
+        "type": "int option -> int",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 10
+        },
+        "end": {
+          "line": 5,
+          "col": 17
+        },
+        "type": "'a",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 2,
+=======
+>>>>>>> upstream/main
           "col": 6
         },
         "end": {
           "line": 5,
           "col": 17
         },
-        "type": "'a -> 'b",
+        "type": "'a -> int",
         "tail": "no"
       }
     ],

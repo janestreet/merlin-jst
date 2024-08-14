@@ -10,6 +10,7 @@
   (and
    (<> %{ocaml_version} 4.12.0+multicore)
    (<> %{ocaml_version} 4.12.0+domains))))
+<<<<<<< HEAD
 
 ; FIXME: re-enable once ppxlib for 5.1 is released
 (cram
@@ -29,3 +30,7 @@
   (applies_to
      ; Enable this test when the Stdlib.Effect module is added.
      issue1558))
+||||||| 7b73c6aa3f
+=======
+
+>>>>>>> upstream/main

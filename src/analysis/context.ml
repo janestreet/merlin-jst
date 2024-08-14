@@ -64,8 +64,17 @@ let cursor_on_longident_end
   match lid with
   | Longident.Lident _ -> true
   | _ ->
-    let end_offset = loc.loc_end.pos_cnum in
-    let cstr_name_size = String.length name in
+    let end_offset =
+      loc.loc_end.pos_cnum in
+    let cstr_name_size =
+      (* FIXME: this is britle, but lids don't have precise enough location
+         information to handle these cases correctly. *)
+      let name_lenght = String.length name in
+      if Pprintast.needs_parens name then
+        name_lenght + 2
+      else
+        name_lenght
+    in
     let constr_pos =
       { loc.loc_end
         with pos_cnum = end_offset - cstr_name_size }
@@ -78,9 +87,21 @@ let inspect_pattern (type a) ~cursor ~lid (p : a Typedtree.general_pattern) =
                   (Printtyped.pattern 0) p);
   match p.pat_desc with
   | Tpat_any when Longident.last lid = "_" -> None
+<<<<<<< HEAD
   | Tpat_var (_, str_loc,_, _) when (Longident.last lid) = str_loc.txt ->
+||||||| 7b73c6aa3f
+  | Tpat_var (_, str_loc) when (Longident.last lid) = str_loc.txt ->
+=======
+  | Tpat_var (_, str_loc, _) when (Longident.last lid) = str_loc.txt ->
+>>>>>>> upstream/main
     None
+<<<<<<< HEAD
   | Tpat_alias (_, _, str_loc,_, _)
+||||||| 7b73c6aa3f
+  | Tpat_alias (_, _, str_loc)
+=======
+  | Tpat_alias (_, _, str_loc, _)
+>>>>>>> upstream/main
     when (Longident.last lid) = str_loc.txt ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
       subpattern, then it must mean that the cursor is on the alias. *)
@@ -107,6 +128,7 @@ let inspect_expression ~cursor ~lid e : t =
     else Module_path
   | Texp_ident (p, lid_loc, _, _, _) ->
     let name = Path.last p in
+    log ~title:"inspect_context" "name is: [%s]" name;
     if name = "*type-error*" then
       (* For type_enclosing: it is enough to return Module_path here.
          - If the cursor was on the end of the lid typing should fail anyway
@@ -143,7 +165,9 @@ let inspect_browse_tree ~cursor lid browse : t option =
     | Type_declaration _
     | Extension_constructor _
     | Module_binding_name _
-    | Module_declaration_name _ ->
+    | Module_declaration_name _
+    | Label_declaration _
+    | Constructor_declaration _ ->
       None
     | Module_expr _
     | Open_description _ -> Some Module_path

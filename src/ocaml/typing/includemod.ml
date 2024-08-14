@@ -687,6 +687,7 @@ and functor_param ~in_eq ~loc env ~mark subst param1 param2 =
       let param2 = force_functor_parameter param2 in
       Error (Error.Incompatible_params (param1, param2)), env, subst
 
+<<<<<<< HEAD
 and equate_one_functor_param subst env arg2' name1 name2  =
   match name1, name2 with
   | Some id1, Some id2 ->
@@ -704,6 +705,26 @@ and equate_one_functor_param subst env arg2' name1 name2  =
   | None, None ->
       env, subst
 
+||||||| 7b73c6aa3f
+=======
+and equate_one_functor_param subst env arg2' name1 name2  =
+  match name1, name2 with
+  | Some id1, Some id2 ->
+  (* two matching abstract parameters: we add one identifier to the
+     environment and record the equality between the two identifiers
+     in the substitution *)
+      Env.add_module id1 Mp_present arg2' env,
+      Subst.add_module id2 (Path.Pident id1) subst
+  | None, Some id2 ->
+      let id1 = Ident.rename id2 in
+      Env.add_module id1 Mp_present arg2' env,
+      Subst.add_module id2 (Path.Pident id1) subst
+  | Some id1, None ->
+      Env.add_module id1 Mp_present arg2' env, subst
+  | None, None ->
+      env, subst
+
+>>>>>>> upstream/main
 and strengthened_modtypes ~in_eq ~loc ~aliasable env ~mark
     subst mty1 path1 mty2 shape =
   let mty1 = Mtype.strengthen_lazy ~aliasable mty1 path1 in
@@ -1169,6 +1190,7 @@ module Functor_inclusion_diff = struct
     | Keep (_,Unit,_) ->
         (* No named abstract parameters: we keep the same environment *)
         st, [||]
+<<<<<<< HEAD
     | Insert (Named (Some id, arg)) | Delete (Named (Some id, arg)) ->
         (* one named parameter to bind *)
         st |> bind id arg |> expand_params
@@ -1184,6 +1206,46 @@ module Functor_inclusion_diff = struct
           equate_one_functor_param st.subst st.env arg name1 name2
         in
         expand_params { st with env; subst }
+||||||| 7b73c6aa3f
+    | Insert (Named (Some id, arg))
+    | Delete (Named (Some id, arg))
+    | Change (Unit, Named (Some id, arg), _) ->
+        let arg' = Subst.modtype Keep st.subst arg in
+        let env = Env.add_module id Mp_present arg' st.env in
+        expand_params { st with env }
+    | Keep (Named (name1, _), Named (name2, arg2), _)
+    | Change (Named (name1, _), Named (name2, arg2), _) -> begin
+        let arg' = Subst.modtype Keep st.subst arg2 in
+        match name1, name2 with
+        | Some id1, Some id2 ->
+            let env = Env.add_module id1 Mp_present arg' st.env in
+            let subst = Subst.add_module id2 (Path.Pident id1) st.subst in
+            expand_params { st with env; subst }
+        | None, Some id2 ->
+            let env = Env.add_module id2 Mp_present arg' st.env in
+            { st with env }, [||]
+        | Some id1, None ->
+            let env = Env.add_module id1 Mp_present arg' st.env in
+            expand_params { st with env }
+        | None, None ->
+            st, [||]
+      end
+=======
+    | Insert (Named (Some id, arg)) | Delete (Named (Some id, arg)) ->
+        (* one named parameter to bind *)
+        st |> bind id arg |> expand_params
+    | Change (delete, insert, _) ->
+        (* Change should be delete + insert: we add both abstract parameters
+           to the environment without equating them. *)
+        let st, _expansion = update (Diffing.Delete delete) st in
+        update (Diffing.Insert insert) st
+    | Keep (Named (name1, _), Named (name2, arg2), _) ->
+        let arg = Subst.modtype Keep st.subst arg2 in
+        let env, subst =
+          equate_one_functor_param st.subst st.env arg name1 name2
+        in
+        expand_params { st with env; subst }
+>>>>>>> upstream/main
 
   let diff env (l1,res1) (l2,_) =
     let module Compute = Diff.Left_variadic(struct

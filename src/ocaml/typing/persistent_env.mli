@@ -25,6 +25,7 @@ module Consistbl : module type of struct
 end
 
 type error =
+<<<<<<< HEAD
   | Illegal_renaming of Compilation_unit.Name.t * Compilation_unit.Name.t * filepath
   | Inconsistent_import of Compilation_unit.Name.t * filepath * filepath
   | Need_recursive_types of Compilation_unit.Name.t
@@ -38,6 +39,16 @@ type error =
       { imported : Compilation_unit.Name.t;
         parameter : Compilation_unit.Name.t;
   }
+||||||| 7b73c6aa3f
+  | Illegal_renaming of modname * modname * filepath
+  | Inconsistent_import of modname * filepath * filepath
+  | Need_recursive_types of modname
+  | Depend_on_unsafe_string_unit of modname
+=======
+  | Illegal_renaming of modname * modname * filepath
+  | Inconsistent_import of modname * filepath * filepath
+  | Need_recursive_types of modname
+>>>>>>> upstream/main
 
 exception Error of error
 
@@ -46,15 +57,29 @@ val report_error: Format.formatter -> error -> unit
 module Persistent_signature : sig
   type t =
     { filename : string; (** Name of the file containing the signature. *)
+<<<<<<< HEAD
       cmi : Cmi_format.cmi_infos_lazy;
       visibility : Load_path.visibility
     }
+||||||| 7b73c6aa3f
+      cmi : Cmi_format.cmi_infos }
+=======
+      cmi : Cmi_format.cmi_infos;
+      visibility : Load_path.visibility
+    }
+>>>>>>> upstream/main
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
       it from memory, for instance to build a self-contained toplevel. *)
+<<<<<<< HEAD
   val load :
     (allow_hidden:bool -> unit_name:Compilation_unit.Name.t -> t option) ref
+||||||| 7b73c6aa3f
+  val load : (unit_name:string -> t option) ref
+=======
+  val load : (allow_hidden:bool -> unit_name:string -> t option) ref
+>>>>>>> upstream/main
 end
 
 type can_load_cmis =
@@ -72,10 +97,26 @@ val clear_missing : 'a t -> unit
 
 val fold : 'a t -> (Compilation_unit.Name.t -> 'a -> 'b -> 'b) -> 'b -> 'b
 
+<<<<<<< HEAD
 type address =
   | Aunit of Compilation_unit.t
   | Alocal of Ident.t
   | Adot of address * int
+||||||| 7b73c6aa3f
+val read : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> modname -> filepath -> 'a
+val find : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> modname -> 'a
+=======
+val read : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> Unit_info.Artifact.t -> 'a
+val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> modname -> 'a
+>>>>>>> upstream/main
 
 type 'a sig_reader =
   Subst.Lazy.signature
@@ -86,6 +127,7 @@ type 'a sig_reader =
   -> flags:Cmi_format.pers_flags list
   -> 'a
 
+<<<<<<< HEAD
 (* If [add_binding] is false, reads the signature from the .cmi but does not
    bind the module name in the environment. *)
 (* CR-someday lmaurer: [add_binding] is apparently always false, including in the
@@ -112,6 +154,15 @@ val register_parameter : 'a t -> Compilation_unit.Name.t -> unit
 (* [is_parameter_import penv md] checks if [md] is a parameter. Raises a fatal
    error if the module has not been imported. *)
 val is_parameter_import : 'a t -> Compilation_unit.Name.t -> bool
+||||||| 7b73c6aa3f
+val check : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> loc:Location.t -> modname -> unit
+=======
+val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> loc:Location.t -> modname -> unit
+>>>>>>> upstream/main
 
 (* [looked_up penv md] checks if one has already tried
    to read the signature for [md] in the environment

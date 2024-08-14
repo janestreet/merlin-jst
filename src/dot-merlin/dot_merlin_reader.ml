@@ -72,12 +72,20 @@ module Cache = File_cache.Make (struct
 
           else if String.is_prefixed ~by:"B " line then
             tell (`B (String.drop 2 line))
+          else if String.is_prefixed ~by:"BH " line then
+            tell (`BH (String.drop 3 line))
           else if String.is_prefixed ~by:"S " line then
             tell (`S (String.drop 2 line))
+<<<<<<< HEAD
           else if String.is_prefixed ~by:"BH " line then
             tell (`BH (String.drop 3 line))
           else if String.is_prefixed ~by:"SH " line then
             tell (`SH (String.drop 3 line))
+||||||| 7b73c6aa3f
+=======
+          else if String.is_prefixed ~by:"SH " line then
+            tell (`SH (String.drop 3 line))
+>>>>>>> upstream/main
           else if String.is_prefixed ~by:"SRC " line then
             tell (`S (String.drop 4 line))
           else if String.is_prefixed ~by:"CMI " line then
@@ -98,10 +106,20 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
+<<<<<<< HEAD
           else if String.is_prefixed ~by:"UNIT_NAME " line then
             tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
             tell (`WRAPPING_PREFIX (String.drop 16 line))
+||||||| 7b73c6aa3f
+=======
+          else if String.is_prefixed ~by:"SOURCE_ROOT " line then
+            tell (`SOURCE_ROOT (String.drop 12 line))
+          else if String.is_prefixed ~by:"UNIT_NAME " line then
+            tell (`UNIT_NAME (String.drop 10 line))
+          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
+            tell (`WRAPPING_PREFIX (String.drop 16 line))
+>>>>>>> upstream/main
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -315,6 +333,7 @@ type config = {
   pass_forward : Merlin_dot_protocol.Directive.no_processing_required list;
   to_canonicalize : (string * Merlin_dot_protocol.Directive.include_path) list;
   stdlib : string option;
+  source_root : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -325,6 +344,7 @@ let empty_config = {
   pass_forward      = [];
   to_canonicalize   = [];
   stdlib            = None;
+  source_root       = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -353,6 +373,9 @@ let prepend_config ~cwd ~cfg =
         log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
       end;
       { cfg with stdlib = Some canon_path }
+    | `SOURCE_ROOT path ->
+      let canon_path = canonicalize_filename ~cwd path in
+      { cfg with source_root = Some canon_path }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with
@@ -377,6 +400,10 @@ let process_one ~cfg {path;directives; _ } =
   let cwd = Filename.dirname path in
   prepend_config ~cwd ~cfg (List.rev directives)
 
+(** [expand ~stdlib dir path] does 3 things:
+    - Re-root paths starting with [+] into [stdlib]
+    - Canonicalize [path] relatively to [dir]
+    - Expand glob patterns *)
 let expand =
   let filter path =
     let name = Filename.basename path in
@@ -388,67 +415,6 @@ let expand =
     let path = expand_directory stdlib path in
     let path = canonicalize_filename ~cwd:dir path in
     expand_glob ~filter path []
-
-module Import_from_dune = struct
-  let escape_only c s =
-    let open String in
-    let n = ref 0 in
-    let len = length s in
-    for i = 0 to len - 1 do
-      if unsafe_get s i = c then incr n
-    done;
-    if !n = 0 then
-      s
-    else
-      let b = Bytes.create (len + !n) in
-      n := 0;
-      for i = 0 to len - 1 do
-        if unsafe_get s i = c then (
-          Bytes.unsafe_set b !n '\\';
-          incr n
-        );
-        Bytes.unsafe_set b !n (unsafe_get s i);
-        incr n
-      done;
-      Bytes.unsafe_to_string b
-
-  let need_quoting s =
-    let len = String.length s in
-    len = 0
-    ||
-    let rec loop i =
-      if i = len then
-        false
-      else
-        match s.[i] with
-        | ' '
-        | '\"'
-        | '('
-        | ')'
-        | '{'
-        | '}'
-        | ';'
-        | '#' ->
-          true
-        | _ -> loop (i + 1)
-    in
-    loop 0
-
-  let quote s =
-    let s =
-      if Sys.win32 then
-        (* We need this hack because merlin unescapes backslashes (except when
-           protected by single quotes). It is only a problem on windows because
-           Filename.quote is using double quotes. *)
-        escape_only '\\' s
-      else
-        s
-    in
-    if need_quoting s then
-      Filename.quote s
-    else
-      s
-end
 
 let postprocess cfg =
   let stdlib = Option.value ~default:standard_library cfg.stdlib in

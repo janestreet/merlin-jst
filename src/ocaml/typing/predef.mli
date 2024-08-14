@@ -111,6 +111,7 @@ val list_argument_jkind : Jkind.t
 val build_initial_env:
   (Ident.t -> type_declaration -> 'a -> 'a) ->
   (Ident.t -> extension_constructor -> 'a -> 'a) ->
+<<<<<<< HEAD
   'a -> 'a
 
 (* Add simd types to an environment.  This is separate from [build_initial_env]
@@ -122,6 +123,11 @@ val add_simd_extension_types :
    because we'd like to only do it if the small numbers extension is on. *)
 val add_small_number_extension_types :
    (Ident.t -> type_declaration -> 'a -> 'a) -> 'a -> 'a
+||||||| 7b73c6aa3f
+  'a -> 'a * 'a
+=======
+  'a -> 'a
+>>>>>>> upstream/main
 
 (* To initialize linker tables *)
 

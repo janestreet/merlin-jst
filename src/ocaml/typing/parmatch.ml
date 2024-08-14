@@ -20,6 +20,7 @@ open Asttypes
 open Types
 open Typedtree
 
+<<<<<<< HEAD
 type error = Float32_match
 
 exception Error of error
@@ -43,6 +44,26 @@ let untyped_case { Parsetree.pc_lhs; pc_guard; pc_rhs } =
     has_guard = Option.is_some pc_guard;
     needs_refute = (pc_rhs.pexp_desc = Parsetree.Pexp_unreachable);
   }
+||||||| 7b73c6aa3f
+=======
+type 'pattern parmatch_case =
+  { pattern : 'pattern;
+    has_guard : bool;
+    needs_refute : bool;
+  }
+
+let typed_case { c_lhs; c_guard; c_rhs } =
+  { pattern = c_lhs;
+    has_guard = Option.is_some c_guard;
+    needs_refute = (c_rhs.exp_desc = Texp_unreachable);
+  }
+
+let untyped_case { Parsetree.pc_lhs; pc_guard; pc_rhs } =
+  { pattern = pc_lhs;
+    has_guard = Option.is_some pc_guard;
+    needs_refute = (pc_rhs.pexp_desc = Parsetree.Pexp_unreachable);
+  }
+>>>>>>> upstream/main
 
 (*************************************)
 (* Utilities for building patterns   *)
@@ -60,8 +81,15 @@ let omega_list = Patterns.omega_list
 
 let extra_pat =
   make_pat
+<<<<<<< HEAD
     (Tpat_var (Ident.create_local "+", mknoloc "+",
       Uid.internal_not_actually_unique, Mode.Value.disallow_right Mode.Value.max))
+||||||| 7b73c6aa3f
+    (Tpat_var (Ident.create_local "+", mknoloc "+"))
+=======
+    (Tpat_var (Ident.create_local "+", mknoloc "+",
+      Uid.internal_not_actually_unique))
+>>>>>>> upstream/main
     Ctype.none Env.empty
 
 
@@ -326,8 +354,16 @@ module Compat
   | ((Tpat_any|Tpat_var _),_)
   | (_,(Tpat_any|Tpat_var _)) -> true
 (* Structural induction *)
+<<<<<<< HEAD
   | Tpat_alias (p,_,_,_,_),_      -> compat p q
   | _,Tpat_alias (q,_,_,_,_)      -> compat p q
+||||||| 7b73c6aa3f
+  | Tpat_alias (p,_,_),_      -> compat p q
+  | _,Tpat_alias (q,_,_)      -> compat p q
+=======
+  | Tpat_alias (p,_,_,_),_      -> compat p q
+  | _,Tpat_alias (q,_,_,_)      -> compat p q
+>>>>>>> upstream/main
   | Tpat_or (p1,p2,_),_ ->
       (compat p1 q || compat p2 q)
   | _,Tpat_or (q1,q2,_) ->
@@ -902,6 +938,7 @@ let pats_of_type env ty =
           [make_pat (Tpat_record (fields, Closed)) ty env]
       | _ -> [omega]
       end
+<<<<<<< HEAD
   | Has_no_typedecl ->
       begin match get_desc (Ctype.expand_head env ty) with
         Ttuple tl ->
@@ -911,6 +948,20 @@ let pats_of_type env ty =
       end
   | Typedecl (_, _, {type_kind = Type_abstract _ | Type_open})
   | May_have_typedecl -> [omega]
+||||||| 7b73c6aa3f
+  | Ttuple tl ->
+      [make_pat (Tpat_tuple (omegas (List.length tl))) ty env]
+  | _ -> [omega]
+=======
+  | Has_no_typedecl ->
+      begin match get_desc (Ctype.expand_head env ty) with
+        Ttuple tl ->
+          [make_pat (Tpat_tuple (omegas (List.length tl))) ty env]
+      | _ -> [omega]
+      end
+  | Typedecl (_, _, {type_kind = Type_abstract _ | Type_open})
+  | May_have_typedecl -> [omega]
+>>>>>>> upstream/main
 
 let get_variant_constructors env ty =
   match Ctype.extract_concrete_typedecl env ty with
@@ -981,8 +1032,15 @@ let build_other ext env =
           (* let c = {c with cstr_name = "*extension*"} in *) (* PR#7330 *)
           make_pat
             (Tpat_var (Ident.create_local "*extension*",
+<<<<<<< HEAD
                        {txt="*extension*"; loc = d.pat_loc},
                        Uid.internal_not_actually_unique, Mode.Value.disallow_right Mode.Value.max))
+||||||| 7b73c6aa3f
+                       {txt="*extension*"; loc = d.pat_loc}))
+=======
+                       {txt="*extension*"; loc = d.pat_loc},
+                       Uid.internal_not_actually_unique))
+>>>>>>> upstream/main
             Ctype.none Env.empty
       | Construct _ ->
           begin match ext with
@@ -1139,7 +1197,13 @@ let build_other ext env =
 let rec has_instance p = match p.pat_desc with
   | Tpat_variant (l,_,r) when is_absent l r -> false
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> true
+<<<<<<< HEAD
   | Tpat_alias (p,_,_,_,_) | Tpat_variant (_,Some p,_) -> has_instance p
+||||||| 7b73c6aa3f
+  | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) -> has_instance p
+=======
+  | Tpat_alias (p,_,_,_) | Tpat_variant (_,Some p,_) -> has_instance p
+>>>>>>> upstream/main
   | Tpat_or (p1,p2,_) -> has_instance p1 || has_instance p2
   | Tpat_construct (_,_,ps, _) | Tpat_array (_, _, ps) ->
       has_instances ps
@@ -1595,7 +1659,13 @@ let is_var_column rs =
 (* Standard or-args for left-to-right matching *)
 let rec or_args p = match p.pat_desc with
 | Tpat_or (p1,p2,_) -> p1,p2
+<<<<<<< HEAD
 | Tpat_alias (p,_,_,_,_)  -> or_args p
+||||||| 7b73c6aa3f
+| Tpat_alias (p,_,_)  -> or_args p
+=======
+| Tpat_alias (p,_,_,_)  -> or_args p
+>>>>>>> upstream/main
 | _                 -> assert false
 
 (* Just remove current column *)
@@ -1775,8 +1845,16 @@ and every_both pss qs q1 q2 =
 let rec le_pat p q =
   match (p.pat_desc, q.pat_desc) with
   | (Tpat_var _|Tpat_any),_ -> true
+<<<<<<< HEAD
   | Tpat_alias(p,_,_,_,_), _ -> le_pat p q
   | _, Tpat_alias(q,_,_,_,_) -> le_pat p q
+||||||| 7b73c6aa3f
+  | Tpat_alias(p,_,_), _ -> le_pat p q
+  | _, Tpat_alias(q,_,_) -> le_pat p q
+=======
+  | Tpat_alias(p,_,_,_), _ -> le_pat p q
+  | _, Tpat_alias(q,_,_,_) -> le_pat p q
+>>>>>>> upstream/main
   | Tpat_constant(c1), Tpat_constant(c2) -> const_compare c1 c2 = 0
   | Tpat_construct(_,c1,ps,_), Tpat_construct(_,c2,qs,_) ->
       Types.equal_tag c1.cstr_tag c2.cstr_tag && le_pats ps qs
@@ -1827,8 +1905,16 @@ let get_mins le ps =
 *)
 
 let rec lub p q = match p.pat_desc,q.pat_desc with
+<<<<<<< HEAD
 | Tpat_alias (p,_,_,_,_),_      -> lub p q
 | _,Tpat_alias (q,_,_,_,_)      -> lub p q
+||||||| 7b73c6aa3f
+| Tpat_alias (p,_,_),_      -> lub p q
+| _,Tpat_alias (q,_,_)      -> lub p q
+=======
+| Tpat_alias (p,_,_,_),_      -> lub p q
+| _,Tpat_alias (q,_,_,_)      -> lub p q
+>>>>>>> upstream/main
 | (Tpat_any|Tpat_var _),_ -> q
 | _,(Tpat_any|Tpat_var _) -> p
 | Tpat_or (p1,p2,_),_     -> orlub p1 p2 q
@@ -1945,7 +2031,13 @@ let rec initial_matrix = function
 *)
 let rec initial_only_guarded = function
   | [] -> []
+<<<<<<< HEAD
   | { has_guard=false; _} :: rem ->
+||||||| 7b73c6aa3f
+  | { c_guard = None; _} :: rem ->
+=======
+  | { has_guard = false; _} :: rem ->
+>>>>>>> upstream/main
       initial_only_guarded rem
   | { pattern = pat; _ } :: rem ->
       [pat] :: initial_only_guarded rem
@@ -1959,7 +2051,13 @@ let rec initial_only_guarded = function
 let contains_extension pat =
   exists_pattern
     (function
+<<<<<<< HEAD
      | {pat_desc=Tpat_var (_, {txt="*extension*"}, _, _)} -> true
+||||||| 7b73c6aa3f
+     | {pat_desc=Tpat_var (_, {txt="*extension*"})} -> true
+=======
+     | {pat_desc=Tpat_var (_, {txt="*extension*"}, _)} -> true
+>>>>>>> upstream/main
      | _ -> false)
     pat
 
@@ -2044,8 +2142,15 @@ let rec collect_paths_from_pat r p = match p.pat_desc with
     List.fold_left
       (fun r (_, _, p) -> collect_paths_from_pat r p)
       r lps
+<<<<<<< HEAD
 | Tpat_variant (_, Some p, _) | Tpat_alias (p,_,_,_,_) ->
     collect_paths_from_pat r p
+||||||| 7b73c6aa3f
+| Tpat_variant (_, Some p, _) | Tpat_alias (p,_,_) -> collect_paths_from_pat r p
+=======
+| Tpat_variant (_, Some p, _) | Tpat_alias (p,_,_,_) ->
+    collect_paths_from_pat r p
+>>>>>>> upstream/main
 | Tpat_or (p1,p2,_) ->
     collect_paths_from_pat (collect_paths_from_pat r p1) p2
 | Tpat_lazy p
@@ -2171,18 +2276,34 @@ let inactive ~partial pat =
             true
         | Tpat_constant c -> begin
             match c with
+<<<<<<< HEAD
             | Const_string _
             | Const_int _ | Const_char _ | Const_float _ | Const_float32 _
             | Const_unboxed_float _ | Const_unboxed_float32 _ | Const_int32 _
             | Const_int64 _ | Const_nativeint _ | Const_unboxed_int32 _
             | Const_unboxed_int64 _ | Const_unboxed_nativeint _
             -> true
+||||||| 7b73c6aa3f
+            | Const_string _ -> Config.safe_string
+            | Const_int _ | Const_char _ | Const_float _
+            | Const_int32 _ | Const_int64 _ | Const_nativeint _ -> true
+=======
+            | Const_string _
+            | Const_int _ | Const_char _ | Const_float _
+            | Const_int32 _ | Const_int64 _ | Const_nativeint _ -> true
+>>>>>>> upstream/main
           end
         | Tpat_tuple ps ->
             List.for_all (fun (_,p) -> loop p) ps
         | Tpat_construct (_, _, ps, _) | Tpat_array (Immutable, _, ps) ->
             List.for_all (fun p -> loop p) ps
+<<<<<<< HEAD
         | Tpat_alias (p,_,_,_,_) | Tpat_variant (_, Some p, _) ->
+||||||| 7b73c6aa3f
+        | Tpat_alias (p,_,_) | Tpat_variant (_, Some p, _) ->
+=======
+        | Tpat_alias (p,_,_,_) | Tpat_variant (_, Some p, _) ->
+>>>>>>> upstream/main
             loop p
         | Tpat_record (ldps,_) ->
             List.for_all
@@ -2301,9 +2422,21 @@ type amb_row = { row : pattern list ; varsets : Ident.Set.t list; }
 let simplify_head_amb_pat head_bound_variables varsets ~add_column p ps k =
   let rec simpl head_bound_variables varsets p ps k =
     match (Patterns.General.view p).pat_desc with
+<<<<<<< HEAD
     | `Alias (p,x,_,_,_) ->
+||||||| 7b73c6aa3f
+    | `Alias (p,x,_) ->
+=======
+    | `Alias (p,x,_,_) ->
+>>>>>>> upstream/main
       simpl (Ident.Set.add x head_bound_variables) varsets p ps k
+<<<<<<< HEAD
     | `Var (x, _, _, _) ->
+||||||| 7b73c6aa3f
+    | `Var (x, _) ->
+=======
+    | `Var (x,_,_) ->
+>>>>>>> upstream/main
       simpl (Ident.Set.add x head_bound_variables) varsets Patterns.omega ps k
     | `Or (p1,p2,_) ->
       simpl head_bound_variables varsets p1 ps
@@ -2437,11 +2570,40 @@ let all_rhs_idents exp =
   let ids = ref Ident.Set.empty in
   let open Tast_iterator in
   let expr_iter iter exp =
+<<<<<<< HEAD
     match exp.exp_desc with
     | Texp_ident (path, _lid, _descr, _kind, _mode) ->
       List.iter (fun id -> ids := Ident.Set.add id !ids) (Path.heads path)
     (* Use default iterator methods for rest of match.*)
     | _ -> Tast_iterator.default_iterator.expr iter exp
+||||||| 7b73c6aa3f
+    (match exp.exp_desc with
+      | Texp_ident (path, _lid, _descr) ->
+        List.iter (fun id -> ids := Ident.Set.add id !ids) (Path.heads path)
+      (* Use default iterator methods for rest of match.*)
+      | _ -> Tast_iterator.default_iterator.expr iter exp);
+
+    if is_unpack exp then begin match exp.exp_desc with
+    | Texp_letmodule
+        (id_mod,_,_,
+         {mod_desc=
+          Tmod_unpack ({exp_desc=Texp_ident (Path.Pident id_exp,_,_)},_)},
+         _) ->
+           assert (Ident.Set.mem id_exp !ids) ;
+           begin match id_mod with
+           | Some id_mod when not (Ident.Set.mem id_mod !ids) ->
+             ids := Ident.Set.remove id_exp !ids
+           | _ -> ()
+           end
+    | _ -> assert false
+    end
+=======
+    match exp.exp_desc with
+    | Texp_ident (path, _lid, _descr) ->
+        List.iter (fun id -> ids := Ident.Set.add id !ids) (Path.heads path)
+    (* Use default iterator methods for rest of match.*)
+    | _ -> Tast_iterator.default_iterator.expr iter exp
+>>>>>>> upstream/main
   in
   let iterator = {Tast_iterator.default_iterator with expr = expr_iter} in
   iterator.expr iterator exp;
@@ -2473,6 +2635,7 @@ let check_ambiguous_bindings =
       in
       ignore (List.fold_left check_case [] cases)
 
+<<<<<<< HEAD
 let report_error ppf = function
   | Float32_match -> Format.pp_print_string ppf "float32 literal patterns are not supported."
     
@@ -2482,6 +2645,11 @@ let () =
     | _ -> None)
 
 let do_complete_partial ~(pred : pattern -> pattern option) pss =
+||||||| 7b73c6aa3f
+let do_complete_partial ?pred pss =
+=======
+let do_complete_partial ~(pred : pattern -> pattern option) pss =
+>>>>>>> upstream/main
   (* c/p of [do_check_partial] without the parts concerning the generation of
      the error message or the warning emiting. *)
   match pss with

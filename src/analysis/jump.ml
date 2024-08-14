@@ -91,6 +91,10 @@ let module_pred = function
   | _ -> None
 ;;
 
+let module_type_pred = function
+  | (Module_type_declaration _ as node) :: _ -> Some node
+  | _ -> None
+
 let match_pred = function
   | (Expression { exp_desc = Texp_match _ ; _ } as node) :: _ -> Some node
   | _ -> None
@@ -131,6 +135,7 @@ let rec skip_non_moving pos = function
   | [] -> []
 ;;
 
+<<<<<<< HEAD
 let get_cases_from_match node =
   match node with
   | Expression { exp_desc = Texp_match (_, _, cases, _); _ } -> cases
@@ -161,6 +166,39 @@ let find_case_pos cases pos direction =
     | Next -> raise No_next_match_case
     | Prev -> raise No_prev_match_case)
 
+||||||| 7b73c6aa3f
+=======
+let get_cases_from_match node =
+  match node with
+  | Expression { exp_desc = Texp_match (_, cases, _); _ } -> cases
+  | _ -> []
+
+let find_case_pos cases pos direction =
+  let rec find_pos pos cases direction =
+    match cases with
+    | [] -> None
+    | { c_lhs = { pat_loc; _ }; _ } :: tail ->
+        let check =
+          match direction with
+          | Prev ->
+            pos.Lexing.pos_cnum > pat_loc.loc_start.pos_cnum
+          | Next ->
+            pos.Lexing.pos_cnum < pat_loc.loc_start.pos_cnum
+        in
+        if check then
+          Some pat_loc.loc_start
+        else
+          find_pos pos tail direction
+  in
+  let case = find_pos pos cases direction in
+  match case with
+  | Some location -> `Found location
+  | None ->
+    (match direction with
+    | Next -> raise No_next_match_case
+    | Prev -> raise No_prev_match_case)
+
+>>>>>>> upstream/main
 let get typed_tree pos target =
   let roots = Mbrowse.of_typedtree typed_tree in
   let enclosings =
@@ -172,6 +210,7 @@ let get typed_tree pos target =
     "fun", fun_pred;
     "let", let_pred;
     "module", module_pred;
+    "module-type", module_type_pred;
     "match", match_pred;
     "match-next-case", match_pred;
     "match-prev-case", match_pred;

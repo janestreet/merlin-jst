@@ -31,6 +31,7 @@ open Merlin_utils.Std.Result
 
 module Directive = struct
   type include_path =
+<<<<<<< HEAD
     [ `B of string
     | `S of string
     | `BH of string
@@ -38,13 +39,31 @@ module Directive = struct
     | `CMI of string
     | `CMT of string
     | `INDEX of string ]
+||||||| 7b73c6aa3f
+    [ `B of string | `S of string | `CMI of string | `CMT of string ]
+=======
+    [ `B of string
+    | `S of string
+    | `BH of string
+    | `SH of string
+    | `CMI of string
+    | `CMT of string
+    | `INDEX of string]
+>>>>>>> upstream/main
 
   type no_processing_required =
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
+<<<<<<< HEAD
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
+||||||| 7b73c6aa3f
+=======
+    | `SOURCE_ROOT of string
+    | `UNIT_NAME of string
+    | `WRAPPING_PREFIX of string
+>>>>>>> upstream/main
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
@@ -96,8 +115,15 @@ module Sexp = struct
         | "CMT" -> `CMT value
         | "INDEX" -> `INDEX value
         | "STDLIB" -> `STDLIB value
+<<<<<<< HEAD
         | "UNIT_NAME" -> `UNIT_NAME value
         | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
+||||||| 7b73c6aa3f
+=======
+        | "SOURCE_ROOT" -> `SOURCE_ROOT value
+        | "UNIT_NAME" -> `UNIT_NAME value
+        | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
+>>>>>>> upstream/main
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
         | "FLG" ->
@@ -129,9 +155,17 @@ module Sexp = struct
         | `SH s -> ("SH", single s)
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
+<<<<<<< HEAD
         | `INDEX s -> ("INDEX", single s)
         | `UNIT_NAME s -> ("UNIT_NAME", single s)
         | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
+||||||| 7b73c6aa3f
+=======
+        | `INDEX s -> ("INDEX", single s)
+        | `SOURCE_ROOT s -> ("SOURCE_ROOT", single s)
+        | `UNIT_NAME s -> ("UNIT_NAME", single s)
+        | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
+>>>>>>> upstream/main
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)

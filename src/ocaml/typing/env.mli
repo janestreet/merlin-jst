@@ -54,11 +54,18 @@ type address =
 type t
 
 val empty: t
+<<<<<<< HEAD
 (* This environment is lazy so that it may depend on the enabled extensions,
    typically adjusted via command line flags.  If extensions are changed after
    theis environment is forced, they may be inaccurate.  This could happen, for
    example, if extensions are adjusted via the compiler-libs. *)
 val initial: t Lazy.t
+||||||| 7b73c6aa3f
+val initial_safe_string: t
+val initial_unsafe_string: t
+=======
+val initial: t
+>>>>>>> upstream/main
 val diff: t -> t -> Ident.t list
 
 (* approximation to the preimage equivalence class of [find_type] *)
@@ -352,10 +359,22 @@ val add_value_lazy:
     ?check:(string -> Warnings.t) -> mode:(Mode.allowed * 'r) Mode.Value.t ->
     Ident.t -> Subst.Lazy.value_description -> t -> t
 val add_value:
+<<<<<<< HEAD
     ?check:(string -> Warnings.t) -> mode:(Mode.allowed * 'r) Mode.Value.t ->
     Ident.t -> Types.value_description -> t -> t
 val add_type: check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
 val add_type_long_path: check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
+||||||| 7b73c6aa3f
+    ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
+val add_type: check:bool -> Ident.t -> type_declaration -> t -> t
+val add_type_long_path: check:bool -> Ident.t -> type_declaration -> t -> t
+=======
+    ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
+val add_type:
+  check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
+val add_type_long_path:
+  check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
+>>>>>>> upstream/main
 val add_extension:
   check:bool -> ?shape:Shape.t -> rebind:bool -> Ident.t ->
   extension_constructor -> t -> t
@@ -472,17 +491,36 @@ val set_unit_name: Compilation_unit.t option -> unit
 val get_unit_name: unit -> Compilation_unit.t option
 
 (* Read, save a signature to/from a file *)
+<<<<<<< HEAD
 val read_signature:
   Compilation_unit.Name.t -> Unit_info.Artifact.t -> add_binding:bool
   -> signature
         (* Arguments: module name, file name, [add_binding] flag.
            Results: signature. If [add_binding] is true, creates an entry for
            the module in the environment. *)
+||||||| 7b73c6aa3f
+val read_signature: modname -> filepath -> signature
+        (* Arguments: module name, file name. Results: signature. *)
+=======
+val read_signature: Unit_info.Artifact.t -> signature
+        (* Arguments: module name, file name. Results: signature. *)
+>>>>>>> upstream/main
 val save_signature:
+<<<<<<< HEAD
   alerts:alerts -> Types.signature -> Compilation_unit.Name.t -> Cmi_format.kind
   -> Unit_info.Artifact.t -> Cmi_format.cmi_infos_lazy
         (* Arguments: signature, module name, module kind, file name. *)
+||||||| 7b73c6aa3f
+  alerts:alerts -> signature -> modname -> filepath
+  -> Cmi_format.cmi_infos
+        (* Arguments: signature, module name, file name. *)
+=======
+  alerts:alerts -> Types.signature -> Unit_info.Artifact.t
+  -> Cmi_format.cmi_infos
+        (* Arguments: signature, module name, file name. *)
+>>>>>>> upstream/main
 val save_signature_with_imports:
+<<<<<<< HEAD
   alerts:alerts -> signature -> Compilation_unit.Name.t -> Cmi_format.kind
   -> Unit_info.Artifact.t -> Import_info.t array -> Cmi_format.cmi_infos_lazy
         (* Arguments: signature, module name, module kind,
@@ -490,6 +528,17 @@ val save_signature_with_imports:
 
 (* Register a module as a parameter to this unit. *)
 val register_parameter: Compilation_unit.Name.t -> unit
+||||||| 7b73c6aa3f
+  alerts:alerts -> signature -> modname -> filepath -> crcs
+  -> Cmi_format.cmi_infos
+        (* Arguments: signature, module name, file name,
+           imported units with their CRCs. *)
+=======
+  alerts:alerts -> signature -> Unit_info.Artifact.t -> crcs
+  -> Cmi_format.cmi_infos
+        (* Arguments: signature, module name, file name,
+           imported units with their CRCs. *)
+>>>>>>> upstream/main
 
 (* Return the CRC of the interface of the given compilation unit *)
 val crc_of_unit: Compilation_unit.Name.t -> Digest.t
@@ -655,4 +704,9 @@ val with_cmis : (unit -> 'a) -> 'a
 
 val add_merlin_extension_module: Ident.t -> module_type -> t -> t
 val cleanup_functor_caches : stamp:int -> unit
+<<<<<<< HEAD
 val scrape: (t -> module_type -> module_type) ref
+||||||| 7b73c6aa3f
+=======
+val cleanup_usage_tables : stamp:int -> unit
+>>>>>>> upstream/main
