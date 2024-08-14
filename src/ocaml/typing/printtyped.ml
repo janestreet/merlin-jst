@@ -292,19 +292,11 @@ let rec core_type i ppf x =
   | Ttyp_class (li, _, l) ->
       line i ppf "Ttyp_class %a\n" fmt_path li;
       list i core_type ppf l;
-<<<<<<< HEAD
   | Ttyp_alias (ct, s, jkind) ->
       line i ppf "Ttyp_alias \"%s\"\n"
         (match s with
          | None -> "_"
          | Some { txt; loc = _ } -> txt);
-||||||| fcc3157ab0
-  | Ttyp_alias (ct, s) ->
-      line i ppf "Ttyp_alias \"%s\"\n" s;
-=======
-  | Ttyp_alias (ct, s) ->
-      line i ppf "Ttyp_alias \"%s\"\n" s.txt;
->>>>>>> 501-plus-upstream-main-9fa77db
       core_type i ppf ct;
       option i jkind_annotation ppf jkind
   | Ttyp_poly (sl, ct) ->
@@ -314,7 +306,6 @@ let rec core_type i ppf x =
   | Ttyp_package { pack_path = s; pack_fields = l } ->
       line i ppf "Ttyp_package %a\n" fmt_path s;
       list i package_with ppf l;
-<<<<<<< HEAD
   | Ttyp_open (path, _mod_ident, t) ->
       line i ppf "Ttyp_open %a\n" fmt_path path;
       core_type i ppf t
@@ -323,12 +314,6 @@ let rec core_type i ppf x =
 and labeled_core_type i ppf (l, t) =
   tuple_component_label i ppf l;
   core_type i ppf t
-||||||| fcc3157ab0
-=======
-  | Ttyp_open (path, _mod_ident, t) ->
-      line i ppf "Ttyp_open %a\n" fmt_path path;
-      core_type i ppf t
->>>>>>> 501-plus-upstream-main-9fa77db
 
 and package_with i ppf (s, t) =
   line i ppf "with type %a\n" fmt_longident s;
@@ -346,18 +331,10 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
   end;
   match x.pat_desc with
   | Tpat_any -> line i ppf "Tpat_any\n";
-<<<<<<< HEAD
   | Tpat_var (s,_,_,m) ->
       line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
       value_mode i ppf m
   | Tpat_alias (p, s,_,_,m) ->
-||||||| fcc3157ab0
-  | Tpat_var (s,_) -> line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
-  | Tpat_alias (p, s,_) ->
-=======
-  | Tpat_var (s,_,_) -> line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
-  | Tpat_alias (p, s,_,_) ->
->>>>>>> 501-plus-upstream-main-9fa77db
       line i ppf "Tpat_alias \"%a\"\n" fmt_ident s;
       value_mode i ppf m;
       pattern i ppf p;
@@ -419,7 +396,6 @@ and pattern_extra i ppf (extra_pat, _, attrs) =
      line i ppf "Tpat_extra_open %a\n" fmt_path id;
      attributes i ppf attrs;
 
-<<<<<<< HEAD
 and function_body i ppf (body : function_body) =
   match[@warning "+9"] body with
   | Tfunction_body e ->
@@ -439,26 +415,6 @@ and function_body i ppf (body : function_body) =
       list (i+1) case ppf fc_cases
 
 and expression_extra i ppf x attrs =
-||||||| fcc3157ab0
-and expression_extra i ppf (x,_,attrs) =
-=======
-and function_body i ppf (body : function_body) =
-  match[@warning "+9"] body with
-  | Tfunction_body e ->
-      line i ppf "Tfunction_body\n";
-      expression (i+1) ppf e
-  | Tfunction_cases
-      { cases; loc; exp_extra; attributes = attrs; param = _; partial }
-    ->
-      line i ppf "Tfunction_cases%a %a\n"
-        fmt_partiality partial
-        fmt_location loc;
-      attributes (i+1) ppf attrs;
-      Option.iter (fun e -> expression_extra (i+1) ppf e []) exp_extra;
-      list (i+1) case ppf cases
-
-and expression_extra i ppf x attrs =
->>>>>>> 501-plus-upstream-main-9fa77db
   match x with
   | Texp_constraint ct ->
       line i ppf "Texp_constraint\n";
@@ -473,22 +429,10 @@ and expression_extra i ppf x attrs =
       line i ppf "Texp_poly\n";
       attributes i ppf attrs;
       option i core_type ppf cto;
-<<<<<<< HEAD
   | Texp_newtype (s, lay) ->
       line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
   | Texp_newtype' (id, _, lay, _) ->
       line i ppf "Texp_newtype' %a\n" typevar_layout' (id, lay);
-||||||| fcc3157ab0
-  | Texp_newtype s ->
-      line i ppf "Texp_newtype \"%s\"\n" s;
-  | Texp_newtype' (id, _) ->
-      line i ppf "Texp_newtype' \"%a\"\n" fmt_ident id;
-=======
-  | Texp_newtype s ->
-      line i ppf "Texp_newtype \"%s\"\n" s;
-  | Texp_newtype' (id, _, _) ->
-      line i ppf "Texp_newtype' \"%a\"\n" fmt_ident id;
->>>>>>> 501-plus-upstream-main-9fa77db
       attributes i ppf attrs;
   | Texp_mode_coerce modes ->
       let modes = (modes :> string Location.loc list Location.loc) in
@@ -533,29 +477,13 @@ and expression i ppf x =
       line i ppf "Texp_let %a\n" fmt_rec_flag rf;
       list i (value_binding rf) ppf l;
       expression i ppf e;
-<<<<<<< HEAD
   | Texp_function { params; body; region; alloc_mode = am } ->
-||||||| fcc3157ab0
-  | Texp_function { arg_label = p; param = _; cases; partial = _; } ->
-=======
-  | Texp_function (params, body) ->
->>>>>>> 501-plus-upstream-main-9fa77db
       line i ppf "Texp_function\n";
-<<<<<<< HEAD
       line i ppf "region %b\n" region;
       alloc_mode i ppf am;
       list i function_param ppf params;
       function_body i ppf body;
   | Texp_apply (e, l, m, am, za) ->
-||||||| fcc3157ab0
-      arg_label i ppf p;
-      list i case ppf cases;
-  | Texp_apply (e, l) ->
-=======
-      list i function_param ppf params;
-      function_body i ppf body;
-  | Texp_apply (e, l) ->
->>>>>>> 501-plus-upstream-main-9fa77db
       line i ppf "Texp_apply\n";
       line i ppf "apply_mode %s\n"
         (match m with
@@ -565,21 +493,10 @@ and expression i ppf x =
       locality_mode i ppf am;
       Option.iter (zero_alloc_assume i ppf) za;
       expression i ppf e;
-<<<<<<< HEAD
       list i label_x_apply_arg ppf l;
   | Texp_match (e, sort, l, partial) ->
       line i ppf "Texp_match%a\n"
         fmt_partiality partial;
-||||||| fcc3157ab0
-      list i label_x_expression ppf l;
-  | Texp_match (e, l, _partial) ->
-      line i ppf "Texp_match\n";
-=======
-      list i label_x_expression ppf l;
-  | Texp_match (e, l, partial) ->
-      line i ppf "Texp_match%a\n"
-        fmt_partiality partial;
->>>>>>> 501-plus-upstream-main-9fa77db
       expression i ppf e;
       line i ppf "%a\n" Jkind.Sort.format sort;
       list i case ppf l;
@@ -727,7 +644,6 @@ and binding_op i ppf x =
     fmt_location x.bop_loc;
   expression i ppf x.bop_exp
 
-<<<<<<< HEAD
 and function_param i ppf x =
   let p = x.fp_arg_label in
   arg_label i ppf p;
@@ -743,23 +659,6 @@ and function_param i ppf x =
       pattern (i+1) ppf pat;
       expression (i+1) ppf expr
 
-||||||| fcc3157ab0
-=======
-and function_param i ppf x =
-  let p = x.fp_arg_label in
-  arg_label i ppf p;
-  match x.fp_kind with
-  | Tparam_pat pat ->
-      line i ppf "Param_pat%a\n"
-        fmt_partiality x.fp_partial;
-      pattern (i+1) ppf pat
-  | Tparam_optional_default (pat, expr) ->
-      line i ppf "Param_optional_default%a\n"
-        fmt_partiality x.fp_partial;
-      pattern (i+1) ppf pat;
-      expression (i+1) ppf expr
-
->>>>>>> 501-plus-upstream-main-9fa77db
 and type_parameter i ppf (x, _variance) = core_type i ppf x
 
 and type_declaration i ppf x =

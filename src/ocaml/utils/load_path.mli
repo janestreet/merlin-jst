@@ -22,16 +22,10 @@
     doesn't change during the execution of the compiler.
 *)
 
-<<<<<<< HEAD
 (* CR aodintsov/mshinwell: merge the remaining flambda-backend changes
    upstream *)
 
 val add_dir : hidden:bool -> string -> unit
-||||||| fcc3157ab0
-val add_dir : string -> unit
-=======
-val add_dir : hidden:bool -> string -> unit
->>>>>>> 501-plus-upstream-main-9fa77db
 (** Add a directory to the end of the load path (i.e. at lowest priority.) *)
 
 val remove_dir : string -> unit
@@ -49,28 +43,6 @@ module Dir : sig
   val basenames : t -> string list
   (** All the files in that directory. This doesn't include files in
       sub-directories of this directory. *)
-<<<<<<< HEAD
-||||||| fcc3157ab0
-
-  val find : t -> string -> string option
-  (** [find dir fn] returns the full path to [fn] in [dir]. *)
-
-  val find_uncap : t -> string -> string option
-  (** As {!find}, but search also for uncapitalized name, i.e. if name is
-      Foo.ml, either /path/Foo.ml or /path/foo.ml may be returned. *)
-=======
-
-  val hidden : t -> bool
-  (** If the modules in this directory should not be bound in the initial
-      scope *)
-
-  val find : t -> string -> string option
-  (** [find dir fn] returns the full path to [fn] in [dir]. *)
-
-  val find_normalized : t -> string -> string option
-  (** As {!find}, but search also for uncapitalized name, i.e. if name is
-      Foo.ml, either /path/Foo.ml or /path/foo.ml may be returned. *)
->>>>>>> 501-plus-upstream-main-9fa77db
 end
 
 type auto_include_callback =

@@ -72,16 +72,9 @@ val reraise_preserving_backtrace : exn -> (unit -> unit) -> 'a
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
        (** [map_end f l t] is [map f l @ t], just more efficient. *)
 
-<<<<<<< HEAD
 val rev_map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
        (** [rev_map_end f l t] is [map f (rev l) @ t], just more efficient. *)
 
-||||||| fcc3157ab0
-=======
-val rev_map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
-       (** [map_end f l t] is [map f (rev l) @ t], just more efficient. *)
-
->>>>>>> 501-plus-upstream-main-9fa77db
 val map_left_right: ('a -> 'b) -> 'a list -> 'b list
        (** Like [List.map], with guaranteed left-to-right evaluation order *)
 
@@ -121,7 +114,6 @@ val find_in_path: string list -> string -> string
 val find_in_path_rel: string list -> string -> string
        (** Search a relative file in a list of directories. *)
 
-<<<<<<< HEAD
 (** Normalize file name [Foo.ml] to [foo.ml] *)
 val normalized_unit_filename: string -> string
 
@@ -129,21 +121,6 @@ val find_in_path_normalized: ?fallback:string -> string list -> string -> string
 (** Same as {!find_in_path_rel} , but search also for normalized unit filename,
     i.e. if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml] to
     match. *)
-||||||| fcc3157ab0
-val find_in_path_uncap: ?fallback:string -> string list -> string -> string
-       (** Same, but search also for uncapitalized name, i.e.
-           if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml]
-            to match. *)
-=======
- (** Normalize file name [Foo.ml] to [foo.ml] *)
-val normalized_unit_filename: string -> string
-
-val find_in_path_normalized: ?fallback:string -> string list -> string -> string
-(** Same as {!find_in_path_rel} , but search also for normalized unit filename,
-    i.e. if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml] to
-    match. *)
-
->>>>>>> 501-plus-upstream-main-9fa77db
 
 val canonicalize_filename : ?cwd:string -> string -> string
         (* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)

@@ -65,14 +65,8 @@ type cmt_infos = {
   cmt_use_summaries : bool;
   cmt_uid_to_decl : item_declaration Shape.Uid.Tbl.t;
   cmt_impl_shape : Shape.t option; (* None for mli *)
-<<<<<<< HEAD
   cmt_ident_occurrences :
     (Longident.t Location.loc * Shape_reduce.result) array
-||||||| fcc3157ab0
-=======
-  cmt_ident_occurrences :
-    (Longident.t Location.loc * Shape_reduce.result) list
->>>>>>> 501-plus-upstream-main-9fa77db
 }
 
 type error =
@@ -96,15 +90,8 @@ val read_cmi : string -> Cmi_format.cmi_infos_lazy
 (** [save_cmt filename modname binary_annots sourcefile initial_env cmi]
     writes a cmt(i) file.  *)
 val save_cmt :
-<<<<<<< HEAD
   Unit_info.Artifact.t ->
   Compilation_unit.t ->  (* module name *)
-||||||| fcc3157ab0
-  string ->  (* filename.cmt to generate *)
-  string ->  (* module name *)
-=======
-  Unit_info.Artifact.t ->
->>>>>>> 501-plus-upstream-main-9fa77db
   binary_annots ->
   Env.t -> (* initial env *)
   Cmi_format.cmi_infos_lazy option -> (* if a .cmi was generated *)
@@ -124,19 +111,14 @@ val set_saved_types : binary_part list -> unit
 val record_value_dependency:
   Types.value_description -> Types.value_description -> unit
 
-<<<<<<< HEAD
 val index_occurrences :
   binary_annots -> (Longident.t Location.loc * Shape_reduce.result) array
 
 val iter_declarations
   : binary_annots
-    -> f:(Shape.Uid.t -> Typedtree.item_declaration -> unit)
-    -> unit
+  -> f:(Shape.Uid.t -> Typedtree.item_declaration -> unit)
+  -> unit
 
-||||||| fcc3157ab0
-
-=======
->>>>>>> 501-plus-upstream-main-9fa77db
 (*
 
   val is_magic_number : string -> bool

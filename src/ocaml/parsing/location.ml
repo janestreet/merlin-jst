@@ -272,14 +272,8 @@ let print_filename ppf file =
    Some of the information (filename, line number or characters numbers) in the
    location might be invalid; in which case we do not print it.
  *)
-<<<<<<< HEAD
 let print_loc ~capitalize_first ppf loc =
-||||||| fcc3157ab0
-let print_loc ppf loc =
-=======
-let print_loc ppf loc =
   (* setup_tags (); *)
->>>>>>> 501-plus-upstream-main-9fa77db
   let file_valid = function
     | "_none_" ->
         (* This is a dummy placeholder, but we print it anyway to please editors
@@ -970,7 +964,6 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
 
-module Style = Misc.Style
 
 module Style = Misc.Style
 

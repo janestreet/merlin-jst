@@ -114,7 +114,6 @@ module Typ = struct
             Ptyp_object (List.map loop_object_field lst, o)
         | Ptyp_class (longident, lst) ->
             Ptyp_class (longident, List.map loop lst)
-<<<<<<< HEAD
         (* A Ptyp_alias might be a jkind annotation (that is, it might have
            attributes which mean it should be interpreted as a
            [Jane_syntax.Layouts.Ltyp_alias]), but the code here still has the
@@ -122,15 +121,6 @@ module Typ = struct
         | Ptyp_alias(core_type, alias) ->
             check_variable var_names alias.loc alias.txt;
             Ptyp_alias(loop core_type, alias)
-||||||| fcc3157ab0
-        | Ptyp_alias(core_type, string) ->
-            check_variable var_names t.ptyp_loc string;
-            Ptyp_alias(loop core_type, string)
-=======
-        | Ptyp_alias(core_type, alias) ->
-            check_variable var_names alias.loc alias.txt;
-            Ptyp_alias(loop core_type, alias)
->>>>>>> 501-plus-upstream-main-9fa77db
         | Ptyp_variant(row_field_list, flag, lbl_lst_option) ->
             Ptyp_variant(List.map loop_row_field row_field_list,
                          flag, lbl_lst_option)

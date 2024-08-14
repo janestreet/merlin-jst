@@ -98,7 +98,7 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
      module with its (partially) reduced shape. We finish the reduction and
      group together all the locations that share the same definition uid. *)
   let defs, approximated =
-    List.fold_left
+    Array.fold_left
       (fun ((acc_defs, acc_apx) as acc) (lid, (item : Shape_reduce.result)) ->
         let lid = if rewrite_root then add_root ~root lid else lid in
         let resolved =

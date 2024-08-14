@@ -120,7 +120,9 @@ let may_map f x = Option.map ~f x
 (* File functions *)
 
 let remove_file filename =
-  try  Sys.remove filename
+  try
+    if Sys.is_regular_file filename
+    then Sys.remove filename
   with Sys_error _msg -> ()
 
 let rec split_path path acc =

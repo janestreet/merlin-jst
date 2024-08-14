@@ -83,28 +83,11 @@ type result = {
   initial_env : Env.t;
   initial_snapshot : Types.snapshot;
   initial_stamp : int;
-<<<<<<< HEAD
-  stamp : int;
-  typedtree : [
-    | `Interface of
-        (Parsetree.signature_item, Typedtree.signature_item) item list
-    | `Implementation of
-        (Parsetree.structure_item, Typedtree.structure_item) item list
-  ];
-||||||| fcc3157ab0
-  typedtree : [
-    | `Interface of
-        (Parsetree.signature_item, Typedtree.signature_item) item list
-    | `Implementation of
-        (Parsetree.structure_item, Typedtree.structure_item) item list
-  ];
-=======
   stamp : int;
   initial_uid_stamp : int;
   typedtree : typedtree_items;
   index : (Shape.Uid.t * Longident.t Location.loc, unit) Stamped_hashtable.t;
   cache_stat : typer_cache_stats
->>>>>>> 501-plus-upstream-main-9fa77db
 }
 
 let initial_env res = res.initial_env
@@ -173,44 +156,22 @@ let type_implementation config caught parsetree =
     | Some (`Implementation items) -> compatible_prefix items parsetree
     | Some (`Interface _) | None -> ([], parsetree, Miss)
   in
-<<<<<<< HEAD
-  let env', sg', snap', stamp', warn' = match prefix with
-    | [] -> (env0, [], snap0, stamp0, Warnings.backup ())
-||||||| fcc3157ab0
-  let env', snap', stamp', warn' = match prefix with
-    | [] -> (env0, snap0, stamp0, Warnings.backup ())
-=======
-  let env', snap', stamp', uid_stamp', warn' = match prefix with
-    | [] -> (env, snapshot, ident_stamp, uid_stamp, Warnings.backup ())
->>>>>>> 501-plus-upstream-main-9fa77db
+  let env', sg', snap', stamp', uid_stamp', warn' = match prefix with
+    | [] -> (env, [], snapshot, ident_stamp, uid_stamp, Warnings.backup ())
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
-<<<<<<< HEAD
-      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_warnings)
-||||||| fcc3157ab0
-      (x.part_env, x.part_snapshot, x.part_stamp, x.part_warnings)
-=======
-      (x.part_env, x.part_snapshot, x.part_stamp, x.part_uid, x.part_warnings)
->>>>>>> 501-plus-upstream-main-9fa77db
+      (x.part_env, x.part_rev_sg, x.part_snapshot,
+       x.part_stamp, x.part_uid, x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';
   Env.cleanup_functor_caches ~stamp:stamp';
-<<<<<<< HEAD
-  let suffix = type_structure caught env' sg' parsetree in
-  return_and_cache
-    (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix))
-||||||| fcc3157ab0
-  let suffix = type_structure caught env' parsetree in
-  return_and_cache
-    (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix))
-=======
   let stamp = List.length prefix - 1 in
   Stamped_hashtable.backtrack !index_changelog ~stamp;
   Env.cleanup_usage_tables ~stamp:uid_stamp';
   Shape.Uid.restore_stamp uid_stamp';
-  let suffix = type_structure caught env' parsetree in
+  let suffix = type_structure caught env' sg' parsetree in
   let () =
     List.iteri ~f:(fun i { typedtree_items = (items, _); _ } ->
       let stamp  = stamp + i + 1 in
@@ -219,7 +180,6 @@ let type_implementation config caught parsetree =
   let value = `Implementation (List.rev_append prefix suffix) in
   return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index },
   cache_stats
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let type_interface config caught parsetree =
   let { env; snapshot; ident_stamp; uid_stamp; value = prefix; index; _ } =
@@ -230,44 +190,22 @@ let type_interface config caught parsetree =
     | Some (`Interface items) -> compatible_prefix items parsetree
     | Some (`Implementation _) | None -> ([], parsetree, Miss)
   in
-<<<<<<< HEAD
-  let env', sg', snap', stamp', warn' = match prefix with
-    | [] -> (env0, [], snap0, stamp0, Warnings.backup ())
-||||||| fcc3157ab0
-  let env', snap', stamp', warn' = match prefix with
-    | [] -> (env0, snap0, stamp0, Warnings.backup ())
-=======
-  let env', snap', stamp', uid_stamp', warn' = match prefix with
-    | [] -> (env, snapshot, ident_stamp, uid_stamp, Warnings.backup ())
->>>>>>> 501-plus-upstream-main-9fa77db
+  let env', sg', snap', stamp', uid_stamp', warn' = match prefix with
+    | [] -> (env, [], snapshot, ident_stamp, uid_stamp, Warnings.backup ())
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
-<<<<<<< HEAD
-      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_warnings)
-||||||| fcc3157ab0
-      (x.part_env, x.part_snapshot, x.part_stamp, x.part_warnings)
-=======
-      (x.part_env, x.part_snapshot, x.part_stamp, x.part_uid, x.part_warnings)
->>>>>>> 501-plus-upstream-main-9fa77db
+      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_uid,
+       x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';
   Env.cleanup_functor_caches ~stamp:stamp';
-<<<<<<< HEAD
-  let suffix = type_signature caught env' sg' parsetree in
-  return_and_cache
-    (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix))
-||||||| fcc3157ab0
-  let suffix = type_signature caught env' parsetree in
-  return_and_cache
-    (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix))
-=======
   let stamp = List.length prefix in
   Stamped_hashtable.backtrack !index_changelog ~stamp;
   Env.cleanup_usage_tables ~stamp:uid_stamp';
   Shape.Uid.restore_stamp uid_stamp';
-  let suffix = type_signature caught env' parsetree in
+  let suffix = type_signature caught env' sg' parsetree in
   let () =
     List.iteri ~f:(fun i { typedtree_items = (items, _); _ } ->
       let stamp  = stamp + i + 1 in
@@ -276,7 +214,6 @@ let type_interface config caught parsetree =
   let value = `Interface (List.rev_append prefix suffix) in
   return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index},
   cache_stats
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let run config parsetree =
   if not (Env.check_state_consistency ()) then (
@@ -297,11 +234,6 @@ let run config parsetree =
   in
   let stamp = Ident.get_currentstamp () in
   Typecore.reset_delayed_checks ();
-<<<<<<< HEAD
-  { config; initial_env; initial_snapshot; initial_stamp; stamp; typedtree }
-||||||| fcc3157ab0
-  { config; initial_env; initial_snapshot; initial_stamp; typedtree }
-=======
   {
     config;
     initial_env = cached_result.env;
@@ -313,7 +245,6 @@ let run config parsetree =
     index = cached_result.index;
     cache_stat;
   }
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let get_env ?pos:_ t =
   Option.value ~default:t.initial_env (
@@ -350,16 +281,10 @@ let get_typedtree t =
     let sig_items, sig_type = split_items l in
     `Interface {Typedtree. sig_items; sig_type; sig_final_env = get_env t}
 
-<<<<<<< HEAD
-let get_stamp t = t.stamp
-
-||||||| fcc3157ab0
-=======
 let get_index t = t.index
 
 let get_stamp t = t.stamp
 
->>>>>>> 501-plus-upstream-main-9fa77db
 let node_at ?(skip_recovered=false) t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   log ~title:"node_at" "Node: %s" (Mbrowse.print () node);

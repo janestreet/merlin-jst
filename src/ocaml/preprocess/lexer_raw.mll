@@ -430,17 +430,11 @@ let keyword_or state s default =
       with Not_found -> try Hashtbl.find keyword_table s
   with Not_found -> default
 
-<<<<<<< HEAD
 let is_keyword name =
   match lookup_keyword name with
   | LIDENT _ -> false
   | _ -> true
-||||||| fcc3157ab0
-let is_keyword name = Hashtbl.mem keyword_table name
-=======
-let is_keyword name = Hashtbl.mem keyword_table name
 let () = Lexer.is_keyword_ref := is_keyword
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let check_label_name lexbuf name =
   if is_keyword name
@@ -467,6 +461,7 @@ let update_loc lexbuf _file line absolute chars =
 let warn_latin1 lexbuf =
   Location.deprecated (Location.curr lexbuf)
     "ISO-Latin1 characters in identifiers"
+;;
 
 let float ~maybe_hash lit modifier =
   match maybe_hash with
@@ -479,6 +474,7 @@ let int ~maybe_hash lit modifier =
   | "#" -> return (HASH_INT (lit, modifier))
   | "" -> return (INT (lit, modifier))
   | unexpected -> fatal_error ("expected # or empty string: " ^ unexpected)
+;;
 
 (* Error report *)
 
@@ -631,7 +627,6 @@ rule token state = parse
       { oPTLABEL (check_label_name lexbuf name) }
   | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
       { warn_latin1 lexbuf; return (OPTLABEL name) }
-<<<<<<< HEAD
   (* Lowercase identifiers are split into 3 cases, and the order matters
      (longest to shortest).
   *)
@@ -649,11 +644,6 @@ rule token state = parse
               lookup_keyword name) }
   | raw_ident_escape (lowercase identchar * as name)
     { return (LIDENT name) }
-||||||| fcc3157ab0
-=======
-  | raw_ident_escape (lowercase identchar * as name)
-      { return (LIDENT name) }
->>>>>>> 501-plus-upstream-main-9fa77db
   | lowercase identchar * as name
     { return (try Hashtbl.find state.keywords name
               with Not_found ->
@@ -977,13 +967,7 @@ and comment state = parse
 
   | "\'\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-<<<<<<< HEAD
   | "'" (newline as nl) "'"
-||||||| fcc3157ab0
-  | "'" newline "'"
-=======
-  | "\'" (newline as nl) "\'"
->>>>>>> 501-plus-upstream-main-9fa77db
       { update_loc lexbuf None 1 false 1;
         store_string_char state.buffer '\'';
         store_normalized_newline state.buffer nl;

@@ -90,17 +90,8 @@ module Cmi = struct
           merlin_ocaml_version
       end
     | Corrupted_interface filename ->
-<<<<<<< HEAD
-      fprintf ppf
-        "Corrupted compiled interface@ %a"
-        (Style.as_inline_code Location.print_filename) filename
-||||||| fcc3157ab0
-        fprintf ppf "Corrupted compiled interface@ %a"
-          Location.print_filename filename
-=======
         fprintf ppf "Corrupted compiled interface@ %a"
         (Style.as_inline_code Location.print_filename) filename
->>>>>>> 501-plus-upstream-main-9fa77db
 
   let () =
     Location.register_error_of_exn

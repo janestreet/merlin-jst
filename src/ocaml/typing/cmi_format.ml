@@ -88,6 +88,8 @@ let deserialize data =
   in
   Deserialize.signature {map_signature; map_type_expr}
 
+(* Serialization is unused by merlin.
+
 module Serialize = Types.Map_wrapped(Subst.Lazy)(Serialized)
 
 let serialize oc base =
@@ -105,6 +107,7 @@ let serialize oc base =
   in
   let map_type_expr _ ty = Subst.Lazy.force_type_expr ty |> marshal in
   Serialize.signature {map_signature; map_type_expr}
+*)
 
 let input_cmi_lazy ic =
   let read_bytes n =
@@ -166,7 +169,6 @@ let output_cmi filename oc cmi =
 (*
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
-<<<<<<< HEAD
   let output_int64 oc n =
     let buf = Bytes.create 8 in
     Bytes.set_int64_ne buf 0 n;
@@ -190,11 +192,6 @@ let output_cmi filename oc cmi =
       header_sign = sign;
       header_params = cmi.cmi_params;
     };
-||||||| fcc3157ab0
-  output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
-=======
-  Marshal.(to_channel oc ((cmi.cmi_name, cmi.cmi_sign) : header) [Compression]);
->>>>>>> 501-plus-upstream-main-9fa77db
   flush oc;
   let crc = Digest.file filename in
   let my_info =

@@ -33,13 +33,8 @@ val allow_illegal_crossing : bool ref
     Ignored by merlin but kept for compatibility with upstream code. *)
 val annotations          : bool ref
 val binary_annotations   : bool ref
-<<<<<<< HEAD
 val binary_annotations_cms   : bool ref
 val store_occurrences    : bool ref
-||||||| fcc3157ab0
-=======
-val store_occurrences    : bool ref
->>>>>>> 501-plus-upstream-main-9fa77db
 val print_types          : bool ref
 val native_code          : bool ref
 val dont_write_files     : bool ref
@@ -54,4 +49,3 @@ val unboxed_types        : bool ref
 val profile_columns : profile_column list ref
 
 val locations            : bool ref
-val all_ppx              : string list ref

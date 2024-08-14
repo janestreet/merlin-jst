@@ -660,15 +660,9 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
                 let lbls = Datarepr.labels_of_type p decl in
                 let labels = List.map lbls ~f:(fun (_,lbl) ->
                     try
-<<<<<<< HEAD
-                      let _, lbl_arg, lbl_res = Ctype.instance_label ~fixed:false lbl in
-||||||| fcc3157ab0
-                      let _, lbl_arg, lbl_res = Ctype.instance_label false lbl in
-=======
                       let _, lbl_arg, lbl_res =
                         Ctype.instance_label ~fixed:false lbl
                       in
->>>>>>> 501-plus-upstream-main-9fa77db
                       begin try
                           Ctype.unify_var env ty lbl_res;
                         with _ -> ()

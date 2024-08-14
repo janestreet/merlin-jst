@@ -832,18 +832,8 @@ let rec class_field_first_pass self_loc cl_num sign self_scope acc cf =
                    Ctype.unify val_env (Ctype.newmono ty') ty;
                    Typecore.type_approx val_env sbody ty'
                | Tpoly (ty1, tl) ->
-<<<<<<< HEAD
                    let _, ty1' = Ctype.instance_poly ~fixed:false tl ty1 in
                    Typecore.type_approx val_env sbody ty1'
-||||||| fcc3157ab0
-                   let _, ty1' = Ctype.instance_poly false tl ty1 in
-                   let ty2 = type_approx val_env sbody in
-                   Ctype.unify val_env ty2 ty1'
-=======
-                   let _, ty1' = Ctype.instance_poly ~fixed:false tl ty1 in
-                   let ty2 = type_approx val_env sbody in
-                   Ctype.unify val_env ty2 ty1'
->>>>>>> 501-plus-upstream-main-9fa77db
                | _ -> assert false
              with Ctype.Unify err ->
                raise(Error(loc, val_env,
@@ -1279,16 +1269,8 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
         | _ -> true
       in
       let partial =
-<<<<<<< HEAD
         let dummy = Typecore.type_exp val_env (Ast_helper.Exp.unreachable ()) in
         Typecore.check_partial val_env pat.pat_type pat.pat_loc
-||||||| fcc3157ab0
-        let dummy = type_exp val_env (Ast_helper.Exp.unreachable ()) in
-        Typecore.check_partial Modules_rejected val_env pat.pat_type pat.pat_loc
-=======
-        let dummy = type_exp val_env (Ast_helper.Exp.unreachable ()) in
-        Typecore.check_partial val_env pat.pat_type pat.pat_loc
->>>>>>> 501-plus-upstream-main-9fa77db
           [{c_lhs = pat; c_guard = None; c_rhs = dummy}]
       in
       let val_env' = Env.add_escape_lock Class val_env' in
@@ -1454,7 +1436,6 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
         Typecore.type_let In_class_def val_env rec_flag sdefs in
       let (vals, met_env) =
         List.fold_right
-<<<<<<< HEAD
           (fun (id, modes_and_sorts, _) (vals, met_env) ->
              List.iter
                (fun (loc, mode, sort) ->
@@ -1465,11 +1446,6 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                                  Non_value_let_binding (Ident.name id, sort)))
                )
                modes_and_sorts;
-||||||| fcc3157ab0
-          (fun (id, _id_loc, _typ) (vals, met_env) ->
-=======
-          (fun (id, _id_loc, _typ, _uid) (vals, met_env) ->
->>>>>>> 501-plus-upstream-main-9fa77db
              let path = Pident id in
              (* do not mark the value as used *)
              let vd = Env.find_value path val_env
@@ -1507,18 +1483,9 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
           ([], met_env)
       in
       let cl = class_expr cl_num val_env met_env virt self_scope scl' in
-<<<<<<< HEAD
       let defs = match rec_flag with
         | Recursive -> Typecore.annotate_recursive_bindings val_env defs
         | Nonrecursive -> defs
-||||||| fcc3157ab0
-      let () = if rec_flag = Recursive then
-        check_recursive_bindings val_env defs
-=======
-      let defs = match rec_flag with
-        | Recursive -> annotate_recursive_bindings val_env defs
-        | Nonrecursive -> defs
->>>>>>> 501-plus-upstream-main-9fa77db
       in
       rc {cl_desc = Tcl_let (rec_flag, defs, vals, cl);
           cl_loc = scl.pcl_loc;
@@ -1642,15 +1609,9 @@ let temp_abbrev loc id arity uid =
   let ty_td =
       {type_params = !params;
        type_arity = arity;
-<<<<<<< HEAD
        type_kind = Type_abstract Definition;
        type_jkind = Jkind.Primitive.value ~why:Object;
        type_jkind_annotation = None;
-||||||| fcc3157ab0
-       type_kind = Type_abstract;
-=======
-       type_kind = Type_abstract Definition;
->>>>>>> 501-plus-upstream-main-9fa77db
        type_private = Public;
        type_manifest = Some ty;
        type_variance = Variance.unknown_signature ~injective:false ~arity;
@@ -1880,15 +1841,9 @@ let class_infos define_class kind
     {
      type_params = obj_params;
      type_arity = arity;
-<<<<<<< HEAD
      type_kind = Type_abstract Definition;
      type_jkind = Jkind.Primitive.value ~why:Object;
      type_jkind_annotation = None;
-||||||| fcc3157ab0
-     type_kind = Type_abstract;
-=======
-     type_kind = Type_abstract Definition;
->>>>>>> 501-plus-upstream-main-9fa77db
      type_private = Public;
      type_manifest = Some obj_ty;
      type_variance = Variance.unknown_signature ~injective:false ~arity;
@@ -2408,7 +2363,6 @@ let report_error env ppf =
       "@[Cannot close type of object literal:@ %a@,\
        it has been unified with the self type of a class that is not yet@ \
        completely defined.@]"
-<<<<<<< HEAD
       (Style.as_inline_code Printtyp.type_scheme) sign.csig_self
   | Polymorphic_class_parameter ->
       fprintf ppf
@@ -2426,11 +2380,6 @@ let report_error env ppf =
     fprintf ppf
       "@[the argument labeled '%s' is a [%%call_pos] argument, filled in @ \
          automatically if ommitted. It cannot be passed with '?'.@]" label
-||||||| fcc3157ab0
-      Printtyp.type_scheme sign.csig_self
-=======
-      (Style.as_inline_code Printtyp.type_scheme) sign.csig_self
->>>>>>> 501-plus-upstream-main-9fa77db
 
 let report_error env ppf err =
   Printtyp.wrap_printing_env ~error:true

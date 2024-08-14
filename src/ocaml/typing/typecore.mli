@@ -69,7 +69,6 @@ type pattern_variable =
     pv_loc: Location.t;
     pv_as_var: bool;
     pv_attributes: Typedtree.attributes;
-    pv_uid : Uid.t;
   }
 
 val mk_expected:
@@ -112,19 +111,11 @@ type existential_restriction =
   | In_class_def (** or in [class c = let ... in ...] *)
   | In_self_pattern (** or in self pattern *)
 
-<<<<<<< HEAD
 type module_patterns_restriction =
   | Modules_allowed of { scope: int }
   | Modules_rejected
   | Modules_ignored
 
-||||||| fcc3157ab0
-type module_patterns_restriction =
-  | Modules_allowed of { scope : int }
-  | Modules_rejected
-
-=======
->>>>>>> 501-plus-upstream-main-9fa77db
 val type_binding:
         Env.t -> rec_flag ->
           ?force_toplevel:bool ->
@@ -349,7 +340,7 @@ val annotate_recursive_bindings :
 val check_recursive_class_bindings :
   Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
 
-val src_pos : Location.t -> Typedtree.attributes -> Env.t -> Typedtree.expression 
+val src_pos : Location.t -> Typedtree.attributes -> Env.t -> Typedtree.expression
 
 (* Merlin specific *)
 val partial_pred :

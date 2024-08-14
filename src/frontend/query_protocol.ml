@@ -96,16 +96,6 @@ type error_filter = {
   typing : bool;
 }
 
-<<<<<<< HEAD
-type syntax_doc_result = 
-{ 
-    name : string; 
-    description : string; 
-    documentation : string 
-}
-
-||||||| fcc3157ab0
-=======
 type syntax_doc_result =
 {
     name : string;
@@ -113,14 +103,13 @@ type syntax_doc_result =
     documentation : string
 }
 
-type ppxed_source = 
+type ppxed_source =
 {
   code : string;
   attr_start : Lexing.position;
   attr_end : Lexing.position;
 }
 
->>>>>>> 501-plus-upstream-main-9fa77db
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -168,14 +157,6 @@ type _ t =
        | `Not_found of string * string option
        | `No_documentation
        ] t
-<<<<<<< HEAD
-  | Syntax_document
-    : Msource.position
-    -> [ `Found of syntax_doc_result
-       | `No_documentation
-       ] t
-||||||| fcc3157ab0
-=======
   | Syntax_document
     : Msource.position
     -> [ `Found of syntax_doc_result
@@ -186,7 +167,6 @@ type _ t =
     -> [ `Found of ppxed_source
        | `No_ppx
        ] t
->>>>>>> 501-plus-upstream-main-9fa77db
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position

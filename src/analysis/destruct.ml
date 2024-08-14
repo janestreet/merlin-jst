@@ -128,23 +128,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         let res =
           try
             ignore (
-<<<<<<< HEAD
               let pattern_env = Ctype.Pattern_env.make env
                   ~equations_scope:0
                   ~allow_recursive_equations:true
               in
               Ctype.unify_gadt pattern_env type_expr typ
-||||||| fcc3157ab0
-              Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive_equations:true (* really? *)
-                (ref env) type_expr typ
-=======
-              let pattern_env = Ctype.Pattern_env.make env
-                ~equations_scope:0
-                ~allow_recursive_equations:true
-              in
-              Ctype.unify_gadt pattern_env type_expr typ
->>>>>>> 501-plus-upstream-main-9fa77db
             );
             true
           with Ctype.Unify _trace -> false
@@ -220,13 +208,7 @@ let rec needs_parentheses = function
       | Texp_let _
         (* We are after the "in" keyword, we need to look at the parent of the
            binding. *)
-<<<<<<< HEAD
       | Texp_function { body = Tfunction_body _ ; _ }
-||||||| fcc3157ab0
-      | Texp_function {cases = [ _ ]; _ }
-=======
-      | Texp_function (_, Tfunction_body _)
->>>>>>> 501-plus-upstream-main-9fa77db
         (* The assumption here is that we're not in a [function ... | ...]
             situation but either in [fun param] or [let name param]. *)
         ->
@@ -277,8 +259,6 @@ let rec get_match = function
     let s = Mbrowse.print_node () parent in
     raise  (Not_allowed s)
 
-<<<<<<< HEAD
-
 let collect_every_pattern_for_expression parent =
   let patterns =
     Mbrowse.fold_node (fun env node acc ->
@@ -323,73 +303,16 @@ let collect_function_pattern loc param_pattern =
     raise (Not_allowed "value_binding")
 
 let rec get_every_pattern loc = function
-||||||| fcc3157ab0
-let rec get_every_pattern = function
-=======
-let collect_every_pattern_for_expression parent =
-  let patterns =
-    Mbrowse.fold_node (fun env node acc ->
-      match node with
-      | Pattern _ -> (* Not expected here *) raise Nothing_to_do
-      | Case _ ->
-        Mbrowse.fold_node (fun _env node acc ->
-          match node with
-          | Pattern p ->
-            let ill_typed_pred = Typedtree.{ f = fun p ->
-              List.memq Msupport.incorrect_attribute ~set:p.pat_attributes }
-            in
-            if Typedtree.exists_general_pattern ill_typed_pred p
-            then raise Ill_typed
-            else begin
-              match Typedtree.classify_pattern p with
-              | Value -> (p : Typedtree.pattern) :: acc
-              | Computation ->
-                begin
-                  match Typedtree.split_pattern p with
-                  | Some p, _ -> (p : Typedtree.pattern) :: acc
-                  | None, _ -> acc
-                end
-            end
-          | _ -> acc
-        ) env node acc
-      | _ -> acc
-    ) Env.empty parent []
-  in
-  let loc = Mbrowse.fold_node (fun _ node acc ->
-    let open Location in
-    let loc = Mbrowse.node_loc node in
-    if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
-  ) Env.empty parent Location.none
-  in loc, patterns
-
-let collect_function_pattern loc param_pattern =
-  match param_pattern.Typedtree.fp_kind with
-  | Typedtree.Tparam_pat pattern ->
-    loc, [pattern]
-  | Typedtree.Tparam_optional_default _ ->
-    raise (Not_allowed "value_binding")
-
-let rec get_every_pattern loc = function
->>>>>>> 501-plus-upstream-main-9fa77db
   | [] -> assert false
   | parent :: parents ->
     match parent with
     | Case _
     | Pattern _ ->
       (* We are still in the same branch, going up. *)
-<<<<<<< HEAD
       get_every_pattern loc parents
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _, _, _) ; _}
-||||||| fcc3157ab0
-      get_every_pattern parents
-    | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
-=======
-      get_every_pattern loc parents
-    | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
->>>>>>> 501-plus-upstream-main-9fa77db
       when Ident.name id = "*type-error*" ->
       raise (Ill_typed)
-<<<<<<< HEAD
     | Expression { exp_desc = Typedtree.Texp_function {params; _}; _ } ->
       (* So we need to deal with the case where we're either in the body of a
          function, or in a function parameter. *)
@@ -405,24 +328,6 @@ let rec get_every_pattern loc = function
           (* In function body *)
           collect_every_pattern_for_expression parent
       end
-||||||| fcc3157ab0
-=======
-    | Expression { exp_desc = Typedtree.Texp_function (params, _body); _ } ->
-      (* So we need to deal with the case where we're either in the body of a
-         function, or in a function parameter. *)
-      begin
-        match
-          List.find_some ~f:(fun param ->
-            Location_aux.included ~into:param.Typedtree.fp_loc loc
-        ) params with
-        | Some pattern ->
-          (* In parameter case *)
-          collect_function_pattern loc pattern
-        | None ->
-          (* In function body *)
-          collect_every_pattern_for_expression parent
-      end
->>>>>>> 501-plus-upstream-main-9fa77db
     | Expression _ ->
       (* We are on the right node *)
       collect_every_pattern_for_expression parent
@@ -435,13 +340,7 @@ let rec destructible patt =
   let open Typedtree in
   match patt.pat_desc with
   | Tpat_any | Tpat_var _ -> true
-<<<<<<< HEAD
   | Tpat_alias (p, _, _, _, _)  -> destructible p
-||||||| fcc3157ab0
-  | Tpat_alias (p, _, _)  -> destructible p
-=======
-  | Tpat_alias (p, _, _, _)  -> destructible p
->>>>>>> 501-plus-upstream-main-9fa77db
   | _ -> false
 
 
@@ -475,16 +374,8 @@ let rec subst_patt initial ~by patt =
   | Tpat_any
   | Tpat_var _
   | Tpat_constant _ -> patt
-<<<<<<< HEAD
   | Tpat_alias (p,x,y,uid,m) ->
     { patt with pat_desc = Tpat_alias (f p, x, y, uid, m) }
-||||||| fcc3157ab0
-  | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = Tpat_alias (f p, x, y) }
-=======
-  | Tpat_alias (p,x,y,uid) ->
-    { patt with pat_desc = Tpat_alias (f p, x, y,uid) }
->>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
   | Tpat_construct (lid, cd, lst, lco) ->
@@ -510,16 +401,8 @@ let rec rm_sub patt sub =
   | Tpat_any
   | Tpat_var _
   | Tpat_constant _ -> patt
-<<<<<<< HEAD
   | Tpat_alias (p,x,y,uid,m) ->
     { patt with pat_desc = Tpat_alias (f p, x, y,uid,m)  }
-||||||| fcc3157ab0
-  | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = Tpat_alias (f p, x, y)  }
-=======
-  | Tpat_alias (p,x,y,uid) ->
-    { patt with pat_desc = Tpat_alias (f p, x, y,uid)  }
->>>>>>> 501-plus-upstream-main-9fa77db
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
   | Tpat_construct (lid, cd, lst, lco) ->
@@ -544,17 +427,9 @@ let rec qualify_constructors ~unmangling_tables f pat  =
   let qualify_constructors = qualify_constructors ~unmangling_tables in
   let pat_desc =
     match pat.pat_desc with
-<<<<<<< HEAD
-    | Tpat_alias (p, id, loc, uid, m) -> Tpat_alias (qualify_constructors f p, id, loc, uid, m)
+    | Tpat_alias (p, id, loc, uid, m) ->
+      Tpat_alias (qualify_constructors f p, id, loc, uid, m)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(fun (lbl, p) -> lbl, qualify_constructors f p))
-||||||| fcc3157ab0
-    | Tpat_alias (p, id, loc) -> Tpat_alias (qualify_constructors f p, id, loc)
-    | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
-=======
-    | Tpat_alias (p, id, loc, uid) ->
-      Tpat_alias (qualify_constructors f p, id, loc, uid)
-    | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
->>>>>>> 501-plus-upstream-main-9fa77db
     | Tpat_record (labels, closed) ->
       let labels =
         let open Longident in
@@ -623,13 +498,7 @@ let find_branch patterns sub =
       | Tpat_var _
       | Tpat_constant _
       | Tpat_variant (_, None, _) -> false
-<<<<<<< HEAD
       | Tpat_alias (p,_,_,_,_)
-||||||| fcc3157ab0
-      | Tpat_alias (p,_,_)
-=======
-      | Tpat_alias (p,_,_,_)
->>>>>>> 501-plus-upstream-main-9fa77db
       | Tpat_variant (_, Some p, _)
       | Tpat_lazy p ->
         is_sub_patt p ~sub
@@ -655,11 +524,11 @@ let find_branch patterns sub =
    becomes [{a = destruct_result; b}]. *)
 let find_field_name_for_punned_field patt = function
   | Pattern {pat_desc = Tpat_record (fields, _); _} :: _ ->
-    List.find_opt ~f:(fun (_, _, opat) ->
-        let ppat_loc = patt.Typedtree.pat_loc
-        and opat_loc = opat.Typedtree.pat_loc in
-        Int.equal (Location_aux.compare ppat_loc opat_loc) 0
-      ) fields |> Option.map ~f:(fun (_, label, _) -> label)
+      List.find_opt ~f:(fun (_, _, opat) ->
+          let ppat_loc = patt.Typedtree.pat_loc
+          and opat_loc = opat.Typedtree.pat_loc in
+          Int.equal (Location_aux.compare ppat_loc opat_loc) 0
+        ) fields |> Option.map ~f:(fun (_, label, _) -> label)
   | _ -> None
 
 let print_pretty ?punned_field config source subject =
@@ -667,7 +536,8 @@ let print_pretty ?punned_field config source subject =
   match punned_field with
   | None -> result
   | Some label ->
-    label.Types.lbl_name ^ " = " ^ result
+      label.Types.lbl_name ^ " = " ^ result
+
 
 (* conversion from Typedtree.pattern to Parsetree.pattern list *)
 module Conv = struct
@@ -690,19 +560,12 @@ module Conv = struct
       match pat.pat_desc with
         Tpat_or (pa,pb,_) ->
           mkpat (Ppat_or (loop pa, loop pb))
-<<<<<<< HEAD
       | Tpat_var (_, ({txt="*extension*"; _} as nm), _, _) -> (* PR#7330 *)
-||||||| fcc3157ab0
-      | Tpat_var (_, ({txt="*extension*"; _} as nm)) -> (* PR#7330 *)
-=======
-      | Tpat_var (_, ({txt="*extension*"; _} as nm), _) -> (* PR#7330 *)
->>>>>>> 501-plus-upstream-main-9fa77db
           mkpat (Ppat_var nm)
       | Tpat_any
       | Tpat_var _ ->
           mkpat Ppat_any
       | Tpat_constant c ->
-<<<<<<< HEAD
           begin match Untypeast.constant c with
             | `Jane_syntax c ->
                 Jane_syntax.Layouts.pat_of (Lpat_constant c)
@@ -710,13 +573,6 @@ module Conv = struct
             | `Parsetree c -> mkpat (Ppat_constant c)
           end
       | Tpat_alias (p,_,_,_,_) -> loop p
-||||||| fcc3157ab0
-          mkpat (Ppat_constant (Untypeast.constant c))
-      | Tpat_alias (p,_,_) -> loop p
-=======
-          mkpat (Ppat_constant (Untypeast.constant c))
-      | Tpat_alias (p,_,_,_) -> loop p
->>>>>>> 501-plus-upstream-main-9fa77db
       | Tpat_tuple lst ->
           let lst = List.map ~f:(fun (lbl, p) -> lbl, loop p) lst in
           Jane_syntax.Labeled_tuples.pat_of (lst, Closed)
@@ -795,138 +651,6 @@ let remove_non_applied_optional_args (Parsetree.{ pexp_desc; _} as base_expr) =
     { base_expr with pexp_desc }
   | _ -> base_expr
 
-<<<<<<< HEAD
-let destruct_expression loc config source parents expr =
-  let ty = expr.Typedtree.exp_type in
-  let pexp =
-    filter_expr_attr (Untypeast.untype_expression expr)
-    |> remove_non_applied_optional_args
-  in
-  let () =
-    log ~title:"node_expression" "%a"
-      Logger.fmt (fun fmt -> Printast.expression 0 fmt pexp)
-  in
-  let needs_parentheses, result =
-    if is_package (Types.Transient_expr.repr ty) then
-      let mode = Ast_helper.Mod.unpack pexp in
-      false, Ast_helper.Exp.letmodule_no_opt "M" mode placeholder
-    else
-      let ps = gen_patterns expr.Typedtree.exp_env ty in
-      let cases = List.map ps ~f:(fun patt ->
-        let pc_lhs = filter_pat_attr (Untypeast.untype_pattern patt) in
-        { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = placeholder }
-      ) in
-      needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
-  in
-  let str = Mreader.print_pretty config source (Pretty_expression result) in
-  let str = if needs_parentheses then "(" ^ str ^ ")" else str in
-  loc, str
-
-let refine_partial_match last_case_loc config source patterns =
-  let cases = List.map patterns ~f:(fun pat ->
-    let _pat, constrs, labels = Conv.conv pat in
-    let unmangling_tables = constrs, labels in
-    (* Unmangling and prefixing *)
-    let pat = qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat in
-    (* Untyping and casing *)
-    let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
-    Ast_helper.Exp.case ppat placeholder
-  ) in
-  let loc = Location.{ last_case_loc with loc_start = last_case_loc.loc_end } in
-  let str = Mreader.print_pretty config source (Pretty_case_list cases) in
-  loc, str
-
-let filter_new_branches new_branches patterns =
-  let unused = Parmatch.return_unused patterns in
-  List.fold_left unused ~init:new_branches ~f:(fun branches u ->
-    match u with
-    | `Unused p -> List.remove ~phys:true p branches
-    | `Unused_subs (p, lst) ->
-      List.map branches ~f:(fun branch ->
-        if branch != p then branch else
-          List.fold_left lst ~init:branch ~f:rm_sub))
-
-let refine_current_pattern patt config source generated_pattern =
-  let ppat = filter_pat_attr (Untypeast.untype_pattern generated_pattern) in
-  let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
-  patt.Typedtree.pat_loc, str
-
-let refine_and_generate_branches patt config source patterns sub_patterns =
-  let rev_before, after, top_patt = find_branch patterns patt in
-  let new_branches =
-    List.map sub_patterns ~f:(fun by -> subst_patt patt ~by top_patt)
-  in
-  let patterns = after @ rev_before @ new_branches in
-  match filter_new_branches new_branches patterns with
-  | [] -> raise Useless_refine
-  | p :: ps ->
-    let p = List.fold_left ps ~init:p ~f:(fun acc p ->
-      Tast_helper.Pat.pat_or
-          top_patt.Typedtree.pat_env
-          top_patt.Typedtree.pat_type acc p)
-    in
-    (* Format.eprintf "por %a \n%!" (Printtyped.pattern 0) p; *)
-    let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
-    (* Format.eprintf "ppor %a \n%!" (Pprintast.pattern) ppat; *)
-    let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
-    (* Format.eprintf "STR: %s \n %!" str; *)
-    top_patt.Typedtree.pat_loc, str
-
-let refine_complete_match
-    (type a) (patt: a Typedtree.general_pattern)
-    config source patterns =
-  match Typedtree.classify_pattern patt with
-  | Computation -> raise (Not_allowed ("computation pattern"))
-  | Value ->
-    let _: Typedtree.value Typedtree.general_pattern = patt in
-    if not (destructible patt) then raise Nothing_to_do
-    else
-      let ty = patt.Typedtree.pat_type in
-      begin match gen_patterns patt.Typedtree.pat_env ty with
-      | [] -> assert false
-      | [more_precise_pattern] ->
-        (* If only one pattern is generated, then we're only refining the
-          current pattern, not generating new branches. *)
-        refine_current_pattern patt config source more_precise_pattern
-      | sub_patterns ->
-        (* If more than one pattern is generated, then we're generating new
-           branches. *)
-        refine_and_generate_branches patt config source patterns sub_patterns
-       end
-
-let destruct_pattern
-    (type a) (patt: a Typedtree.general_pattern)
-    config source loc parents =
-  let last_case_loc, patterns = get_every_pattern loc parents in
-  (* Printf.eprintf "tot %d o%!"(List.length patterns); *)
-  let () = List.iter patterns ~f:(fun p ->
-    let p = filter_pat_attr (Untypeast.untype_pattern p) in
-    log ~title:"EXISTING" "%t"
-      (fun () -> Mreader.print_pretty config source (Pretty_pattern p)))
-  in
-  let pss = List.map patterns ~f:(fun x -> [ x ]) in
-  let m, e_typ = get_match parents in
-  let pred = Typecore.partial_pred ~lev:Btype.generic_level m.Typedtree.exp_env e_typ in
-  match Parmatch.complete_partial ~pred pss with
-  | [] ->
-    (* The match is already complete, we try to refine it *)
-    refine_complete_match patt config source patterns
-  | patterns ->
-    refine_partial_match last_case_loc config source patterns
-
-let rec destruct_record config source selected_node = function
-  | Expression { exp_desc = Texp_field _; _ } as parent :: rest ->
-    node config source parent rest
-  | Expression e :: rest ->
-    node config source (Expression e) rest
-  | _ ->
-    raise (Not_allowed (string_of_node selected_node))
-
-and node config source selected_node parents =
-||||||| fcc3157ab0
-let rec node config source selected_node parents =
-  let open Extend_protocol.Reader in
-=======
 let destruct_expression loc config source parents expr =
   let ty = expr.Typedtree.exp_type in
   let pexp =
@@ -1055,7 +779,6 @@ let rec destruct_record config source selected_node = function
     raise (Not_allowed (string_of_node selected_node))
 
 and node config source selected_node parents =
->>>>>>> 501-plus-upstream-main-9fa77db
   let loc = Mbrowse.node_loc selected_node in
   match selected_node with
   | Record_field (`Expression _, _, _) ->

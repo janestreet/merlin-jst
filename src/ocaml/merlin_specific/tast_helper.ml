@@ -14,15 +14,8 @@ module Pat = struct
       | None -> str.Asttypes.loc
       | Some loc -> loc
     in
-<<<<<<< HEAD
     let mode = Mode.Value.newvar () in
-    let uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
     let pat_desc = Tpat_var (Ident.create_local str.Asttypes.txt, str, uid, mode) in
-||||||| fcc3157ab0
-    let pat_desc = Tpat_var (Ident.create_local str.Asttypes.txt, str) in
-=======
-    let pat_desc = Tpat_var (Ident.create_local str.Asttypes.txt, str, uid) in
->>>>>>> 501-plus-upstream-main-9fa77db
     { pat_desc; pat_loc; pat_extra; pat_attributes; pat_type; pat_env }
 
   let record ?(loc=Location.none) pat_env pat_type lst closed_flag =

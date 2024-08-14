@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 (* The lambda representation is of no interest for Merlin, but some types are
    used by [value_rec_check]. *)
 
@@ -21,15 +20,3 @@ type array_kind =
     Pgenarray | Paddrarray | Pintarray | Pfloatarray
   | Punboxedfloatarray of unboxed_float
   | Punboxedintarray of unboxed_integer
-||||||| fcc3157ab0
-=======
-(* The lambda representation is of no interest for Merlin, but some types are
-   used by [value_rec_check]. *)
-
-type immediate_or_pointer =
-  | Immediate
-  | Pointer
-
-type array_kind =
-  Pgenarray | Paddrarray | Pintarray | Pfloatarray
->>>>>>> 501-plus-upstream-main-9fa77db
