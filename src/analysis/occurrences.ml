@@ -3,8 +3,6 @@ module LidSet = Index_format.LidSet
 
 let {Logger. log} = Logger.for_section "occurrences"
 
-type res = { locs: Warnings.loc list; synced: bool }
-
 let set_fname ~file (loc : Location.t) =
   let pos_fname = file in
   { loc with
@@ -27,7 +25,7 @@ let decl_of_path_or_lid env namespace path lid =
     end
   | _ -> Env_lookup.loc path namespace env
 
-let index_buffer_ ~scope ~current_buffer_path ~local_defs () =
+let index_buffer_ ~current_buffer_path ~local_defs () =
   let {Logger. log} = Logger.for_section "index" in
   let defs = Hashtbl.create 64 in
   let module Shape_reduce =
@@ -98,7 +96,6 @@ let index_buffer_ ~scope ~current_buffer_path ~local_defs () =
        occurrences in the current buffer only. *)
     let rec iter_on_path ~namespace path ({Location.txt; loc} as lid) =
       let () = f ~namespace env path lid in
-      if scope = `Buffer then
       match path, txt with
       | Pdot (path, _), Ldot (lid, s) ->
         let length_with_dot = String.length s + 1 in
@@ -120,20 +117,19 @@ let index_buffer =
   (* Right now, we only cache the last used index. We could do better by caching
       the index for every known buffer. *)
   let cache = ref None in
-  fun ~scope ~current_buffer_path ~stamp ~local_defs () ->
+  fun ~current_buffer_path ~stamp ~local_defs () ->
     let {Logger. log} = Logger.for_section "index" in
     match !cache with
-    | Some (path, stamp', scope', value) when
+    | Some (path, stamp', value) when
         String.equal path current_buffer_path
-        && Int.equal stamp' stamp
-        && scope' = scope ->
+        && Int.equal stamp' stamp ->
       log ~title:"index_cache" "Reusing cached value for path %s and stamp %i."
         path stamp';
       value
     | _ ->
       log ~title:"index_cache" "No valid cache found, reindexing.";
-      let result = index_buffer_ ~current_buffer_path ~scope ~local_defs () in
-      cache := Some (current_buffer_path, stamp, scope, result);
+      let result = index_buffer_ ~current_buffer_path ~local_defs () in
+      cache := Some (current_buffer_path, stamp, result);
       result
 
 (* A longident can have the form: A.B.x Right now we are only interested in
@@ -178,24 +174,7 @@ let comp_unit_of_uid = function
   | Item { comp_unit; _ } -> Some comp_unit
   | Internal | Predef _ -> None
 
-let check Index_format.{ stats; _ } file =
-  let open Index_format in
-  match Stats.find_opt file stats with
-  | None -> log ~title:"stat_check" "No mtime found for file %S." file; true
-  | Some { size; _ } ->
-    try
-      let stats = Unix.stat file in
-      let equal =
-        (* This is fast but approximative. A better option would be to check
-            [mtime] and then [source_digest] if the times differ. *)
-          Int.equal stats.st_size size
-      in
-      log ~title:"stat_check"
-        "File %s has been modified since the index was built." file;
-      equal
-    with Unix.Unix_error _ -> false
-
-let locs_of ~config ~env ~typer_result ~pos ~scope path =
+let locs_of ~config ~env ~typer_result ~pos path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)"
     path
     (Lexing.print_position () pos);
@@ -205,29 +184,28 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     ~config:{ mconfig = config; traverse_aliases=false; ml_or_mli = `ML}
     ~env ~local_defs ~pos path
   in
-  (* When we fail to find an exact definition we restrict scope to `Buffer *)
-  let def, scope =
+  let def =
     match locate_result with
     | `At_origin ->
       log ~title:"locs_of" "Cursor is on definition / declaration";
       (* We are on  a definition / declaration so we look for the node's uid  *)
       let browse = Mbrowse.of_typedtree local_defs in
       let env, node = Mbrowse.leaf_node (Mbrowse.enclosing pos [browse]) in
-      uid_and_loc_of_node env node, scope
+      uid_and_loc_of_node env node
     | `Found { uid; location; approximated = false; _ } ->
         log ~title:"locs_of" "Found definition uid using locate: %a "
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
-        Some (uid, location), scope
+        Some (uid, location)
     | `Found { decl_uid; location; approximated = true; _ } ->
-        log ~title:"locs_of" "Approx. definition: %a "
+        log ~title:"locs_of" "Approx: %a "
           Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
-        Some (decl_uid, location), `Buffer
+        Some (decl_uid, location)
     | `Builtin (uid, s) ->
         log ~title:"locs_of" "Locate found a builtin: %s" s;
-        Some (uid, Location.none), scope
+        Some (uid, Location.none)
     | _ ->
         log ~title:"locs_of" "Locate failed to find a definition.";
-        None, `Buffer
+        None
   in
   let current_buffer_path =
     Filename.concat config.query.directory config.query.filename
@@ -240,68 +218,23 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     log ~title:"locs_of" "Indexing current buffer";
     let buffer_index =
       let stamp = Mtyper.get_stamp typer_result in
-      index_buffer ~scope ~current_buffer_path ~stamp ~local_defs ()
+      index_buffer ~current_buffer_path ~stamp ~local_defs ()
     in
     let buffer_locs = Hashtbl.find_opt buffer_index def_uid in
-    let external_locs, desync =
-      if scope = `Buffer then [], false else begin
-      let exception File_changed in
-      try
-        let locs = List.filter_map config.merlin.index_files ~f:(fun file ->
-          let external_index = Index_cache.read file in
-          Hashtbl.find_opt external_index.defs def_uid
-          |> Option.map ~f:(fun locs -> LidSet.filter (fun {loc; _} ->
-            (* We ignore external results that concern the current buffer *)
-            let fname = loc.Location.loc_start.Lexing.pos_fname in
-            if String.equal fname current_buffer_path then false
-            else begin
-              (* We ignore external results if the index is not up-to-date *)
-              (* We could return partial results from up-to-date file *)
-              if not (check external_index fname) then begin
-                log ~title:"locs_of" "File %s might be out-of-sync." fname;
-                raise File_changed
-              end;
-              true
-            end) locs))
-          in
-          locs, false
-      with File_changed -> [], true
-      end
-    in
-    if desync then log ~title:"locs_of" "External index might be out-of-sync.";
+    let locs = Option.value ~default:LidSet.empty buffer_locs in
     let locs =
-      let all_locs =
-        match buffer_locs with
-        | Some buffer_locs -> buffer_locs :: external_locs
-        | None -> external_locs
-      in
-      List.fold_left ~init:LidSet.empty ~f:LidSet.union all_locs
+        log ~title:"occurrences" "Found %i locs" (LidSet.cardinal locs);
+        LidSet.elements locs
+        |> List.map ~f:(fun {Location.txt; loc} ->
+          log ~title:"occurrences" "Found occ: %s %a"
+            (Longident.head txt) Logger.fmt (Fun.flip Location.print_loc loc);
+          last_loc loc txt)
     in
-    let locs =
-      log ~title:"occurrences" "Found %i locs" (LidSet.cardinal locs);
-      LidSet.elements locs
-      |> List.filter_map ~f:(fun {Location.txt; loc} ->
-        let lid = try Longident.head txt with _ -> "not flat lid" in
-        log ~title:"occurrences" "Found occ: %s %a"
-          lid Logger.fmt (Fun.flip Location.print_loc loc);
-        let loc = last_loc loc txt in
-        let fname = loc.Location.loc_start.Lexing.pos_fname in
-        if Filename.is_relative fname then begin
-          match Locate.find_source ~config loc fname with
-          | `Found (file, _) -> Some (set_fname ~file loc)
-          | `File_not_found msg ->
-              log ~title:"occurrences" "%s" msg;
-              None
-        end else Some loc)
-      in
     let def_uid_is_in_current_unit =
       let uid_comp_unit = comp_unit_of_uid def_uid in
       Option.value_map ~default:false uid_comp_unit
         ~f:(Misc_utils.is_current_unit)
     in
-    let synced = not desync in
-    if not def_uid_is_in_current_unit then Ok { locs; synced }
-    else
-      let locs = set_fname ~file:current_buffer_path def_loc :: locs in
-      Ok { locs;  synced }
-  | None -> Error "Could not find the definition [uid]"
+    if not def_uid_is_in_current_unit then Ok locs
+    else Ok (set_fname ~file:current_buffer_path def_loc :: locs)
+  | None -> Error "Could not find the uid of the definition."

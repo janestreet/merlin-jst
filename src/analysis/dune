@@ -24,5 +24,4 @@
   query_protocol
   ocaml_typing
   ocaml_utils
-  str
-  unix))
+  str))
