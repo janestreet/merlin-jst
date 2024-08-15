@@ -351,6 +351,8 @@ let cache_information t =
     `Assoc [ "hit", `Int h; "miss", `Int m ] in
   let cmt_stat = Cmt_cache.get_cache_stats () in
   let cmt = fmt_hit_miss cmt_stat.hit cmt_stat.miss in
+  let cms_stat = Cms_cache.get_cache_stats () in
+  let cms = fmt_hit_miss cms_stat.hit cmt_stat.miss in
   let cmi_stat = Cmi_cache.get_cache_stats () in
   let cmi = fmt_hit_miss cmi_stat.hit cmi_stat.miss in
   Cmt_cache.clear_cache_stats ();
@@ -361,5 +363,6 @@ let cache_information t =
     "ppx_phase"    , fmt_bool !(t.ppx_cache_hit);
     "typer"        , typer;
     "cmt"          , cmt;
+    "cms"          , cms;
     "cmi"          , cmi
   ]

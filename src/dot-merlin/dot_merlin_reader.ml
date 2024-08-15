@@ -106,6 +106,8 @@ module Cache = File_cache.Make (struct
             tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
             tell (`WRAPPING_PREFIX (String.drop 16 line))
+          else if String.is_prefixed ~by:"SOURCE_ROOT " line then
+            tell (`SOURCE_ROOT (String.drop 12 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then

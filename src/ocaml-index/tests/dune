@@ -1,7 +1,15 @@
+(env (_
+ (binaries ocamlc-wrapper ocamlobjinfo-wrapper)
+ (env-vars
+  (OCAMLC ocamlc-wrapper)
+  (OCAMLOBJINFO ocamlobjinfo-wrapper))))
+
 (alias
  (name ocaml-index-test-deps)
  (deps
-  (package ocaml-index)))
+  (package ocaml-index)
+  %{bin:ocamlc-wrapper}
+  %{bin:ocamlobjinfo-wrapper}))
 
 (cram
  (package ocaml-index)

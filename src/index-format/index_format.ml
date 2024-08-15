@@ -82,7 +82,7 @@ let write ~file index =
       output_string oc magic_number;
       output_value oc (index : index))
 
-type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
+type file_content = Cmt of Cmt_format.cmt_infos | Cms of Cms_format.cms_infos | Index of index | Unknown
 
 let read ~file =
   let ic = open_in_bin file in
@@ -92,11 +92,14 @@ let read ~file =
       let file_magic_number = ref (Cmt_format.read_magic_number ic) in
       let cmi_magic_number = Ocaml_utils.Config.cmi_magic_number in
       let cmt_magic_number = Ocaml_utils.Config.cmt_magic_number in
+      let cms_magic_number = Ocaml_utils.Config.cms_magic_number in
       (if String.equal !file_magic_number cmi_magic_number then
          let _ = Cmi_format.input_cmi ic in
-         file_magic_number := Cmt_format.read_magic_number ic);
+         file_magic_number := Cms_format.read_magic_number ic);
       if String.equal !file_magic_number cmt_magic_number then
         Cmt (input_value ic : Cmt_format.cmt_infos)
+      else if String.equal !file_magic_number cms_magic_number then
+        Cms (input_value ic : Cms_format.cms_infos)
       else if String.equal !file_magic_number magic_number then
         Index (input_value ic : index)
       else Unknown)

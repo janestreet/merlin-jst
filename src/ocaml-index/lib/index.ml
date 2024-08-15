@@ -31,7 +31,7 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
     { name with txt = Longident.Lident name.txt }
   in
   let add_loc uid fragment acc =
-    match Misc_utils.loc_of_decl ~uid fragment with
+    match fragment with
     | None -> acc
     | Some lid ->
         let lid = to_located_lid lid in
@@ -44,15 +44,27 @@ module Reduce_conf = struct
   let fuel = 10
 
   let try_load ~unit_name () =
-    let cmt = Format.sprintf "%s.cmt" unit_name in
-    match Cmt_cache.read (Load_path.find_normalized cmt) with
-    | cmt_item ->
-        Log.debug "Loaded CMT %s" cmt;
-        cmt_item.cmt_infos.cmt_impl_shape
+    let artifact =
+    let cms = Format.sprintf "%s.cms" unit_name in
+    match Locate.Artifact.read (Load_path.find_normalized cms) with
+    | artifact ->
+      Log.debug "Loaded CMS %s" cms;
+      Some artifact
     | exception Not_found ->
+      let cmt = Format.sprintf "%s.cmt" unit_name in
+      match Locate.Artifact.read (Load_path.find_normalized cmt) with
+      | artifact ->
+        Log.debug "Loaded CMT %s" cmt;
+        Some artifact
+      | exception Not_found ->
         Log.warn "Failed to load file %S in load_path: @[%s@]\n%!" cmt
         @@ String.concat "; " (Load_path.get_path_list ());
         None
+    in
+    match artifact with
+    | None -> None
+    | Some artifact ->
+      Merlin_analysis.Locate.Artifact.impl_shape artifact
 
   let read_unit_shape ~unit_name =
     Log.debug "Read unit shape: %s\n%!" unit_name;
@@ -71,28 +83,26 @@ let init_load_path_once ~do_not_use_cmt_loadpath =
       Load_path.(init ~auto_include:no_auto_include ~visible ~hidden:cmt_hidden);
       loaded := true)
 
-let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
-    cmt_infos =
-  let {
-    Cmt_format.cmt_loadpath;
-    cmt_impl_shape;
-    cmt_modname;
-    cmt_uid_to_decl;
-    cmt_ident_occurrences;
-    cmt_initial_env;
-    cmt_sourcefile;
-    cmt_source_digest;
-    _;
-  } =
-    cmt_infos
-  in
+let index_of_artifact
+    ~root
+    ~rewrite_root
+    ~build_path
+    ~do_not_use_cmt_loadpath
+    ~cmt_loadpath
+    ~cmt_impl_shape
+    ~cmt_modname
+    ~uid_to_loc
+    ~cmt_ident_occurrences
+    ~cmt_initial_env
+    ~cmt_sourcefile
+    ~cmt_source_digest
+  =
   init_load_path_once ~do_not_use_cmt_loadpath ~dirs:build_path cmt_loadpath;
   let module Reduce = Shape_reduce.Make (Reduce_conf) in
   let defs =
     if Option.is_none cmt_impl_shape then Shape.Uid.Map.empty
     else
-      gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty
-        cmt_uid_to_decl
+      gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty uid_to_loc
   in
   (* The list [cmt_ident_occurrences] associate each ident usage location in the
      module with its (partially) reduced shape. We finish the reduction and
@@ -138,6 +148,88 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
   in
   { defs; approximated; cu_shape; stats; root_directory = None }
 
+let shape_of_artifact ~impl_shape ~modname =
+  let cu_shape = Hashtbl.create 1 in
+  Option.iter (Hashtbl.add cu_shape modname) impl_shape;
+  {
+    defs = Shape.Uid.Map.empty;
+    approximated = Shape.Uid.Map.empty;
+    cu_shape;
+    stats = Stats.empty;
+    root_directory = None;
+  }
+
+let shape_of_cmt { Cmt_format.cmt_impl_shape; cmt_modname; _ }  =
+  shape_of_artifact ~impl_shape:cmt_impl_shape ~modname:cmt_modname
+
+let shape_of_cms { Cms_format.cms_impl_shape; cms_modname; _ }  =
+  shape_of_artifact ~impl_shape:cms_impl_shape ~modname:cms_modname
+
+let index_of_cmt ~root ~build_path cmt_infos =
+  let {
+    Cmt_format.cmt_loadpath;
+    cmt_impl_shape;
+    cmt_modname;
+    cmt_uid_to_decl;
+    cmt_ident_occurrences;
+    cmt_initial_env;
+    cmt_sourcefile;
+    cmt_source_digest;
+    _;
+  } =
+    cmt_infos
+  in
+  let uid_to_loc =
+    Shape.Uid.Tbl.to_list cmt_uid_to_decl
+    |> List.map (fun (uid, fragment) -> uid, Misc_utils.loc_of_decl ~uid fragment)
+    |> Shape.Uid.Tbl.of_list
+  in
+  index_of_artifact
+    ~root
+    ~build_path
+    ~cmt_loadpath
+    ~cmt_impl_shape
+    ~cmt_modname
+    ~uid_to_loc
+    ~cmt_ident_occurrences
+    ~cmt_initial_env
+    ~cmt_sourcefile
+    ~cmt_source_digest
+
+let index_of_cms ~root ~build_path cms_infos =
+  let {
+    Cms_format.cms_impl_shape;
+    cms_modname;
+    cms_uid_to_loc;
+    cms_ident_occurrences;
+    cms_sourcefile;
+    cms_source_digest;
+    (* cms_load-path; cms_initial_env *)
+    _;
+  } =
+    cms_infos
+  in
+  let uid_to_loc =
+    Shape.Uid.Tbl.to_list cms_uid_to_loc
+    |> List.map (function
+      | (uid, l) -> uid, Some { Location.txt = ""; loc = l })
+    |> Shape.Uid.Tbl.of_list
+  in
+  index_of_artifact
+    ~root
+    ~build_path
+    (* CR: Add [loadpath], [initial_env] and
+       the txt component of locations to cms files. *)
+    (* Is .txt even needed? *)
+    ~cmt_loadpath:({visible=[]; hidden=[]})
+    ~cmt_impl_shape:cms_impl_shape
+    ~cmt_modname:cms_modname
+    ~uid_to_loc
+    ~cmt_ident_occurrences:cms_ident_occurrences
+    ~cmt_initial_env:Env.empty
+    ~cmt_sourcefile:cms_sourcefile
+    ~cmt_source_digest:cms_source_digest
+
 let merge_index ~store_shapes ~into index =
   let defs = merge index.defs into.defs in
   let approximated = merge index.approximated into.approximated in
@@ -164,7 +256,11 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
     List.fold_left
       (fun into file ->
         let index =
-          match Cmt_cache.read file with
+          match Cms_cache.read file with
+          | cms_item ->
+            index_of_cms ~root ~rewrite_root ~build_path
+              ~do_not_use_cmt_loadpath cms_item.cms_infos
+          | exception _ -> match Cmt_cache.read file with
           | cmt_item ->
               index_of_cmt ~root ~rewrite_root ~build_path
                 ~do_not_use_cmt_loadpath cmt_item.cmt_infos
@@ -176,6 +272,35 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
                   exit 1)
         in
         merge_index ~store_shapes index ~into)
+      initial_index files
+  in
+  write ~file:output_file final_index
+
+let gather_shapes ~output_file files =
+  let initial_index =
+    {
+      defs = Shape.Uid.Map.empty;
+      approximated = Shape.Uid.Map.empty;
+      cu_shape = Hashtbl.create 64;
+      stats = Stats.empty;
+      root_directory = None;
+    }
+  in
+  let final_index =
+    List.fold_left
+      (fun into file ->
+         let index =
+           match Cache.read file with
+           | Cmt cmt_infos -> Some (shape_of_cmt cmt_infos)
+           | Cms cmt_infos -> Some (shape_of_cms cmt_infos)
+           | Index index -> Some index
+           | Unknown | exception _ ->
+             Log.error "Not a valid file %S" file;
+             None
+         in
+         match index with
+         | None -> into
+         | Some index -> merge_index ~store_shapes:true index ~into)
       initial_index files
   in
   write ~file:output_file final_index

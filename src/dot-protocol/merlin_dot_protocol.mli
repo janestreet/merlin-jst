@@ -58,6 +58,7 @@ module Directive : sig
     | `SOURCE_ROOT of string
     | `UNIT_NAME of string
     | `WRAPPING_PREFIX of string
+    | `SOURCE_ROOT of string
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR

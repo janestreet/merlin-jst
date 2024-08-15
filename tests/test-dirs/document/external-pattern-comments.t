@@ -20,6 +20,4 @@
 
 We should not rely on the heuristic to get that comment
   $ cat log | grep -A 2 "looking around"
-  looking around File "_none_", line 1 inside: [
-    ("* doc for all node ", File "lib.ml", line 1, characters 0-23);
-  ]
+  [1]

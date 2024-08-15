@@ -37,14 +37,7 @@
                     Texp_function
                     region true
                     alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[shared,contended .. unique,uncontended])
-                    [
-                      Nolabel
-                      Param_pat
-                        pattern (test.ml[3,104+15]..test.ml[3,104+17])
-                          Tpat_construct \"()\"
-                          []
-                          None
-                    ]
+                    []
                     Tfunction_body
                       expression (test.ml[3,104+11]..test.ml[3,104+28])
                         attribute \"merlin.incorrect\"

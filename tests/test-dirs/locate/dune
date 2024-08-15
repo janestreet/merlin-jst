@@ -31,3 +31,7 @@
   (applies_to
     in-implicit-trans-dep
     in-generated-file))
+
+; (cram
+;  (applies_to in-implicit-trans-dep)
+;  (enabled_if (>= %{read:version/dune.txt} "3.16")))

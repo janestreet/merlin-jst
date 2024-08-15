@@ -1,11 +1,16 @@
 (cram
  (applies_to :whole_subtree)
- (deps
-  %{bin:ocaml-index}))
+ (enabled_if %{bin-available:ocaml-index}))
 
+; Jane Street disabled tests -- they use dune.
+; Revisit when dune can run the flambda-backend compiler.
 (cram
- (applies_to pwo-ml-gen)
- (enabled_if (>= %{read:version/dune.txt} "3.16")))
+  (enabled_if false)
+  (applies_to pwo-ml-gen))
+
+; (cram
+;  (applies_to pwo-ml-gen)
+;  (enabled_if (and %{bin-available:ocaml-index} (>= %{read:version/dune.txt} "3.16"))))
 
 (subdir
  version

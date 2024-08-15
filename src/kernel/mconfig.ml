@@ -136,6 +136,7 @@ let dump_merlin x =
     "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
+    "source_root"  , Json.option Json.string x.source_root;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -267,14 +268,13 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     extensions = dot.extensions @ merlin.extensions;
     suffixes = dot.suffixes @ merlin.suffixes;
     stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-    source_root =
-      (if dot.source_root = None then merlin.source_root else dot.source_root);
-    unit_name =
-      (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
+    unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
     wrapping_prefix =
       if dot.wrapping_prefix = None
       then merlin.wrapping_prefix
       else dot.wrapping_prefix;
+    source_root =
+      (if dot.source_root = None then merlin.source_root else dot.source_root);
     reader =
       if dot.reader = []
       then merlin.reader
@@ -282,7 +282,7 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     flags_to_apply = dot.flags @ merlin.flags_to_apply;
     failures = failures @ merlin.failures;
     config_path = Some config_path;
-  }
+    }
 
 let get_external_config path t =
   let path = Misc.canonicalize_filename path in
