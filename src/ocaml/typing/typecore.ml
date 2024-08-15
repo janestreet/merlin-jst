@@ -6864,7 +6864,7 @@ and type_function_
   (* Merlin: [loc] is computed in [type_function] and passed through to
      here. (We use it in the error recovery in [type_function].)
   *)
-  let { ty_fun; _ } = in_function in
+  let ty_fun, _ = in_function in
   match params_suffix with
   | { pparam_desc = Pparam_newtype (newtype_var, jkind_annot) } :: rest ->
       (* Check everything else in the scope of (type a). *)
@@ -6906,8 +6906,16 @@ and type_function_
                   | None -> Alloc.newvar ()
                 in
                 Texp_function
-                  { params; body; ret_mode; ret_sort; alloc_mode; zero_alloc=Zero_alloc.default;
-                    region = in_function.region_locked });
+                  { params;
+                    body;
+                    ret_mode;
+                    ret_sort;
+                    alloc_mode =
+                      { mode = alloc_mode;
+                        closure_context = expected_mode.closure_context
+                      };
+                    zero_alloc=Zero_alloc.default
+                  });
               exp_loc = loc;
               exp_extra = [];
               exp_type;
@@ -7085,8 +7093,11 @@ and type_function_
                 in
                 Texp_function
                   { params; body; ret_mode; ret_sort;
-                    alloc_mode = Alloc.disallow_left alloc_mode; zero_alloc=Zero_alloc.default;
-                    region = in_function.region_locked });
+                    alloc_mode = {
+                      mode = Alloc.disallow_left alloc_mode;
+                      closure_context = expected_mode.closure_context
+                    };
+                    zero_alloc=Zero_alloc.default });
               exp_loc = loc;
               exp_extra = [];
               exp_type;
@@ -8562,9 +8573,11 @@ and type_function_cases_expect
                   body = Tfunction_cases cases;
                   ret_mode = Alloc.disallow_right ret_mode;
                   ret_sort;
-                  alloc_mode = Alloc.disallow_left alloc_mode;
+                  alloc_mode = {
+                    mode = Alloc.disallow_left alloc_mode;
+                    closure_context = expected_mode.closure_context
+                  };
                   zero_alloc = Zero_alloc.default;
-                  region = in_function.region_locked;
                 };
             exp_loc = loc;
             exp_extra = [];
