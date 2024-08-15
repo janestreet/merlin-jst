@@ -46,6 +46,7 @@ type merlin = {
   stdlib      : string option;
   unit_name   : string option;
   wrapping_prefix : string option;
+  source_root : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -98,6 +99,10 @@ type t = {
 val initial : t
 
 val dump : t -> json
+
+val merge_merlin_config :
+  Mconfig_dot.config
+  -> merlin -> failures:(string list) -> config_path:string -> merlin
 
 val get_external_config : string -> t -> t
 

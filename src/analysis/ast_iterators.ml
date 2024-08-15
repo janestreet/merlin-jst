@@ -49,3 +49,6 @@ let iter_on_usages ~f (local_defs : Mtyper.typedtree) =
   begin match local_defs with
   | `Interface signature -> iter.signature iter signature
   | `Implementation structure -> iter.structure iter structure end
+
+let iterator_on_usages ~f =
+  Cmt_format.iter_on_occurrences ~f

@@ -208,24 +208,15 @@ let dump pipeline = function
 
 let reconstruct_identifier pipeline pos = function
   | None ->
-    let path = Mreader.reconstruct_identifier
-        (Mpipeline.input_config pipeline)
-        (Mpipeline.raw_source pipeline)
-        pos
-    in
-    let path = Mreader_lexer.identifier_suffix path in
-    Logger.log
-      ~section:Type_enclosing.log_section
-      ~title:"reconstruct-identifier"
-      "paths: [%s]"
-      (String.concat ~sep:";" (List.map path
-        ~f:(fun l -> l.Location.txt)));
+    let config = Mpipeline.input_config pipeline in
+    let source = Mpipeline.raw_source pipeline in
+    let path = Misc_utils.parse_identifier (config, source) pos in
     let reify dot =
       if dot = "" ||
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
          (dot.[0] >= 'A' && dot.[0] <= 'Z')
       then dot
-      else "(" ^ dot ^ ")"
+      else "( " ^ dot ^ ")"
     in
     begin match path with
       | [] -> []
@@ -885,12 +876,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Locate.log ~title:"reconstructed identifier" "%s" path;
       path
     in
-    let locs =
-      match Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path with
-      | Ok { locs; _ } -> locs
-      | Error _ -> []
+    let { Occurrences.locs; status } =
+      Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path
     in
-    locs
+    locs, status
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
