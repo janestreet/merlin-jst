@@ -11,7 +11,7 @@ bug-reports: "https://github.com/ocaml/merlin/issues"
 depends: [
   "dune" {>= "3.0.0"}
   "ocaml" {>= "5.1" & < "5.2"}
-  "merlin-lib" {= version}
+  "merlin-lib" {>= "4.9"}
   "odoc" {with-doc}
 ]
 build: [
