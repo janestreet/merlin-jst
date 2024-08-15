@@ -228,12 +228,6 @@ and exp_extra =
       Merlin typechecker uses [Texp_newtype'] constructor, while upstream
       OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
       files. By adding a new constructor, we can still safely uses these. *)
-  | Texp_mode_coerce of Jane_syntax.Mode_expr.t
-        (** local_ E *)
-
-(* CR modes: Consider fusing [Texp_mode_coerce] and [Texp_constraint] when
-   the syntax changes.
-*)
   | Texp_stack
         (** stack_ E *)
 

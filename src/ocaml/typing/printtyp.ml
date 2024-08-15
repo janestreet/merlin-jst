@@ -1796,7 +1796,7 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
     if print_non_value_inferred_jkind
     then
       let jkind = Jkind.default_to_value_and_get decl.type_jkind in
-      match Jkind.Const.equal jkind Jkind.Const.Primitive.value.jkind with
+      match Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind with
       | true -> None
       | false -> Some jkind
     else None

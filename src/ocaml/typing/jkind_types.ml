@@ -12,6 +12,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+module Misc = Misc_stdlib
+
 module Sort = struct
   type const =
     | Void

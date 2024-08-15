@@ -4921,8 +4921,8 @@ let split_function_ty
         (* Merlin: we recover with an expected type of 'a -> 'b *)
         let level = get_level (instance ty_expected) in
         raise_error (error(loc_fun, env, err));
-        let arg_kind = Jkind.Primitive.any ~why:Inside_of_Tarrow in
-        let ret_kind = Jkind.Primitive.any ~why:Inside_of_Tarrow in
+        let arg_kind = Jkind.Builtin.any ~why:Inside_of_Tarrow in
+        let ret_kind = Jkind.Builtin.any ~why:Inside_of_Tarrow in
         { ty_arg = newty (Tpoly (newvar2 level arg_kind, []))
         ; arg_mode = Mode.Alloc.newvar ()
         ; ty_ret = newvar2 level ret_kind

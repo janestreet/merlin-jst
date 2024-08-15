@@ -947,7 +947,7 @@ let merloc startpos ?endpos x =
   let default_pattern () = Pat.any ~loc:!default_loc ()
 
   let default_pattern_and_mode () =
-    Pat.any ~loc:!default_loc (), []
+    Pat.any ~loc:!default_loc (), None, []
 
   let default_module_expr () = Mod.structure ~loc:!default_loc []
   let default_module_type () = Mty.signature ~loc:!default_loc []
