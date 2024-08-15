@@ -23,3 +23,11 @@
   (applies_to
     in-implicit-trans-dep
     in-generated-file))
+
+; (cram
+;  (applies_to in-implicit-trans-dep)
+;  (enabled_if (>= %{read:version/dune.txt} "3.16")))
+
+(subdir
+ version
+ (rule (action (with-stdout-to dune.txt (run dune --version)))))

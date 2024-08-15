@@ -15,30 +15,27 @@ module Lid : Set.OrderedType with type t = Longident.t Location.loc = struct
     | n -> n
 end
 
-module LidSet = Set.Make (Lid)
+module Lid_set = Set.Make (Lid)
+module Uid_map = Shape.Uid.Map
 module Stats = Map.Make (String)
 
-(** [add tbl uid locs] adds a binding of [uid] to the locations [locs]. If this key is
-    already present the locations are merged. *)
-let add tbl uid locs =
-  try
-    let locations = Hashtbl.find tbl uid in
-    Hashtbl.replace tbl uid (LidSet.union locs locations)
-  with Not_found -> Hashtbl.add tbl uid locs
+let add map uid locs = Uid_map.update uid (function
+    | None -> Some locs
+    | Some locs' -> Some (Lid_set.union locs' locs))
+  map
 
-type stat = { mtime : float; size : int; source_digest: string option }
+type stat = { mtime : float; size : int; source_digest : string option }
+
 type index = {
-  defs : (Shape.Uid.t, LidSet.t) Hashtbl.t;
-  approximated : (Shape.Uid.t, LidSet.t) Hashtbl.t;
-  load_path : Load_path.paths;
+  defs : Lid_set.t Uid_map.t;
+  approximated : Lid_set.t Uid_map.t;
   cu_shape : (string, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
 }
 
-let pp_partials (fmt : Format.formatter)
-    (partials : (Shape.Uid.t, LidSet.t) Hashtbl.t) =
+let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "{@[";
-  Hashtbl.iter
+  Uid_map.iter
     (fun uid locs ->
       Format.fprintf fmt "@[<hov 2>uid: %a; locs:@ @[<v>%a@]@]@;"
         Shape.Uid.print uid
@@ -48,13 +45,13 @@ let pp_partials (fmt : Format.formatter)
              Format.fprintf fmt "%S: %a"
                (try Longident.flatten txt |> String.concat "." with _ -> "<?>")
                Location.print_loc loc))
-        (LidSet.elements locs))
+        (Lid_set.elements locs))
     partials;
   Format.fprintf fmt "@]}"
 
 let pp (fmt : Format.formatter) pl =
-  Format.fprintf fmt "%i uids:@ {@[" (Hashtbl.length pl.defs);
-  Hashtbl.iter
+  Format.fprintf fmt "%i uids:@ {@[" (Uid_map.cardinal pl.defs);
+  Uid_map.iter
     (fun uid locs ->
       Format.fprintf fmt "@[<hov 2>uid: %a; locs:@ @[<v>%a@]@]@;"
         Shape.Uid.print uid
@@ -64,19 +61,18 @@ let pp (fmt : Format.formatter) pl =
              Format.fprintf fmt "%S: %a"
                (try Longident.flatten txt |> String.concat "." with _ -> "<?>")
                Location.print_loc loc))
-        (LidSet.elements locs))
+        (Lid_set.elements locs))
     pl.defs;
   Format.fprintf fmt "@]},@ ";
   Format.fprintf fmt "%i approx shapes:@ @[%a@],@ "
-    (Hashtbl.length pl.approximated)
+    (Uid_map.cardinal pl.approximated)
     pp_partials pl.approximated;
   Format.fprintf fmt "and shapes for CUS %s.@ "
     (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq))
 
 let ext = "ocaml-index"
 
-(* [magic_number] Must be the same lenght as cmt's magic numbers *)
-let magic_number = "Merl2023I001"
+let magic_number = Config.index_magic_number
 
 let write ~file index =
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
