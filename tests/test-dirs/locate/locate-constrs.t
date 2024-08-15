@@ -16,14 +16,7 @@
       "col": 9
     }
   }
-<<<<<<< HEAD
-||||||| fcc3157ab0
 
-FIXME: this is not a very satisfying answer. 
-We could expect 1:9
-=======
-
->>>>>>> 501-plus-upstream-main-9fa77db
   $ $MERLIN single locate  -look-for ml -position 2:14 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {

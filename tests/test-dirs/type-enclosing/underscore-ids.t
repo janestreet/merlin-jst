@@ -319,7 +319,6 @@ We try several places in the identifier to check the result stability
       {
         "start": {
           "line": 2,
-<<<<<<< HEAD
           "col": 18
         },
         "end": {
@@ -344,33 +343,6 @@ We try several places in the identifier to check the result stability
       {
         "start": {
           "line": 2,
-||||||| fcc3157ab0
-          "col": 18
-        },
-        "end": {
-          "line": 5,
-          "col": 17
-        },
-        "type": "int option -> int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 2,
-          "col": 10
-        },
-        "end": {
-          "line": 5,
-          "col": 17
-        },
-        "type": "'a",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 2,
-=======
->>>>>>> 501-plus-upstream-main-9fa77db
           "col": 6
         },
         "end": {

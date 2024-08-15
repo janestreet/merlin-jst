@@ -335,7 +335,7 @@ let legacy_modality f m =
   let s =
     match txt with
     | Modality "global" -> "global_"
-    | Modality s -> Misc.fatal_errorf "Unrecognized modality %s - should not parse" s
+    | Modality s -> s
   in
   pp_print_string f s
 

@@ -83,15 +83,7 @@ locate position 2:1 returns the definition of [(+)]
   {
     "file": "lib/ocaml/stdlib.mli",
     "pos": {
-<<<<<<< HEAD
       "line": 339,
       "col": 9
-||||||| fcc3157ab0
-      "line": 335,
-      "col": 0
-=======
-      "line": 335,
-      "col": 9
->>>>>>> 501-plus-upstream-main-9fa77db
     }
   }

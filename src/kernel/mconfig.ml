@@ -584,7 +584,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style"; "-dump-dir"; "-cmi-file"; "-libloc";
+  "-error-style"; "-dump-dir"; "-libloc";
 
   (* flambda-backend specific *)
   "-extension";
@@ -922,7 +922,8 @@ let () =
     args, (upd a b)
   in
   let add prj upd (name,flag,_doc) =
-    assert (not (Hashtbl.mem arguments_table name));
+    if Hashtbl.mem arguments_table name then
+      failwith ("Duplicate flag spec: " ^ name);
     Hashtbl.add arguments_table name (lens prj upd flag)
   in
   List.iter

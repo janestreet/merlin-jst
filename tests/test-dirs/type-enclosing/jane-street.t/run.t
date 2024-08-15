@@ -375,8 +375,8 @@ escape characters in string literals, so we use the revert-newlines script.
   > run layouts.ml 30:6
   type _                p0 = A0
        ^
-  With verbosity 0: "'_"
-  With verbosity 1: "'_"
+  With verbosity 0: "_"
+  With verbosity 1: "_"
   
   type 'a               p1 = A1 of 'a
        ^
