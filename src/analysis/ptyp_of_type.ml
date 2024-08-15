@@ -48,6 +48,8 @@ and core_type type_expr =
     Typ.arrow label
       type_expr
       (core_type type_expr_out)
+      (failwith "TODO")
+      (failwith "TODO")
   | Ttuple type_exprs ->
       let labeled_type_exprs =
         List.map ~f:(fun (lbl, ty) -> lbl, core_type ty) type_exprs

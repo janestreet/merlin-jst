@@ -18,7 +18,7 @@
 open Misc
 open Parsetree
 
-module String = Misc.Stdlib.String
+module String = Misc_stdlib.String
 
 type boxed_integer = Pnativeint | Pint32 | Pint64
 
