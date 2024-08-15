@@ -31,6 +31,7 @@ type index = {
   approximated : Lid_set.t Uid_map.t;
   cu_shape : (string, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
+  root_directory: string option;
 }
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
@@ -80,7 +81,7 @@ let write ~file index =
       output_string oc magic_number;
       output_value oc (index : index))
 
-type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
+type file_content = Cmt of Cmt_format.cmt_infos | Cms of Cms_format.cms_infos | Index of index | Unknown
 
 let read ~file =
   let ic = open_in_bin file in
