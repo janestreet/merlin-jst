@@ -349,7 +349,7 @@ We try several places in the identifier to check the result stability
           "line": 5,
           "col": 17
         },
-        "type": "'a -> int",
+        "type": "'a -> 'b",
         "tail": "no"
       }
     ],
