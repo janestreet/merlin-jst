@@ -474,29 +474,29 @@ escape characters in string literals, so we use the revert-newlines script.
   
   null
   
-  |let f x = local_ (Some (Some x))
-  |                             ^
+  |let f x = exclave_ (Some (Some x))
+  |                               ^
   
-  |let f x = local_ (Some (Some x))
-  |                       ^^^^^^^^
-  
-  "stack"
-  
-  |let f x = local_ (Some (Some x))
-  |                             ^
-  
-  |let f x = local_ (Some (Some x))
-  |          ^^^^^^^^^^^^^^^^^^^^^^
+  |let f x = exclave_ (Some (Some x))
+  |                         ^^^^^^^^
   
   "stack"
   
-  |let f x = local_ (Some (Some x))
-  |                             ^
+  |let f x = exclave_ (Some (Some x))
+  |                               ^
+  
+  |let f x = exclave_ (Some (Some x))
+  |                   ^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |let f x = exclave_ (Some (Some x))
+  |                               ^
   
   null
   
-  |let f x = local_ (Some (Some x))
-  |                             ^
+  |let f x = exclave_ (Some (Some x))
+  |                               ^
   
   null
   
