@@ -1793,9 +1793,13 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
   (* Merlin only: we print the inferred jkind (not the jkind annotation) if
      the user asked for it hard enough. *)
   let inferred_jkind_to_print =
-    match print_non_value_inferred_jkind with
-    | true -> Some (Jkind.default_to_value_and_get decl.type_jkind)
-    | false -> None
+    if print_non_value_inferred_jkind
+    then
+      let jkind = Jkind.default_to_value_and_get decl.type_jkind in
+      match Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind with
+      | true -> None
+      | false -> Some jkind
+    else None
   in
   (* The algorithm for setting [lay] here is described as Case (C1) in
      Note [When to print jkind annotations] *)
