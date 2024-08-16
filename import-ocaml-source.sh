@@ -3,16 +3,15 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # Script arguments with their default values
-commitish=main
 repository=https://github.com/ocaml-flambda/flambda-backend
 subdirectory=ocaml
 
 function usage () {
   cat <<USAGE
-Usage: $0 [COMMITISH [REPO [SUBDIRECTORY]]]
+Usage: $0 COMMITISH [REPO [SUBDIRECTORY]]
 
 Fetch the new compiler sources and patch Merlin to keep Merlin's local copies of
-things in sync.  By default, this will pull the "$commitish" branch from
+things in sync.  By default, this will pull the COMMITISH branch from
 <$repository> and look in "$subdirectory/" for the compiler source, but the
 branch can be overridden by any commitish (branch, tag, full (not abbreviated!)
 commit hash, etc.), the repository can be overridden by any URL, and the
@@ -41,8 +40,14 @@ case "$1" in
     ;;
 esac
 
+if [[ $# -gt 0 ]]; then
+  commitish="$1"
+else
+  usage >&2
+  exit 1
+fi
+
 if [[ $# -le 3 ]]; then
-  commitish="${1-$commitish}"
   repository="${2-$repository}"
   subdirectory="${3-$subdirectory}"
 else
