@@ -447,8 +447,18 @@ module Utils = struct
   let find_file ~config ?with_fallback (file : File.t) =
     find_file_with_path ~config ?with_fallback file @@
         match file with
-        (* CR nroberts: it seems suspicious that we append the hidden paths but
-           upstream does not. Also, can cmt_path be used for the cms loadpath?
+        (* Here there is drift between janestreet/merlin-jst and ocaml/merlin:
+           In merlin-jst, we look in both visible and hidden paths. In upstream
+           merlin, we look in only visible paths.
+
+           We ought to be able to reduce drift here by either:
+           - upstreaming the looking-in of hidden paths.
+           - fixing merlin-jst to make it so it's not necessary to also look
+              in hidden paths here.
+
+           Nobody has closely investigated the source of the drift. Liam thinks
+           that some -H functionality doesn't work upstream; this might be one
+           such case, or it might not. (We suspect this one is such a case.)
         *)
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config @ Mconfig.hidden_source_path config
         | CMT _ | CMTI _         -> Mconfig.cmt_path config @ Mconfig.hidden_build_path config

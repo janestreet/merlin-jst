@@ -838,11 +838,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let rec aux = function
       | [] -> raise Not_found
       | x :: xs ->
-          (* CR nroberts: upstream doesn't use hidden here *)
+        (* Here there is drift between janestreet/merlin-jst and ocaml/merlin:
+           In merlin-jst, we look in both visible and hidden paths. In upstream
+           merlin, we look in only visible paths.
+
+           We ought to be able to reduce drift here by either:
+            - upstreaming the looking-in of hidden paths.
+            - fixing merlin-jst to make it so it's not necessary to also look
+              in hidden paths here.
+
+           Nobody has closely investigated the source of the drift. Liam thinks
+           that some -H functionality doesn't work upstream; this might be one
+           such case, or it might not.
+        *)
         try
           find_in_path_normalized (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
         with Not_found -> try
-            (* CR nroberts: upstream doesn't use hidden here *)
             find_in_path_normalized (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
           with Not_found ->
             aux xs
