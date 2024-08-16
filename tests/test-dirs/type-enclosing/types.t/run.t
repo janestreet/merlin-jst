@@ -127,7 +127,7 @@ Same result regardless of verbosity:
         "line": 11,
         "col": 19
       },
-      "type": "type 'a l = 'a l",
+      "type": "type 'a l : value = 'a l",
       "tail": "no"
     }
   ]

@@ -54,7 +54,7 @@ escape characters in string literals, so we use the revert-newlines script.
   type t3 : value = D | E of int
       ^
   With verbosity 0: "type t3 = D | E of int"
-  With verbosity 1: "type t3 = D | E of int"
+  With verbosity 1: "type t3 : value = D | E of int"
   
   type t4 : immediate64 = A
       ^
@@ -63,7 +63,7 @@ escape characters in string literals, so we use the revert-newlines script.
   
   type t5 : value
       ^
-  With verbosity 0: "type t5 : value"
+  With verbosity 0: "type t5"
   With verbosity 1: "type t5 : value"
   
   type t6 : value = { v : int } [@@unboxed]
@@ -206,7 +206,7 @@ escape characters in string literals, so we use the revert-newlines script.
   let f3 (x : t3) = x
               ^
   With verbosity 0: "type t3 = D | E of int"
-  With verbosity 1: "type t3 = D | E of int"
+  With verbosity 1: "type t3 : value = D | E of int"
   
   let f4 (x : t4) = x
               ^
@@ -215,7 +215,7 @@ escape characters in string literals, so we use the revert-newlines script.
   
   let f5 (x : t5) = x
               ^
-  With verbosity 0: "type t5 : value"
+  With verbosity 0: "type t5"
   With verbosity 1: "type t5 : value"
   
   let f6 (x : t6) = x
@@ -283,11 +283,11 @@ escape characters in string literals, so we use the revert-newlines script.
   let poly1 (type a)           (x : a) = x
                                     ^
   With verbosity 0: "type a"
-  With verbosity 1: "type a"
+  With verbosity 1: "type a : value"
   
   let poly2 (type a : value)   (x : a) = x
                                     ^
-  With verbosity 0: "type a : value"
+  With verbosity 0: "type a"
   With verbosity 1: "type a : value"
   
   let poly3 (type a : float64) (x : a) = x
@@ -361,7 +361,7 @@ escape characters in string literals, so we use the revert-newlines script.
   type 'a               p1 = A1 of 'a
                        ^
   With verbosity 0: "type 'a p1 = A1 of 'a"
-  With verbosity 1: "type 'a p1 = A1 of 'a"
+  With verbosity 1: "type 'a p1 : value = A1 of 'a"
   
   type ('a : immediate) p2 = A2 of 'a [@@unboxed]
                        ^
