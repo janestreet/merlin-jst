@@ -59,6 +59,7 @@ val tyvar: Format.formatter -> string -> unit
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
 val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
+<<<<<<< janestreet/merlin-jst:
 
 val mode : Format.formatter -> Jane_syntax.Mode_expr.Const.t -> unit
 
@@ -66,3 +67,8 @@ val mode : Format.formatter -> Jane_syntax.Mode_expr.Const.t -> unit
 val case_list : Format.formatter -> Parsetree.case list -> unit
 val protect_ident : Format.formatter -> string -> unit
 val needs_parens : string -> bool
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+val mode : Format.formatter -> Jane_syntax.Mode_expr.Const.t -> unit
+=======
+val mode : Format.formatter -> Parsetree.mode Location.loc -> unit
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21

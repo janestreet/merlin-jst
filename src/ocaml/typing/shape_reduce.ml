@@ -23,13 +23,30 @@ type result =
   | Unresolved of t
   | Approximated of Uid.t option
   | Internal_error_missing_uid
+<<<<<<< janestreet/merlin-jst:
 
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+let print_result fmt result =
+=======
+let rec print_result fmt result =
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 let rec print_result fmt result =
   match result with
   | Resolved uid ->
+<<<<<<< janestreet/merlin-jst:
       Format.fprintf fmt "@[Resolved: %a@]@;" Uid.print uid
   | Resolved_alias (uid, r) ->
       Format.fprintf fmt "@[Alias: %a -> %a@]@;"
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+  | Resolved_alias uids ->
+      Format.fprintf fmt "@[Resolved_alias: %a@]@;"
+        Format.(pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "@ -> ")
+        Uid.print) uids
+=======
+  | Resolved_alias (uid, r) ->
+      Format.fprintf fmt "@[Alias: %a -> %a@]@;"
+        Uid.print uid print_result r
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
         Uid.print uid print_result r
   | Unresolved shape ->
       Format.fprintf fmt "@[Unresolved: %a@]@;" print shape
@@ -229,7 +246,13 @@ end) = struct
   and reduce__
     ({fuel; global_env; local_env; _} as env) (t : t) =
     let reduce env t = reduce_ env t in
+<<<<<<< janestreet/merlin-jst:
     let delay_reduce env t = Thunk (env.local_env, t) in
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+          let nf = force delayed_nf in
+=======
+          let nf = force env delayed_nf in
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
     let return desc = { uid = t.uid; desc; approximated = t.approximated } in
     let rec force_aliases nf = match nf.desc with
       | NAlias delayed_nf ->
@@ -370,6 +393,43 @@ end) = struct
     | NStruct _ | NAbs _ -> false
     | NAlias _ -> false
     | NComp_unit _ -> true
+<<<<<<< janestreet/merlin-jst:
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+    | NError _ -> false
+    | NLeaf -> false
+
+  let get_aliases_uids (t : t) =
+    let rec aux acc (t : t) = match t with
+      | { uid = Some uid; desc = Alias t; _ } -> aux (uid::acc) t
+      | { uid = Some uid; _ } -> Resolved_alias (List.rev (uid::acc))
+      | _ -> Internal_error_missing_uid
+    in
+    aux [] t
+
+  let reduce_for_uid global_env t =
+    let fuel = ref Params.fuel in
+=======
+    | NError _ -> false
+    | NLeaf -> false
+
+  let rec reduce_aliases_for_uid env (nf : nf) =
+    match nf with
+    | { uid = Some uid; desc = NAlias dnf; approximated = false; _ } ->
+        let result = reduce_aliases_for_uid env (force env dnf) in
+        Resolved_alias (uid, result)
+    | { uid = Some uid; approximated = false; _ } -> Resolved uid
+    | { uid; approximated = true } -> Approximated uid
+    | { uid = None; approximated = false; _ } ->
+      (* A missing Uid after a complete reduction means the Uid was first
+         missing in the shape which is a code error. Having the
+         [Missing_uid] reported will allow Merlin (or another tool working
+         with the index) to ask users to report the issue if it does happen.
+      *)
+      Internal_error_missing_uid
+
+  let reduce_for_uid global_env t =
+    let fuel = ref Params.fuel in
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
     | NError _ -> false
     | NLeaf -> false
 
@@ -391,6 +451,38 @@ end) = struct
   let reduce_for_uid global_env t =
     let fuel = ref Params.fuel in
     let local_env = Ident.Map.empty in
+<<<<<<< janestreet/merlin-jst:
+||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
+    let nf = reduce_ env t in
+    if is_stuck_on_comp_unit nf then
+      Unresolved (read_back env nf)
+    else match nf with
+      | { desc = NAlias _; approximated = false; _ } ->
+          get_aliases_uids (read_back env nf)
+      | { uid = Some uid; approximated = false; _ } ->
+          Resolved uid
+      | { uid; approximated = true; _ } ->
+          Approximated uid
+      | { uid = None; approximated = false; _ } ->
+          (* A missing Uid after a complete reduction means the Uid was first
+             missing in the shape which is a code error. Having the
+             [Missing_uid] reported will allow Merlin (or another tool working
+             with the index) to ask users to report the issue if it does happen.
+          *)
+          Internal_error_missing_uid
+end
+
+module Local_reduce =
+=======
+    let nf = reduce_ env t in
+    if is_stuck_on_comp_unit nf then
+      Unresolved (read_back env nf)
+    else
+      reduce_aliases_for_uid env nf
+end
+
+module Local_reduce =
+>>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
     let env = {
       fuel;
       global_env;
