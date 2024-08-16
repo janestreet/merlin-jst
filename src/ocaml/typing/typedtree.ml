@@ -131,14 +131,9 @@ and exp_extra =
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
   | Texp_newtype of string * Jkind.annotation option
-<<<<<<< janestreet/merlin-jst:
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
   | Texp_mode_coerce of Jane_syntax.Mode_expr.t
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | Texp_mode_coerce of Jane_syntax.Mode_expr.t
-=======
   | Texp_stack
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -1195,28 +1190,6 @@ let rec exp_is_nominal exp =
       exp_is_nominal parent
   | _ -> false
 
-
-(* Merlin specific *)
-
-let unpack_functor_me me =
-  match me.mod_desc with
-  | Tmod_functor (fp, mty) -> fp, mty
-  | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
-
-let unpack_functor_mty mty =
-<<<<<<< janestreet/merlin-jst:
-  match mty.mty_desc with
-  | Tmty_functor (fp, mty) -> fp, mty
-  | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
-=======
-  | Texp_field (parent, _, _, _) | Texp_send (parent, _, _) ->
-      exp_is_nominal parent
-  | _ -> false
-
 let loc_of_decl ~uid =
   let of_option { txt; loc } =
     match txt with
@@ -1246,4 +1219,16 @@ let loc_of_decl ~uid =
   | Module_substitution msd -> msd.ms_name
   | Class cd -> cd.ci_id_name
   | Class_type ctd -> ctd.ci_id_name
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+
+
+(* Merlin specific *)
+
+let unpack_functor_me me =
+  match me.mod_desc with
+  | Tmod_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
+
+let unpack_functor_mty mty =
+  match mty.mty_desc with
+  | Tmty_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"

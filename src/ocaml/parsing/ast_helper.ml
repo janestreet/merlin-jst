@@ -233,14 +233,10 @@ module Exp = struct
     mk ?loc ?attrs (Pexp_letop {let_; ands; body})
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
-<<<<<<< janestreet/merlin-jst:
+  let stack ?loc ?attrs e = mk ?loc ?attrs (Pexp_stack e)
   let hole ?(loc = !default_loc) ?attrs () =
     let id = Location.mkloc hole_txt loc in
     mk ~loc ?attrs  @@ Pexp_extension (id, PStr [])
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
-  let stack ?loc ?attrs e = mk ?loc ?attrs (Pexp_stack e)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 
   let case lhs ?guard rhs =
     {

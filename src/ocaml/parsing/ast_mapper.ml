@@ -1008,19 +1008,7 @@ let default_mapper =
 
 
     value_binding =
-<<<<<<< janestreet/merlin-jst:
-      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_attributes; pvb_loc} ->
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_attributes; pvb_loc} ->
-         let map_ct (ct:Parsetree.value_constraint) = match ct with
-           | Pvc_constraint {locally_abstract_univars=vars; typ} ->
-               Pvc_constraint
-=======
       (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_modes; pvb_attributes; pvb_loc} ->
-         let map_ct (ct:Parsetree.value_constraint) = match ct with
-           | Pvc_constraint {locally_abstract_univars=vars; typ} ->
-               Pvc_constraint
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
       let map_ct (ct:Parsetree.value_constraint) = match ct with
       | Pvc_constraint {locally_abstract_univars=vars; typ} ->
           Pvc_constraint

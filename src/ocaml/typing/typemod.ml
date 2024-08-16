@@ -3766,21 +3766,7 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
           Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
             annots (Some sourcefile) initial_env None (Some shape);
           Cms_format.save_cms (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) (Some shape);
-<<<<<<< janestreet/merlin-jst:
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env None (Some shape);
-            Cms_format.save_cms (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) (Some shape);
-            gen_annot outputprefix sourcefile annots);
-=======
-            Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env None (Some shape);
-            Cms_format.save_cms (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) initial_env (Some shape);
-            gen_annot outputprefix sourcefile annots);
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+            annots (Some sourcefile) initial_env (Some shape);
           { structure = str;
             coercion;
             shape;
@@ -3826,21 +3812,7 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
               annots (Some sourcefile) initial_env (Some cmi) (Some shape);
             Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) (Some shape)
-<<<<<<< janestreet/merlin-jst:
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-              Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-                annots (Some sourcefile) initial_env (Some cmi) (Some shape);
-              Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-                annots (Some sourcefile) (Some shape);
-              gen_annot outputprefix sourcefile annots)
-=======
-              Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-                annots (Some sourcefile) initial_env (Some cmi) (Some shape);
-              Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-                annots (Some sourcefile) initial_env (Some shape);
-              gen_annot outputprefix sourcefile annots)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+              annots (Some sourcefile) initial_env (Some shape)
           end;
           { structure = str;
             coercion;
@@ -3859,21 +3831,7 @@ let type_implementation ~sourcefile outputprefix modulename initial_env ast =
         Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
           annots (Some sourcefile) initial_env None None;
         Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-<<<<<<< janestreet/merlin-jst:
-          annots (Some sourcefile) None
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-            annots (Some sourcefile) initial_env None None;
-          Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) None;
-          gen_annot outputprefix sourcefile annots)
-=======
-          Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-            annots (Some sourcefile) initial_env None None;
-          Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) initial_env None;
-          gen_annot outputprefix sourcefile annots)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+          annots (Some sourcefile) initial_env None
       )
 
 let save_signature modname tsg outputprefix source_file initial_env cmi =

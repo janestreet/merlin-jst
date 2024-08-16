@@ -462,25 +462,13 @@ let exp_extra sub (extra, loc, attrs) sexp =
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(add_loc s, jkind, sexp))
         |> add_jane_syntax_attributes
-<<<<<<< janestreet/merlin-jst:
     | Texp_newtype' (_id, label_loc, None, _) ->
         Pexp_newtype (label_loc, sexp)
     | Texp_newtype' (_id, label_loc, Some (_, jkind), _) ->
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(label_loc, jkind, sexp))
         |> add_jane_syntax_attributes
-    | Texp_mode_coerce modes ->
-        Jane_syntax.Modes.expr_of ~loc
-          (Coerce (modes, sexp))
-        |> add_jane_syntax_attributes
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    | Texp_mode_coerce modes ->
-        Jane_syntax.Modes.expr_of ~loc
-          (Coerce (modes, sexp))
-        |> add_jane_syntax_attributes
-=======
     | Texp_stack -> Pexp_stack sexp
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   in
   Exp.mk ~loc ~attrs:!attrs desc
 
@@ -578,18 +566,6 @@ let expression sub exp =
                 match exp_extra with
                 | Some (Texp_coerce (ty1, ty2)) ->
                     Some
-<<<<<<< janestreet/merlin-jst:
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2))
-                | Some (Texp_constraint ty) ->
-                    Some (Pconstraint (sub.typ sub ty))
-                | Some (Texp_poly _ | Texp_newtype _ | Texp_mode_coerce _
-                       | Texp_newtype' _)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2))
-                | Some (Texp_constraint ty) ->
-                    Some (Pconstraint (sub.typ sub ty))
-                | Some (Texp_poly _ | Texp_newtype _ | Texp_mode_coerce _)
-=======
                       (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2), [])
                 | Some (Texp_constraint (Some ty, modes)) ->
                   Some (
@@ -597,8 +573,8 @@ let expression sub exp =
                     Typemode.untransl_mode_annots ~loc modes
                   )
                 | Some (Texp_poly _ | Texp_newtype _) | Some (Texp_constraint (None, _))
+                | Some (Texp_newtype' _)
                 | Some Texp_stack
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
                 | None -> None
               in
               let constraint_ =

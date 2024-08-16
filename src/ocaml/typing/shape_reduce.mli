@@ -20,13 +20,7 @@ type result =
   | Resolved of Shape.Uid.t (** Shape reduction succeeded and a uid was found *)
   | Resolved_alias of Shape.Uid.t * result (** Reduction led to an alias *)
   | Unresolved of Shape.t (** Result still contains [Comp_unit] terms *)
-<<<<<<< janestreet/merlin-jst:
   | Approximated of Shape.Uid.t option
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    (** Reduction failed: it can arrive with first-clsss modules for example *)
-=======
-    (** Reduction failed: it can arrive with first-class modules for example *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
     (** Reduction failed: it can arrive with first-class modules for example *)
   | Internal_error_missing_uid
     (** Reduction succeeded but no uid was found, this should never happen *)

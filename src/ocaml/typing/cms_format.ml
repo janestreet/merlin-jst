@@ -107,19 +107,7 @@ let save_cms filename modname binary_annots sourcefile initial_env shape =
               then Env.keep_only_summary initial_env else initial_env in
             cms_ident_occurrences, Some cms_initial_env
           else
-<<<<<<< janestreet/merlin-jst:
-            [| |]
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            [| |]
-        in
-        let cms_uid_to_loc, cms_uid_to_attributes =
-          uid_tables_of_binary_annots binary_annots
-=======
             [| |], None
-        in
-        let cms_uid_to_loc, cms_uid_to_attributes =
-          uid_tables_of_binary_annots binary_annots
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
          in
          let cms_uid_to_loc, cms_uid_to_attributes = 
            uid_tables_of_binary_annots binary_annots 
@@ -128,23 +116,6 @@ let save_cms filename modname binary_annots sourcefile initial_env shape =
            cms_modname = modname;
            cms_comments = [];
               (* XXX merlin: upstream does
-<<<<<<< janestreet/merlin-jst:
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            cms_sourcefile = sourcefile;
-            cms_builddir = Location.rewrite_absolute_path (Sys.getcwd ());
-            cms_source_digest = source_digest;
-            cms_uid_to_loc;
-            cms_uid_to_attributes;
-            cms_impl_shape = shape;
-=======
-            cms_sourcefile = sourcefile;
-            cms_builddir = Location.rewrite_absolute_path (Sys.getcwd ());
-            cms_source_digest = source_digest;
-            cms_initial_env;
-            cms_uid_to_loc;
-            cms_uid_to_attributes;
-            cms_impl_shape = shape;
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
                    `cms_comments = Lexer.comments ()`
                  here.  But we don't seem to have the same lexer, so we can't
                  do that straightforwardly.  On the other hand, this function
@@ -153,6 +124,7 @@ let save_cms filename modname binary_annots sourcefile initial_env shape =
            cms_sourcefile = sourcefile;
            cms_builddir = Location.rewrite_absolute_path (Sys.getcwd ());
            cms_source_digest = source_digest;
+           cms_initial_env;
            cms_uid_to_loc;
            cms_uid_to_attributes;
            cms_impl_shape = shape;

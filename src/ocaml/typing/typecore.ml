@@ -4090,220 +4090,6 @@ let check_recursive_class_bindings env ids exprs =
          raise(error(expr.cl_loc, env, Illegal_class_expr)))
     exprs
 
-<<<<<<< janestreet/merlin-jst:
-module Is_local_returning : sig
-  val function_body : Parsetree.function_body -> bool
-end = struct
-
-  (* Is the return value annotated with "local_"?
-     [assert false] can work either way *)
-
-  type local_returning_flag =
-    | Local of Location.t  (* location of a local return *)
-    | Not of Location.t  (* location of a non-local return *)
-    | Either
-
-  let combine flag1 flag2 =
-    match flag1, flag2 with
-    | (Local _ as flag), Local _
-    | (Local _ as flag), Either
-    | (Not _ as flag), Not _
-    | (Not _ as flag), Either
-    | Either, (Local _ as flag)
-    | Either, (Not _ as flag)
-    | (Either as flag), Either ->
-      flag
-
-    | Local local_loc, Not not_local_loc
-    | Not not_local_loc, Local local_loc ->
-       raise(error(not_local_loc, Env.empty,
-                   Local_return_annotation_mismatch local_loc))
-
-  let expr e =
-    let rec loop e =
-      match Jane_syntax.Expression.of_ast e with
-      | Some (jexp, _attrs) -> begin
-          match jexp with
-          | Jexp_comprehension   _ -> Not e.pexp_loc
-          | Jexp_immutable_array _ -> Not e.pexp_loc
-          | Jexp_layout (Lexp_constant _) -> Not e.pexp_loc
-          | Jexp_layout (Lexp_newtype (_, _, e)) -> loop e
-          | Jexp_tuple _ -> Not e.pexp_loc
-          | Jexp_modes (Coerce (modes, exp)) ->
-              if List.exists
-                  (fun { Location.txt; _ } -> txt = "local")
-                  modes.txt
-              then Local e.pexp_loc
-              else loop exp
-        end
-      | None      ->
-      match e.pexp_desc with
-      | Pexp_assert { pexp_desc = Pexp_construct ({ txt = Lident "false" },
-                                                  None) } ->
-          Either
-      | Pexp_ident _ | Pexp_constant _ | Pexp_apply _ | Pexp_tuple _
-      | Pexp_construct _ | Pexp_variant _ | Pexp_record _ | Pexp_field _
-      | Pexp_setfield _ | Pexp_array _ | Pexp_while _ | Pexp_for _ | Pexp_send _
-      | Pexp_new _ | Pexp_setinstvar _ | Pexp_override _ | Pexp_assert _
-      | Pexp_lazy _ | Pexp_object _ | Pexp_pack _ | Pexp_function _
-      | Pexp_letop _ | Pexp_extension _ | Pexp_unreachable ->
-          Not e.pexp_loc
-      | Pexp_let(_, _, e) | Pexp_sequence(_, e) | Pexp_constraint(e, _)
-      | Pexp_coerce(e, _, _) | Pexp_letmodule(_, _, e) | Pexp_letexception(_, e)
-      | Pexp_poly(e, _) | Pexp_newtype(_, e) | Pexp_open(_, e)
-      | Pexp_ifthenelse(_, e, None)->
-          loop e
-      | Pexp_ifthenelse(_, e1, Some e2)-> combine (loop e1) (loop e2)
-      | Pexp_match(_, cases) -> begin
-          match cases with
-          | [] -> Not e.pexp_loc
-          | first :: rest ->
-              List.fold_left
-                (fun acc pc -> combine acc (loop pc.pc_rhs))
-                (loop first.pc_rhs) rest
-        end
-      | Pexp_try(e, cases) ->
-          List.fold_left
-            (fun acc pc -> combine acc (loop pc.pc_rhs))
-            (loop e) cases
-    in
-    loop e
-
-  let cases cs =
-    match cs with
-    | [] -> Either
-    | case :: cases ->
-        let is_local_returning_case case =
-          expr case.pc_rhs
-        in
-        List.fold_left
-          (fun acc case -> combine acc (is_local_returning_case case))
-          (is_local_returning_case case) cases
-
-  let function_body body =
-    match body with
-    | Pfunction_body body -> expr body
-    | Pfunction_cases (cs, _, _) -> cases cs
-
-  let is_strictly_local = function
-    | Local _ -> true
-    | Either | Not _ -> false
-        (* [fun _ -> assert false] must not be local-returning for
-          backward compatibility *)
-
-  (* for exporting from this module *)
-
-  let function_body body = is_strictly_local (function_body body)
-end
-
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-module Is_local_returning : sig
-  val function_body : Parsetree.function_body -> bool
-end = struct
-
-  (* Is the return value annotated with "local_"?
-     [assert false] can work either way *)
-
-  type local_returning_flag =
-    | Local of Location.t  (* location of a local return *)
-    | Not of Location.t  (* location of a non-local return *)
-    | Either
-
-  let combine flag1 flag2 =
-    match flag1, flag2 with
-    | (Local _ as flag), Local _
-    | (Local _ as flag), Either
-    | (Not _ as flag), Not _
-    | (Not _ as flag), Either
-    | Either, (Local _ as flag)
-    | Either, (Not _ as flag)
-    | (Either as flag), Either ->
-      flag
-
-    | Local local_loc, Not not_local_loc
-    | Not not_local_loc, Local local_loc ->
-       raise(Error(not_local_loc, Env.empty,
-                   Local_return_annotation_mismatch local_loc))
-
-  let expr e =
-    let rec loop e =
-      match Jane_syntax.Expression.of_ast e with
-      | Some (jexp, _attrs) -> begin
-          match jexp with
-          | Jexp_comprehension   _ -> Not e.pexp_loc
-          | Jexp_immutable_array _ -> Not e.pexp_loc
-          | Jexp_layout (Lexp_constant _) -> Not e.pexp_loc
-          | Jexp_layout (Lexp_newtype (_, _, e)) -> loop e
-          | Jexp_tuple _ -> Not e.pexp_loc
-          | Jexp_modes (Coerce (modes, exp)) ->
-              if List.exists
-                  (fun { Location.txt; _ } -> txt = "local")
-                  modes.txt
-              then Local e.pexp_loc
-              else loop exp
-        end
-      | None      ->
-      match e.pexp_desc with
-      | Pexp_assert { pexp_desc = Pexp_construct ({ txt = Lident "false" },
-                                                  None) } ->
-          Either
-      | Pexp_ident _ | Pexp_constant _ | Pexp_apply _ | Pexp_tuple _
-      | Pexp_construct _ | Pexp_variant _ | Pexp_record _ | Pexp_field _
-      | Pexp_setfield _ | Pexp_array _ | Pexp_while _ | Pexp_for _ | Pexp_send _
-      | Pexp_new _ | Pexp_setinstvar _ | Pexp_override _ | Pexp_assert _
-      | Pexp_lazy _ | Pexp_object _ | Pexp_pack _ | Pexp_function _
-      | Pexp_letop _ | Pexp_extension _ | Pexp_unreachable ->
-          Not e.pexp_loc
-      | Pexp_let(_, _, e) | Pexp_sequence(_, e) | Pexp_constraint(e, _)
-      | Pexp_coerce(e, _, _) | Pexp_letmodule(_, _, e) | Pexp_letexception(_, e)
-      | Pexp_poly(e, _) | Pexp_newtype(_, e) | Pexp_open(_, e)
-      | Pexp_ifthenelse(_, e, None)->
-          loop e
-      | Pexp_ifthenelse(_, e1, Some e2)-> combine (loop e1) (loop e2)
-      | Pexp_match(_, cases) -> begin
-          match cases with
-          | [] -> Not e.pexp_loc
-          | first :: rest ->
-              List.fold_left
-                (fun acc pc -> combine acc (loop pc.pc_rhs))
-                (loop first.pc_rhs) rest
-        end
-      | Pexp_try(e, cases) ->
-          List.fold_left
-            (fun acc pc -> combine acc (loop pc.pc_rhs))
-            (loop e) cases
-    in
-    loop e
-
-  let cases cs =
-    match cs with
-    | [] -> Either
-    | case :: cases ->
-        let is_local_returning_case case =
-          expr case.pc_rhs
-        in
-        List.fold_left
-          (fun acc case -> combine acc (is_local_returning_case case))
-          (is_local_returning_case case) cases
-
-  let function_body body =
-    match body with
-    | Pfunction_body body -> expr body
-    | Pfunction_cases (cs, _, _) -> cases cs
-
-  let is_strictly_local = function
-    | Local _ -> true
-    | Either | Not _ -> false
-        (* [fun _ -> assert false] must not be local-returning for
-          backward compatibility *)
-
-  (* for exporting from this module *)
-
-  let function_body body = is_strictly_local (function_body body)
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 (* The "rest of the function" extends from the start of the first parameter
    to the end of the overall function. The parser does not construct such
    a location so we forge one for type errors.
@@ -5181,33 +4967,7 @@ let split_function_ty
       function *)
       mode_default ret_value_mode
     else
-<<<<<<< janestreet/merlin-jst:
-      let ret_value_mode =
-        if region_locked then mode_return ret_value_mode
-        else begin
-          (* if the function has no region, we force the ret_mode to be local *)
-          match
-            Locality.submode Locality.local (Alloc.proj (Comonadic Areality) ret_mode)
-          with
-          | Ok () -> mode_default ret_value_mode
-          | Error _ -> raise (error (loc_fun, env, Function_returns_local))
-        end
-      in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      let ret_value_mode =
-        if region_locked then mode_return ret_value_mode
-        else begin
-          (* if the function has no region, we force the ret_mode to be local *)
-          match
-            Locality.submode Locality.local (Alloc.proj (Comonadic Areality) ret_mode)
-          with
-          | Ok () -> mode_default ret_value_mode
-          | Error _ -> raise (Error (loc_fun, env, Function_returns_local))
-        end
-      in
-=======
       let ret_value_mode = mode_return ret_value_mode in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
       let ret_value_mode = expect_mode_cross env ty_ret ret_value_mode in
       ret_value_mode
   in
@@ -6308,7 +6068,7 @@ and type_expect_
                   (Warnings.Not_principal "this use of a polymorphic method");
               snd (instance_poly false tl ty)
           | Tvar _ ->
-              let ty' = newvar (Jkind.Primitive.value ~why:Object_field) in
+              let ty' = newvar (Jkind.Builtin.value ~why:Object_field) in
               unify env (instance typ) (newty(Tpoly(ty',[])));
               (* if not !Clflags.nolabels then
                 Location.prerr_warning loc (Warnings.Unknown_method met); *)
@@ -6522,7 +6282,7 @@ and type_expect_
       }
   | Pexp_lazy e ->
       submode ~loc ~env Value.legacy expected_mode;
-      let ty = newgenvar (Jkind.Primitive.value ~why:Lazy_expression) in
+      let ty = newgenvar (Jkind.Builtin.value ~why:Lazy_expression) in
       let to_unify = Predef.type_lazy_t ty in
       with_explanation (fun () ->
         unify_exp_types loc env to_unify (generic_instance ty_expected));
@@ -6587,18 +6347,6 @@ and type_expect_
             in
             { exp with exp_type = instance ty }
         | Tvar _ ->
-<<<<<<< janestreet/merlin-jst:
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-            let ty' = newvar (Jkind.Primitive.value ~why:Object_field) in
-            unify env (instance typ) (newty(Tpoly(ty',[])));
-            (* if not !Clflags.nolabels then
-               Location.prerr_warning loc (Warnings.Unknown_method met); *)
-=======
-            let ty' = newvar (Jkind.Builtin.value ~why:Object_field) in
-            unify env (instance typ) (newty(Tpoly(ty',[])));
-            (* if not !Clflags.nolabels then
-               Location.prerr_warning loc (Warnings.Unknown_method met); *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
             let exp = type_exp env expected_mode sbody in
             let exp = {exp with exp_type = newmono exp.exp_type} in
             unify_exp env exp ty;
@@ -6637,19 +6385,7 @@ and type_expect_
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_open (od, e) ->
-<<<<<<< janestreet/merlin-jst:
-      let tv = newvar (Jkind.Primitive.any ~why:Dummy_jkind) in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      let tv = newvar (Jkind.Primitive.any ~why:Dummy_jkind) in
-      let (od, _, newenv) = !type_open_decl env od in
-      let exp = type_expect newenv expected_mode e ty_expected_explained in
-      (* Force the return type to be well-formed in the original
-=======
       let tv = newvar (Jkind.Builtin.any ~why:Dummy_jkind) in
-      let (od, _, newenv) = !type_open_decl env od in
-      let exp = type_expect newenv expected_mode e ty_expected_explained in
-      (* Force the return type to be well-formed in the original
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
       begin match !type_open_decl env od with
       | (od, _, newenv) ->
         let exp = type_expect newenv expected_mode e ty_expected_explained in
@@ -7075,13 +6811,7 @@ and type_function
       params_suffix body_constraint body ~first ~in_function
   : type_function_result
   =
-<<<<<<< janestreet/merlin-jst:
-  let { loc_fun; _ } = in_function in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  let { ty_fun; loc_fun; _ } = in_function in
-=======
-  let ty_fun, (loc_fun : Location.t) = in_function in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+  let _, (loc_fun : Location.t) = in_function in
   let loc =
     loc_rest_of_function ~first ~loc_function:loc_fun params_suffix body
   in

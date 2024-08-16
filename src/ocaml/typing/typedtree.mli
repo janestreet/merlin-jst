@@ -222,7 +222,6 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of string * Jkind.annotation option
         (** fun (type t : immediate) ->  *)
-<<<<<<< janestreet/merlin-jst:
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
   (** merlin-specific: keep enough information to correctly implement
       occurrences for local-types.
@@ -235,17 +234,8 @@ and exp_extra =
 (* CR modes: Consider fusing [Texp_mode_coerce] and [Texp_constraint] when
    the syntax changes.
 *)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | Texp_mode_coerce of Jane_syntax.Mode_expr.t
-        (** local_ E *)
-
-(* CR modes: Consider fusing [Texp_mode_coerce] and [Texp_constraint] when
-   the syntax changes.
-*)
-=======
   | Texp_stack
         (** stack_ E *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -1219,15 +1209,11 @@ val exp_is_nominal : expression -> bool
 
 (** Calculates the syntactic arity of a function based on its parameters and body. *)
 val function_arity : function_param list -> function_body -> int
-<<<<<<< janestreet/merlin-jst:
+
+(** Given a declaration, return the location of the bound identifier *)
+val loc_of_decl : uid:Shape.Uid.t -> item_declaration -> string Location.loc
 
 (* Merlin specific *)
 
 val unpack_functor_me : module_expr -> functor_parameter * module_expr
 val unpack_functor_mty : module_type -> functor_parameter * module_type
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-=======
-
-(** Given a declaration, return the location of the bound identifier *)
-val loc_of_decl : uid:Shape.Uid.t -> item_declaration -> string Location.loc
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21

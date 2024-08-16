@@ -32,13 +32,8 @@ open Parsetree
 open Ast_helper
 open Docstrings
 open Docstrings.WithMenhir
-<<<<<<< janestreet/merlin-jst:
-open Msupport_parsing
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-module Mode = Jane_syntax.Mode_expr
-=======
 open Parser_types
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+open Msupport_parsing
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc
@@ -183,65 +178,6 @@ let mkpat_with_modes ~loc ~pat ~cty ~modes =
     | cty, modes -> mkpat ~loc (Ppat_constraint (pat, cty, modes))
     end
 
-<<<<<<< janestreet/merlin-jst:
-let mkpat_with_modes modes pat =
-  (* Mark ghost to pass ppxlib well-nestedness check. *)
-  let modes = Jane_syntax.Mode_expr.ghostify modes in
-  match Jane_syntax.Mode_expr.attr_of modes with
-  | None -> pat
-  | Some attr ->
-      let ppat_desc =
-        match pat.ppat_desc with
-        | Ppat_constraint(pat, typ) ->
-           (* Example: let foo (local_ f : string -> string -> string)
-             We want to the user written type better interpreted under the
-             context of the mode. *)
-            let ptyp_attributes = attr :: typ.ptyp_attributes in
-            Ppat_constraint(pat, {typ with ptyp_attributes})
-        | ppat_desc -> ppat_desc
-      in
-      {pat with
-       ppat_desc;
-       ppat_attributes = attr :: pat.ppat_attributes}
-
-let mktyp_with_modes modes typ =
-  (* Mark ghost to pass ppxlib well-nestedness check. *)
-  let modes = Jane_syntax.Mode_expr.ghostify modes in
-  match Jane_syntax.Mode_expr.attr_of modes with
-  | None -> typ
-  | Some attr ->
-      {typ with
-      ptyp_attributes = attr :: typ.ptyp_attributes}
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let mkpat_with_modes modes pat =
-  (* Mark ghost to pass ppxlib well-nestedness check. *)
-  let modes = Mode.ghostify modes in
-  match Mode.attr_of modes with
-  | None -> pat
-  | Some attr ->
-      let ppat_desc =
-        match pat.ppat_desc with
-        | Ppat_constraint(pat, typ) ->
-           (* Example: let foo (local_ f : string -> string -> string)
-             We want to the user written type better interpreted under the
-             context of the mode. *)
-            let ptyp_attributes = attr :: typ.ptyp_attributes in
-            Ppat_constraint(pat, {typ with ptyp_attributes})
-        | ppat_desc -> ppat_desc
-      in
-      {pat with
-       ppat_desc;
-       ppat_attributes = attr :: pat.ppat_attributes}
-
-let mktyp_with_modes modes typ =
-  (* Mark ghost to pass ppxlib well-nestedness check. *)
-  let modes = Mode.ghostify modes in
-  match Mode.attr_of modes with
-  | None -> typ
-  | Some attr ->
-      {typ with
-      ptyp_attributes = attr :: typ.ptyp_attributes}
-=======
 let ghpat_with_modes ~loc ~pat ~cty ~modes =
   let pat = mkpat_with_modes ~loc ~pat ~cty ~modes in
   { pat with ppat_loc = { pat.ppat_loc with loc_ghost = true }}
@@ -268,23 +204,10 @@ let mkexp_with_modes ~loc ~exp ~cty ~modes =
      | None, [] -> exp
      | cty, modes -> mkexp ~loc (Pexp_constraint (exp, cty, modes))
      end
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 
-<<<<<<< janestreet/merlin-jst:
-let let_binding_mode_attrs modes =
-  match Jane_syntax.Mode_expr.attr_of modes with
-  | None -> []
-  | Some attr -> [attr]
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let let_binding_mode_attrs modes =
-  match Mode.attr_of modes with
-  | None -> []
-  | Some attr -> [attr]
-=======
 let ghexp_with_modes ~loc ~exp ~cty ~modes =
   let exp = mkexp_with_modes ~loc ~exp ~cty ~modes in
   { exp with pexp_loc = { exp.pexp_loc with loc_ghost = true }}
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 
 let exclave_ext_loc loc = mkloc "extension.exclave" loc
 
@@ -755,7 +678,6 @@ let extra_rhs_core_type ct ~pos =
   let docs = rhs_info pos in
   { ct with ptyp_attributes = add_info_attrs docs ct.ptyp_attributes }
 
-<<<<<<< janestreet/merlin-jst:
 (* moved to ast_helper
 type let_binding =
   { lb_pattern: pattern;
@@ -773,27 +695,7 @@ type let_bindings =
     lbs_extension: string Asttypes.loc option }
 *)
 
-let mklb first ~loc (p, e, typ, is_pun) attrs =
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-type let_binding =
-  { lb_pattern: pattern;
-    lb_expression: expression;
-    lb_constraint: value_constraint option;
-    lb_is_pun: bool;
-    lb_attributes: attributes;
-    lb_docs: docs Lazy.t;
-    lb_text: text Lazy.t;
-    lb_loc: Location.t; }
-
-type let_bindings =
-  { lbs_bindings: let_binding list;
-    lbs_rec: rec_flag;
-    lbs_extension: string Asttypes.loc option }
-
-let mklb first ~loc (p, e, typ, is_pun) attrs =
-=======
 let mklb first ~loc (p, e, typ, modes, is_pun) attrs =
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   {
     lb_pattern = p;
     lb_expression = e;
@@ -972,90 +874,8 @@ let mk_directive ~loc name arg =
 
 (* CR layouts v2.5: The [unboxed_*] functions will both be improved and lose
    their explicit assert once we have real unboxed literals in Jane syntax; they
-<<<<<<< janestreet/merlin-jst:
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
    may also get re-inlined at that point *)
 let unboxed_literals_extension = Language_extension.Layouts
-
-module Constant : sig
-  type t = private
-    | Value of constant
-    | Unboxed of Jane_syntax.Layouts.constant
-
-  type loc := Lexing.position * Lexing.position
-
-  val value : Parsetree.constant -> t
-  val unboxed : Jane_syntax.Layouts.constant -> t
-  val to_expression : loc:loc -> t -> expression
-  val to_pattern : loc:loc -> t -> pattern
-end = struct
-  type t =
-    | Value of constant
-    | Unboxed of Jane_syntax.Layouts.constant
-
-  let value x = Value x
-
-  let unboxed x = Unboxed x
-
-  let to_expression ~loc : t -> expression = function
-    | Value const_value ->
-        mkexp ~loc (Pexp_constant const_value)
-    | Unboxed const_unboxed ->
-      Jane_syntax.Layouts.expr_of ~loc:(make_loc loc)
-        (Lexp_constant const_unboxed)
-
-  let to_pattern ~loc : t -> pattern = function
-    | Value const_value ->
-        mkpat ~loc (Ppat_constant const_value)
-    | Unboxed const_unboxed ->
-      Jane_syntax.Layouts.pat_of
-        ~loc:(make_loc loc) (Lpat_constant const_unboxed)
-end
-
-type sign = Positive | Negative
-
-let with_sign sign num =
-=======
-   may also get re-inlined at that point *)
-let unboxed_literals_extension = Language_extension.Layouts
-
-type sign = Positive | Negative
-
-let with_sign sign num =
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
-   may also get re-inlined at that point *)
-let unboxed_literals_extension = Language_extension.Layouts
-
-(* merlin-jst: The type [t] is missing from the below module for boring reasons
-   of dependencies and warnings.  It is replaced by [Jane_syntax.jane_constant],
-   and all the functions here manipulate that instead. *)
-
-module Constant : sig
-  type loc := Lexing.position * Lexing.position
-
-  val value : Parsetree.constant -> Jane_syntax.jane_constant
-  val unboxed : Jane_syntax.Layouts.constant -> Jane_syntax.jane_constant
-  val to_expression : loc:loc -> Jane_syntax.jane_constant -> expression
-  val to_pattern : loc:loc -> Jane_syntax.jane_constant -> pattern
-end = struct
-  let value x = Jane_syntax.Value x
-
-  let unboxed x = Jane_syntax.Unboxed x
-
-  let to_expression ~loc : Jane_syntax.jane_constant -> expression = function
-    | Value const_value ->
-        mkexp ~loc (Pexp_constant const_value)
-    | Unboxed const_unboxed ->
-      Jane_syntax.Layouts.expr_of ~loc:(make_loc loc)
-        (Lexp_constant const_unboxed)
-
-  let to_pattern ~loc : Jane_syntax.jane_constant -> pattern = function
-    | Value const_value ->
-        mkpat ~loc (Ppat_constant const_value)
-    | Unboxed const_unboxed ->
-      Jane_syntax.Layouts.pat_of
-        ~loc:(make_loc loc) (Lpat_constant const_unboxed)
-end
 
 type sign = Positive | Negative
 
@@ -1127,7 +947,7 @@ let merloc startpos ?endpos x =
   let default_pattern () = Pat.any ~loc:!default_loc ()
 
   let default_pattern_and_mode () =
-    Pat.any ~loc:!default_loc (), Jane_syntax.Mode_expr.empty
+    Pat.any ~loc:!default_loc (), []
 
   let default_module_expr () = Mod.structure ~loc:!default_loc []
   let default_module_type () = Mty.signature ~loc:!default_loc []
@@ -1213,23 +1033,6 @@ let merloc startpos ?endpos x =
 %token LBRACKET [@symbol "["]
 %token LBRACKETBAR [@symbol "[|"]
 %token LBRACKETCOLON [@symbol "[:"]
-<<<<<<< janestreet/merlin-jst:
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-%token HASH_SUFFIX            "# "
-%token <string> HASHOP        "##" (* just an example *)
-%token SIG                    "sig"
-%token STAR                   "*"
-%token <string * Location.t * string option>
-       STRING                 "\"hello\"" (* just an example *)
-=======
-%token HASH_SUFFIX            "# "
-%token <string> HASHOP        "##" (* just an example *)
-%token SIG                    "sig"
-%token STACK                  "stack_"
-%token STAR                   "*"
-%token <string * Location.t * string option>
-       STRING                 "\"hello\"" (* just an example *)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 %token LBRACKETLESS [@symbol "[<"]
 %token LBRACKETGREATER [@symbol "[>"]
 %token LBRACKETPERCENT [@symbol "[%"]
@@ -1279,6 +1082,7 @@ let merloc startpos ?endpos x =
 %token HASH_SUFFIX [@symbol "# "]
 %token <string> HASHOP [@cost 2] [@recovery ""][@printer Printf.sprintf "HASHOP(%S)"] [@symbol "#<op>"]
 %token SIG [@symbol "sig"]
+%token STACK [@symbol "stack_"]
 %token STAR [@symbol "*"]
 %token <string * Location.t * string option> STRING "\"hello\"" [@cost 1] [@recovery ("", Location.none, None)][@printer string_of_STRING]
 %token
@@ -1374,17 +1178,9 @@ The precedences must be listed from low to high.
 /* Finally, the first tokens of simple_expr are above everything else. */
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT HASH_FLOAT INT HASH_INT OBJECT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LBRACKETCOLON LIDENT LPAREN
-<<<<<<< janestreet/merlin-jst:
           NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
-          LBRACKETPERCENT QUOTED_STRING_EXPR
-          DOTLESS DOTTILDE GREATERDOT
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-          NEW PREFIXOP STRING TRUE UIDENT
-          LBRACKETPERCENT QUOTED_STRING_EXPR
-=======
-          NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT QUOTED_STRING_EXPR STACK
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+          DOTLESS DOTTILDE GREATERDOT
 
 
 /* Entry points */
@@ -2886,59 +2682,25 @@ seq_expr:
 ;
 
 labeled_simple_pattern:
-<<<<<<< janestreet/merlin-jst:
-    QUESTION LPAREN modes0=optional_mode_expr_legacy label_let_pattern opt_default RPAREN
-      { let lbl, pat, modes1 = $4 in
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-        (Optional lbl, $5, mkpat_with_modes modes pat) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    QUESTION LPAREN modes0=optional_mode_expr_legacy label_let_pattern opt_default RPAREN
-      { let lbl, pat, modes1 = $4 in
-        let modes = Mode.concat modes0 modes1 in
-        (Optional lbl, $5, mkpat_with_modes modes pat) }
-=======
     QUESTION LPAREN modes0=optional_mode_expr_legacy x=label_let_pattern opt_default RPAREN
       { let lbl, pat, cty, modes = x in
         let loc = $startpos(modes0), $endpos(x) in
         (Optional lbl, $5,
          mkpat_with_modes ~loc ~pat ~cty ~modes:(modes0 @ modes))
       }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   | QUESTION label_var
       { (Optional (fst $2), None, snd $2) }
-<<<<<<< janestreet/merlin-jst:
-  | OPTLABEL LPAREN modes0=optional_mode_expr_legacy let_pattern opt_default RPAREN
-      { let pat, modes1 = $4 in
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-        (Optional $1, $5, mkpat_with_modes modes pat) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | OPTLABEL LPAREN modes0=optional_mode_expr_legacy let_pattern opt_default RPAREN
-      { let pat, modes1 = $4 in
-        let modes = Mode.concat modes0 modes1 in
-        (Optional $1, $5, mkpat_with_modes modes pat) }
-=======
   | OPTLABEL LPAREN modes0=optional_mode_expr_legacy x=let_pattern opt_default RPAREN
       { let pat, cty, modes = x in
         let loc = $startpos(modes0), $endpos(x) in
         (Optional $1, $5,
          mkpat_with_modes ~loc ~pat ~cty ~modes:(modes0 @ modes))
       }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   | OPTLABEL pattern_var
       { (Optional $1, None, $2) }
-<<<<<<< janestreet/merlin-jst:
-  | TILDE LPAREN modes0=optional_mode_expr_legacy label_let_pattern RPAREN
-      { let lbl, pat, modes1 = $4 in
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | TILDE LPAREN modes0=optional_mode_expr_legacy label_let_pattern RPAREN
-      { let lbl, pat, modes1 = $4 in
-        let modes = Mode.concat modes0 modes1 in
-=======
   | TILDE LPAREN modes0=optional_mode_expr_legacy x=label_let_pattern RPAREN
       { let lbl, pat, cty, modes = x in
         let loc = $startpos(modes0), $endpos(x) in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
         (Labelled lbl, None,
          mkpat_with_modes ~loc ~pat ~cty ~modes:(modes0 @ modes))
       }
@@ -2959,37 +2721,6 @@ labeled_simple_pattern:
       }
   | simple_pattern
       { (Nolabel, None, $1) }
-<<<<<<< janestreet/merlin-jst:
-  | LPAREN modes0=mode_expr_legacy let_pattern RPAREN
-      { let pat, modes1 = $3 in
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-        (Nolabel, None, mkpat_with_modes modes pat ) }
-  | LABEL LPAREN poly_pattern RPAREN
-      { let pat, modes = $3 in
-        (Labelled $1, None, mkpat_with_modes modes pat) }
-  | LABEL LPAREN modes0=mode_expr_legacy poly_pattern RPAREN
-      { let pat, modes1 = $4 in
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-        (Labelled $1, None, mkpat_with_modes modes pat) }
-  | LPAREN poly_pattern RPAREN
-      { let pat, modes = $2 in
-        (Nolabel, None, mkpat_with_modes modes pat) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | LPAREN modes0=mode_expr_legacy let_pattern RPAREN
-      { let pat, modes1 = $3 in
-        let modes = Mode.concat modes0 modes1 in
-        (Nolabel, None, mkpat_with_modes modes pat ) }
-  | LABEL LPAREN poly_pattern RPAREN
-      { let pat, modes = $3 in
-        (Labelled $1, None, mkpat_with_modes modes pat) }
-  | LABEL LPAREN modes0=mode_expr_legacy poly_pattern RPAREN
-      { let pat, modes1 = $4 in
-        let modes = Mode.concat modes0 modes1 in
-        (Labelled $1, None, mkpat_with_modes modes pat) }
-  | LPAREN poly_pattern RPAREN
-      { let pat, modes = $2 in
-        (Nolabel, None, mkpat_with_modes modes pat) }
-=======
   | LPAREN modes=mode_expr_legacy x=let_pattern_no_modes RPAREN
       { let pat, cty = x in
         let loc = $startpos(modes), $endpos(x) in
@@ -3018,7 +2749,6 @@ labeled_simple_pattern:
         (Nolabel, None,
          mkpat_with_modes ~loc:$loc(x) ~pat ~cty ~modes:[])
       }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 ;
 
 pattern_var:
@@ -3055,34 +2785,12 @@ label_let_pattern:
     mkrhs(LIDENT)
       { ($1.Location.txt, mkpat ~loc:$sloc (Ppat_var $1)) }
 ;
-<<<<<<< janestreet/merlin-jst:
 let_pattern [@recovery default_pattern_and_mode ()]:
-    pattern modes = optional_at_mode_expr
-      { ($1, modes) }
-  | mkpat(pattern COLON core_type
-      { Ppat_constraint($1, $3) })
-    modes = optional_atat_mode_expr
-      { ($1, modes) }
-  | poly_pattern
-      { $1 }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-let_pattern:
-    pattern modes = optional_at_mode_expr
-      { ($1, modes) }
-  | mkpat(pattern COLON core_type
-      { Ppat_constraint($1, $3) })
-    modes = optional_atat_mode_expr
-      { ($1, modes) }
-  | poly_pattern
-      { $1 }
-=======
-let_pattern:
     x=let_pattern_awaiting_at_modes modes=optional_at_mode_expr
     { let pat, cty = x in pat, cty, modes }
   | x=let_pattern_awaiting_atat_modes modes=optional_atat_mode_expr
     { let pat, cty = x in pat, cty, modes }
   | LPAREN let_pattern_required_modes RPAREN { $2 }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 ;
 
 let_pattern_required_modes:
@@ -3152,13 +2860,7 @@ let_pattern_no_modes:
           Option.map
             (fun x ->
               { type_constraint = Pconstraint x
-<<<<<<< janestreet/merlin-jst:
-              ; mode_annotations = Jane_syntax.Mode_expr.empty
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-              ; mode_annotations = Mode.empty
-=======
               ; mode_annotations = []
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
               })
           $4
         in
@@ -3191,17 +2893,9 @@ let_pattern_no_modes:
   | UNDERSCORE
      { not_expecting $loc($1) "wildcard \"_\"" }
 /* END AVOID */
-<<<<<<< janestreet/merlin-jst:
   *)
-  | mode_legacy seq_expr
-     { mkexp_with_modes ~loc:$sloc (Jane_syntax.Mode_expr.singleton $1) $2 }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | mode_legacy seq_expr
-     { mkexp_with_modes ~loc:$sloc (Mode.singleton $1) $2 }
-=======
   | mode=mode_legacy exp=seq_expr
      { mkexp_with_modes ~loc:$sloc ~exp ~cty:None ~modes:[mode] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   | EXCLAVE seq_expr
      { mkexp_exclave ~loc:$sloc ~kwd_loc:($loc($1)) $2 }
 ;
@@ -3319,14 +3013,8 @@ let_pattern_no_modes:
   | LPAREN MODULE ext_attributes module_expr RPAREN
       { Pexp_pack $4, $3 }
   | LPAREN MODULE ext_attributes module_expr COLON package_type RPAREN
-<<<<<<< janestreet/merlin-jst:
-      { Pexp_constraint (ghexp ~loc:$sloc (Pexp_pack $4), $6), $3 }
-  (*
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { Pexp_constraint (ghexp ~loc:$sloc (Pexp_pack $4), $6), $3 }
-=======
       { Pexp_constraint (ghexp ~loc:$sloc (Pexp_pack $4), Some $6, []), $3 }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
+  (*
   | LPAREN MODULE ext_attributes module_expr COLON error
       { unclosed "(" $loc($1) ")" $loc($6) }
   *)
@@ -3354,15 +3042,9 @@ comprehension_clause_binding:
      We have to have that as a separate rule here because it moves the [local_]
      over to the RHS of the binding, so we need everything to be visible. *)
   | attributes mode_legacy pattern IN expr
-<<<<<<< janestreet/merlin-jst:
-      { let expr = mkexp_with_modes ~loc:$sloc (Jane_syntax.Mode_expr.singleton $2) $5 in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { let expr = mkexp_with_modes ~loc:$sloc (Mode.singleton $2) $5 in
-=======
       { let expr =
           mkexp_with_modes ~loc:$sloc ~exp:$5 ~cty:None ~modes:[$2]
         in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
         Jane_syntax.Comprehensions.
           { pattern    = $3
           ; iterator   = In expr
@@ -3577,20 +3259,8 @@ let_binding_body_no_punning:
           | Pcoerce (ground, coercion) -> Pvc_coercion { ground; coercion}
           ) typ
         in
-<<<<<<< janestreet/merlin-jst:
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-        let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $5 in
-        (v, exp, t, let_binding_mode_attrs modes)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        let modes = Mode.concat modes0 modes1 in
-        let modes_ghost = Mode.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $5 in
-        (v, exp, t, let_binding_mode_attrs modes)
-=======
         let modes = modes0 @ modes1 in
         (v, $5, t, modes)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
       }
   | modes0 = optional_mode_expr_legacy let_ident COLON poly(core_type) modes1 = optional_atat_mode_expr EQUAL seq_expr
       { let bound_vars, inner_type = $4 in
@@ -3599,23 +3269,9 @@ let_binding_body_no_punning:
         let typ =
           Jane_syntax.Layouts.type_of ~loc:typ_loc ltyp
         in
-<<<<<<< janestreet/merlin-jst:
-        let modes = Jane_syntax.Mode_expr.concat modes0 modes1 in
-        let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $7 in
-        ($2, exp, Some (Pvc_constraint { locally_abstract_univars = []; typ }),
-         let_binding_mode_attrs modes)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        let modes = Mode.concat modes0 modes1 in
-        let modes_ghost = Mode.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $7 in
-        ($2, exp, Some (Pvc_constraint { locally_abstract_univars = []; typ }),
-         let_binding_mode_attrs modes)
-=======
         let modes = modes0 @ modes1 in
         ($2, $7, Some (Pvc_constraint { locally_abstract_univars = []; typ }),
          modes)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
       }
   | let_ident COLON TYPE newtypes DOT core_type modes=optional_atat_mode_expr EQUAL seq_expr
       (* The code upstream looks like:
@@ -3638,63 +3294,23 @@ let_binding_body_no_punning:
           wrap_type_annotation ~loc:$sloc ~modes:[] ~typloc:$loc($6) $4 $6 $9
         in
         let loc = ($startpos($1), $endpos($6)) in
-<<<<<<< janestreet/merlin-jst:
-        let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost exp in
-        (ghpat ~loc (Ppat_constraint($1, poly)), exp, None, let_binding_mode_attrs modes)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        let modes_ghost = Mode.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost exp in
-        (ghpat ~loc (Ppat_constraint($1, poly)), exp, None, let_binding_mode_attrs modes)
-=======
         (ghpat_with_modes ~loc ~pat:$1 ~cty:(Some poly) ~modes:[], exp, None, modes)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
        }
   | pattern_no_exn EQUAL seq_expr
       { ($1, $3, None, []) }
   | simple_pattern_not_ident pvc_modes EQUAL seq_expr
       {
         let pvc, modes = $2 in
-<<<<<<< janestreet/merlin-jst:
-        let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $4 in
-        ($1, exp, pvc, let_binding_mode_attrs modes)
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-        let modes_ghost = Mode.ghostify modes in
-        let exp = mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost $4 in
-        ($1, exp, pvc, let_binding_mode_attrs modes)
-=======
         ($1, $4, pvc, modes)
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
       }
   | modes=mode_expr_legacy let_ident strict_binding_modes
-<<<<<<< janestreet/merlin-jst:
-      { let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
-        ($2, mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost ($3 modes_ghost), None,
-         let_binding_mode_attrs modes) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { let modes_ghost = Mode.ghostify modes in
-        ($2, mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost ($3 modes_ghost), None,
-         let_binding_mode_attrs modes) }
-=======
       {
         ($2, $3 modes, None, modes)
       }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   | LPAREN let_ident modes=at_mode_expr RPAREN strict_binding_modes
-<<<<<<< janestreet/merlin-jst:
-      { let modes_ghost = Jane_syntax.Mode_expr.ghostify modes in
-        ($2, mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost ($5 modes_ghost), None,
-         let_binding_mode_attrs modes) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-      { let modes_ghost = Mode.ghostify modes in
-        ($2, mkexp_with_modes ~ghost:true ~loc:$sloc modes_ghost ($5 modes_ghost), None,
-         let_binding_mode_attrs modes) }
-=======
       {
         ($2, $5 modes, None, modes)
       }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 ;
 let_binding_body:
   | let_binding_body_no_punning
@@ -3779,13 +3395,7 @@ strict_binding_modes:
 ;
 %inline strict_binding:
   strict_binding_modes
-<<<<<<< janestreet/merlin-jst:
-    {$1 Jane_syntax.Mode_expr.empty}
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    {$1 Mode.empty}
-=======
     {$1 []}
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 ;
 fun_body:
   | FUNCTION ext_attributes match_cases
@@ -4929,29 +4539,11 @@ strict_function_or_labeled_tuple_type:
 /* Legacy mode annotations */
 %inline mode_legacy:
    | LOCAL
-<<<<<<< janestreet/merlin-jst:
-       { Jane_syntax.Mode_expr.Const.mk "local" (make_loc $sloc) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-       { Mode.Const.mk "local" (make_loc $sloc) }
-=======
        { mkloc (Mode "local") (make_loc $sloc) }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
    | UNIQUE
-<<<<<<< janestreet/merlin-jst:
-       { Jane_syntax.Mode_expr.Const.mk "unique" (make_loc $sloc) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-       { Mode.Const.mk "unique" (make_loc $sloc) }
-=======
        { mkloc (Mode "unique") (make_loc $sloc) }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
    | ONCE
-<<<<<<< janestreet/merlin-jst:
-       { Jane_syntax.Mode_expr.Const.mk "once" (make_loc $sloc) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-       { Mode.Const.mk "once" (make_loc $sloc) }
-=======
        { mkloc (Mode "once") (make_loc $sloc) }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 ;
 
 %inline mode_expr_legacy:
@@ -4959,25 +4551,13 @@ strict_function_or_labeled_tuple_type:
 ;
 
 %inline optional_mode_expr_legacy:
-<<<<<<< janestreet/merlin-jst:
-   | { Jane_syntax.Mode_expr.empty }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-   | { Mode.empty }
-=======
    | { [] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
    | mode_expr_legacy {$1}
 ;
 
 /* New mode annotation, introduced by AT or ATAT */
 %inline mode:
-<<<<<<< janestreet/merlin-jst:
-  | LIDENT { Jane_syntax.Mode_expr.Const.mk $1 (make_loc $sloc) }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | LIDENT { Mode.Const.mk $1 (make_loc $sloc) }
-=======
   | LIDENT { mkloc (Mode $1) (make_loc $sloc) }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
 ;
 
 %inline mode_expr:
@@ -4990,25 +4570,13 @@ at_mode_expr:
 ;
 
 %inline optional_at_mode_expr:
-<<<<<<< janestreet/merlin-jst:
-  | { Jane_syntax.Mode_expr.empty }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | { Mode.empty }
-=======
   | { [] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   | at_mode_expr {$1}
 ;
 
 %inline with_optional_mode_expr(ty):
   | m0=optional_mode_expr_legacy ty=ty m1=optional_at_mode_expr {
-<<<<<<< janestreet/merlin-jst:
-    let m = Jane_syntax.Mode_expr.concat m0 m1 in
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-    let m = Mode.concat m0 m1 in
-=======
     let m = m0 @ m1 in
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
     (ty, $loc(ty)), m
   }
 ;
@@ -5019,13 +4587,7 @@ atat_mode_expr:
 ;
 
 %inline optional_atat_mode_expr:
-<<<<<<< janestreet/merlin-jst:
-  | { Jane_syntax.Mode_expr.empty }
-||||||| ocaml-flambda/flambda-backend:1cc52ed5fa73a88abe59baf3058df23ee48e105d
-  | { Mode.empty }
-=======
   | { [] }
->>>>>>> ocaml-flambda/flambda-backend:5.1.1minus-21
   | atat_mode_expr {$1}
 ;
 
