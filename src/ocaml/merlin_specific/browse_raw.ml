@@ -255,13 +255,13 @@ let option_fold f' o env (f : _ f0) acc = match o with
 let of_core_type ct = app (Core_type ct)
 
 let of_exp_extra (exp,_,_) = match exp with
-  | Texp_constraint ct ->
-    of_core_type ct
+  | Texp_constraint (ct, _) ->
+    option_fold of_core_type ct
   | Texp_coerce (cto,ct) ->
     of_core_type ct ** option_fold of_core_type cto
   | Texp_poly cto ->
     option_fold of_core_type cto
-  | Texp_mode_coerce _
+  | Texp_stack
   | Texp_newtype' _
   | Texp_newtype _ ->
     id_fold

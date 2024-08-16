@@ -97,7 +97,6 @@
             value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
-            region true
             alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[shared,contended .. unique,uncontended])
             [
               Nolabel
@@ -258,7 +257,6 @@
             value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
-            region true
             alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[shared,contended .. unique,uncontended])
             [
               Nolabel
@@ -286,9 +284,11 @@
                   ]
                 extra
                   Texp_constraint
-                  core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
-                    Ttyp_constr \"int/1!\"
-                    []
+                  Some
+                    core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
+                      Ttyp_constr \"int/1!\"
+                      []
+                  alloc_const_option_mode None,None,None,None,None
                 Texp_ident \"*type-error*/280\"
       ]
   ]
@@ -567,9 +567,11 @@ make sure we also handle that correctly in structures:
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
-              core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
-                Ttyp_constr \"int/1!\"
-                []
+              Some
+                core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
+                  Ttyp_constr \"int/1!\"
+                  []
+              alloc_const_option_mode None,None,None,None,None
             Texp_constant Const_int 3
       ]
     structure_item (test_ct.ml[3,20+0]..test_ct.ml[3,20+28])
@@ -596,20 +598,22 @@ make sure we also handle that correctly in structures:
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
-              core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
-                Ttyp_tuple
-                [
-                  Label: None
-                  core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
-                    Ttyp_constr \"int/1!\"
-                    []
-                  Label: None
-                  core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
-                    Ttyp_var _
-                    None
-                ]
+              Some
+                core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
+                  Ttyp_tuple
+                  [
+                    Label: None
+                    core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
+                      Ttyp_constr \"int/1!\"
+                      []
+                    Label: None
+                    core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
+                      Ttyp_var _
+                      None
+                  ]
+              alloc_const_option_mode None,None,None,None,None
             Texp_tuple
-            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);subtract_shared,contended(modevar#3[shared,uncontended .. unique,uncontended])
+            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]));unique,uncontended
             [
               <tuple component>
               Label: None
@@ -645,20 +649,22 @@ make sure we also handle that correctly in structures:
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
-              core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20])
-                Ttyp_tuple
-                [
-                  Label: None
-                  core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+14])
-                    Ttyp_constr \"int/1!\"
-                    []
-                  Label: None
-                  core_type (test_ct.ml[5,50+17]..test_ct.ml[5,50+20])
-                    Ttyp_constr \"int/1!\"
-                    []
-                ]
+              Some
+                core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20])
+                  Ttyp_tuple
+                  [
+                    Label: None
+                    core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+14])
+                      Ttyp_constr \"int/1!\"
+                      []
+                    Label: None
+                    core_type (test_ct.ml[5,50+17]..test_ct.ml[5,50+20])
+                      Ttyp_constr \"int/1!\"
+                      []
+                  ]
+              alloc_const_option_mode None,None,None,None,None
             Texp_tuple
-            alloc_mode map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]);subtract_shared,contended(modevar#5[shared,uncontended .. unique,uncontended])
+            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]));unique,uncontended
             [
               <tuple component>
               Label: None

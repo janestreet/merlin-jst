@@ -71,7 +71,7 @@ jobs:
       run: |
         opam switch create 4.14.0 --yes
         opam switch link 4.14.0 --yes
-        opam install --yes dune.3.10.0 menhir.20210419
+        opam install --yes dune.3.10.0 menhir.20231231
 
     - name: Configure, build, and install flambda-backend
       if: steps.cache.outputs.cache-hit != 'true'
@@ -89,7 +89,7 @@ jobs:
       working-directory: merlin-jst
       run: |
         opam depext conf-jq --yes # opam depext bug
-        opam pin menhirLib 20210419 --no-action
+        opam pin menhirLib 20231231 --no-action
         opam install --yes ppx_string ppx_compare
         opam install . --deps-only --with-test --yes
 

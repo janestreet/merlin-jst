@@ -23,7 +23,6 @@ type result =
   | Unresolved of t
   | Approximated of Uid.t option
   | Internal_error_missing_uid
-
 let rec print_result fmt result =
   match result with
   | Resolved uid ->

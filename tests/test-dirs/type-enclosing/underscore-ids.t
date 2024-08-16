@@ -385,7 +385,6 @@ We try several places in the identifier to check the result stability
             value_mode meet(local,once,nonportable)(modevar#2[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#3[shared,uncontended .. unique,uncontended])
           expression (under.ml[2,13+6]..under.ml[5,70+17]) ghost
             Texp_function
-            region true
             alloc_mode map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]);id(modevar#5[shared,contended .. unique,uncontended])
             [
               Nolabel

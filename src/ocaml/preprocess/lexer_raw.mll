@@ -128,6 +128,7 @@ let keyword_table : keywords =
     "private", PRIVATE;
     "rec", REC;
     "sig", SIG;
+    "stack_", STACK;
     "struct", STRUCT;
     "then", THEN;
     "to", TO;
