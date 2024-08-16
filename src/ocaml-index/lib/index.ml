@@ -206,15 +206,14 @@ let index_of_cms ~root ~build_path cms_infos =
     cms_ident_occurrences;
     cms_sourcefile;
     cms_source_digest;
-    (* cms_load-path; cms_initial_env *)
+    cms_initial_env;
     _;
   } =
     cms_infos
   in
   let uid_to_loc =
     Shape.Uid.Tbl.to_list cms_uid_to_loc
-    |> List.map (function
-      | (uid, l) -> uid, Some { Location.txt = ""; loc = l })
+    |> List.map (fun (uid, l) -> uid, Some l)
     |> Shape.Uid.Tbl.of_list
   in
   index_of_artifact
@@ -228,7 +227,7 @@ let index_of_cms ~root ~build_path cms_infos =
     ~cmt_modname:cms_modname
     ~uid_to_loc
     ~cmt_ident_occurrences:cms_ident_occurrences
-    ~cmt_initial_env:Env.empty
+    ~cmt_initial_env:(Option.value cms_initial_env ~default:Env.empty)
     ~cmt_sourcefile:cms_sourcefile
     ~cmt_source_digest:cms_source_digest
 

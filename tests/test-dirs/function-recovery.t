@@ -35,7 +35,6 @@
                     None
                   expression (test.ml[3,104+11]..test.ml[3,104+28])
                     Texp_function
-                    region true
                     alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[shared,contended .. unique,uncontended])
                     []
                     Tfunction_body
@@ -75,7 +74,6 @@
             extra
               Texp_newtype'  t/277
             Texp_function
-            region true
             alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[shared,contended .. unique,uncontended])
             [
               Nolabel

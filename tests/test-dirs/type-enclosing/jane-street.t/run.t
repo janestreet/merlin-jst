@@ -63,8 +63,8 @@ escape characters in string literals, so we use the revert-newlines script.
   
   type t5 : value
       ^
-  With verbosity 0: "type t5 : value"
-  With verbosity 1: "type t5 : value"
+  With verbosity 0: "type t5"
+  With verbosity 1: "type t5"
   
   type t6 : value = { v : int } [@@unboxed]
       ^
@@ -215,8 +215,8 @@ escape characters in string literals, so we use the revert-newlines script.
   
   let f5 (x : t5) = x
               ^
-  With verbosity 0: "type t5 : value"
-  With verbosity 1: "type t5 : value"
+  With verbosity 0: "type t5"
+  With verbosity 1: "type t5"
   
   let f6 (x : t6) = x
               ^
@@ -287,8 +287,8 @@ escape characters in string literals, so we use the revert-newlines script.
   
   let poly2 (type a : value)   (x : a) = x
                                     ^
-  With verbosity 0: "type a : value"
-  With verbosity 1: "type a : value"
+  With verbosity 0: "type a"
+  With verbosity 1: "type a"
   
   let poly3 (type a : float64) (x : a) = x
                                     ^
