@@ -1059,7 +1059,7 @@ let unify_pat_types_return_equated_pairs ~refine loc penv ty ty' =
     else (unify !!penv ty ty'; nothing_equated)
   with
   | Unify err ->
-      raise(Error(loc, !!penv, Pattern_type_clash(err, None)))
+      raise(error(loc, !!penv, Pattern_type_clash(err, None)))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, !!penv, Typetexp.Variant_tags (l1, l2)))
 
