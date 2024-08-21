@@ -2511,15 +2511,7 @@ let add_module_lazy ~update_summary id presence mty env =
 let add_module ?arg ?shape id presence mty env =
   add_module_declaration ~check:false ?arg ?shape id presence (md mty) env
 
-<<<<<<< HEAD
 let add_local_constraint path info env =
-||||||| 78ff8bc3c0
-let add_local_type path info env =
-  (* CR layouts: there should be a safety check for extension universe when the type's
-     kind allows mode crossing *)
-=======
-let add_local_type path info env =
->>>>>>> origin/main
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
 

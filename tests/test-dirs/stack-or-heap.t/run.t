@@ -477,35 +477,18 @@ escape characters in string literals, so we use the revert-newlines script.
   |let f x = exclave_ (Some (Some x))
   |                               ^
   
-<<<<<<< HEAD
-  |let f x = local_ (Some (Some x))
-  |                             ^
-||||||| 78ff8bc3c0
-  |let f x = local_ (Some (Some x))
-  |                       ^^^^^^^^
-=======
   |let f x = exclave_ (Some (Some x))
   |                         ^^^^^^^^
->>>>>>> origin/main
   
-  "no relevant allocation to show"
+  "stack"
   
   |let f x = exclave_ (Some (Some x))
   |                               ^
   
-<<<<<<< HEAD
-  null
-||||||| 78ff8bc3c0
-  |let f x = local_ (Some (Some x))
-  |          ^^^^^^^^^^^^^^^^^^^^^^
-  
-  "stack"
-=======
   |let f x = exclave_ (Some (Some x))
   |                   ^^^^^^^^^^^^^^^
   
   "stack"
->>>>>>> origin/main
   
   |let f x = exclave_ (Some (Some x))
   |                               ^

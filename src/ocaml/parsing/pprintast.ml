@@ -327,40 +327,6 @@ let optional_legacy_modes f m =
     legacy_modes f m;
     pp_print_space f ()
 
-<<<<<<< HEAD
-let legacy_modality f m =
-  let {txt; _} = (m : modality Location.loc) in
-  let s =
-    match txt with
-    | Modality "global" -> "global_"
-    | Modality s -> s
-  in
-  pp_print_string f s
-||||||| 78ff8bc3c0
-(** Some modalities have a preferred legacy syntax *)
-module Split_modalities = struct
-  type legacy_modality = | Legacy_modality of string [@@unboxed]
-  type t =
-    { legacy : legacy_modality loc list
-    ; nonlegacy : modality loc list
-    }
-
-  let split_list modalities =
-    let f { txt = modality; loc } =
-      match modality with
-      | Modality "global" -> Either.Left { txt = (Legacy_modality "global_"); loc }
-      | Modality _ -> Either.Right { txt = modality; loc }
-    in
-    let legacy, nonlegacy = List.partition_map f modalities in
-    { legacy; nonlegacy }
-end
-
-let modality f {txt = Modality m; _} =
-  pp_print_string f m
-
-let legacy_modality f {txt = Split_modalities.Legacy_modality m; _} =
-  pp_print_string f m
-=======
 let legacy_modality f m =
   let {txt; _} = (m : modality Location.loc) in
   let s =
@@ -369,7 +335,6 @@ let legacy_modality f m =
     | Modality s -> Misc.fatal_errorf "Unrecognized modality %s - should not parse" s
   in
   pp_print_string f s
->>>>>>> origin/main
 
 let legacy_modalities f m =
   pp_print_list ~pp_sep:(fun f () -> pp f " ") legacy_modality f m
@@ -450,7 +415,6 @@ let rec class_params_def ctxt f =  function
 
 and type_with_label ctxt f (label, c, mode) =
   match label with
-<<<<<<< HEAD
   | Nolabel    ->
     maybe_legacy_modes_type_at_modes core_type1 ctxt f (c, mode)
     (* otherwise parenthesize *)
@@ -460,32 +424,13 @@ and type_with_label ctxt f (label, c, mode) =
   | Optional s ->
     pp f "?%a:%a" ident_of_name s
       (maybe_legacy_modes_type_at_modes core_type1 ctxt) (c, mode)
-||||||| 78ff8bc3c0
-  | Nolabel    -> maybe_modes_type core_type1 ctxt f c (* otherwise parenthesize *)
-  | Labelled s -> pp f "%s:%a" s (maybe_modes_type core_type1 ctxt) c
-  | Optional s -> pp f "?%s:%a" s (maybe_modes_type core_type1 ctxt) c
-=======
-  | Nolabel    -> maybe_legacy_modes_type_at_modes core_type1 ctxt f (c, mode) (* otherwise parenthesize *)
-  | Labelled s -> pp f "%s:%a" s (maybe_legacy_modes_type_at_modes core_type1 ctxt) (c, mode)
-  | Optional s -> pp f "?%s:%a" s (maybe_legacy_modes_type_at_modes core_type1 ctxt) (c, mode)
->>>>>>> origin/main
 
 and jkind ctxt f k = match (k : Jane_syntax.Jkind.t) with
   | Default -> pp f "_"
   | Abbreviation s ->
-<<<<<<< HEAD
     pp f "%s" s.txt
   | Mod (t, modes) ->
     begin match modes with
-||||||| 78ff8bc3c0
-    pp f "%s" s.txt
-  | Mod (t, { txt = mode_list }) ->
-    begin match mode_list with
-=======
-    pp f "%s" (s : Jane_syntax.Jkind.Const.t :> _ loc).txt
-  | Mod (t, modes) ->
-    begin match modes with
->>>>>>> origin/main
     | [] -> Misc.fatal_error "malformed jkind annotation"
     | _ :: _ ->
       pp f "%a mod %a"
@@ -792,7 +737,6 @@ and simple_pattern ctxt (f:Format.formatter) (x:pattern) : unit =
         pp f "@[<1>(%a)@]" (list  ~sep:",@;" (pattern1 ctxt))  l (* level1*)
     | Ppat_constant (c) -> pp f "%a" constant c
     | Ppat_interval (c1, c2) -> pp f "%a..%a" constant c1 constant c2
-<<<<<<< HEAD
     | Ppat_variant (l,None) ->  pp f "`%a" ident_of_name l
     | Ppat_constraint (p, ct, m) ->
         let legacy, m = split_out_legacy_modes m in
@@ -809,28 +753,6 @@ and simple_pattern ctxt (f:Format.formatter) (x:pattern) : unit =
               (pattern1 ctxt) p
               optional_at_modes m
         end
-||||||| 78ff8bc3c0
-    | Ppat_variant (l,None) ->  pp f "`%s" l
-    | Ppat_constraint (p, ct) ->
-        pp f "@[<2>(%a@;:@;%a)@]" (pattern1 ctxt) p (core_type ctxt) ct
-=======
-    | Ppat_variant (l,None) ->  pp f "`%s" l
-    | Ppat_constraint (p, ct, m) ->
-        let legacy, m = split_out_legacy_modes m in
-        begin match ct with
-        | Some ct ->
-            pp f "@[<2>(%a%a@;:@;%a%a)@]"
-              optional_legacy_modes legacy
-              (pattern1 ctxt) p
-              (core_type ctxt) ct
-              optional_atat_modes m
-        | None ->
-            pp f "@[<2>(%a%a%a)@]"
-              optional_legacy_modes legacy
-              (pattern1 ctxt) p
-              optional_at_modes m
-        end
->>>>>>> origin/main
     | Ppat_lazy p ->
         pp f "@[<2>(lazy@;%a)@]" (simple_pattern ctxt) p
     | Ppat_exception p ->
@@ -881,21 +803,12 @@ and label_exp ctxt f (l,opt,p) =
       | {ppat_desc = Ppat_var {txt;_}; ppat_attributes = []}
         when txt = rest ->
           (match opt with
-<<<<<<< HEAD
            | Some o ->
               pp f "?(%a=@;%a)" ident_of_name rest (expression ctxt) o
            | None -> pp f "?%a" ident_of_name rest)
-||||||| 78ff8bc3c0
-           | Some o -> pp f "?(%s=@;%a)" rest  (expression ctxt) o
-           | None -> pp f "?%s" rest)
-=======
-           | Some o -> pp f "?(%s=@;%a)" rest (expression ctxt) o
-           | None -> pp f "?%s" rest)
->>>>>>> origin/main
       | _ ->
           (match opt with
            | Some o ->
-<<<<<<< HEAD
                (* Remove the legacy modes from the pattern here *)
                let legacy, p =
                  match p.ppat_desc with
@@ -915,52 +828,12 @@ and label_exp ctxt f (l,opt,p) =
                  (pattern1 ctxt) p
                  (expression ctxt) o
            | None -> pp f "?%a:%a" ident_of_name rest (simple_pattern ctxt) p)
-||||||| 78ff8bc3c0
-               pp f "?%s:(%a%a=@;%a)"
-                 rest
-                 optional_legacy_modes m
-                 (pattern1 ctxt) p (expression ctxt) o
-           | None -> pp f "?%s:%a" rest (maybe_modes_pat ctxt m) p)
-=======
-               (* Remove the legacy modes from the pattern here *)
-               let legacy, p =
-                 match p.ppat_desc with
-                 | Ppat_constraint (p', cty', m') ->
-                   let legacy, m' = split_out_legacy_modes m' in
-                   let p =
-                     match cty', m' with
-                     | None, [] -> p'
-                     | _ -> { p with ppat_desc = Ppat_constraint (p', cty', m') }
-                   in
-                   legacy, p
-                 | _ -> [], p
-               in
-               pp f "?%s:(%a%a=@;%a)"
-                 rest
-                 optional_legacy_modes legacy
-                 (pattern1 ctxt) p
-                 (expression ctxt) o
-           | None -> pp f "?%s:%a" rest (simple_pattern ctxt) p)
->>>>>>> origin/main
       end
   | Labelled l -> match p with
     | {ppat_desc  = Ppat_var {txt;_}; ppat_attributes = []}
       when txt = l ->
-<<<<<<< HEAD
         pp f "~%a" ident_of_name l
     | _ ->  pp f "~%a:%a" ident_of_name l (simple_pattern ctxt) p
-||||||| 78ff8bc3c0
-        (match m with
-        | Some m ->
-          pp f "~(%a %s)" legacy_modes m l
-        | None ->
-          pp f "~%s" l
-        )
-    | _ ->  pp f "~%s:%a" l (maybe_modes_pat ctxt m) p
-=======
-        pp f "~%s" l
-    | _ ->  pp f "~%s:%a" l (simple_pattern ctxt) p
->>>>>>> origin/main
 
 and sugar_expr ctxt f e =
   if e.pexp_attributes <> [] then false
@@ -2144,27 +2017,11 @@ and type_def_list ctxt f (rf, exported, l) =
 
 and record_declaration ctxt f lbls =
   let type_record_field f pld =
-<<<<<<< HEAD
     let legacy, m = split_out_legacy_modalities pld.pld_modalities in
     pp f "@[<2>%a%a%a:@;%a%a@;%a@]"
-||||||| 78ff8bc3c0
-    let modalities = Split_modalities.split_list pld.pld_modalities in
-    pp f "@[<2>%a%a%s:@;%a%a@;%a@]"
-=======
-    let legacy, m = split_out_legacy_modalities pld.pld_modalities in
-    pp f "@[<2>%a%a%s:@;%a%a@;%a@]"
->>>>>>> origin/main
       mutable_flag pld.pld_mutable
-<<<<<<< HEAD
       optional_legacy_modalities legacy
       ident_of_name pld.pld_name.txt
-||||||| 78ff8bc3c0
-      optional_legacy_modalities modalities.legacy
-      pld.pld_name.txt
-=======
-      optional_legacy_modalities legacy
-      pld.pld_name.txt
->>>>>>> origin/main
       (core_type ctxt) pld.pld_type
       optional_atat_modalities m
       (attributes ctxt) pld.pld_attributes

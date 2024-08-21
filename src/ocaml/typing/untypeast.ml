@@ -473,15 +473,6 @@ let exp_extra sub (extra, loc, attrs) sexp =
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(label_loc, jkind, sexp))
         |> add_jane_syntax_attributes
-<<<<<<< HEAD
-||||||| 78ff8bc3c0
-    | Texp_mode_coerce modes ->
-        Jane_syntax.Modes.expr_of ~loc
-          (Coerce (modes, sexp))
-        |> add_jane_syntax_attributes
-=======
-    | Texp_stack -> Pexp_stack sexp
->>>>>>> origin/main
   in
   Exp.mk ~loc ~attrs:!attrs desc
 
@@ -579,7 +570,6 @@ let expression sub exp =
                 match exp_extra with
                 | Some (Texp_coerce (ty1, ty2)) ->
                     Some
-<<<<<<< HEAD
                       (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2), [])
                 | Some (Texp_constraint (Some ty, modes)) ->
                   Some (
@@ -589,23 +579,6 @@ let expression sub exp =
                 | Some (Texp_poly _ | Texp_newtype _ | Texp_newtype' _)
                 | Some (Texp_constraint (None, _))
                 | Some Texp_stack
-||||||| 78ff8bc3c0
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2))
-                | Some (Texp_constraint ty) ->
-                    Some (Pconstraint (sub.typ sub ty))
-                | Some (Texp_poly _ | Texp_newtype _ | Texp_mode_coerce _
-                       | Texp_newtype' _)
-=======
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2), [])
-                | Some (Texp_constraint (Some ty, modes)) ->
-                  Some (
-                    Pconstraint (sub.typ sub ty),
-                    Typemode.untransl_mode_annots ~loc modes
-                  )
-                | Some (Texp_poly _ | Texp_newtype _) | Some (Texp_constraint (None, _))
-                | Some (Texp_newtype' _)
-                | Some Texp_stack
->>>>>>> origin/main
                 | None -> None
               in
               let constraint_ =

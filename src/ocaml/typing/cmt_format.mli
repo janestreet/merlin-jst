@@ -123,10 +123,6 @@ val iter_declarations
     whether the environment variable OCAML_BINANNOT_WITHENV is set *)
 val need_to_clear_env : bool
 
-(** Whether only the summary of the environment should be stored. This is based on
-    whether the environment variable OCAML_BINANNOT_WITHENV is set *)
-val need_to_clear_env : bool
-
 (*
 
   val is_magic_number : string -> bool

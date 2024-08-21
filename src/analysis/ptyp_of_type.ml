@@ -38,31 +38,6 @@ and core_type type_expr =
   match Types.get_desc type_expr with
   | Tvar { name = None; _ } | Tunivar { name = None; _ } -> Typ.any ()
   | Tvar { name = Some s; _ } | Tunivar { name = Some s; _ } -> Typ.var s
-<<<<<<< HEAD
-  | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
-     let (label : Asttypes.arg_label), type_expr = match label with
-       | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
-       | Nolabel -> Nolabel, core_type type_expr
-       | Labelled l -> Labelled l, core_type type_expr
-       | Optional l -> Optional l, core_type type_expr
-     in
-    Typ.arrow label
-      type_expr
-      (core_type type_expr_out)
-      []
-      []
-||||||| 78ff8bc3c0
-  | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
-     let (label : Asttypes.arg_label), type_expr = match label with
-       | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
-       | Nolabel -> Nolabel, core_type type_expr
-       | Labelled l -> Labelled l, core_type type_expr
-       | Optional l -> Optional l, core_type type_expr
-     in
-    Typ.arrow label
-      type_expr
-      (core_type type_expr_out)
-=======
   | Tarrow ((label,arg_alloc_mode,ret_alloc_mode), type_expr, type_expr_out, _commutable) ->
     let (label : Asttypes.arg_label), type_expr = match label with
       | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
@@ -81,7 +56,6 @@ and core_type type_expr =
     in
     Btype.backtrack snap;
     Typ.arrow label type_expr (core_type type_expr_out) arg_modes ret_modes
->>>>>>> origin/main
   | Ttuple type_exprs ->
       let labeled_type_exprs =
         List.map ~f:(fun (lbl, ty) -> lbl, core_type ty) type_exprs

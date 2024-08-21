@@ -1609,16 +1609,8 @@ let temp_abbrev loc id arity uid =
   let ty_td =
       {type_params = !params;
        type_arity = arity;
-<<<<<<< HEAD
        type_kind = Type_abstract Definition;
        type_jkind = Jkind.Builtin.value ~why:Object;
-||||||| 78ff8bc3c0
-       type_kind = Type_abstract Abstract_def;
-       type_jkind = Jkind.Primitive.value ~why:Object;
-=======
-       type_kind = Type_abstract Abstract_def;
-       type_jkind = Jkind.Builtin.value ~why:Object;
->>>>>>> origin/main
        type_jkind_annotation = None;
        type_private = Public;
        type_manifest = Some ty;
@@ -1849,16 +1841,8 @@ let class_infos define_class kind
     {
      type_params = obj_params;
      type_arity = arity;
-<<<<<<< HEAD
      type_kind = Type_abstract Definition;
      type_jkind = Jkind.Builtin.value ~why:Object;
-||||||| 78ff8bc3c0
-     type_kind = Type_abstract Abstract_def;
-     type_jkind = Jkind.Primitive.value ~why:Object;
-=======
-     type_kind = Type_abstract Abstract_def;
-     type_jkind = Jkind.Builtin.value ~why:Object;
->>>>>>> origin/main
      type_jkind_annotation = None;
      type_private = Public;
      type_manifest = Some obj_ty;

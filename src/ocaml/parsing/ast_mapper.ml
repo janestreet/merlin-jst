@@ -1019,7 +1019,6 @@ let default_mapper =
 
 
     value_binding =
-<<<<<<< HEAD
       (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_modes; pvb_attributes; pvb_loc} ->
          let map_ct (ct:Parsetree.value_constraint) = match ct with
            | Pvc_constraint {locally_abstract_univars=vars; typ} ->
@@ -1032,33 +1031,6 @@ let default_mapper =
                  ground = Option.map (this.typ this) ground;
                  coercion = this.typ this coercion
                }
-||||||| 78ff8bc3c0
-      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_attributes; pvb_loc} ->
-      let map_ct (ct:Parsetree.value_constraint) = match ct with
-      | Pvc_constraint {locally_abstract_univars=vars; typ} ->
-          Pvc_constraint
-            { locally_abstract_univars = List.map (map_loc this) vars;
-              typ = this.typ this typ
-            }
-      | Pvc_coercion { ground; coercion } ->
-          Pvc_coercion {
-            ground = Option.map (this.typ this) ground;
-            coercion = this.typ this coercion
-          }
-=======
-      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_modes; pvb_attributes; pvb_loc} ->
-      let map_ct (ct:Parsetree.value_constraint) = match ct with
-      | Pvc_constraint {locally_abstract_univars=vars; typ} ->
-          Pvc_constraint
-            { locally_abstract_univars = List.map (map_loc this) vars;
-              typ = this.typ this typ
-            }
-      | Pvc_coercion { ground; coercion } ->
-          Pvc_coercion {
-            ground = Option.map (this.typ this) ground;
-            coercion = this.typ this coercion
-          }
->>>>>>> origin/main
          in
          Vb.mk
            (this.pat this pvb_pat)
@@ -1157,7 +1129,6 @@ let default_mapper =
     typ_jane_syntax = T.map_jst;
 
     modes = (fun this m ->
-<<<<<<< HEAD
       List.map (map_loc this) m);
 
     modalities = (fun this m ->
@@ -1178,22 +1149,6 @@ let default_mapper =
       (fun this -> function
          | Ptop_def s -> Ptop_def (this.structure this s)
          | Ptop_dir d -> Ptop_dir (this.toplevel_directive this d) );
-||||||| 78ff8bc3c0
-      let open Jane_syntax.Mode_expr in
-      let map_const sub : Const.t -> Const.t =
-        fun m ->
-          let {txt; loc} =
-            map_loc sub m
-          in
-          Const.mk txt loc
-      in
-      map_loc_txt this (fun sub -> List.map (map_const sub)) m);
-=======
-      List.map (map_loc this) m);
-
-    modalities = (fun this m ->
-      List.map (map_loc this) m);
->>>>>>> origin/main
   }
 
 let extension_of_error {kind; main; sub} =

@@ -133,12 +133,6 @@ and exp_extra =
   | Texp_newtype of string * Jkind.annotation option
   | Texp_stack
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
-<<<<<<< HEAD
-||||||| 78ff8bc3c0
-  | Texp_mode_coerce of Jane_syntax.Mode_expr.t
-=======
-  | Texp_stack
->>>>>>> origin/main
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -1206,12 +1200,12 @@ let loc_of_decl ~uid =
   | Value vd -> vd.val_name
   | Value_binding vb ->
     let bound_idents = let_bound_idents_full [vb] in
-    let name = ListLabels.find_map 
+    let name = ListLabels.find_map
       ~f:(fun (_, name, _, uid') -> if uid = uid' then Some name else None)
       bound_idents in
     (match name with
     | Some name -> name
-    | None -> 
+    | None ->
       (* The find_map will only fail if a bad uid was given. In that case, just
          use the location of the pattern on the left of the binding. *)
       { txt = ""; loc = vb.vb_pat.pat_loc })
@@ -1238,33 +1232,3 @@ let unpack_functor_mty mty =
   match mty.mty_desc with
   | Tmty_functor (fp, mty) -> fp, mty
   | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"
-
-let loc_of_decl ~uid =
-  let of_option { txt; loc } =
-    match txt with
-    | Some txt -> { txt; loc }
-    | None -> { txt = ""; loc }
-  in
-  function
-  | Value vd -> vd.val_name
-  | Value_binding vb ->
-    let bound_idents = let_bound_idents_full [vb] in
-    let name = ListLabels.find_map
-      ~f:(fun (_, name, _, uid') -> if uid = uid' then Some name else None)
-      bound_idents in
-    (match name with
-    | Some name -> name
-    | None ->
-      (* The find_map will only fail if a bad uid was given. In that case, just
-         use the location of the pattern on the left of the binding. *)
-      { txt = ""; loc = vb.vb_pat.pat_loc })
-  | Type td -> td.typ_name
-  | Constructor cd -> cd.cd_name
-  | Extension_constructor ec -> ec.ext_name
-  | Label ld -> ld.ld_name
-  | Module md -> of_option md.md_name
-  | Module_binding mb -> of_option mb.mb_name
-  | Module_type mtd -> mtd.mtd_name
-  | Module_substitution msd -> msd.ms_name
-  | Class cd -> cd.ci_id_name
-  | Class_type ctd -> ctd.ci_id_name
