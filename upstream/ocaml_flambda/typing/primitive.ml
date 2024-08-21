@@ -474,7 +474,6 @@ end
 let prim_has_valid_reprs ~loc prim =
   let open Repr_check in
   let check =
-<<<<<<< HEAD
     let stringlike_indexing_primitives =
       let widths : (_ * _ * Jkind_types.Sort.const) list =
         [
@@ -531,55 +530,6 @@ let prim_has_valid_reprs ~loc prim =
       |> List.to_seq
       |> fun seq -> String.Map.add_seq seq String.Map.empty
     in
-||||||| 78ff8bc3c0
-=======
-    let stringlike_indexing_primitives =
-      let widths : (_ * _ * Jkind_types.Sort.const) list =
-        [
-          ("16", "", Value);
-          ("32", "", Value);
-          ("f32", "", Value);
-          ("64", "", Value);
-          ("a128", "", Value);
-          ("u128", "", Value);
-          ("32", "#", Bits32);
-          ("f32", "#", Float32);
-          ("64", "#", Bits64);
-        ]
-      in
-      let combiners =
-        [
-          ( Printf.sprintf "%%caml_%s_get%s%s%s",
-            fun width_kind ->
-              [
-                Same_as_ocaml_repr Value;
-                Same_as_ocaml_repr Value;
-                Same_as_ocaml_repr width_kind;
-              ] );
-          ( Printf.sprintf "%%caml_%s_set%s%s%s",
-            fun width_kind ->
-              [
-                Same_as_ocaml_repr Value;
-                Same_as_ocaml_repr Value;
-                Same_as_ocaml_repr width_kind;
-                Same_as_ocaml_repr Value;
-              ] );
-        ]
-      in
-      (let ( let* ) x f = List.concat_map f x in
-       let* container = [ "bigstring"; "bytes"; "string" ] in
-       let* safe_sigil = [ ""; "u" ] in
-       let* width_sigil, unboxed_sigil, width_kind = widths in
-       let* combine_string, combine_repr = combiners in
-       let string =
-         combine_string container width_sigil safe_sigil unboxed_sigil
-       in
-       let reprs = combine_repr width_kind in
-       [ (string, reprs) ])
-      |> List.to_seq
-      |> fun seq -> String.Map.add_seq seq String.Map.empty
-    in
->>>>>>> origin/main
     match prim.prim_name with
     | "%identity"
     | "%opaque"

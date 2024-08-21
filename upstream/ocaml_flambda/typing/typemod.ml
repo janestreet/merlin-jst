@@ -660,16 +660,8 @@ let merge_constraint initial_env loc sg lid constr =
                 (fun _ -> Btype.newgenvar (Jkind.Builtin.any ~why:Dummy_jkind))
                 sdecl.ptype_params;
             type_arity = arity;
-<<<<<<< HEAD
             type_kind = Type_abstract Definition;
             type_jkind = Jkind.Builtin.value ~why:(Unknown "merge_constraint");
-||||||| 78ff8bc3c0
-            type_kind = Type_abstract Abstract_def;
-            type_jkind = Jkind.Primitive.value ~why:(Unknown "merge_constraint");
-=======
-            type_kind = Type_abstract Abstract_def;
-            type_jkind = Jkind.Builtin.value ~why:(Unknown "merge_constraint");
->>>>>>> origin/main
             type_jkind_annotation = None;
             type_private = Private;
             type_manifest = None;
@@ -3697,21 +3689,7 @@ let type_implementation target modulename initial_env ast =
           Profile.record_call "save_cmt" (fun () ->
             let shape = Shape_reduce.local_reduce Env.empty shape in
             let annots = Cmt_format.Implementation str in
-<<<<<<< HEAD
             save_cmt_and_cms target annots initial_env None (Some shape));
-||||||| 78ff8bc3c0
-            Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env None (Some shape);
-            Cms_format.save_cms (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) (Some shape);
-            gen_annot outputprefix sourcefile annots);
-=======
-            Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env None (Some shape);
-            Cms_format.save_cms (outputprefix ^ ".cms") modulename
-              annots (Some sourcefile) initial_env (Some shape);
-            gen_annot outputprefix sourcefile annots);
->>>>>>> origin/main
           { structure = str;
             coercion;
             shape;
@@ -3758,21 +3736,7 @@ let type_implementation target modulename initial_env ast =
             in
             Profile.record_call "save_cmt" (fun () ->
               let annots = Cmt_format.Implementation str in
-<<<<<<< HEAD
               save_cmt_and_cms target annots initial_env (Some cmi) (Some shape));
-||||||| 78ff8bc3c0
-              Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-                annots (Some sourcefile) initial_env (Some cmi) (Some shape);
-              Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-                annots (Some sourcefile) (Some shape);
-              gen_annot outputprefix sourcefile annots)
-=======
-              Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-                annots (Some sourcefile) initial_env (Some cmi) (Some shape);
-              Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-                annots (Some sourcefile) initial_env (Some shape);
-              gen_annot outputprefix sourcefile annots)
->>>>>>> origin/main
           end;
           { structure = str;
             coercion;
@@ -3789,42 +3753,14 @@ let type_implementation target modulename initial_env ast =
             Cmt_format.Partial_implementation
               (Array.of_list (Cmt_format.get_saved_types ()))
           in
-<<<<<<< HEAD
           save_cmt_and_cms target annots initial_env None None)
-||||||| 78ff8bc3c0
-          Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-            annots (Some sourcefile) initial_env None None;
-          Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) None;
-          gen_annot outputprefix sourcefile annots)
-=======
-          Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-            annots (Some sourcefile) initial_env None None;
-          Cms_format.save_cms  (outputprefix ^ ".cms") modulename
-            annots (Some sourcefile) initial_env None;
-          gen_annot outputprefix sourcefile annots)
->>>>>>> origin/main
       )
 
-<<<<<<< HEAD
 let save_signature target modname tsg initial_env cmi =
   Cmt_format.save_cmt (Unit_info.cmti target) modname
     (Cmt_format.Interface tsg) initial_env (Some cmi) None;
   Cms_format.save_cms  (Unit_info.cmsi target) modname
     (Cmt_format.Interface tsg) initial_env None
-||||||| 78ff8bc3c0
-let save_signature modname tsg outputprefix source_file initial_env cmi =
-  Cmt_format.save_cmt  (outputprefix ^ ".cmti") modname
-    (Cmt_format.Interface tsg) (Some source_file) initial_env (Some cmi) None;
-  Cms_format.save_cms  (outputprefix ^ ".cmsi") modname
-    (Cmt_format.Interface tsg) (Some source_file) None
-=======
-let save_signature modname tsg outputprefix source_file initial_env cmi =
-  Cmt_format.save_cmt  (outputprefix ^ ".cmti") modname
-    (Cmt_format.Interface tsg) (Some source_file) initial_env (Some cmi) None;
-  Cms_format.save_cms  (outputprefix ^ ".cmsi") modname
-    (Cmt_format.Interface tsg) (Some source_file) initial_env None
->>>>>>> origin/main
 
 let cms_register_toplevel_signature_attributes ~sourcefile ~uid ast =
   cms_register_toplevel_attributes ~sourcefile ~uid ast
@@ -3941,22 +3877,10 @@ let package_units initial_env objfiles target_cmi modulename =
       Includemod.compunit initial_env ~mark:Mark_both
         "(obtained by packing)" sg mli dclsig shape
     in
-<<<<<<< HEAD
     Cmt_format.save_cmt  (Unit_info.companion_cmt target_cmi) modulename
       (Cmt_format.Packed (sg, objfiles)) initial_env  None (Some shape);
     Cms_format.save_cms  (Unit_info.companion_cms target_cmi) modulename
       (Cmt_format.Packed (sg, objfiles)) initial_env (Some shape);
-||||||| 78ff8bc3c0
-    Cmt_format.save_cmt  (prefix ^ ".cmt") modulename
-      (Cmt_format.Packed (sg, objfiles)) None initial_env  None (Some shape);
-    Cms_format.save_cms  (prefix ^ ".cms") modulename
-      (Cmt_format.Packed (sg, objfiles)) None (Some shape);
-=======
-    Cmt_format.save_cmt  (prefix ^ ".cmt") modulename
-      (Cmt_format.Packed (sg, objfiles)) None initial_env  None (Some shape);
-    Cms_format.save_cms  (prefix ^ ".cms") modulename
-      (Cmt_format.Packed (sg, objfiles)) None initial_env (Some shape);
->>>>>>> origin/main
     cc
   end else begin
     (* Determine imports *)
@@ -3979,24 +3903,10 @@ let package_units initial_env objfiles target_cmi modulename =
           sg name kind target_cmi (Array.of_list imports)
       in
       let sign = Subst.Lazy.force_signature cmi.Cmi_format.cmi_sign in
-<<<<<<< HEAD
       Cmt_format.save_cmt (Unit_info.companion_cmt target_cmi)  modulename
         (Cmt_format.Packed (sign, objfiles)) initial_env (Some cmi) (Some shape);
       Cms_format.save_cms (Unit_info.companion_cms target_cmi)  modulename
         (Cmt_format.Packed (sign, objfiles)) initial_env (Some shape);
-||||||| 78ff8bc3c0
-      Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
-        (Cmt_format.Packed (sign, objfiles)) None initial_env
-        (Some cmi) (Some shape);
-      Cms_format.save_cms (prefix ^ ".cms")  modulename
-        (Cmt_format.Packed (sign, objfiles)) None (Some shape);
-=======
-      Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
-        (Cmt_format.Packed (sign, objfiles)) None initial_env
-        (Some cmi) (Some shape);
-      Cms_format.save_cms (prefix ^ ".cms")  modulename
-        (Cmt_format.Packed (sign, objfiles)) None initial_env (Some shape);
->>>>>>> origin/main
     end;
     Tcoerce_none
   end

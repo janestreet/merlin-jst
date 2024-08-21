@@ -47,14 +47,7 @@ val save_cms :
   Unit_info.Artifact.t ->
   Compilation_unit.t ->  (* module name *)
   Cmt_format.binary_annots ->
-<<<<<<< HEAD
   Env.t -> (* initial env *)
-||||||| 78ff8bc3c0
-  string option ->  (* source file *)
-=======
-  string option ->  (* source file *)
-  Env.t -> (* initial env *)
->>>>>>> origin/main
   Shape.t option ->
   unit
 
