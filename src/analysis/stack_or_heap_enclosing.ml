@@ -56,11 +56,11 @@ let from_nodes ~pos ~path =
            | Some { loc_start; loc_end; loc_ghost = _ } ->
              Lexing.compare_pos pos loc_start >= 0 && Lexing.compare_pos pos loc_end <= 0
          in
-         if cursor_is_inside_function_body then None else ret (Alloc_mode alloc_mode)
-       | Texp_array (_, _, _, alloc_mode) -> ret (Alloc_mode alloc_mode)
+         if cursor_is_inside_function_body then None else ret (Alloc_mode alloc_mode.mode)
+       | Texp_array (_, _, _, alloc_mode) -> ret (Alloc_mode alloc_mode.mode)
        | Texp_construct (_, { cstr_repr; _ }, args, maybe_alloc_mode) ->
          (match maybe_alloc_mode with
-          | Some alloc_mode -> ret (Alloc_mode alloc_mode)
+          | Some alloc_mode -> ret (Alloc_mode alloc_mode.mode)
           | None ->
             (match args with
              | [] -> ret_no_alloc "constructor without arguments"
@@ -71,17 +71,18 @@ let from_nodes ~pos ~path =
        | Texp_record { representation; alloc_mode = maybe_alloc_mode; _ } ->
          (match maybe_alloc_mode, representation with
           | _, Record_inlined _ -> None
-          | Some alloc_mode, _ -> ret_alloc alloc_mode
+          | Some alloc_mode, _ -> ret_alloc alloc_mode.mode
           | None, Record_unboxed -> ret_no_alloc "unboxed record"
           | None, (Record_boxed _ | Record_float | Record_ufloat | Record_mixed _) ->
             ret Unexpected_no_alloc)
        | Texp_field (_, _, _, boxed_or_unboxed) ->
          (match boxed_or_unboxed with
-          | Boxing (alloc_mode, _) -> ret_alloc alloc_mode
+          | Boxing (alloc_mode, _) -> ret_alloc alloc_mode.mode
           | Non_boxing _ -> None)
        | Texp_variant (_, maybe_exp_and_alloc_mode) ->
          maybe_exp_and_alloc_mode
-         |> Option.map ~f:snd
+         |> Option.map ~f:(fun (_, (alloc_mode : Typedtree.alloc_mode)) ->
+             alloc_mode.mode)
          |> ret_maybe_alloc "variant without argument"
        | _ -> None)
     | _ -> None

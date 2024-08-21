@@ -227,10 +227,13 @@ end = struct
 
   let uid_to_loc uid = function
     | Cmt cmt_infos ->
-      Shape.Uid.Tbl.find_opt cmt_infos.cmt_uid_to_decl uid
-      |> Option.bind ~f:(Misc_utils.loc_of_decl ~uid)
-      |> Option.map ~f:(fun { Location.loc; _ } -> loc)
-    | Cms cms_infos -> Shape.Uid.Tbl.find_opt cms_infos.cms_uid_to_loc uid
+        Shape.Uid.Tbl.find_opt cmt_infos.cmt_uid_to_decl uid
+        |> Option.bind ~f:(Misc_utils.loc_of_decl ~uid)
+        |> Option.map ~f:(fun { Location.loc; _ } -> loc)
+    | Cms cms_infos ->
+        Shape.Uid.Tbl.find_opt cms_infos.cms_uid_to_loc uid
+        |> Option.map ~f:(fun { Location.loc; _ } -> loc)
+
 
   let find_doc_attribute attrs =
     let open Parsetree in

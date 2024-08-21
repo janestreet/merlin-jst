@@ -48,6 +48,8 @@ and core_type type_expr =
     Typ.arrow label
       type_expr
       (core_type type_expr_out)
+      []
+      []
   | Ttuple type_exprs ->
       let labeled_type_exprs =
         List.map ~f:(fun (lbl, ty) -> lbl, core_type ty) type_exprs
@@ -132,8 +134,8 @@ and extension_constructor id {
     ~args:(constructor_arguments ext_args)
     ?res:(Option.map ~f:core_type ext_ret_type)
     (var_of_id id)
-and const_modalities modalities =
-  Typemode.untransl_modalities ~loc:Location.none modalities
+and const_modalities ~attrs modalities =
+  Typemode.untransl_modalities Immutable attrs modalities
 and value_description id { val_type; val_kind=_; val_loc; val_attributes; val_modalities; _ } =
   let type_ = core_type val_type in
   let snap = Btype.snapshot () in
@@ -144,14 +146,14 @@ and value_description id { val_type; val_kind=_; val_loc; val_attributes; val_mo
     pval_type = type_;
     pval_prim = [];
     pval_attributes = val_attributes;
-    pval_modalities = const_modalities modalities;
+    pval_modalities = const_modalities ~attrs:val_attributes modalities;
     pval_loc = val_loc
   }
 and constructor_argument {ca_type; ca_loc; ca_modalities} =
   {
     Parsetree.pca_type = core_type ca_type;
     pca_loc = ca_loc;
-    pca_modalities = const_modalities ca_modalities
+    pca_modalities = const_modalities ~attrs:[] ca_modalities
   }
 and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
   Ast_helper.Type.field

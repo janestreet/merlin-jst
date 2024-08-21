@@ -478,17 +478,14 @@ escape characters in string literals, so we use the revert-newlines script.
   |                             ^
   
   |let f x = local_ (Some (Some x))
-  |                       ^^^^^^^^
+  |                             ^
   
-  "stack"
+  "no relevant allocation to show"
   
   |let f x = local_ (Some (Some x))
   |                             ^
   
-  |let f x = local_ (Some (Some x))
-  |          ^^^^^^^^^^^^^^^^^^^^^^
-  
-  "stack"
+  null
   
   |let f x = local_ (Some (Some x))
   |                             ^

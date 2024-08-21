@@ -401,7 +401,11 @@ let index_occurrences binary_annots =
 
 exception Error of error
 
-let input_cmt ic = (input_value ic : cmt_infos)
+let input_cmt ic : cmt_infos =
+  (* CR ocaml 5 compressed-marshal mshinwell:
+     (Compression.input_value ic : cmt_infos)
+  *)
+  Marshal.from_channel ic
 
 let output_cmt oc cmt =
   ignore (oc, cmt)

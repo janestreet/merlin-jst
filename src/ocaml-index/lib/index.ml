@@ -211,8 +211,7 @@ let index_of_cms ~root ~build_path cms_infos =
   in
   let uid_to_loc =
     Shape.Uid.Tbl.to_list cms_uid_to_loc
-    |> List.map (function
-      | (uid, l) -> uid, Some { Location.txt = ""; loc = l })
+    |> List.map (fun (uid, l) -> uid, Some l)
     |> Shape.Uid.Tbl.of_list
   in
   index_of_artifact

@@ -343,7 +343,8 @@ module Gen = struct
               (Labelled s)
               (Pat.constraint_
                 (Pat.var (Location.mknoloc s))
-                (Typ.extension (Location.mknoloc "call_pos", PStr []))),
+                (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
+                []),
             s
         | Labelled s ->
             make_param
@@ -553,7 +554,8 @@ module Gen = struct
             let ast =
               Exp.constraint_
                 (Exp.pack (module_ env ty))
-                (Ptyp_of_type.core_type typ)
+                (Some (Ptyp_of_type.core_type typ))
+                []
             in
             [ ast ]
           with Typemod.Error _ ->
