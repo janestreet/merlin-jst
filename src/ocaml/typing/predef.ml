@@ -216,8 +216,16 @@ let or_null_argument_jkind = Jkind.Builtin.value ~why:(
 
 let mk_add_type add_type
       ?manifest type_ident
+<<<<<<< HEAD
       ?(kind=Type_abstract Definition)
       ?(jkind=Jkind.Builtin.value ~why:(Primitive type_ident))
+||||||| 78ff8bc3c0
+      ?(kind=Type_abstract Abstract_def)
+      ?(jkind=Jkind.Primitive.value ~why:(Primitive type_ident))
+=======
+      ?(kind=Type_abstract Abstract_def)
+      ?(jkind=Jkind.Builtin.value ~why:(Primitive type_ident))
+>>>>>>> origin/main
       (* [jkind_annotation] is just used for printing. It's best to
          provide it if the jkind is not implied by the kind of the
          type, as then the type, if printed, will be clearer.
@@ -246,8 +254,16 @@ let mk_add_type add_type
   add_type type_ident decl env
 
 let mk_add_type1 add_type type_ident
+<<<<<<< HEAD
       ?(kind=fun _ -> Type_abstract Definition)
       ?(jkind=Jkind.Builtin.value ~why:(Primitive type_ident))
+||||||| 78ff8bc3c0
+      ?(kind=fun _ -> Type_abstract Abstract_def)
+      ?(jkind=Jkind.Primitive.value ~why:(Primitive type_ident))
+=======
+      ?(kind=fun _ -> Type_abstract Abstract_def)
+      ?(jkind=Jkind.Builtin.value ~why:(Primitive type_ident))
+>>>>>>> origin/main
       (* See the comment on the [jkind_annotation] argument to [mk_add_type]
       *)
       ?jkind_annotation
@@ -421,8 +437,14 @@ let build_initial_env add_type add_extension empty_env =
          in
          let immediate = Jkind.Builtin.value ~why:(Primitive ident_int) in
          let labels = List.map lbl [
+<<<<<<< HEAD
            ("pos_fname", type_string, (Jkind.of_const ~why:(Primitive ident_string)
                                           Jkind.Const.Builtin.immutable_data.jkind));
+||||||| 78ff8bc3c0
+           ("pos_fname", type_string, Jkind.Primitive.value ~why:(Primitive ident_string));
+=======
+           ("pos_fname", type_string, Jkind.Builtin.value ~why:(Primitive ident_string));
+>>>>>>> origin/main
            ("pos_lnum", type_int, immediate);
            ("pos_bol", type_int, immediate);
            ("pos_cnum", type_int, immediate) ]
@@ -432,9 +454,15 @@ let build_initial_env add_type add_extension empty_env =
            (Record_boxed (List.map (fun label -> label.ld_jkind) labels |> Array.of_list))
          )
        )
+<<<<<<< HEAD
        ~jkind:(Jkind.of_const ~why:(Primitive ident_lexing_position)
                 Jkind.Const.Builtin.immutable_data.jkind)
        ~jkind_annotation:Jkind.Const.Builtin.word
+||||||| 78ff8bc3c0
+       ~jkind:(Jkind.Primitive.value ~why:Boxed_record)
+=======
+       ~jkind:(Jkind.Builtin.value ~why:Boxed_record)
+>>>>>>> origin/main
   |> add_type ident_string
        ~jkind:(Jkind.of_const ~why:(Primitive ident_string)
                 Jkind.Const.Builtin.immutable_data.jkind)

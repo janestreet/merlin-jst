@@ -1,6 +1,13 @@
 --- typecore.ml
 +++ typecore.ml
+<<<<<<< HEAD
 @@ -6539,7 +6439,7 @@ and type_expect_
+||||||| 78ff8bc3c0
+@@ -6423,13 +6457,14 @@ and type_expect_
+         exp_env = env;
+=======
+@@ -6489,7 +6396,7 @@ and type_expect_
+>>>>>>> origin/main
        }
    | Pexp_lazy e ->
        submode ~loc ~env Value.legacy expected_mode;

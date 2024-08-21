@@ -35,6 +35,7 @@ open Parsetree
 open Ast_helper
 open Docstrings
 open Docstrings.WithMenhir
+open Parser_types
 open Msupport_parsing
 open Parser_types
 
@@ -681,7 +682,47 @@ let extra_rhs_core_type ct ~pos =
   let docs = rhs_info pos in
   { ct with ptyp_attributes = add_info_attrs docs ct.ptyp_attributes }
 
+<<<<<<< HEAD
 let mklb first ~loc (p, e, typ, modes, is_pun) attrs =
+||||||| 78ff8bc3c0
+(* moved to ast_helper
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_constraint: value_constraint option;
+    lb_is_pun: bool;
+    lb_attributes: attributes;
+    lb_docs: docs Lazy.t;
+    lb_text: text Lazy.t;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: rec_flag;
+    lbs_extension: string Asttypes.loc option }
+*)
+
+let mklb first ~loc (p, e, typ, is_pun) attrs =
+=======
+(* moved to ast_helper
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_constraint: value_constraint option;
+    lb_is_pun: bool;
+    lb_attributes: attributes;
+    lb_docs: docs Lazy.t;
+    lb_text: text Lazy.t;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: rec_flag;
+    lbs_extension: string Asttypes.loc option }
+*)
+
+let mklb first ~loc (p, e, typ, modes, is_pun) attrs =
+>>>>>>> origin/main
   {
     lb_pattern = p;
     lb_expression = e;

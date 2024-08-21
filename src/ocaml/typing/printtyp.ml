@@ -2308,8 +2308,16 @@ let dummy =
   {
     type_params = [];
     type_arity = 0;
+<<<<<<< HEAD
     type_kind = Type_abstract Definition;
     type_jkind = Jkind.Builtin.any ~why:Dummy_jkind;
+||||||| 78ff8bc3c0
+    type_kind = Type_abstract Abstract_def;
+    type_jkind = Jkind.Primitive.any ~why:Dummy_jkind;
+=======
+    type_kind = Type_abstract Abstract_def;
+    type_jkind = Jkind.Builtin.any ~why:Dummy_jkind;
+>>>>>>> origin/main
     type_jkind_annotation = None;
     type_private = Public;
     type_manifest = None;

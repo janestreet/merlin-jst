@@ -389,10 +389,18 @@ and function_body i ppf (body : function_body) =
       { fc_cases; fc_loc; fc_exp_extra; fc_attributes; fc_arg_mode;
         fc_arg_sort; fc_param = _; fc_partial; fc_env = _; fc_ret_type = _ }
     ->
+<<<<<<< HEAD
       line i ppf "Tfunction_cases%a %a\n"
         fmt_partiality fc_partial
         fmt_location fc_loc;
       alloc_mode_raw i ppf fc_arg_mode;
+||||||| 78ff8bc3c0
+      line i ppf "Tfunction_cases %a\n" fmt_location fc_loc;
+      alloc_mode i ppf fc_arg_mode;
+=======
+      line i ppf "Tfunction_cases %a\n" fmt_location fc_loc;
+      alloc_mode_raw i ppf fc_arg_mode;
+>>>>>>> origin/main
       line i ppf "%a\n" Jkind.Sort.format fc_arg_sort;
       attributes (i+1) ppf fc_attributes;
       Option.iter (fun e -> expression_extra (i+1) ppf e []) fc_exp_extra;

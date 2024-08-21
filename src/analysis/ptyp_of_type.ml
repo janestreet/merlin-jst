@@ -38,6 +38,7 @@ and core_type type_expr =
   match Types.get_desc type_expr with
   | Tvar { name = None; _ } | Tunivar { name = None; _ } -> Typ.any ()
   | Tvar { name = Some s; _ } | Tunivar { name = Some s; _ } -> Typ.var s
+<<<<<<< HEAD
   | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
      let (label : Asttypes.arg_label), type_expr = match label with
        | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
@@ -50,6 +51,37 @@ and core_type type_expr =
       (core_type type_expr_out)
       []
       []
+||||||| 78ff8bc3c0
+  | Tarrow ((label,_,_), type_expr, type_expr_out, _commutable) ->
+     let (label : Asttypes.arg_label), type_expr = match label with
+       | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
+       | Nolabel -> Nolabel, core_type type_expr
+       | Labelled l -> Labelled l, core_type type_expr
+       | Optional l -> Optional l, core_type type_expr
+     in
+    Typ.arrow label
+      type_expr
+      (core_type type_expr_out)
+=======
+  | Tarrow ((label,arg_alloc_mode,ret_alloc_mode), type_expr, type_expr_out, _commutable) ->
+    let (label : Asttypes.arg_label), type_expr = match label with
+      | Position l -> Labelled l, Typ.extension (mkloc "call_pos" !default_loc, PStr [])
+      | Nolabel -> Nolabel, core_type type_expr
+      | Labelled l -> Labelled l, core_type type_expr
+      | Optional l -> Optional l, core_type type_expr
+    in
+    let snap = Btype.snapshot () in
+    let arg_modes =
+      Typemode.untransl_mode_annots ~loc:Location.none @@
+      Mode.Alloc.(Const.diff (zap_to_legacy arg_alloc_mode) Const.legacy)
+    in
+    let ret_modes =
+      Typemode.untransl_mode_annots ~loc:Location.none @@
+      Mode.Alloc.(Const.diff (zap_to_legacy ret_alloc_mode) Const.legacy)
+    in
+    Btype.backtrack snap;
+    Typ.arrow label type_expr (core_type type_expr_out) arg_modes ret_modes
+>>>>>>> origin/main
   | Ttuple type_exprs ->
       let labeled_type_exprs =
         List.map ~f:(fun (lbl, ty) -> lbl, core_type ty) type_exprs
@@ -155,12 +187,13 @@ and constructor_argument {ca_type; ca_loc; ca_modalities} =
     pca_loc = ca_loc;
     pca_modalities = const_modalities ~attrs:[] ca_modalities
   }
-and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; _ } =
+and label_declaration { ld_id; ld_mutable; ld_type; ld_attributes; ld_modalities; _ } =
   Ast_helper.Type.field
     ~attrs:ld_attributes
     ~mut:(match ld_mutable with
          | Mutable _ -> Mutable
          | Immutable -> Immutable)
+    ~modalities:(Typemode.untransl_modalities ld_mutable ld_attributes ld_modalities)
     (var_of_id ld_id)
     (core_type ld_type)
 and constructor_arguments = function

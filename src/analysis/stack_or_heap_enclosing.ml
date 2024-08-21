@@ -81,8 +81,15 @@ let from_nodes ~pos ~path =
           | Non_boxing _ -> None)
        | Texp_variant (_, maybe_exp_and_alloc_mode) ->
          maybe_exp_and_alloc_mode
+<<<<<<< HEAD
          |> Option.map ~f:(fun (_, (alloc_mode : Typedtree.alloc_mode)) ->
              alloc_mode.mode)
+||||||| 78ff8bc3c0
+         |> Option.map ~f:snd
+=======
+         |> Option.map ~f:(fun (_, (alloc_mode : Typedtree.alloc_mode)) ->
+                              alloc_mode.mode)
+>>>>>>> origin/main
          |> ret_maybe_alloc "variant without argument"
        | _ -> None)
     | _ -> None

@@ -574,6 +574,10 @@ let ocaml_ignored_flags = [
   "-cfg-zero-alloc-checker";
   "-no-cfg-zero-alloc-checker";
   "-dcounters";
+  "-vectorize";
+  "-no-vectorize";
+  "-dvectorize";
+  "-dump-into-csv";
 ]
 
 let ocaml_ignored_parametrized_flags = [

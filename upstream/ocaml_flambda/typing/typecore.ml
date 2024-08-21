@@ -462,6 +462,7 @@ let mode_default mode =
 
 let mode_legacy = mode_default Value.legacy
 
+<<<<<<< HEAD
 let as_single_mode {mode; tuple_modes; _} =
   match tuple_modes with
   | Some l -> Value.meet (mode :: l)
@@ -478,6 +479,25 @@ let mode_morph f expected_mode =
   let tuple_modes = None in
   {expected_mode with mode; tuple_modes}
 
+||||||| 78ff8bc3c0
+=======
+let as_single_mode {mode; tuple_modes; _} =
+  match tuple_modes with
+  | Some l -> Value.meet (mode :: l)
+  | None -> mode
+
+let get_single_mode_exn {mode; tuple_modes; _} =
+  match tuple_modes with
+  | Some _ -> Misc.fatal_error "tuple_modes should be None"
+  | None -> mode
+
+let mode_morph f expected_mode =
+  let mode = as_single_mode expected_mode in
+  let mode = f mode in
+  let tuple_modes = None in
+  {expected_mode with mode; tuple_modes}
+
+>>>>>>> origin/main
 let mode_modality modality expected_mode =
   get_single_mode_exn expected_mode
   |> Modality.Value.Const.apply modality
@@ -1495,8 +1515,14 @@ let solve_constructor_annotation
             See: https://github.com/ocaml/ocaml/pull/9584/ *)
         let decl = new_local_type ~loc:name.loc
                      ~jkind_annot:None
+<<<<<<< HEAD
                      Definition
                      (Jkind.Builtin.value ~why:Existential_type_variable) in
+||||||| 78ff8bc3c0
+                     (Jkind.Primitive.value ~why:Existential_type_variable) in
+=======
+                     (Jkind.Builtin.value ~why:Existential_type_variable) in
+>>>>>>> origin/main
         let (id, new_env) =
           Env.enter_type ~scope:expansion_scope name.txt decl !!penv in
         Pattern_env.set_env penv new_env;
@@ -1648,8 +1674,16 @@ let solve_Ppat_array ~refine loc env mutability expected_ty =
   ty_elt, arg_sort
 
 let solve_Ppat_lazy  ~refine loc env expected_ty =
+<<<<<<< HEAD
   let nv = newgenvar (Jkind.Builtin.value ~why:Lazy_expression) in
   unify_pat_types_refine ~refine loc env (Predef.type_lazy_t nv)
+||||||| 78ff8bc3c0
+  let nv = newgenvar (Jkind.Primitive.value ~why:Lazy_expression) in
+  unify_pat_types ~refine loc env (Predef.type_lazy_t nv)
+=======
+  let nv = newgenvar (Jkind.Builtin.value ~why:Lazy_expression) in
+  unify_pat_types ~refine loc env (Predef.type_lazy_t nv)
+>>>>>>> origin/main
     (generic_instance expected_ty);
   nv
 
@@ -1685,8 +1719,16 @@ let solve_Ppat_variant ~refine loc env tag no_arg expected_ty =
   (* PR#7404: allow some_private_tag blindly, as it would not unify with
      the abstract row variable *)
   if tag <> Parmatch.some_private_tag then
+<<<<<<< HEAD
     unify_pat_types_refine ~refine loc env (newgenty(Tvariant row)) expected_ty;
   (arg_type, make_row (newvar (Jkind.Builtin.value ~why:Row_variable)),
+||||||| 78ff8bc3c0
+    unify_pat_types ~refine loc env (newgenty(Tvariant row)) expected_ty;
+  (arg_type, make_row (newvar (Jkind.Primitive.value ~why:Row_variable)),
+=======
+    unify_pat_types ~refine loc env (newgenty(Tvariant row)) expected_ty;
+  (arg_type, make_row (newvar (Jkind.Builtin.value ~why:Row_variable)),
+>>>>>>> origin/main
    instance expected_ty)
 
 (* Building the or-pattern corresponding to a polymorphic variant type *)
@@ -2437,8 +2479,19 @@ and type_pat_aux
        keep them in sync, at the cost of a worse diff with upstream; it
        shouldn't be too bad.  We can inline this when we upstream this code and
        combine the two array pattern constructors. *)
+<<<<<<< HEAD
     let ty_elt, arg_sort =
       solve_Ppat_array ~refine:false loc penv mutability expected_ty
+||||||| 78ff8bc3c0
+    let ty_elt, arg_sort = solve_Ppat_array ~refine loc env mutability expected_ty in
+    let modalities =
+      if Types.is_mutable mutability then Typemode.mutable_implied_modalities
+      else Modality.Value.Const.id
+=======
+    let ty_elt, arg_sort = solve_Ppat_array ~refine loc env mutability expected_ty in
+    let modalities =
+      Typemode.transl_modalities ~maturity:Stable mutability [] []
+>>>>>>> origin/main
     in
     let modalities =
       Typemode.transl_modalities ~maturity:Stable mutability [] []
@@ -2817,9 +2870,18 @@ and type_pat_aux
         pat_loc = loc; pat_extra=[];
         pat_type = instance expected_ty;
         pat_attributes = sp.ppat_attributes;
+<<<<<<< HEAD
         pat_env = !!penv }
   | Ppat_constraint(sp_constrained, sty, ms) ->
+||||||| 78ff8bc3c0
+        pat_env = !env }
+  | Ppat_constraint(sp_constrained, sty) ->
+=======
+        pat_env = !env }
+  | Ppat_constraint(sp_constrained, sty, ms) ->
+>>>>>>> origin/main
       (* Pretend separate = true *)
+<<<<<<< HEAD
       begin match sty with
       | Some sty ->
         let cty, ty, expected_ty' =
@@ -2832,6 +2894,28 @@ and type_pat_aux
       | None ->
         type_pat ~alloc_mode tps category sp_constrained expected_ty
       end
+||||||| 78ff8bc3c0
+      let cty, ty, expected_ty' =
+        let type_modes, sty = alloc_mode_from_ppat_constraint_typ_attrs sty in
+        solve_Ppat_constraint ~refine tps loc env type_modes sty expected_ty
+      in
+      let p = type_pat ~alloc_mode tps category sp_constrained expected_ty' in
+      let extra = (Tpat_constraint cty, loc, sp_constrained.ppat_attributes) in
+      { p with pat_type = ty; pat_extra = extra::p.pat_extra }
+=======
+      begin match sty with
+      | Some sty ->
+        let cty, ty, expected_ty' =
+          let type_modes = Typemode.transl_alloc_mode ms in
+          solve_Ppat_constraint ~refine tps loc env type_modes sty expected_ty
+        in
+        let p = type_pat ~alloc_mode tps category sp_constrained expected_ty' in
+        let extra = (Tpat_constraint cty, loc, sp_constrained.ppat_attributes) in
+        { p with pat_type = ty; pat_extra = extra::p.pat_extra }
+      | None ->
+        type_pat ~alloc_mode tps category sp_constrained expected_ty
+      end
+>>>>>>> origin/main
   | Ppat_type lid ->
       let (path, p) = build_or_pat !!penv loc lid in
       pure category @@ solve_expected
@@ -4041,6 +4125,7 @@ let type_pattern_approx env spat ty_expected =
   | Some (jpat, _attrs) -> type_pattern_approx_jane_syntax jpat
   | None      ->
   match spat.ppat_desc with
+<<<<<<< HEAD
   | Ppat_constraint(_, Some sty, arg_type_mode) ->
       let inferred_ty =
         match sty with
@@ -4052,6 +4137,17 @@ let type_pattern_approx env spat ty_expected =
           in
           inferred_ty.ctyp_type
         | _ -> approx_type env sty
+||||||| 78ff8bc3c0
+  | Ppat_constraint(_, ({ptyp_desc=Ptyp_poly _} as sty)) ->
+      let arg_type_mode, sty = alloc_mode_from_ppat_constraint_typ_attrs sty in
+      let ty_pat =
+        Typetexp.transl_simple_type ~new_var_jkind:Any env ~closed:false arg_type_mode sty
+=======
+  | Ppat_constraint(_, Some ({ptyp_desc=Ptyp_poly _} as sty), arg_type_mode) ->
+      let arg_type_mode = Typemode.transl_alloc_mode arg_type_mode in
+      let ty_pat =
+        Typetexp.transl_simple_type ~new_var_jkind:Any env ~closed:false arg_type_mode sty
+>>>>>>> origin/main
       in
       begin try unify env inferred_ty ty_expected with Unify trace ->
         raise(Error(spat.ppat_loc, env, Pattern_type_clash(trace, None)))
@@ -5830,7 +5926,14 @@ and type_expect_
         in
         type_constraint env sty alloc_mode
       in
+<<<<<<< HEAD
       let expected_mode = type_expect_mode ~loc ~env ~modes expected_mode in
+||||||| 78ff8bc3c0
+      let ty' = instance ty in
+=======
+      let expected_mode = type_expect_mode ~loc ~env ~modes expected_mode in
+      let ty' = instance ty in
+>>>>>>> origin/main
       let error_message_attr_opt =
         Builtin_attributes.error_message_attr sexp.pexp_attributes in
       let explanation = Option.map (fun msg -> Error_message_attr msg)
@@ -8289,6 +8392,142 @@ and type_function_cases_expect
         ret_mode = Alloc.disallow_right ret_mode }
   end
 
+<<<<<<< HEAD
+||||||| 78ff8bc3c0
+(** Typecheck the body of a newtype. The "body" of a newtype may be:
+    - an expression
+    - a suffix of function parameters together with a function body
+      That's why this function is polymorphic over the body.
+
+      @param type_body A function that produces a type for the body given the
+      environment. When typechecking an expression, this is [type_exp].
+      @return The type returned by [type_body] but with the Tconstr
+      nodes for the newtype properly linked, and the jkind annotation written
+      by the user.
+*)
+and type_newtype
+  : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
+    -> a * type_expr * Jkind.annotation option =
+  fun env name jkind_annot_opt type_body  ->
+  let { txt = name; loc = name_loc } : _ Location.loc = name in
+  let jkind, jkind_annot =
+    Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
+      ~default:(Jkind.Primitive.value ~why:Univar) jkind_annot_opt
+  in
+  let ty =
+    if Typetexp.valid_tyvar_name name then
+      newvar ~name jkind
+    else
+      newvar jkind
+  in
+  (* Use [with_local_level] just for scoping *)
+  with_local_level begin fun () ->
+    (* Create a fake abstract type declaration for name. *)
+    let decl = new_local_type ~loc:name_loc jkind ~jkind_annot in
+    let scope = create_scope () in
+    let (id, new_env) = Env.enter_type ~scope name decl env in
+
+    let result, exp_type = type_body new_env in
+    (* Replace every instance of this type constructor in the resulting
+       type. *)
+    let seen = Hashtbl.create 8 in
+    let rec replace t =
+      if Hashtbl.mem seen (get_id t) then ()
+      else begin
+        Hashtbl.add seen (get_id t) ();
+        match get_desc t with
+        | Tconstr (Path.Pident id', _, _) when id == id' -> link_type t ty
+        | _ -> Btype.iter_type_expr replace t
+      end
+    in
+    let ety = Subst.type_expr Subst.identity exp_type in
+    replace ety;
+    (result, ety, jkind_annot)
+  end
+
+(** [type_newtype] where the "body" is just an expression. *)
+and type_newtype_expr
+    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
+  let body, ety, jkind_annot =
+    type_newtype env name jkind_annot_opt (fun env ->
+      let expr = type_exp env expected_mode sbody in
+      expr, expr.exp_type)
+  in
+  (* non-expansive if the body is non-expansive, so we don't introduce
+     any new extra node in the typed AST. *)
+  rue { body with exp_loc = loc; exp_type = ety;
+        exp_extra =
+        (Texp_newtype (name.txt, jkind_annot),
+         loc, attributes) :: body.exp_extra }
+
+=======
+(** Typecheck the body of a newtype. The "body" of a newtype may be:
+    - an expression
+    - a suffix of function parameters together with a function body
+      That's why this function is polymorphic over the body.
+
+      @param type_body A function that produces a type for the body given the
+      environment. When typechecking an expression, this is [type_exp].
+      @return The type returned by [type_body] but with the Tconstr
+      nodes for the newtype properly linked, and the jkind annotation written
+      by the user.
+*)
+and type_newtype
+  : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
+    -> a * type_expr * Jkind.annotation option =
+  fun env name jkind_annot_opt type_body  ->
+  let { txt = name; loc = name_loc } : _ Location.loc = name in
+  let jkind, jkind_annot =
+    Jkind.of_annotation_option_default ~context:(Newtype_declaration name)
+      ~default:(Jkind.Builtin.value ~why:Univar) jkind_annot_opt
+  in
+  let ty =
+    if Typetexp.valid_tyvar_name name then
+      newvar ~name jkind
+    else
+      newvar jkind
+  in
+  (* Use [with_local_level] just for scoping *)
+  with_local_level begin fun () ->
+    (* Create a fake abstract type declaration for name. *)
+    let decl = new_local_type ~loc:name_loc jkind ~jkind_annot in
+    let scope = create_scope () in
+    let (id, new_env) = Env.enter_type ~scope name decl env in
+
+    let result, exp_type = type_body new_env in
+    (* Replace every instance of this type constructor in the resulting
+       type. *)
+    let seen = Hashtbl.create 8 in
+    let rec replace t =
+      if Hashtbl.mem seen (get_id t) then ()
+      else begin
+        Hashtbl.add seen (get_id t) ();
+        match get_desc t with
+        | Tconstr (Path.Pident id', _, _) when id == id' -> link_type t ty
+        | _ -> Btype.iter_type_expr replace t
+      end
+    in
+    let ety = Subst.type_expr Subst.identity exp_type in
+    replace ety;
+    (result, ety, jkind_annot)
+  end
+
+(** [type_newtype] where the "body" is just an expression. *)
+and type_newtype_expr
+    ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
+  let body, ety, jkind_annot =
+    type_newtype env name jkind_annot_opt (fun env ->
+      let expr = type_exp env expected_mode sbody in
+      expr, expr.exp_type)
+  in
+  (* non-expansive if the body is non-expansive, so we don't introduce
+     any new extra node in the typed AST. *)
+  rue { body with exp_loc = loc; exp_type = ety;
+        exp_extra =
+        (Texp_newtype (name.txt, jkind_annot),
+         loc, attributes) :: body.exp_extra }
+
+>>>>>>> origin/main
 (* Typing of let bindings *)
 
 and type_let ?check ?check_strict ?(force_toplevel = false)
@@ -10269,6 +10508,7 @@ let report_error ~loc env = function
         | Labelled _ | Position _ -> assert false )
   | Nonoptional_call_pos_label label ->
     Location.errorf ~loc
+<<<<<<< HEAD
       "@[the argument labeled %a is a %a argument, filled in @ \
          automatically if omitted. It cannot be passed with '?'.@]"
       Style.inline_code label
@@ -10281,6 +10521,21 @@ let report_error ~loc env = function
       print_unsupported_stack_allocation category
   | Not_allocation ->
       Location.errorf ~loc "This expression is not an allocation site."
+||||||| 78ff8bc3c0
+      "@[the argument labeled '%s' is a [%%call_pos] argument, filled in @ \
+         automatically if ommitted. It cannot be passed with '?'.@]" label
+=======
+      "@[the argument labeled '%s' is a [%%call_pos] argument, filled in @ \
+         automatically if ommitted. It cannot be passed with '?'.@]" label
+  | Cannot_stack_allocate closure_context ->
+      let sub = stack_hint closure_context in
+      Location.errorf ~loc ~sub "@[This allocation cannot be on the stack.@]"
+  | Unsupported_stack_allocation category ->
+    Location.errorf ~loc "@[Stack allocating %a is unsupported yet.@]"
+      print_unsupported_stack_allocation category
+  | Not_allocation ->
+      Location.errorf ~loc "This expression is not an allocation site."
+>>>>>>> origin/main
 
 let report_error ~loc env err =
   Printtyp.wrap_printing_env_error env

@@ -823,8 +823,15 @@ let transl_declaration env sdecl (id, uid) =
         Builtin_attributes.has_or_null_reexport sdecl_attributes ->
         raise (Error (sdecl.ptype_loc, Non_abstract_reexport path))
       | Ptype_abstract ->
+<<<<<<< HEAD
         Ttype_abstract, Type_abstract Definition,
         Jkind.Builtin.value ~why:Default_type_jkind
+||||||| 78ff8bc3c0
+        Ttype_abstract, Type_abstract Abstract_def, Jkind.Primitive.value ~why:Default_type_jkind
+=======
+        Ttype_abstract, Type_abstract Abstract_def,
+          Jkind.Builtin.value ~why:Default_type_jkind
+>>>>>>> origin/main
       | Ptype_variant scstrs ->
         if List.exists (fun cstr -> cstr.pcd_res <> None) scstrs then begin
           match cstrs with
@@ -3243,8 +3250,16 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
 let transl_package_constraint ~loc ty =
   { type_params = [];
     type_arity = 0;
+<<<<<<< HEAD
     type_kind = Type_abstract Definition;
     type_jkind = Jkind.Builtin.any ~why:Dummy_jkind;
+||||||| 78ff8bc3c0
+    type_kind = Type_abstract Abstract_def;
+    type_jkind = Jkind.Primitive.any ~why:Dummy_jkind;
+=======
+    type_kind = Type_abstract Abstract_def;
+    type_jkind = Jkind.Builtin.any ~why:Dummy_jkind;
+>>>>>>> origin/main
     (* There is no reason to calculate an accurate jkind here.  This typedecl
        will be thrown away once it is used for the package constraint inclusion
        check, and that check will expand the manifest as needed. *)

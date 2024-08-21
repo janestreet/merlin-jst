@@ -326,7 +326,13 @@ module Gen = struct
             make_i n 0
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
+<<<<<<< HEAD
       fun env label ty ->
+||||||| 78ff8bc3c0
+      fun env label ty : (Asttypes.arg_label * _ * _) ->
+=======
+      fun env label ty modes : (Asttypes.arg_label * _ * _) ->
+>>>>>>> origin/main
         let open Ast_helper in
         let make_param arg_label pat =
           {
@@ -339,12 +345,25 @@ module Gen = struct
         match label with
         (* Pun for labelled arguments *)
         | Position s ->
+<<<<<<< HEAD
             make_param
               (Labelled s)
               (Pat.constraint_
                 (Pat.var (Location.mknoloc s))
                 (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
                 []),
+||||||| 78ff8bc3c0
+            Labelled s,
+            Pat.constraint_
+              (Pat.var (Location.mknoloc s))
+              (Typ.extension (Location.mknoloc "call_pos", PStr [])),
+=======
+            Labelled s,
+            Pat.constraint_
+              (Pat.var (Location.mknoloc s))
+              (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
+              modes,
+>>>>>>> origin/main
             s
         | Labelled s ->
             make_param
@@ -509,6 +528,7 @@ module Gen = struct
             | Type_record (labels, _) -> record env rtyp path labels
             | Type_abstract _ | Type_open -> []
           end
+<<<<<<< HEAD
         | Tarrow _ ->
           let rec left_types acc env ty =
             match get_desc ty with
@@ -532,6 +552,53 @@ module Gen = struct
             | _ -> List.rev acc, ty, env
          in
           let arguments, tyright, env = left_types [] env rtyp in
+||||||| 78ff8bc3c0
+        | Tarrow ((label,_,_), tyleft, tyright, _) ->
+          let label, argument, name = make_arg env label tyleft in
+          let param =
+            { Parsetree.pparam_desc =
+                Pparam_val (label, None, argument);
+              pparam_loc = Location.none;
+            }
+          in
+          let value_description = {
+              val_type = tyleft;
+              val_kind = Val_reg;
+              val_loc = Location.none;
+              val_attributes = [];
+              val_zero_alloc = Zero_alloc.default;
+              val_modalities = Mode.Modality.Value.id;
+              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+            }
+          in
+          let env =
+            Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
+              value_description env
+          in
+=======
+        | Tarrow ((label,_,_), tyleft, tyright, _) ->
+          let label, argument, name = make_arg env label tyleft [] in
+          let param =
+            { Parsetree.pparam_desc =
+                Pparam_val (label, None, argument);
+              pparam_loc = Location.none;
+            }
+          in
+          let value_description = {
+              val_type = tyleft;
+              val_kind = Val_reg;
+              val_loc = Location.none;
+              val_attributes = [];
+              val_zero_alloc = Zero_alloc.default;
+              val_modalities = Mode.Modality.Value.id;
+              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+            }
+          in
+          let env =
+            Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
+              value_description env
+          in
+>>>>>>> origin/main
           let exps = arrow_rhs env tyright in
           List.map exps ~f:(fun e ->
               Ast_helper.Exp.function_ arguments None (Pfunction_body e))

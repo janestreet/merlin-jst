@@ -94,7 +94,13 @@ let uid_tables_of_binary_annots binary_annots =
     );
   cms_uid_to_loc, cms_uid_to_attributes
 
+<<<<<<< HEAD
 let save_cms target modname binary_annots initial_env shape =
+||||||| 78ff8bc3c0
+let save_cms filename modname binary_annots sourcefile shape =
+=======
+let save_cms filename modname binary_annots sourcefile initial_env shape =
+>>>>>>> origin/main
   if (!Clflags.binary_annotations_cms && not !Clflags.print_types) then begin
     Misc.output_to_file_via_temporary
        ~mode:[Open_binary] (Unit_info.Artifact.filename target)

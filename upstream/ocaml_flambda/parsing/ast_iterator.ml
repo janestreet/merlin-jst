@@ -557,6 +557,34 @@ module E = struct
         sub.location sub loc;
         sub.attributes sub attrs
 
+<<<<<<< HEAD
+||||||| 78ff8bc3c0
+  let iter_labeled_tuple sub : LT.expression -> _ = function
+    | el -> List.iter (iter_snd (sub.expr sub)) el
+
+  let iter_modes_exp sub : Modes.expression -> _ = function
+    | Coerce (modes, expr) ->
+        sub.modes sub modes;
+        sub.expr sub expr
+
+  let iter_jst sub : Jane_syntax.Expression.t -> _ = function
+    | Jexp_comprehension comp_exp -> iter_comp_exp sub comp_exp
+    | Jexp_immutable_array iarr_exp -> iter_iarr_exp sub iarr_exp
+    | Jexp_layout layout_exp -> iter_layout_exp sub layout_exp
+    | Jexp_tuple lt_exp -> iter_labeled_tuple sub lt_exp
+    | Jexp_modes mode_exp -> iter_modes_exp sub mode_exp
+
+=======
+  let iter_labeled_tuple sub : LT.expression -> _ = function
+    | el -> List.iter (iter_snd (sub.expr sub)) el
+
+  let iter_jst sub : Jane_syntax.Expression.t -> _ = function
+    | Jexp_comprehension comp_exp -> iter_comp_exp sub comp_exp
+    | Jexp_immutable_array iarr_exp -> iter_iarr_exp sub iarr_exp
+    | Jexp_layout layout_exp -> iter_layout_exp sub layout_exp
+    | Jexp_tuple lt_exp -> iter_labeled_tuple sub lt_exp
+
+>>>>>>> origin/main
   let iter sub
       ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} as expr)=
     sub.location sub loc;
