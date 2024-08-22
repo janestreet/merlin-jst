@@ -530,8 +530,8 @@ module Gen = struct
                 left_types (arg :: acc) env tyright
             | _ -> List.rev acc, ty, env
          in
-          let arguments, tyright, env = left_types [] env rtyp in
-          let exps = arrow_rhs env tyright in
+          let arguments, body_type, env = left_types [] env rtyp in
+          let exps = arrow_rhs env body_type in
           List.map exps ~f:(fun e ->
               Ast_helper.Exp.function_ arguments None (Pfunction_body e))
         | Ttuple types ->

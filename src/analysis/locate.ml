@@ -460,9 +460,9 @@ module Utils = struct
            that some -H functionality doesn't work upstream; this might be one
            such case, or it might not. (We suspect this one is such a case.)
         *)
-        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config @ Mconfig.hidden_source_path config
-        | CMT _ | CMTI _         -> Mconfig.cmt_path config @ Mconfig.hidden_build_path config
-        | CMS _ | CMSI _         -> Mconfig.cmt_path config @ Mconfig.hidden_build_path config
+        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
+        | CMT _ | CMTI _         -> Mconfig.cmt_path config
+        | CMS _ | CMSI _         -> Mconfig.cmt_path config
 end
 
 let move_to filename artifact =
