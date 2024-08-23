@@ -136,7 +136,6 @@ let dump_merlin x =
     "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
     "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
-    "source_root"  , Json.option Json.string x.source_root;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"

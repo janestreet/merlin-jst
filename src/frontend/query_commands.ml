@@ -852,7 +852,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
            such case, or it might not.
         *)
         try
-          find_in_path_normalized (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
+          find_in_path_normalized (Mconfig.source_path config) x
         with Not_found -> try
             find_in_path_normalized (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
           with Not_found ->
