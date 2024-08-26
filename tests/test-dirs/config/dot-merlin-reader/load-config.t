@@ -4,6 +4,9 @@
   > BH build-hidden/dir
   > SH source-hidden/dir
   > STDLIB /stdlib
+  > WRAPPING_PREFIX Prefix__
+  > UNIT_NAME_FOR a Prefix__a
+  > UNIT_NAME_FOR b b
   > EOF
 
   $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
