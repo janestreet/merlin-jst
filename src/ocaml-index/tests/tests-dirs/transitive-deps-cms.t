@@ -24,7 +24,7 @@ Here we have an implicit transitive dependency on lib2:
 Here we differ from the cmt version of this test. Since cms files do not include the
 loadpath, we must explicitly pass all dependencies. Additionally, we make a distinction
 between visible and hidden dependencies:
-  $ ocaml-index aggregate -o main.uideps main.cms -I lib1 -I lib2 -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
+  $ ocaml-index aggregate -o main.uideps main.cms -I lib1 -H lib2 -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
   $ ocaml-index aggregate -o lib1/foo.uideps lib1/foo.cms -I lib2 -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
   $ ocaml-index aggregate -o lib2/bar.uideps lib2/bar.cms -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
 
