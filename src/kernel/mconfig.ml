@@ -1042,5 +1042,6 @@ let unitname t =
     | Some prefix -> prefix ^ basename
     | None ->
       String.Map.find_opt basename t.merlin.unit_name_for
+      |> Option.map ~f:Misc.unitname
       |> Option.value ~default:basename
     end
