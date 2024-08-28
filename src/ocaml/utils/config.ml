@@ -43,14 +43,14 @@ and cmo_magic_number = "Caml1999O550"
 and cma_magic_number = "Caml1999A550"
 and cmx_magic_number =
   if flambda then
-    "Caml2021y550"
+    "Caml1999y550"
   else
-    "Caml2021Y550"
+    "Caml1999Y550"
 and cmxa_magic_number =
   if flambda then
-    "Caml2021z550"
+    "Caml1999z550"
   else
-    "Caml2021Z550"
+    "Caml1999Z550"
 and ast_impl_magic_number = "Caml1999M550"
 and ast_intf_magic_number = "Caml1999N550"
 and cmxs_magic_number = "Caml1999D550"
