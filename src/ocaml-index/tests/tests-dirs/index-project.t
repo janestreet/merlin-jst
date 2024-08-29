@@ -118,16 +118,16 @@
    }, 0 approx shapes: {}, and shapes for CUS .
 
   $ ocaml-index stats foo.uideps test.uideps
-  Index "test.uideps" contains:
-  - 13 definitions
-  - 29 locations
+  Index "foo.uideps" contains:
+  - 5 definitions
+  - 7 locations
   - 0 approximated definitions
   - 0 compilation units shapes
   - root dir: none
   
-  Index "foo.uideps" contains:
-  - 5 definitions
-  - 7 locations
+  Index "test.uideps" contains:
+  - 13 definitions
+  - 29 locations
   - 0 approximated definitions
   - 0 compilation units shapes
   - root dir: none
