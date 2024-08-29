@@ -1039,7 +1039,7 @@ let unitname t =
     let basename = Misc.unitname t.query.filename in
     (* CR: get rid of wrapping_prefix. it is only here for legacy reasons at the moment *)
     begin match t.merlin.wrapping_prefix with
-    | Some prefix -> prefix ^ basename
+    | Some prefix -> Misc.unitname (prefix ^ basename)
     | None ->
       String.Map.find_opt basename t.merlin.unit_name_for
       |> Option.map ~f:Misc.unitname
