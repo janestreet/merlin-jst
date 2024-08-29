@@ -54,7 +54,7 @@ module Directive = struct
     | `EXCLUDE_QUERY_DIR
     | `USE_PPX_CACHE
     | `UNKNOWN_TAG of string
-    | `TAG_ERROR of string ]
+    | `UNIT_NAME_FOR_ERROR of string ]
 
   module Processed = struct
     type acceptable_in_input = [ include_path | no_processing_required ]
@@ -152,7 +152,7 @@ module Sexp = struct
         | `USE_PPX_CACHE -> ("USE_PPX_CACHE", [])
         | `UNKNOWN_TAG tag -> ("ERROR", single @@
             Printf.sprintf "Unknown tag in .merlin: %s" tag)
-        | `TAG_ERROR s -> ("ERROR", single s)
+        | `UNIT_NAME_FOR_ERROR s -> ("ERROR", single s)
         | `ERROR_MSG s -> ("ERROR", single s)
       in
       List (Atom tag :: body)

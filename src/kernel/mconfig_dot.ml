@@ -290,7 +290,7 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
     | `UNKNOWN_TAG tag  ->
       let error =  Printf.sprintf "Unknown configuration tag \"%s\"" tag in
       config, error :: errors
-    | `TAG_ERROR error -> config, error :: errors
+    | `UNIT_NAME_FOR_ERROR error -> config, error :: errors
   ) directives
 
 let postprocess_config config =

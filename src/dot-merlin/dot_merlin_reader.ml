@@ -108,7 +108,7 @@ module Cache = File_cache.Make (struct
               in
               tell (`UNIT_NAME_FOR mapping)
             | _ ->
-              tell (`TAG_ERROR "Expected two arguments to UNIT_NAME_FOR directive"))
+              tell (`UNIT_NAME_FOR_ERROR "Expected two arguments to UNIT_NAME_FOR directive"))
           else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
             tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"SOURCE_ROOT " line then
@@ -356,7 +356,7 @@ let prepend_config ~cwd ~cfg =
       | `UNIT_NAME_FOR _
       | `WRAPPING_PREFIX _
       | `UNKNOWN_TAG _
-      | `TAG_ERROR _) as directive ->
+      | `UNIT_NAME_FOR_ERROR _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }

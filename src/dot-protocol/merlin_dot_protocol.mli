@@ -66,7 +66,7 @@ module Directive : sig
     | `EXCLUDE_QUERY_DIR
     | `USE_PPX_CACHE
     | `UNKNOWN_TAG of string
-    | `TAG_ERROR of string ]
+    | `UNIT_NAME_FOR_ERROR of string ]
 
   module Processed : sig
     type acceptable_in_input = [ include_path | no_processing_required ]
