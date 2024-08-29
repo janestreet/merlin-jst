@@ -114,6 +114,8 @@ module Sexp = struct
       end
     | List [ Atom "UNIT_NAME_FOR"; List [Atom basename; Atom unit_name] ] ->
       `UNIT_NAME_FOR {basename; unit_name}
+    | List [ Atom "UNIT_NAME_FOR"; _ ] ->
+      `ERROR_MSG "Unexpected output from external config reader: unexpected args to UNIT_NAME_FOR"
     | List [ Atom tag; List l ] ->
         let value = strings_of_atoms l in
         begin match tag with
