@@ -2881,7 +2881,7 @@ let is_identchar_latin1 = function
   | '\248'..'\255' | '\'' | '0'..'9' -> true
   | _ -> false
 
-let unit_name_for_filename fn =
+let unit_name_of_filename fn =
   match Filename.extension fn with
   | ".cmi" -> begin
       let unit =
@@ -2897,7 +2897,7 @@ let unit_name_for_filename fn =
 let persistent_structures_of_dir dir =
   Load_path.Dir.basenames dir
   |> List.to_seq
-  |> Seq.filter_map unit_name_for_filename
+  |> Seq.filter_map unit_name_of_filename
   |> String.Set.of_seq
 
 (* Save a signature to a file *)
