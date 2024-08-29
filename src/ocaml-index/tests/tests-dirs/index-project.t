@@ -132,3 +132,42 @@
   - 0 compilation units shapes
   - root dir: none
   
+
+Jane Street Merlin uses cms files instead of cmt files. Verify that the results using
+cms files are consistent with using cmt files:
+
+  $ $OCAMLC -bin-annot-cms -bin-annot-occurrences -c bar.ml foo.ml main.ml
+
+  $ ocaml-index aggregate -o main.uideps-cms main.cms -I . -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
+  $ ocaml-index aggregate -o foo.uideps-cms foo.cms -I . -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
+  $ ocaml-index aggregate -o bar.uideps-cms bar.cms -I . -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
+  $ ocaml-index -o test.uideps-cms main.cms foo.cms bar.cms -I . -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
+
+The diff here is different. It seems this is because the cms file includes the shape for
+module _ = ..., while the cmt does not. This seems to be an insignificant difference for
+the sake of occurrences, and if anything, the cms behavior seems preferrable.
+  $ ocaml-index dump main.uideps > from-cmt.out
+  $ ocaml-index dump main.uideps-cms > from-cms.out
+  $ diff from-cmt.out from-cms.out
+  1c1
+  < 13 uids:
+  ---
+  > 14 uids:
+  24a25
+  >  uid: Main.7; locs: "": File "main.ml", line 10, characters 7-8
+  [1]
+
+  $ ocaml-index dump foo.uideps > from-cmt.out
+  $ ocaml-index dump foo.uideps-cms > from-cms.out
+  $ diff from-cmt.out from-cms.out
+
+  $ ocaml-index dump test.uideps > from-cmt.out
+  $ ocaml-index dump test.uideps-cms > from-cms.out
+  $ diff from-cmt.out from-cms.out
+  1c1
+  < 13 uids:
+  ---
+  > 14 uids:
+  33a34
+  >  uid: Main.7; locs: "": File "main.ml", line 10, characters 7-8
+  [1]
