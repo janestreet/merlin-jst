@@ -47,6 +47,9 @@ end) = struct
 
   let try_load ~unit_name () =
     match Hashtbl.find_opt Loaded_shapes.shapes unit_name with
+    | Some shape ->
+      Log.debug "Used loaded shape for %s" unit_name;
+      Some shape
     | None -> begin
     let artifact =
     let cms = Format.sprintf "%s.cms" unit_name in
@@ -66,13 +69,10 @@ end) = struct
         None
     in
     match artifact with
-    | None -> Hashtbl.find_opt Loaded_shapes.shapes unit_name
+    | None -> None
     | Some artifact ->
       Merlin_analysis.Locate.Artifact.impl_shape artifact
     end
-    | Some shape ->
-      Log.debug "Used loaded shape for %s" unit_name;
-      Some shape
 
   let read_unit_shape ~unit_name =
     Log.debug "Read unit shape: %s\n%!" unit_name;
@@ -284,6 +284,8 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
                   Log.error "Unknown file type: %s" file;
                   exit 1)
         in
+        (* We add the shapes into `into` because we need to collect them so we can use
+           them for shape reduction, regardless of whether store_shapes is true *)
         merge_index ~store_shapes:true index ~into)
       initial_index files
   in

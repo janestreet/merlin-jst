@@ -4,7 +4,7 @@ us to avoid loading the cms files of dependencies.
   $ cat >main.ml <<EOF
   > let x = Foo.Bar.x
   > let a = Foo.a
-  > let b = Foo.b
+  > let b = Foo.a + Foo.b
   > module Bar = Foo.Bar
   > EOF
 
@@ -29,11 +29,13 @@ us to avoid loading the cms files of dependencies.
   $ ocaml-index dump main.merlin-index
   8 uids:
   {uid: Bar.0; locs: "Foo.Bar.x": File "main.ml", line 1, characters 8-17
-   uid: Foo.0; locs: "Foo.a": File "main.ml", line 2, characters 8-13
+   uid: Foo.0; locs:
+     "Foo.a": File "main.ml", line 2, characters 8-13;
+     "Foo.a": File "main.ml", line 3, characters 8-13
    uid: Main.0; locs: "x": File "main.ml", line 1, characters 4-5
    uid: Foo.1; locs: "Foo.Bar": File "main.ml", line 4, characters 13-20
    uid: Main.1; locs: "a": File "main.ml", line 2, characters 4-5
-   uid: Foo.2; locs: "Foo.b": File "main.ml", line 3, characters 8-13
+   uid: Foo.2; locs: "Foo.b": File "main.ml", line 3, characters 16-21
    uid: Main.2; locs: "b": File "main.ml", line 3, characters 4-5
    uid: Main.3; locs: "Bar": File "main.ml", line 4, characters 7-10 },
   0 approx shapes: {}, and shapes for CUS .
