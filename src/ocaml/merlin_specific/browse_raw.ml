@@ -73,7 +73,7 @@ type node =
   | Class_type_declaration   of class_type_declaration
   | Binding_op               of binding_op
 
-  | Include_description      of include_description
+  | Include_description      of include_description * Mode.Modality.Value.Const.t
   | Include_declaration      of include_declaration
   | Open_description         of open_description
   | Open_declaration         of open_declaration
@@ -141,7 +141,7 @@ let node_real_loc loc0 = function
   | Class_description       {ci_loc = loc}
   | Class_type_declaration  {ci_loc = loc}
   | Extension_constructor   {ext_loc = loc}
-  | Include_description     {incl_loc = loc}
+  | Include_description     ({incl_loc = loc}, _)
   | Include_declaration     {incl_loc = loc}
   | Open_description        {open_loc = loc}
   | Open_declaration        {open_loc = loc}
@@ -174,7 +174,7 @@ let node_attributes = function
   | Module_type_declaration mtd -> mtd.mtd_attributes
   | Open_description o    -> o.open_attributes
   | Include_declaration i -> i.incl_attributes
-  | Include_description i -> i.incl_attributes
+  | Include_description (i, _) -> i.incl_attributes
   | Core_type ct          -> ct.ctyp_attributes
   | Row_field rf          -> rf.rf_attributes
   | Value_description vd  -> vd.val_attributes
@@ -568,8 +568,8 @@ and of_signature_item_desc = function
     list_fold (fun md -> app (Module_declaration md)) mds
   | Tsig_modtype mtd ->
     app (Module_type_declaration mtd)
-  | Tsig_include i ->
-    app (Include_description i)
+  | Tsig_include (i, m) ->
+    app (Include_description (i, m))
   | Tsig_class cds ->
     list_fold (fun cd -> app (Class_description cd)) cds
   | Tsig_class_type ctds ->
@@ -749,7 +749,7 @@ let of_node = function
     app (Module_expr od.open_expr)
   | Include_declaration i ->
     of_module_expr i.incl_mod
-  | Include_description i ->
+  | Include_description (i, _) ->
     of_module_type i.incl_mod
   | Binding_op { bop_exp=_ } ->
     id_fold

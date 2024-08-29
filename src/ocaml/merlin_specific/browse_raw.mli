@@ -86,7 +86,7 @@ type node =
   | Class_type_declaration   of class_type_declaration
   | Binding_op               of binding_op
 
-  | Include_description      of include_description
+  | Include_description      of include_description * Mode.Modality.Value.Const.t
   | Include_declaration      of include_declaration
   | Open_description         of open_description
   | Open_declaration         of open_declaration
