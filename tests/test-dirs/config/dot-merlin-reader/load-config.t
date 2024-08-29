@@ -51,7 +51,7 @@ but we want to observe the stdlib being configured via the STDLIB directive.
       "b": "b",
       "a": "Prefix__a"
     },
-    "wrapping_prefix": null,
+    "wrapping_prefix": "Prefix__",
     "source_root": null,
     "reader": [],
     "protocol": "json",

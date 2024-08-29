@@ -279,6 +279,10 @@ let merge_merlin_config dot merlin ~failures ~config_path =
                             | None, Some merlin -> Some merlin
                             | None, None -> None)
                        dot.unit_name_for merlin.unit_name_for;
+    wrapping_prefix =
+      if dot.wrapping_prefix = None
+      then merlin.wrapping_prefix
+      else dot.wrapping_prefix;
     source_root =
       (if dot.source_root = None then merlin.source_root else dot.source_root);
     reader =
