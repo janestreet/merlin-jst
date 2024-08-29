@@ -143,6 +143,9 @@ cms files are consistent with using cmt files:
   $ ocaml-index aggregate -o bar.uideps-cms bar.cms -I . -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
   $ ocaml-index -o test.uideps-cms main.cms foo.cms bar.cms -I . -I "$MERLIN_TEST_OCAML_PATH/lib/ocaml"
 
+The diff here is different. It seems this is because the cms file includes the shape for
+module _ = ..., while the cmt does not. This seems to be an insignificant difference for
+the sake of occurrences, and if anything, the cms behavior seems preferrable.
   $ ocaml-index dump main.uideps > from-cmt.out
   $ ocaml-index dump main.uideps-cms > from-cms.out
   $ diff from-cmt.out from-cms.out

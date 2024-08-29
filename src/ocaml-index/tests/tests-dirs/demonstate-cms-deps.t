@@ -4,8 +4,8 @@ for it to be able to properly index a file. Additionally, we must distinguish be
 
   $ cat >main.ml <<EOF
   > let x : int = Foo.Bar.x
-  > (* The : int demonstrates that Foo.x is from the visible lib, since Foo.x is a string
-  >    in the hidden lib *)
+  > (* The : int demonstrates that Foo.Bar.x is from the visible lib, since Foo.x is a
+  >    string in the hidden lib *)
   > EOF
 
   $ mkdir visible_lib
