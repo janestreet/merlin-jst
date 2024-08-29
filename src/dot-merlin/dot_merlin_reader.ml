@@ -101,7 +101,7 @@ module Cache = File_cache.Make (struct
           else if String.is_prefixed ~by:"UNIT_NAME " line then
             tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"UNIT_NAME_FOR " line then
-            (match String.split_on_char ~sep:' ' (String.drop 14 line) with
+            (match List.rev (rev_split_words (String.drop 14 line)) with
             | [ basename; unit_name ] ->
               let mapping : Merlin_dot_protocol.Directive.unit_name_mapping =
                 { basename; unit_name }
