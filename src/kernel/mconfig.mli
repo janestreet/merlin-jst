@@ -45,6 +45,7 @@ type merlin = {
   suffixes    : (string * string) list;
   stdlib      : string option;
   unit_name   : string option;
+  unit_name_for : string String.Map.t;
   wrapping_prefix : string option;
   source_root : string option;
   reader      : string list;

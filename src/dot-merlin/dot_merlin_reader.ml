@@ -100,6 +100,15 @@ module Cache = File_cache.Make (struct
             tell (`STDLIB (String.drop 7 line))
           else if String.is_prefixed ~by:"UNIT_NAME " line then
             tell (`UNIT_NAME (String.drop 10 line))
+          else if String.is_prefixed ~by:"UNIT_NAME_FOR " line then
+            (match List.rev (rev_split_words (String.drop 14 line)) with
+            | [ basename; unit_name ] ->
+              let mapping : Merlin_dot_protocol.Directive.unit_name_mapping =
+                { basename; unit_name }
+              in
+              tell (`UNIT_NAME_FOR mapping)
+            | _ ->
+              tell (`UNIT_NAME_FOR_ERROR "Expected two arguments to UNIT_NAME_FOR directive"))
           else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
             tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"SOURCE_ROOT " line then
@@ -344,8 +353,10 @@ let prepend_config ~cwd ~cfg =
     | (`EXCLUDE_QUERY_DIR
       | `USE_PPX_CACHE
       | `UNIT_NAME _
+      | `UNIT_NAME_FOR _
       | `WRAPPING_PREFIX _
-      | `UNKNOWN_TAG _) as directive ->
+      | `UNKNOWN_TAG _
+      | `UNIT_NAME_FOR_ERROR _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }
