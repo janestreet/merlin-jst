@@ -40,10 +40,17 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
   in
   Shape.Uid.Tbl.fold add_loc fragments map
 
-module Reduce_conf = struct
+module Reduce_conf (Loaded_shapes : sig
+  val shapes : (string, Shape.t) Hashtbl.t
+end) = struct
   let fuel = 10
 
   let try_load ~unit_name () =
+    match Hashtbl.find_opt Loaded_shapes.shapes unit_name with
+    | Some shape ->
+      Log.debug "Used loaded shape for %s" unit_name;
+      Some shape
+    | None -> begin
     let artifact =
     let cms = Format.sprintf "%s.cms" unit_name in
     match Locate.Artifact.read (Load_path.find_uncap cms) with
@@ -65,6 +72,7 @@ module Reduce_conf = struct
     | None -> None
     | Some artifact ->
       Merlin_analysis.Locate.Artifact.impl_shape artifact
+    end
 
   let read_unit_shape ~unit_name =
     Log.debug "Read unit shape: %s\n%!" unit_name;
@@ -89,6 +97,7 @@ let index_of_artifact
     ~rewrite_root
     ~build_path
     ~do_not_use_cmt_loadpath
+    ~shapes
     ~cmt_loadpath
     ~cmt_impl_shape
     ~cmt_modname
@@ -99,7 +108,9 @@ let index_of_artifact
     ~cmt_source_digest
   =
   init_load_path_once ~do_not_use_cmt_loadpath ~dirs:build_path cmt_loadpath;
-  let module Reduce = Shape_reduce.Make (Reduce_conf) in
+  let module Reduce = Shape_reduce.Make (Reduce_conf (struct
+    let shapes = shapes
+  end)) in
   let defs =
     if Option.is_none cmt_impl_shape then Shape.Uid.Map.empty
     else
@@ -168,7 +179,7 @@ let shape_of_cmt { Cmt_format.cmt_impl_shape; cmt_modname; _ }  =
 let shape_of_cms { Cms_format.cms_impl_shape; cms_modname; _ }  =
   shape_of_artifact ~impl_shape:cms_impl_shape ~modname:cms_modname
 
-let index_of_cmt ~root ~build_path cmt_infos =
+let index_of_cmt ~root ~build_path ~shapes cmt_infos =
   let {
     Cmt_format.cmt_loadpath;
     cmt_impl_shape;
@@ -190,6 +201,7 @@ let index_of_cmt ~root ~build_path cmt_infos =
   index_of_artifact
     ~root
     ~build_path
+    ~shapes
     ~cmt_loadpath
     ~cmt_impl_shape
     ~cmt_modname
@@ -199,7 +211,7 @@ let index_of_cmt ~root ~build_path cmt_infos =
     ~cmt_sourcefile
     ~cmt_source_digest
 
-let index_of_cms ~root ~build_path cms_infos =
+let index_of_cms ~root ~build_path ~shapes cms_infos =
   let {
     Cms_format.cms_impl_shape;
     cms_modname;
@@ -220,9 +232,7 @@ let index_of_cms ~root ~build_path cms_infos =
   index_of_artifact
     ~root
     ~build_path
-    (* CR: Add [loadpath], [initial_env] and
-       the txt component of locations to cms files. *)
-    (* Is .txt even needed? *)
+    ~shapes
     ~cmt_loadpath:({visible=[]; hidden=[]})
     ~cmt_impl_shape:cms_impl_shape
     ~cmt_modname:cms_modname
@@ -237,7 +247,7 @@ let merge_index ~store_shapes ~into index =
   let approximated = merge index.approximated into.approximated in
   let stats = Stats.union (fun _ f1 _f2 -> Some f1) into.stats index.stats in
   if store_shapes then
-    Hashtbl.add_seq index.cu_shape (Hashtbl.to_seq into.cu_shape);
+    Hashtbl.add_seq into.cu_shape (Hashtbl.to_seq index.cu_shape);
   { into with defs; approximated; stats }
 
 let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
@@ -257,15 +267,16 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
     @@ fun () ->
     List.fold_left
       (fun into file ->
+        Log.debug "Indexing from file: %s" file;
         let index =
           match Cms_cache.read file with
           | cms_item ->
             index_of_cms ~root ~rewrite_root ~build_path
-              ~do_not_use_cmt_loadpath cms_item.cms_infos
+              ~do_not_use_cmt_loadpath ~shapes:into.cu_shape cms_item.cms_infos
           | exception _ -> match Cmt_cache.read file with
           | cmt_item ->
               index_of_cmt ~root ~rewrite_root ~build_path
-                ~do_not_use_cmt_loadpath cmt_item.cmt_infos
+                ~do_not_use_cmt_loadpath ~shapes:into.cu_shape cmt_item.cmt_infos
           | exception _ -> (
               match read ~file with
               | Index index -> index
@@ -273,8 +284,16 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
                   Log.error "Unknown file type: %s" file;
                   exit 1)
         in
-        merge_index ~store_shapes index ~into)
+        (* We add the shapes into `into` because we need to collect them so we can use
+           them for shape reduction, regardless of whether store_shapes is true *)
+        merge_index ~store_shapes:true index ~into)
       initial_index files
+  in
+  let final_index =
+    (* Don't save the collected shapes if store_shapes is false *)
+    if store_shapes
+    then final_index
+    else { final_index with cu_shape = Hashtbl.create 0 }
   in
   write ~file:output_file final_index
 
