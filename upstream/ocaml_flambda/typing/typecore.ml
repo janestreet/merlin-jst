@@ -4920,10 +4920,10 @@ let vb_exp_constraint {pvb_expr=expr; pvb_pat=pat; pvb_constraint=ct; pvb_modes=
       end
   | Some (Pvc_coercion { ground; coercion}) ->
       Exp.coerce ~loc expr ground coercion |> maybe_add_modes_constraint
-  | Some (Pvc_constraint { locally_abstract_univars=vars;typ}) ->
+  | Some (Pvc_constraint { locally_abstract_univars;typ}) ->
       let loc = Location.merge [ loc; pat.ppat_loc ] in
       let expr = Exp.constraint_ ~loc expr (Some typ) modes in
-      List.fold_right (Exp.newtype ~loc) vars expr
+      List.fold_right (Exp.newtype ~loc) locally_abstract_univars expr
 
 let vb_pat_constraint
       ({pvb_pat=pat; pvb_expr = exp; pvb_modes = modes; _ } as vb) =
@@ -5831,6 +5831,7 @@ and type_expect_
         type_constraint env sty alloc_mode
       in
       let expected_mode = type_expect_mode ~loc ~env ~modes expected_mode in
+      let ty' = instance ty in
       let error_message_attr_opt =
         Builtin_attributes.error_message_attr sexp.pexp_attributes in
       let explanation = Option.map (fun msg -> Error_message_attr msg)
@@ -5839,7 +5840,7 @@ and type_expect_
       rue {
         exp_desc = arg.exp_desc;
         exp_loc = arg.exp_loc;
-        exp_type = instance ty;
+        exp_type = ty';
         exp_attributes = arg.exp_attributes;
         exp_env = env;
         exp_extra =
@@ -6311,8 +6312,6 @@ and type_expect_
     | Error () -> raise (Error (loc, env, Probe_format))
     | Ok { name; name_loc; enabled_at_init; arg; } ->
         check_probe_name name name_loc env;
-        let env = Env.add_escape_lock Probe env in
-        let env = Env.add_share_lock Probe env in
         Env.add_probe name;
         let exp = type_expect env mode_legacy arg
                     (mk_expected Predef.type_unit) in
