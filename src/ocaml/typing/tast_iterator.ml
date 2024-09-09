@@ -463,7 +463,13 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_recmodule list -> List.iter (sub.module_declaration sub) list
   | Tsig_modtype x -> sub.module_type_declaration sub x
   | Tsig_modtypesubst x -> sub.module_type_declaration sub x
+<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
   | Tsig_include incl -> sub.include_description sub incl
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+  | Tsig_include incl -> sig_include_infos sub incl
+=======
+  | Tsig_include (incl, _) -> sig_include_infos sub incl
+>>>>>>> ocaml-flambda/flambda-backend:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
   | Tsig_class list -> List.iter (sub.class_description sub) list
   | Tsig_class_type list -> List.iter (sub.class_type_declaration sub) list
   | Tsig_open od -> sub.open_description sub od
