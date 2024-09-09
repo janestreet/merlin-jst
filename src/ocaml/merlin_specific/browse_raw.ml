@@ -569,7 +569,7 @@ and of_signature_item_desc = function
     list_fold (fun md -> app (Module_declaration md)) mds
   | Tsig_modtype mtd ->
     app (Module_type_declaration mtd)
-  | Tsig_include i ->
+  | Tsig_include (i, _) ->
     app (Include_description i)
   | Tsig_class cds ->
     list_fold (fun cd -> app (Class_description cd)) cds

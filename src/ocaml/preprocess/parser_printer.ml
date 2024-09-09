@@ -354,7 +354,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_index_mod) -> "index_mod"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_include_maybe_functor) -> "include_maybe_functor"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_include_kind) -> "include_kind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_implementation) -> "implementation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ident) -> "ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_) -> "generic_type_declaration_nonrec_flag_type_kind_"
@@ -752,7 +752,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")
   | MenhirInterpreter.N MenhirInterpreter.N_index_mod -> (fun _ -> "index_mod")
-  | MenhirInterpreter.N MenhirInterpreter.N_include_maybe_functor -> (fun _ -> "include_maybe_functor")
+  | MenhirInterpreter.N MenhirInterpreter.N_include_kind -> (fun _ -> "include_kind")
   | MenhirInterpreter.N MenhirInterpreter.N_implementation -> (fun _ -> "implementation")
   | MenhirInterpreter.N MenhirInterpreter.N_ident -> (fun _ -> "ident")
   | MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_ -> (fun _ -> "generic_type_declaration_nonrec_flag_type_kind_")
