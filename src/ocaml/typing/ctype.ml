@@ -2332,7 +2332,7 @@ let constrain_type_jkind ~fixed env ty jkind =
       in
       Result.map (set_var_jkind ty) jkind_inter
     in
-    Misc.Stdlib.List.iter_until_error ~f:constrain_one_var tvs
+    Misc_stdlib.List.iter_until_error ~f:constrain_one_var tvs
   | Missing_cmi missing_cmi ->
     Error Jkind.(Violation.of_ ~missing_cmi
       (Not_a_subjkind

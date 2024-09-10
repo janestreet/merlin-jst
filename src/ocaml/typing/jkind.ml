@@ -59,7 +59,7 @@ module Layout = struct
       | _, Any -> Less
       | Product consts1, Product consts2 ->
         if List.compare_lengths consts1 consts2 = 0
-        then Misc.Le_result.combine_list (List.map2 sub consts1 consts2)
+        then Misc_stdlib.Le_result.combine_list (List.map2 sub consts1 consts2)
         else Not_le
       | (Any | Base _ | Product _), _ -> Not_le
 
@@ -96,7 +96,7 @@ module Layout = struct
       | Product ts ->
         Option.map
           (fun x -> Sort.Const.Product x)
-          (Misc.Stdlib.List.map_option get_sort ts)
+          (Misc_stdlib.List.map_option get_sort ts)
 
     let rec of_sort s =
       match Sort.get s with
@@ -105,7 +105,7 @@ module Layout = struct
       | Product sorts ->
         Option.map
           (fun x -> Product x)
-          (Misc.Stdlib.List.map_option of_sort sorts)
+          (Misc_stdlib.List.map_option of_sort sorts)
 
     let to_string t =
       let rec to_string nested (t : t) =
@@ -157,7 +157,7 @@ module Layout = struct
   and to_product_sort ts =
     Option.map
       (fun x -> Sort.Product x)
-      (Misc.Stdlib.List.map_option to_sort ts)
+      (Misc_stdlib.List.map_option to_sort ts)
 
   let sort_equal_result ~allow_mutation result =
     match (result : Sort.equate_result) with
@@ -192,7 +192,7 @@ module Layout = struct
     | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
     | Product ts1, Product ts2 ->
       if List.compare_lengths ts1 ts2 = 0
-      then Misc.Le_result.combine_list (List.map2 sub ts1 ts2)
+      then Le_result.combine_list (List.map2 sub ts1 ts2)
       else Not_le
     | Product ts1, Sort s2 -> (
       match to_product_sort ts1 with
@@ -214,7 +214,7 @@ module Layout = struct
         let components = List.map2 intersection ts1 ts2 in
         Option.map
           (fun x -> Product x)
-          (Misc.Stdlib.List.some_if_all_elements_are_some components)
+          (Misc_stdlib.List.some_if_all_elements_are_some components)
       else None
     | (Product ts as t), Sort sort | Sort sort, (Product ts as t) -> (
       match to_product_sort ts with
@@ -237,7 +237,7 @@ module Layout = struct
       | Sort s -> Sort.format ppf s
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf " & " in
-        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf layout
 end
@@ -808,7 +808,7 @@ module Desc = struct
       | Var v -> fprintf ppf "%s" (Sort.Var.name v)
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf "@ & " in
-        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf
 
@@ -823,7 +823,7 @@ module Desc = struct
     | Var v1, Var v2 -> if v1 == v2 then Equal else Not_le
     | Product ds1, Product ds2 ->
       if List.compare_lengths ds1 ds2 = 0
-      then Misc.Le_result.combine_list (List.map2 sub ds1 ds2)
+      then Le_result.combine_list (List.map2 sub ds1 ds2)
       else Not_le
     | Const _, Product _ | Product _, Const _ | Const _, Var _ | Var _, Const _
       ->
@@ -1256,7 +1256,7 @@ let get_layout jk : Layout.Const.t option =
     | Product layouts ->
       Option.map
         (fun x -> Layout.Const.Product x)
-        (Misc.Stdlib.List.map_option aux layouts)
+        (Misc_stdlib.List.map_option aux layouts)
   in
   aux jk.jkind.layout
 
@@ -1277,7 +1277,7 @@ let format ppf jkind =
     | Var v -> Format.fprintf ppf "%s" (Sort.Var.name v)
     | Product p ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf p
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf p
   in
   pp_element ~nested:false ppf (get jkind)
 
@@ -1833,7 +1833,7 @@ let is_nary_product n t =
   let bound =
     { Jkind_desc.max with layout = Jkind_types.Layout.Product components }
   in
-  if Misc.Le_result.is_le (Jkind_desc.sub t.jkind bound)
+  if Le_result.is_le (Jkind_desc.sub t.jkind bound)
   then
     (* CR layouts v7.1: The histories here are wrong (we are giving each
        component the history of the whole product).  They don't show up in

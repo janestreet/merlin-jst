@@ -538,6 +538,14 @@ module Gen = struct
           List.map choices ~f:(fun choice ->
             Jane_syntax.Labeled_tuples.expr_of choice
               ~loc:!Ast_helper.default_loc)
+        | Tunboxed_tuple types ->
+          let choices =
+            List.map types ~f:(fun (lbl, ty) ->
+              List.map (exp_or_hole env ty) ~f:(fun result -> lbl, result))
+            |> Util.combinations
+          in
+          List.map choices ~f:(fun choice ->
+            Ast_helper.Exp.unboxed_tuple choice)
         | Tvariant row_desc -> variant env rtyp row_desc
         | Tpackage (path, lids_args) -> begin
           let open Ast_helper in

@@ -91,6 +91,7 @@ type token =
   | HASH_INT of (string * char option)
   | HASH_FLOAT of (string * char option)
   | HASHOP of (string)
+  | HASHLPAREN
   | HASH
   | GREATERRBRACKET
   | GREATERRBRACE
@@ -281,6 +282,7 @@ module MenhirInterpreter : sig
     | T_HASH_INT : (string * char option) terminal
     | T_HASH_FLOAT : (string * char option) terminal
     | T_HASHOP : (string) terminal
+    | T_HASHLPAREN : unit terminal
     | T_HASH : unit terminal
     | T_GREATERRBRACKET : unit terminal
     | T_GREATERRBRACE : unit terminal
@@ -412,6 +414,7 @@ module MenhirInterpreter : sig
     | N_reversed_bar_llist_extension_constructor_declaration_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_extension_constructor_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_constructor_declaration_ : (Parsetree.constructor_declaration list) nonterminal
+    | N_reverse_product_jkind : (Parsetree.jkind_annotation list) nonterminal
     | N_record_expr_content : (Parsetree.expression option *
   (Longident.t Location.loc * Parsetree.expression) list) nonterminal
     | N_rec_flag : (Asttypes.rec_flag) nonterminal
@@ -440,7 +443,7 @@ module MenhirInterpreter : sig
     | N_parenthesized_type_parameter : (Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) nonterminal
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
-    | N_optional_atat_modalities_expr : (Parsetree.modality Location.loc list) nonterminal
+    | N_optional_atat_modalities_expr : (Parsetree.modalities) nonterminal
     | N_option_type_constraint_ : (Parsetree.type_constraint option) nonterminal
     | N_option_preceded_EQUAL_seq_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_pattern__ : (Parsetree.pattern option) nonterminal
@@ -461,7 +464,7 @@ module MenhirInterpreter : sig
     | N_nonempty_list_newtype_ : ((string Location.loc * Parsetree.jkind_annotation Location.loc option) list) nonterminal
     | N_nonempty_list_mode_legacy_ : (Parsetree.modes) nonterminal
     | N_nonempty_list_mode_ : (Parsetree.modes) nonterminal
-    | N_nonempty_list_modality_ : (Parsetree.modality Location.loc list) nonterminal
+    | N_nonempty_list_modality_ : (Parsetree.modalities) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
     | N_newtypes : ((string Location.loc * Parsetree.jkind_annotation Location.loc option) list) nonterminal
     | N_newtype : (string Location.loc * Parsetree.jkind_annotation Location.loc option) nonterminal
@@ -536,7 +539,7 @@ module MenhirInterpreter : sig
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
     | N_index_mod : (string) nonterminal
-    | N_include_maybe_functor : (bool) nonterminal
+    | N_include_kind : (Parsetree.include_kind) nonterminal
     | N_implementation : (Parsetree.structure) nonterminal
     | N_ident : (string) nonterminal
     | N_generic_type_declaration_nonrec_flag_type_kind_ : ((Asttypes.rec_flag * string Location.loc option) *

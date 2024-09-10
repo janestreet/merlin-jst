@@ -62,6 +62,11 @@ and core_type type_expr =
       in
       Jane_syntax.Labeled_tuples.typ_of ~loc:!default_loc
         labeled_type_exprs
+  | Tunboxed_tuple type_exprs ->
+      let labeled_type_exprs =
+        List.map ~f:(fun (lbl, ty) -> lbl, core_type ty) type_exprs
+      in
+      Typ.unboxed_tuple labeled_type_exprs
   | Tconstr (path, type_exprs, _abbrev) ->
     let loc = Untypeast.lident_of_path path |> Location.mknoloc in
     Typ.constr loc @@ List.map ~f:core_type type_exprs
