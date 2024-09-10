@@ -30,7 +30,7 @@ type boxed_vector = Pvec128 of vec128_type
 
 type native_repr =
   | Repr_poly
-  | Same_as_ocaml_repr of Jkind_types.Sort.const
+  | Same_as_ocaml_repr of Jkind_types.Sort.base
   | Unboxed_float of boxed_float
   | Unboxed_vector of boxed_vector
   | Unboxed_integer of boxed_integer
@@ -383,7 +383,8 @@ let equal_native_repr nr1 nr2 =
                | Untagged_int | Unboxed_vector _ | Same_as_ocaml_repr _)
   | (Unboxed_float _ | Unboxed_integer _
     | Untagged_int | Unboxed_vector _ | Same_as_ocaml_repr _), Repr_poly -> false
-  | Same_as_ocaml_repr s1, Same_as_ocaml_repr s2 -> Jkind_types.Sort.Const.equal s1 s2
+  | Same_as_ocaml_repr s1, Same_as_ocaml_repr s2 ->
+    Jkind_types.Sort.equal_base s1 s2
   | Same_as_ocaml_repr _,
     (Unboxed_float _ | Unboxed_integer _ | Untagged_int |
      Unboxed_vector _) -> false
@@ -480,7 +481,7 @@ let prim_has_valid_reprs ~loc prim =
   let open Repr_check in
   let check =
     let stringlike_indexing_primitives =
-      let widths : (_ * _ * Jkind_types.Sort.const) list =
+      let widths : (_ * _ * Jkind_types.Sort.base) list =
         [
           ("16", "", Value);
           ("32", "", Value);
@@ -493,20 +494,28 @@ let prim_has_valid_reprs ~loc prim =
           ("64", "#", Bits64);
         ]
       in
+      let indices : (_ * Jkind_types.Sort.base) list =
+        [
+          ("", Value);
+          ("_indexed_by_nativeint#", Word);
+          ("_indexed_by_int32#", Bits32);
+          ("_indexed_by_int64#", Bits64);
+        ]
+      in
       let combiners =
         [
-          ( Printf.sprintf "%%caml_%s_get%s%s%s",
-            fun width_kind ->
+          ( Printf.sprintf "%%caml_%s_get%s%s%s%s",
+            fun index_kind width_kind ->
               [
                 Same_as_ocaml_repr Value;
-                Same_as_ocaml_repr Value;
+                Same_as_ocaml_repr index_kind;
                 Same_as_ocaml_repr width_kind;
               ] );
-          ( Printf.sprintf "%%caml_%s_set%s%s%s",
-            fun width_kind ->
+          ( Printf.sprintf "%%caml_%s_set%s%s%s%s",
+            fun index_kind width_kind ->
               [
                 Same_as_ocaml_repr Value;
-                Same_as_ocaml_repr Value;
+                Same_as_ocaml_repr index_kind;
                 Same_as_ocaml_repr width_kind;
                 Same_as_ocaml_repr Value;
               ] );
@@ -515,12 +524,14 @@ let prim_has_valid_reprs ~loc prim =
       (let ( let* ) x f = List.concat_map f x in
        let* container = [ "bigstring"; "bytes"; "string" ] in
        let* safe_sigil = [ ""; "u" ] in
+       let* index_sigil, index_kind = indices in
        let* width_sigil, unboxed_sigil, width_kind = widths in
        let* combine_string, combine_repr = combiners in
        let string =
          combine_string container width_sigil safe_sigil unboxed_sigil
+           index_sigil
        in
-       let reprs = combine_repr width_kind in
+       let reprs = combine_repr index_kind width_kind in
        [ (string, reprs) ])
       |> List.to_seq
       |> fun seq -> String.Map.add_seq seq String.Map.empty
