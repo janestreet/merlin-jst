@@ -1263,10 +1263,11 @@ let out_jkind_of_const_jkind jkind =
 let out_jkind_option_of_jkind jkind =
   match Jkind.get jkind with
   | Const jkind ->
-    let is_value = Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
+    let is_value = Jkind.Const.equal_and_no_baggage jkind Jkind.Const.Builtin.value.jkind
       (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
       || (not Language_extension.(is_at_least Layouts Alpha)
-          && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
+          && Jkind.Const.equal_and_no_baggage jkind
+                Jkind.Const.Builtin.value_or_null.jkind)
     in
     begin match is_value with
     | true -> None
@@ -1867,7 +1868,8 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
      Note [When to print jkind annotations] *)
   let is_value =
     match decl.type_jkind_annotation with
-    | Some (jkind, _) -> Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
+    | Some (jkind, _) ->
+      Jkind.Const.equal_and_no_baggage jkind Jkind.Const.Builtin.value.jkind
     | None -> false
   in
   let jkind_annotation =
