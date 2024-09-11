@@ -12,14 +12,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
-<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
 module Misc = Misc_stdlib
 
-||||||| git@github.com:mshinwell/flambda-backend.git:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
-=======
 open Jkind_axis
 
->>>>>>> git@github.com:mshinwell/flambda-backend.git:5.2.0-parallel
 module Sort = struct
   type const =
     | Void

@@ -316,29 +316,6 @@ module Bounds = struct
               { bound with baggage = baggage :: bound.baggage }
             | true, false -> bound)
       }
-<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Le_result.combine_list
-      [ Layout.Const.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-||||||| git@github.com:mshinwell/flambda-backend.git:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Misc.Le_result.combine_list
-      [ Layout.Const.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-=======
       bounds
 
   module Debug_printers = struct
@@ -389,7 +366,6 @@ module Const = struct
     Misc.Le_result.combine
       (Layout.Const.sub lay1 lay2)
       (Bounds.sub ~type_equal bounds1 bounds2)
->>>>>>> git@github.com:mshinwell/flambda-backend.git:5.2.0-parallel
 
   let of_layout ~mode_crossing ~nullability layout =
     let upper_bounds =
@@ -830,13 +806,7 @@ module Desc = struct
      relationship only when they are equal.
      Never does mutation.
      Pre-condition: no filled-in sort variables. *)
-<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
-  let sub d1 d2 : Le_result.t =
-||||||| git@github.com:mshinwell/flambda-backend.git:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
-  let sub d1 d2 : Misc.Le_result.t =
-=======
   let sub ~type_equal d1 d2 : Misc.Le_result.t =
->>>>>>> git@github.com:mshinwell/flambda-backend.git:5.2.0-parallel
     match d1, d2 with
     | Const c1, Const c2 -> Const.sub ~type_equal c1 c2
     | Var _, Const c when Const.equal_and_no_baggage Const.max c -> Less
@@ -892,97 +862,6 @@ module Jkind_desc = struct
 
   let max = of_const Const.max
 
-<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
-  let equate_or_equal ~allow_mutation
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Layout.equate_or_equal ~allow_mutation lay1 lay2
-    && Modes.equal modes1 modes2
-    && Externality.equal ext1 ext2
-    && Nullability.equal null1 null2
-
-  let sub
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Le_result.combine_list
-      [ Layout.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-
-  let intersection
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-||||||| git@github.com:mshinwell/flambda-backend.git:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
-  let equate_or_equal ~allow_mutation
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Layout.equate_or_equal ~allow_mutation lay1 lay2
-    && Modes.equal modes1 modes2
-    && Externality.equal ext1 ext2
-    && Nullability.equal null1 null2
-
-  let sub
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Misc.Le_result.combine_list
-      [ Layout.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-
-  let intersection
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-=======
   let equate_or_equal ~allow_mutation ~type_equal
       { layout = lay1; upper_bounds = bounds1 }
       { layout = lay2; upper_bounds = bounds2 } =
@@ -1022,7 +901,6 @@ module Jkind_desc = struct
            constraints. If you see this error message, please contact the Jane \
            Street OCaml Language Team."
     in
->>>>>>> git@github.com:mshinwell/flambda-backend.git:5.2.0-parallel
     Option.bind (Layout.intersection lay1 lay2) (fun layout ->
         Some
           { layout;
@@ -1876,14 +1754,8 @@ let assert_right t = Jkind_desc.assert_right t.jkind
 let check_sub ~type_equal sub super =
   Jkind_desc.sub ~type_equal sub.jkind super.jkind
 
-<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
-let sub sub super = Le_result.is_le (check_sub sub super)
-||||||| git@github.com:mshinwell/flambda-backend.git:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
-let sub sub super = Misc.Le_result.is_le (check_sub sub super)
-=======
 let sub ~type_equal sub super =
   Misc.Le_result.is_le (check_sub ~type_equal sub super)
->>>>>>> git@github.com:mshinwell/flambda-backend.git:5.2.0-parallel
 
 let sub_or_error ~type_equal t1 t2 =
   if sub ~type_equal t1 t2

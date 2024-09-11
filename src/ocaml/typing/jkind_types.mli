@@ -109,81 +109,11 @@ module Layout : sig
   type t = Sort.t layout
 end
 
-<<<<<<< janestreet/merlin-jst:5.2.0-parallel-merge
-module type Axis = sig
-  type t
-
-  val max : t
-
-  val min : t
-
-  val equal : t -> t -> bool
-
-  val less_or_equal : t -> t -> Misc_stdlib.Le_result.t
-
-  val le : t -> t -> bool
-
-  val meet : t -> t -> t
-
-  val print : Format.formatter -> t -> unit
-end
-
-module Externality : sig
-  type t =
-    | External
-    | External64
-    | Internal
-
-  include Axis with type t := t
-end
-
-module Nullability : sig
-  type t =
-    | Non_null
-    | Maybe_null
-
-  include Axis with type t := t
-||||||| git@github.com:mshinwell/flambda-backend.git:d49b7709f22a9cc6be329bc2155ff2ff75ab957c
-module type Axis = sig
-  type t
-
-  val max : t
-
-  val min : t
-
-  val equal : t -> t -> bool
-
-  val less_or_equal : t -> t -> Misc.Le_result.t
-
-  val le : t -> t -> bool
-
-  val meet : t -> t -> t
-
-  val print : Format.formatter -> t -> unit
-end
-
-module Externality : sig
-  type t =
-    | External
-    | External64
-    | Internal
-
-  include Axis with type t := t
-end
-
-module Nullability : sig
-  type t =
-    | Non_null
-    | Maybe_null
-
-  include Axis with type t := t
-=======
 module Bound : sig
   type ('type_expr, 'a) t =
     { modifier : 'a;
       baggage : 'type_expr list
     }
->>>>>>> git@github.com:mshinwell/flambda-backend.git:5.2.0-parallel
 end
 
 module Bounds : module type of Axis_collection (Bound)
