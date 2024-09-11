@@ -325,9 +325,10 @@ end = struct
       let cant_quantify reason =
         raise (Error (loc, env, Cannot_quantify(name, reason)))
       in
+      let type_equal ty1 ty2 = Ctype.is_equal env false [ty1] [ty2] in
       begin match get_desc v with
       | Tvar { jkind } when
-          not (Jkind.equate jkind jkind_info.original_jkind) ->
+          not (Jkind.equate ~type_equal jkind jkind_info.original_jkind) ->
         let reason =
           Bad_univar_jkind { name; jkind_info; inferred_jkind = jkind }
         in
@@ -439,8 +440,14 @@ end = struct
        From testing, we need all callsites that use [Sort] to be non-null to
        preserve backwards compatibility. But we also need [Any] callsites
        to accept nullable jkinds to allow cases like [type ('a : value_or_null) t = 'a]. *)
-    | Any -> Jkind.Builtin.any ~why:(if is_named then Unification_var else Wildcard)
-    | Sort -> Jkind.of_new_legacy_sort ~why:(if is_named then Unification_var else Wildcard)
+    | Any ->
+      let k = Jkind.Builtin.any ~why:(if is_named then Unification_var else Wildcard) in
+      Jkind.assert_right k;
+      k
+    | Sort ->
+      let k = Jkind.of_new_legacy_sort ~why:(if is_named then Unification_var else Wildcard) in
+      Jkind.assert_right k;
+      k
 
   let new_any_var loc env jkind = function
     | { extensibility = Fixed } -> raise(Error(loc, env, No_type_wildcards))
@@ -1033,7 +1040,7 @@ and transl_type_var env ~policy ~row_context attrs loc name jkind_annot_opt =
       TyVarEnv.lookup_local ~row_context name
     with Not_found ->
       let jkind =
-        try TyVarEnv.lookup_global name |> estimate_type_jkind env
+        try TyVarEnv.lookup_global name |> estimate_type_jkind_right env
         with Not_found -> TyVarEnv.new_jkind ~is_named:true policy
       in
       let ty = TyVarEnv.new_var ~name jkind policy in

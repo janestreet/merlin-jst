@@ -29,3 +29,14 @@ val untransl_modalities :
   Parsetree.attributes ->
   Mode.Modality.Value.Const.t ->
   Parsetree.modalities
+
+module Transled_modifier : sig
+  type (_, 'a) t = 'a Location.loc option
+end
+
+module Transled_modifiers :
+    module type of Jkind_axis.Axis_collection (Transled_modifier)
+
+(** Interpret a list of modifiers.
+    A "modifier" is any keyword coming after a `mod` in a jkind *)
+val transl_modifier_annots : Parsetree.modes -> _ Transled_modifiers.t

@@ -478,11 +478,15 @@ let worst_msig decl = List.map (fun _ -> Deepsep) decl.type_params
    array optimization and this entire file at that point. *)
 let msig_of_external_type env decl =
   let is_not_value_or_null =
-    Result.is_error (Ctype.check_decl_jkind env decl
+    Result.is_error (Ctype.check_decl_jkind env decl []
                         (Jkind.Builtin.value_or_null ~why:Separability_check))
   in
+  let externality =
+    Jkind.get_externality_upper_bound
+      ~jkind_of_type:(Ctype.type_jkind_purely_if_principal env) decl.type_jkind
+  in
   let is_external =
-    match Jkind.get_externality_upper_bound decl.type_jkind with
+    match externality with
     | Internal -> false
     | External | External64 -> true
   in

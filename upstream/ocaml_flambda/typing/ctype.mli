@@ -555,6 +555,8 @@ val tvariant_not_immediate : row_desc -> bool
    [type_jkind] if that's needed. *)
 val estimate_type_jkind : Env.t ->  type_expr -> jkind
 
+val estimate_type_jkind_right : Env.t ->  type_expr -> jkind
+
 (* Get the jkind of a type, expanding it and looking through [[@@unboxed]]
    types. *)
 val type_jkind : Env.t -> type_expr -> jkind
@@ -562,6 +564,10 @@ val type_jkind : Env.t -> type_expr -> jkind
 (* Get the jkind of a type, dropping any changes to types caused by
    expansion. *)
 val type_jkind_purely : Env.t -> type_expr -> jkind
+
+(* Get the jkind of a type, dropping any changes to types caused by
+   expansion. Returns None if the type is not known principally *)
+val type_jkind_purely_if_principal : Env.t -> type_expr -> jkind option
 
 (* Find a type's sort (constraining it to be an arbitrary sort variable, if
    needed) *)
@@ -582,13 +588,17 @@ val type_legacy_sort :
 (* CR layouts: When we improve errors, it may be convenient to change these to
    raise on error, like unify. *)
 val check_decl_jkind :
-  Env.t -> type_declaration -> Jkind.t -> (unit, Jkind.Violation.t) result
+  Env.t -> type_declaration -> type_expr list -> Jkind.t -> (unit, Jkind.Violation.t) result
 val constrain_decl_jkind :
-  Env.t -> type_declaration -> Jkind.t -> (unit, Jkind.Violation.t) result
+  Env.t -> type_declaration -> type_expr list -> Jkind.t -> (unit, Jkind.Violation.t) result
 val check_type_jkind :
   Env.t -> type_expr -> Jkind.t -> (unit, Jkind.Violation.t) result
+val check_type_jkind_with_baggage :
+  Env.t ->  type_equal:(type_expr -> type_expr -> bool) -> type_expr -> Jkind.t -> (unit, Jkind.Violation.t) result
 val constrain_type_jkind :
   Env.t -> type_expr -> Jkind.t -> (unit, Jkind.Violation.t) result
+val constrain_type_jkind_with_baggage :
+  Env.t -> type_equal:(type_expr -> type_expr -> bool) -> type_expr -> Jkind.t -> (unit, Jkind.Violation.t) result
 
 (* Check whether a type's externality's upper bound is less than some target.
    Potentially cheaper than just calling [type_jkind], because this can stop
@@ -639,7 +649,7 @@ val check_type_externality : Env.t -> type_expr -> Jkind.Externality.t -> bool
 
    *)
 val check_and_update_generalized_ty_jkind :
-  ?name:Ident.t -> loc:Location.t -> type_expr -> unit
+  ?name:Ident.t -> loc:Location.t -> Env.t -> type_expr -> unit
 
 (* False if running in principal mode and the type is not principal.
    True otherwise. *)

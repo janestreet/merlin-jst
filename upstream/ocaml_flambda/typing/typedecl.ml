@@ -1140,7 +1140,8 @@ let narrow_to_manifest_jkind env loc decl =
   | None -> decl
   | Some ty ->
     let jkind' = Ctype.type_jkind_purely env ty in
-    match Jkind.sub_with_history jkind' decl.type_jkind with
+    let type_equal ty1 ty2 = Ctype.is_equal env false [ty1] [ty2] in
+    match Jkind.sub_with_history ~type_equal jkind' decl.type_jkind with
     | Ok jkind' -> { decl with type_jkind = jkind' }
     | Error v ->
       raise (Error (loc, Jkind_mismatch_of_type (ty,v)))
@@ -1154,7 +1155,8 @@ let check_kind_coherence env loc dpath decl =
   | (Type_variant _ | Type_record _ | Type_open), Some ty ->
       if !Clflags.allow_illegal_crossing then begin
         let jkind' = Ctype.type_jkind_purely env ty in
-        begin match Jkind.sub_with_history jkind' decl.type_jkind with
+        let type_equal ty1 ty2 = Ctype.is_equal env false [ty1] [ty2] in
+        begin match Jkind.sub_with_history ~type_equal jkind' decl.type_jkind with
         | Ok _ -> ()
         | Error v ->
           raise (Error (loc, Jkind_mismatch_of_type (ty,v)))
@@ -1293,7 +1295,7 @@ module Element_repr = struct
       let const_jkind = Jkind.default_to_value_and_get jkind in
       let sort = Jkind.(Layout.Const.get_sort (Const.get_layout const_jkind)) in
       let externality_upper_bound =
-        Jkind.Const.get_externality_upper_bound const_jkind
+        Jkind.Const.get_conservative_externality_upper_bound const_jkind
       in
       match sort, externality_upper_bound with
       (* CR layouts v5.1: We don't allow [External64] in the flat suffix of
@@ -1672,19 +1674,19 @@ let update_decl_jkind env dpath decl =
   (* check that the jkind computed from the kind matches the jkind
      annotation, which was stored in decl.type_jkind *)
   if new_jkind != decl.type_jkind then
-    begin match Jkind.sub_or_error new_jkind decl.type_jkind with
+    (let type_equal ty1 ty2 = Ctype.is_equal env false [ty1] [ty2] in
+    match Jkind.sub_or_error ~type_equal new_jkind decl.type_jkind with
     | Ok () -> ()
     | Error err ->
-      raise(Error(decl.type_loc, Jkind_mismatch_of_path (dpath,err)))
-    end;
+      raise(Error(decl.type_loc, Jkind_mismatch_of_path (dpath,err))));
   new_decl
 
-let update_decls_jkind_reason decls =
+let update_decls_jkind_reason env decls =
   List.map
     (fun (id, decl) ->
        let update_generalized =
         Ctype.check_and_update_generalized_ty_jkind
-          ~name:id ~loc:decl.type_loc
+          ~name:id ~loc:decl.type_loc env
        in
        List.iter update_generalized decl.type_params;
        Btype.iter_type_expr_kind update_generalized decl.type_kind;
@@ -2281,7 +2283,7 @@ let transl_type_decl env rec_flag sdecl_list =
       |> Typedecl_variance.update_decls env sdecl_list
       |> Typedecl_separability.update_decls env
       |> update_decls_jkind new_env
-      |> update_decls_jkind_reason
+      |> update_decls_jkind_reason new_env
     with
     | Typedecl_variance.Error (loc, err) ->
         raise (Error (loc, Variance err))
@@ -3049,7 +3051,7 @@ let transl_value_decl env loc valdecl =
     Env.enter_value ~mode:Mode.Value.legacy valdecl.pval_name.txt v env
       ~check:(fun s -> Warnings.Unused_value_declaration s)
   in
-  Ctype.check_and_update_generalized_ty_jkind ~name:id ~loc ty;
+  Ctype.check_and_update_generalized_ty_jkind ~name:id ~loc newenv ty;
   let desc =
     {
      val_id = id;

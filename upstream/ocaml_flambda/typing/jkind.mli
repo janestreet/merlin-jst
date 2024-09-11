@@ -42,20 +42,20 @@
    https://github.com/goldfirere/flambda-backend/commit/d802597fbdaaa850e1ed9209a1305c5dcdf71e17
    first, which was reisenberg's attempt to do so. *)
 module Externality : sig
-  type t = Jkind_types.Externality.t =
+  type t = Jkind_axis.Externality.t =
     | External (* not managed by the garbage collector *)
     | External64 (* not managed by the garbage collector on 64-bit systems *)
     | Internal (* managed by the garbage collector *)
 
-  include module type of Jkind_types.Externality with type t := t
+  include module type of Jkind_axis.Externality with type t := t
 end
 
 module Nullability : sig
-  type t = Jkind_types.Nullability.t =
+  type t = Jkind_axis.Nullability.t =
     | Non_null (* proven to not have NULL values *)
     | Maybe_null (* may have NULL values *)
 
-  include module type of Jkind_types.Nullability with type t := t
+  include module type of Jkind_axis.Nullability with type t := t
 end
 
 module Sort : Jkind_intf.Sort with type const = Jkind_types.Sort.const
@@ -141,24 +141,27 @@ end
 (******************************)
 (* constants *)
 
+(* CR layouts v2.8: [Jkind.Const.t] can likely be removed, replacing its current usages
+   with either [Jane_syntax.Jkind.annotation]s or [Jkind.t]s *)
 module Const : sig
-  (** Constant jkinds are used for user-written annotations *)
+  (** Constant jkinds are used for user-written annotations. The "constant" refers to
+      there being no sort varialbe. However, a [Jkind.Const.t] can still be mutated, as
+      it can contain a reference to a [Types.type_expr] *)
   type t = Types.type_expr Jkind_types.Const.t
 
   val to_out_jkind_const : t -> Outcometree.out_jkind_const
 
   val format : Format.formatter -> t -> unit
 
-  val equal : t -> t -> bool
+  (* Compares two [Jkind.Const.t]s, never doing mutation. If there are any `with`
+     constraints on either, this function will return false. *)
+  val equal_and_no_baggage : t -> t -> bool
 
   (** Gets the layout of a constant jkind. Never does mutation. *)
   val get_layout : t -> Layout.Const.t
 
-  (** Gets the maximum modes for types of this constant jkind. *)
-  val get_modal_upper_bounds : t -> Mode.Alloc.Const.t
-
   (** Gets the maximum mode on the externality axis for types of this constant jkind. *)
-  val get_externality_upper_bound : t -> Externality.t
+  val get_conservative_externality_upper_bound : t -> Externality.t
 
   val of_user_written_annotation :
     context:History.annotation_context -> Jane_syntax.Jkind.annotation -> t
@@ -249,6 +252,11 @@ val add_mode_crossing : t -> t
 
 (** Take an existing [t] and add an ability to cross across the nullability axis. *)
 val add_nullability_crossing : t -> t
+
+(** Take an existing [t] and add baggage (a [with constraint]) to its bounds. If
+    [deep_only] is [true] (which is the default), the baggage is only added along deep
+    axes. *)
+val add_baggage : ?deep_only:bool -> baggage:Types.type_expr -> t -> t
 
 (** Take an existing [t] and add an ability to mode-cross along the portability and
     contention axes, if [from] crosses the respective axes. Return the new jkind,
@@ -372,10 +380,14 @@ val sort_of_jkind : t -> sort
 val get_layout : t -> Layout.Const.t option
 
 (** Gets the maximum modes for types of this jkind. *)
-val get_modal_upper_bounds : t -> Mode.Alloc.Const.t
+val get_modal_upper_bounds :
+  jkind_of_type:(Types.type_expr -> t option) -> t -> Mode.Alloc.Const.t
 
-(** Gets the maximum mode on the externality axis for types of this jkind. *)
-val get_externality_upper_bound : t -> Externality.t
+(** Gets the maximum mode on the externality axis for types of this jkind.
+    [jkind_of_type] fetches the jkind of the given type. If the type is not principally
+    known, it returns [None]. *)
+val get_externality_upper_bound :
+  jkind_of_type:(Types.type_expr -> t option) -> t -> Externality.t
 
 (** Computes a jkind that is the same as the input but with an updated maximum
     mode for the externality axis *)
@@ -404,14 +416,16 @@ val set_printtyp_path : (Format.formatter -> Path.t -> unit) -> unit
 (** This checks for equality, and sets any variables to make two jkinds
     equal, if possible. e.g. [equate] on a var and [value] will set the
     variable to be [value] *)
-val equate : t -> t -> bool
+val equate :
+  type_equal:(Types.type_expr -> Types.type_expr -> bool) -> t -> t -> bool
 
 (** This checks for equality, but has the invariant that it can only be called
     when there is no need for unification; e.g. [equal] on a var and [value]
     will crash.
 
     CR layouts (v1.5): At the moment, this is actually the same as [equate]! *)
-val equal : t -> t -> bool
+val equal :
+  type_equal:(Types.type_expr -> Types.type_expr -> bool) -> t -> t -> bool
 
 (** Checks whether two jkinds have a non-empty intersection. Might mutate
     sort variables. *)
@@ -427,31 +441,52 @@ val has_intersection : t -> t -> bool
 val intersection_or_error :
   reason:History.interact_reason -> t -> t -> (t, Violation.t) Result.t
 
+val assert_right : t -> unit
+
 (** [sub t1 t2] says whether [t1] is a subjkind of [t2]. Might update
     either [t1] or [t2] to make their layouts equal.*)
-val sub : t -> t -> bool
+val sub :
+  type_equal:(Types.type_expr -> Types.type_expr -> bool) -> t -> t -> bool
 
 (** [sub_or_error t1 t2] returns [Ok ()] iff [t1] is a subjkind of
   of [t2]. Otherwise returns an appropriate error to report to the user. *)
-val sub_or_error : t -> t -> (unit, Violation.t) result
+val sub_or_error :
+  type_equal:(Types.type_expr -> Types.type_expr -> bool) ->
+  t ->
+  t ->
+  (unit, Violation.t) result
 
 (** Like [sub], but returns the subjkind with an updated history. *)
-val sub_with_history : t -> t -> (t, Violation.t) result
+val sub_with_history :
+  type_equal:(Types.type_expr -> Types.type_expr -> bool) ->
+  t ->
+  t ->
+  (t, Violation.t) result
+
+val map_type_expr : (Types.type_expr -> Types.type_expr) -> t -> t
 
 (** Checks to see whether a jkind is the maximum jkind. Never does any
     mutation. *)
 val is_max : t -> bool
 
-(** Checks to see whether a jkind is has layout. Never does any mutation. *)
+(** Checks to see whether a jkind has layout any. Never does any mutation. *)
 val has_layout_any : t -> bool
 
 (*********************************)
 (* debugging *)
 
 module Debug_printers : sig
-  val t : Format.formatter -> t -> unit
+  val t :
+    (Format.formatter -> Types.type_expr -> unit) ->
+    Format.formatter ->
+    t ->
+    unit
 
   module Const : sig
-    val t : Format.formatter -> Const.t -> unit
+    val t :
+      (Format.formatter -> Types.type_expr -> unit) ->
+      Format.formatter ->
+      Const.t ->
+      unit
   end
 end
