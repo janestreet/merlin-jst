@@ -747,6 +747,7 @@ rule token state = parse
   | "\'" { return QUOTE }
   | "("  { return LPAREN }
   | ")"  { return RPAREN }
+  | "#(" { return HASHLPAREN }
   | "*"  { return STAR }
   | ","  { return COMMA }
   | "->" { return MINUSGREATER }

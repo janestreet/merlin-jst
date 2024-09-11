@@ -13,6 +13,27 @@
 (*                                                                        *)
 (**************************************************************************)
 
+val pp_nested_list :
+     nested:bool
+  -> pp_element:(nested:bool -> Format.formatter -> 'a -> unit)
+  -> pp_sep:(Format.formatter -> unit -> unit)
+  -> Format.formatter
+  -> 'a list
+  -> unit
+(** [pp_nested_list ~nested ~pp_element ~pp_sep ppf args] prints the list [args]
+    with [pp_element] on [ppf]. The elements are separated by [pp_sep]. If
+    [~nested] is true, the list is wrapped in parens. The element printer is
+    always called with [nested:true], indicating that any inner lists are nested
+    and need parens. *)
+
+module List : sig
+  val map_option : ('a -> 'b option) -> 'a list -> 'b list option
+  val some_if_all_elements_are_some : 'a option list -> 'a list option
+  val iter_until_error
+       : f:('a -> (unit, 'b) Result.t)
+      -> 'a list
+      -> (unit, 'b) Result.t
+end
 
 module Option : sig
   type 'a t = 'a option
@@ -83,3 +104,7 @@ module Le_result : sig
 end
 
 type (_, _) eq = Refl : ('a, 'a) eq
+
+module type T1 = sig
+  type 'a t
+end

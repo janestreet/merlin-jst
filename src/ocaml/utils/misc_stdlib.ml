@@ -13,6 +13,50 @@
 (*                                                                        *)
 (**************************************************************************)
 
+let pp_parens_if condition printer ppf arg =
+  Format.fprintf ppf "%s%a%s"
+    (if condition then "(" else "")
+    printer arg
+    (if condition then ")" else "")
+
+let pp_nested_list ~nested ~pp_element ~pp_sep ppf arg =
+  Format.fprintf ppf "@[%a@]"
+    (pp_parens_if nested
+       (Format.pp_print_list ~pp_sep (pp_element ~nested:true)))
+    arg
+
+module List = struct
+  include List (* for references to Stdlib.List later in this file *)
+
+  let map_option f l =
+    let rec aux l acc =
+      match l with
+      | [] -> Some (List.rev acc)
+      | x :: xs ->
+        match f x with
+        | None -> None
+        | Some x -> aux xs (x :: acc)
+    in
+    aux l []
+
+  let some_if_all_elements_are_some l =
+      let rec aux acc l =
+        match l with
+        | [] -> Some (List.rev acc)
+        | None :: _ -> None
+        | Some h :: t -> aux (h :: acc) t
+      in
+      aux [] l
+
+  let rec iter_until_error ~f l =
+      match l with
+      | [] -> Ok ()
+      | x :: xs ->
+        match f x with
+        | Ok () -> iter_until_error ~f xs
+        | Error _ as e -> e
+end
+
 module Option = struct
   type 'a t = 'a option
 
@@ -144,3 +188,7 @@ end
 (* Fancy types *)
 
 type (_, _) eq = Refl : ('a, 'a) eq
+
+module type T1 = sig
+  type 'a t
+end

@@ -174,7 +174,8 @@ type error =
       Datatype_kind.t * Longident.t * (Path.t * Path.t) * (Path.t * Path.t) list
   | Invalid_format of string
   | Not_an_object of type_expr * type_forcing_context option
-  | Not_a_value of Jkind.Violation.t * type_forcing_context option
+  | Non_value_object of Jkind.Violation.t * type_forcing_context option
+  | Non_value_let_rec of Jkind.Violation.t * type_expr
   | Undefined_method of type_expr * string * string list option
   | Undefined_self_method of string * string list
   | Virtual_class of Longident.t
@@ -291,6 +292,7 @@ let deep_copy () =
         | Tvariant _ as desc -> (* fixme *) desc
         | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
         | Ttuple tl -> Ttuple (List.map (fun (l, t) -> l, copy t) tl)
+        | Tunboxed_tuple tl -> Tunboxed_tuple (List.map (fun (l, t) -> l, copy t) tl)
         | Tconstr (p, tl, _) -> Tconstr (p, List.map copy tl, ref Mnil)
         | Tobject (t1, r) ->
           let r = match !r with
@@ -550,7 +552,7 @@ let check_tail_call_local_returning loc env ap_mode {region_mode; _} =
 
 let meet_regional mode =
   let mode = Value.disallow_left mode in
-  Value.meet [mode; (Value.max_with (Comonadic Areality) Regionality.regional)]
+  Value.meet_with (Comonadic Areality) Regionality.Const.Regional mode
 
 let mode_default mode =
   { position = RNontail;
@@ -567,19 +569,14 @@ let as_single_mode {mode; tuple_modes; _} =
   | Some l -> Value.meet (mode :: l)
   | None -> mode
 
-let get_single_mode_exn {mode; tuple_modes; _} =
-  match tuple_modes with
-  | Some _ -> Misc.fatal_error "tuple_modes should be None"
-  | None -> mode
-
 let mode_morph f expected_mode =
   let mode = as_single_mode expected_mode in
-  let mode = f mode in
+  let mode = f mode |> Mode.Value.disallow_left in
   let tuple_modes = None in
   {expected_mode with mode; tuple_modes}
 
 let mode_modality modality expected_mode =
-  get_single_mode_exn expected_mode
+  as_single_mode expected_mode
   |> Modality.Value.Const.apply modality
   |> mode_default
 
@@ -737,7 +734,7 @@ let register_allocation_value_mode mode =
     of potential subcomponents. *)
 let register_allocation (expected_mode : expected_mode) =
   let alloc_mode, mode =
-    register_allocation_value_mode (get_single_mode_exn expected_mode)
+    register_allocation_value_mode (as_single_mode expected_mode)
   in
   let alloc_mode =
     { mode = alloc_mode;
@@ -1409,6 +1406,10 @@ and build_as_type_aux ~refine ~mode (env : Env.t ref) p =
       let labeled_tyl =
         List.map (fun (label, p) -> label, build_as_type env p) pl in
       newty (Ttuple labeled_tyl), mode
+  | Tpat_unboxed_tuple pl ->
+      let labeled_tyl =
+        List.map (fun (label, p, _) -> label, build_as_type env p) pl in
+      newty (Tunboxed_tuple labeled_tyl), mode
   | Tpat_construct(_, cstr, pl, vto) ->
       let priv = (cstr.cstr_private = Private) in
       let mode =
@@ -1565,6 +1566,8 @@ let reorder_pat loc env patl closed labeled_tl expected_ty =
 (* This assumes the [args] have already been reordered according to the
    [expected_ty], if needed.  *)
 let solve_Ppat_tuple ~refine ~alloc_mode loc env args expected_ty =
+  (* CR layouts v5: consider sharing code with [solve_Ppat_unboxed_tuple] below
+     when we allow non-values in boxed tuples. *)
   let arity = List.length args in
   let arg_modes =
     match alloc_mode.tuple_modes with
@@ -1583,6 +1586,37 @@ let solve_Ppat_tuple ~refine ~alloc_mode loc env args expected_ty =
       args arg_modes
   in
   let ty = newgenty (Ttuple (List.map (fun (lbl, _, t, _) -> lbl, t) ann)) in
+  let expected_ty = generic_instance expected_ty in
+  unify_pat_types ~refine loc env ty expected_ty;
+  ann
+
+(* This assumes the [args] have already been reordered according to the
+   [expected_ty], if needed.  *)
+let solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env args expected_ty =
+  let arity = List.length args in
+  let arg_modes =
+    match alloc_mode.tuple_modes with
+    (* CR zqian: improve the modes of opened labeled tuple pattern. *)
+    | Some l when List.compare_length_with l arity = 0 -> l
+    | _ -> List.init arity (fun _ -> alloc_mode.mode)
+  in
+  let ann =
+    List.map2
+      (fun (label, p) mode ->
+         let jkind, sort =
+           Jkind.of_new_sort_var ~why:Jkind.History.Unboxed_tuple_element
+         in
+        ( label,
+          p,
+          newgenvar jkind,
+          simple_pat_mode mode,
+          sort
+        ))
+      args arg_modes
+  in
+  let ty =
+    newgenty (Tunboxed_tuple (List.map (fun (lbl, _, t, _, _) -> lbl, t) ann))
+  in
   let expected_ty = generic_instance expected_ty in
   unify_pat_types ~refine loc env ty expected_ty;
   ann
@@ -2429,15 +2463,19 @@ let rec has_literal_pattern p =
   | Ppat_tuple ps
   | Ppat_array ps ->
      List.exists has_literal_pattern ps
+  | Ppat_unboxed_tuple (ps, _) -> has_literal_pattern_labeled_tuple ps
   | Ppat_record (ps, _) ->
      List.exists (fun (_,p) -> has_literal_pattern p) ps
   | Ppat_or (p, q) ->
      has_literal_pattern p || has_literal_pattern q
+
 and has_literal_pattern_jane_syntax : Jane_syntax.Pattern.t -> _ = function
   | Jpat_immutable_array (Iapat_immutable_array ps) ->
      List.exists has_literal_pattern ps
   | Jpat_layout (Lpat_constant _) -> true
-  | Jpat_tuple (labeled_ps, _) ->
+  | Jpat_tuple (labeled_ps, _) -> has_literal_pattern_labeled_tuple labeled_ps
+
+and has_literal_pattern_labeled_tuple labeled_ps =
      List.exists (fun (_, p) -> has_literal_pattern p) labeled_ps
 
 let check_scope_escape loc env level ty =
@@ -2582,6 +2620,8 @@ and type_pat_aux
       pat_env = !env }
   in
   let type_tuple_pat spl closed =
+    (* CR layouts v5: consider sharing code with [type_unboxed_tuple_pat] below
+       when we allow non-values in boxed tuples. *)
     let args =
       match get_desc (expand_head !env expected_ty) with
       (* If it's a principally-known tuple pattern, try to reorder *)
@@ -2605,6 +2645,38 @@ and type_pat_aux
       pat_desc = Tpat_tuple pl;
       pat_loc = loc; pat_extra=[];
       pat_type = newty (Ttuple (List.map (fun (lbl, p) -> lbl, p.pat_type) pl));
+      pat_attributes = sp.ppat_attributes;
+      pat_env = !env }
+  in
+  let type_unboxed_tuple_pat spl closed =
+    Jane_syntax_parsing.assert_extension_enabled ~loc Layouts
+      Language_extension.Beta;
+    let args =
+      match get_desc (expand_head !env expected_ty) with
+      (* If it's a principally-known tuple pattern, try to reorder *)
+      | Tunboxed_tuple labeled_tl when is_principal expected_ty ->
+        reorder_pat loc env spl closed labeled_tl expected_ty
+      (* If not, it's not allowed to be open (partial) *)
+      | _ ->
+        match closed with
+        | Open -> raise (Error (loc, !env, Partial_tuple_pattern_bad_type))
+        | Closed -> spl
+    in
+    let spl_ann =
+      solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env args expected_ty
+    in
+    let pl =
+      List.map (fun (lbl, p, t, alloc_mode, sort) ->
+        lbl, type_pat tps Value ~alloc_mode p t, sort)
+        spl_ann
+    in
+    let ty =
+      newty (Tunboxed_tuple (List.map (fun (lbl, p, _) -> lbl, p.pat_type) pl))
+    in
+    rvp {
+      pat_desc = Tpat_unboxed_tuple pl;
+      pat_loc = loc; pat_extra=[];
+      pat_type = ty;
       pat_attributes = sp.ppat_attributes;
       pat_env = !env }
   in
@@ -2714,6 +2786,8 @@ and type_pat_aux
       raise (error (loc, !env, Invalid_interval))
   | Ppat_tuple spl ->
       type_tuple_pat (List.map (fun sp -> None, sp) spl) Closed
+  | Ppat_unboxed_tuple (spl, oc) ->
+      type_unboxed_tuple_pat spl oc
   | Ppat_construct(lid, sarg) ->
       let expected_type =
         match extract_concrete_variant !env expected_ty with
@@ -3122,6 +3196,7 @@ let rec pat_tuple_arity spat =
   | None      ->
   match spat.ppat_desc with
   | Ppat_tuple args -> Local_tuple (List.length args)
+  | Ppat_unboxed_tuple (args,_c) -> Local_tuple (List.length args)
   | Ppat_any | Ppat_exception _ | Ppat_var _ -> Maybe_local_tuple
   | Ppat_constant _
   | Ppat_interval _ | Ppat_construct _ | Ppat_variant _
@@ -3360,6 +3435,25 @@ let rec check_counter_example_pat
            mkp k (Tpat_tuple pl)
              ~pat_type:(newty (Ttuple (List.map (fun (l,p) -> (l,p.pat_type))
                                          pl))))
+  | Tpat_unboxed_tuple tpl ->
+      let tpl_ann =
+        solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env
+          (List.map (fun (l,t,_) -> l, t) tpl)
+          expected_ty
+      in
+      List.iter2
+        (fun (_, _, orig_sort) (_, _, _, _, sort) ->
+           (* Sanity check *)
+           assert (Jkind.Sort.equate orig_sort sort))
+        tpl tpl_ann;
+      map_fold_cont
+        (fun (l,p,t,_,sort) k -> check_rec p t (fun p -> k (l, p, sort)))
+        tpl_ann
+        (fun pl ->
+           mkp k (Tpat_unboxed_tuple pl)
+             ~pat_type:(newty (Tunboxed_tuple
+                                 (List.map (fun (l,p,_) -> (l,p.pat_type))
+                                    pl))))
   | Tpat_construct(cstr_lid, constr, targs, _) ->
       if constr.cstr_generalized && must_backtrack_on_gadt then
         raise Need_backtrack;
@@ -3955,6 +4049,8 @@ let rec is_nonexpansive exp =
   | Texp_probe {handler} -> is_nonexpansive handler
   | Texp_tuple (el, _) ->
       List.for_all (fun (_,e) -> is_nonexpansive e) el
+  | Texp_unboxed_tuple el ->
+      List.for_all (fun (_,e,_) -> is_nonexpansive e) el
   | Texp_construct(_, _, el, _) ->
       List.for_all is_nonexpansive el
   | Texp_variant(_, arg) -> is_nonexpansive_opt (Option.map fst arg)
@@ -4476,6 +4572,7 @@ let check_partial_application ~statement exp =
           else begin
             match exp_desc with
             | Texp_ident _ | Texp_constant _ | Texp_tuple _
+            | Texp_unboxed_tuple _
             | Texp_construct _ | Texp_variant _ | Texp_record _
             | Texp_field _ | Texp_setfield _ | Texp_array _
             | Texp_list_comprehension _ | Texp_array_comprehension _
@@ -4562,10 +4659,12 @@ let contains_variant_either ty =
   try loop ty; unmark_type ty; false
   with Exit -> unmark_type ty; true
 
+let shallow_iter_ppat_labeled_tuple f lst = List.iter (fun (_,p) -> f p) lst
+
 let shallow_iter_ppat_jane_syntax f : Jane_syntax.Pattern.t -> _ = function
   | Jpat_immutable_array (Iapat_immutable_array pats) -> List.iter f pats
   | Jpat_layout (Lpat_constant _) -> ()
-  | Jpat_tuple (lst, _) ->  List.iter (fun (_,p) -> f p) lst
+  | Jpat_tuple (lst, _) -> shallow_iter_ppat_labeled_tuple f lst
 
 let shallow_iter_ppat f p =
   match Jane_syntax.Pattern.of_ast p with
@@ -4580,6 +4679,7 @@ let shallow_iter_ppat f p =
   | Ppat_or (p1,p2) -> f p1; f p2
   | Ppat_variant (_, arg) -> Option.iter f arg
   | Ppat_tuple lst -> List.iter f lst
+  | Ppat_unboxed_tuple (lst, _) -> shallow_iter_ppat_labeled_tuple f lst
   | Ppat_construct (_, Some (_, p))
   | Ppat_exception p | Ppat_alias (p,_)
   | Ppat_open (_,p)
@@ -4897,7 +4997,7 @@ let split_function_ty
          to be made global if its inner function is global. As a result, a
          function deserves a separate allocation mode.
       *)
-      let mode, _ = Value.newvar_below (get_single_mode_exn expected_mode) in
+      let mode, _ = Value.newvar_below (as_single_mode expected_mode) in
       fst (register_allocation_value_mode mode)
   in
   if expected_mode.strictly_local then
@@ -5256,7 +5356,7 @@ and type_expect_
             in
             Texp_ident(path, lid, desc, kind,
               unique_use ~loc ~env actual_mode.mode
-                (get_single_mode_exn expected_mode))
+                (as_single_mode expected_mode))
         | _ ->
             Texp_ident(path, lid, desc, kind,
               unique_use ~loc ~env actual_mode.mode
@@ -5580,6 +5680,9 @@ and type_expect_
   | Pexp_tuple sexpl ->
       type_tuple ~loc ~env ~expected_mode ~ty_expected ~explanation
         ~attributes:sexp.pexp_attributes (List.map (fun e -> None, e) sexpl)
+  | Pexp_unboxed_tuple sexpl ->
+      type_unboxed_tuple ~loc ~env ~expected_mode ~ty_expected ~explanation
+        ~attributes:sexp.pexp_attributes sexpl
   | Pexp_construct(lid, sarg) ->
       type_construct env expected_mode loc lid
         sarg ty_expected_explained sexp.pexp_attributes
@@ -5779,7 +5882,7 @@ and type_expect_
                   submode ~loc ~env mode argument_mode;
                   Kept (ty_arg1, lbl.lbl_mut,
                         unique_use ~loc ~env mode
-                          (get_single_mode_exn argument_mode))
+                          (as_single_mode argument_mode))
                 end
             in
             let label_definitions = Array.map unify_kept lbl.lbl_all in
@@ -5856,7 +5959,7 @@ and type_expect_
           let mode = mode_cross_left env Predef.type_unboxed_float mode in
           submode ~loc ~env mode argument_mode;
           let uu =
-            unique_use ~loc ~env mode (get_single_mode_exn argument_mode)
+            unique_use ~loc ~env mode (as_single_mode argument_mode)
           in
           Boxing (alloc_mode, uu)
         | false ->
@@ -6530,8 +6633,6 @@ and type_expect_
     | Error () -> raise (error (loc, env, Probe_format))
     | Ok { name; name_loc; enabled_at_init; arg; } ->
         check_probe_name name name_loc env;
-        let env = Env.add_escape_lock Probe env in
-        let env = Env.add_share_lock Probe env in
         Env.add_probe name;
         let exp = type_expect env mode_legacy arg
                     (mk_expected Predef.type_unit) in
@@ -6776,9 +6877,7 @@ and type_ident env ?(recarg=Rejected) lid =
        (* if the locality of returned value of the primitive is poly
           we then register allocation for further optimization *)
        | (Prim_poly, _), Some mode ->
-           register_allocation_mode
-             (Alloc.meet [Alloc.max_with (Comonadic Areality) mode;
-                          Alloc.max_with (Comonadic Linearity) Linearity.many])
+           register_allocation_mode (Alloc.max_with (Comonadic Areality) mode)
        | _ -> ()
        end;
        ty, Id_prim (Option.map Locality.disallow_right mode, sort)
@@ -7680,7 +7779,13 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
       let exp_mode, _ = Value.newvar_below (as_single_mode mode) in
       let texp =
         with_local_level_if_principal ~post:generalize_structure_exp
-          (fun () -> type_exp env {mode with mode = Value.disallow_left exp_mode} sarg)
+          (fun () ->
+            let expected_mode =
+              mode
+              |> mode_morph (fun _mode -> exp_mode)
+              |> expect_mode_cross env ty_expected'
+            in
+            type_exp env expected_mode sarg)
       in
       let rec make_args args ty_fun =
         match get_desc (expand_head env ty_fun) with
@@ -8014,6 +8119,8 @@ and type_application env app_loc expected_mode position_and_mode
 
 and type_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
     ~explanation ~attributes sexpl =
+  (* CR layouts v5: consider sharing code with [type_unboxed_tuple] below when
+     we allow non-values in boxed tuples. *)
   let arity = List.length sexpl in
   assert (arity >= 2);
   let alloc_mode, argument_mode = register_allocation_value_mode expected_mode.mode in
@@ -8036,7 +8143,15 @@ and type_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
     | Some tuple_modes when List.compare_length_with tuple_modes arity = 0 ->
         List.map (fun mode -> Value.meet [mode; argument_mode])
           tuple_modes
-    | _ ->
+    | Some tuple_modes ->
+        (* If the pattern and the expression have different tuple length, it
+          should be an type error. Here, we give the sound mode anyway. *)
+        let tuple_modes =
+          List.map (fun mode -> snd (register_allocation_value_mode mode)) tuple_modes
+        in
+        let argument_mode = Value.meet (argument_mode :: tuple_modes) in
+        List.init arity (fun _ -> argument_mode)
+    | None ->
         List.init arity (fun _ -> argument_mode)
   in
   let types_and_modes = List.combine labeled_subtypes argument_modes in
@@ -8053,6 +8168,62 @@ and type_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
     exp_loc = loc; exp_extra = [];
     (* Keep sharing *)
     exp_type = newty (Ttuple (List.map (fun (label, e) -> label, e.exp_type) expl));
+    exp_attributes = attributes;
+    exp_env = env }
+
+and type_unboxed_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
+      ~explanation ~attributes sexpl =
+  Jane_syntax_parsing.assert_extension_enabled ~loc Layouts
+    Language_extension.Beta;
+  let arity = List.length sexpl in
+  assert (arity >= 2);
+  let argument_mode = expected_mode.mode in
+  (* elements must be representable *)
+  let labels_types_and_sorts =
+    List.map (fun (label, _) ->
+      let jkind, sort = Jkind.of_new_sort_var ~why:Unboxed_tuple_element in
+      label, newgenvar jkind, sort)
+    sexpl
+  in
+  let labeled_subtypes =
+    List.map (fun (l, t, _) -> (l, t)) labels_types_and_sorts
+  in
+  let to_unify = newgenty (Tunboxed_tuple labeled_subtypes) in
+  with_explanation explanation (fun () ->
+    unify_exp_types loc env to_unify (generic_instance ty_expected));
+
+  let argument_modes =
+    match expected_mode.tuple_modes with
+    (* CR zqian: improve the modes of opened labeled tuple pattern. *)
+    | Some tuple_modes when List.compare_length_with tuple_modes arity = 0 ->
+        List.map (fun mode -> Value.meet [mode; argument_mode])
+          tuple_modes
+    | Some tuple_modes ->
+        (* If the pattern and the expression have different tuple length, it
+          should be an type error. Here, we give the sound mode anyway. *)
+        let argument_mode = Value.meet (argument_mode :: tuple_modes) in
+        List.init arity (fun _ -> argument_mode)
+    | None ->
+        List.init arity (fun _ -> argument_mode)
+  in
+  let types_sorts_and_modes =
+    List.combine labels_types_and_sorts argument_modes
+  in
+  let expl =
+    List.map2
+      (fun (label, body) ((_, ty, sort), argument_mode) ->
+        let argument_mode = mode_default argument_mode in
+        let argument_mode = expect_mode_cross env ty argument_mode in
+          (label, type_expect env argument_mode body (mk_expected ty), sort))
+      sexpl types_sorts_and_modes
+  in
+  re {
+    exp_desc = Texp_unboxed_tuple expl;
+    exp_loc = loc; exp_extra = [];
+    (* Keep sharing *)
+    exp_type =
+      newty (Tunboxed_tuple
+               (List.map (fun (label, e, _) -> label, e.exp_type) expl));
     exp_attributes = attributes;
     exp_env = env }
 
@@ -8698,7 +8869,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
             List.split (List.map (fun _ -> new_rep_var ~why:Let_binding ())
                           spatl)
           in
-          let (pat_list, _new_env, _force, _pvs, _mvs as res) =
+          let (pat_list, _new_env, _force, pvs, _mvs as res) =
             with_local_level_if is_recursive (fun () ->
               type_pattern_list Value existential_context env spatl nvs
                 allow_modules
@@ -8720,6 +8891,19 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
                 let bound_expr = vb_exp_constraint binding in
                 type_approx env bound_expr pat.pat_type)
               pat_list spat_sexp_list;
+          (* If recursive, all pattern variables must have layout value. This
+             could be relaxed in some cases, like let recs that aren't actually
+             recusive. But, if making that change, delete [Lambda.layout_letrec]
+             and route the appropriate sorts through to its uses. *)
+          if is_recursive then begin
+            List.iter (fun { pv_id; pv_loc; pv_type; _ } ->
+              let value = Jkind.Builtin.value ~why:(Let_rec_variable pv_id) in
+              match constrain_type_jkind env pv_type value with
+              | Ok () -> ()
+              | Error e ->
+                raise (Error(pv_loc, env, Non_value_let_rec (e, pv_type)))
+            ) pvs
+          end;
           (* Polymorphic variant processing *)
           List.iter
             (fun (_, pat) ->
@@ -9612,7 +9796,7 @@ and type_send env loc explanation e met =
                     in
                     Undefined_method(obj.exp_type, met, valid_methods)
                 | Not_a_value err ->
-                    Not_a_value (err, explanation)
+                    Non_value_object (err, explanation)
               in
               raise (error(e.pexp_loc, env, error_))
         in
@@ -10161,12 +10345,18 @@ let report_error ~loc env = function
         Printtyp.type_expr ty;
       report_type_expected_explanation_opt explanation ppf
     ) ()
-  | Not_a_value (err, explanation) ->
+  | Non_value_object (err, explanation) ->
     Location.error_of_printer ~loc (fun ppf () ->
       fprintf ppf "Object types must have layout value.@ %a"
         (Jkind.Violation.report_with_name ~name:"the type of this expression")
         err;
       report_type_expected_explanation_opt explanation ppf)
+      ()
+  | Non_value_let_rec (err, ty) ->
+    Location.error_of_printer ~loc (fun ppf () ->
+      fprintf ppf "Variables bound in a \"let rec\" must have layout value.@ %a"
+        (Jkind.Violation.report_with_offender
+           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err)
       ()
   | Undefined_method (ty, me, valid_methods) ->
       Location.error_of_printer ~loc (fun ppf () ->
