@@ -16,7 +16,10 @@ open Mode
 open Jkind_types
 open Jkind_axis
 
-module Le_result = Misc_stdlib.Le_result
+module Misc = struct
+  include Misc
+  include Misc_stdlib
+end
 
 [@@@warning "+9"]
 
@@ -48,7 +51,7 @@ module Layout = struct
       | Any, Any -> true
       | (Any | Sort _), _ -> false
 
-    let sub (c1 : t) (c2 : t) : Le_result.t =
+    let sub (c1 : t) (c2 : t) : Misc.Le_result.t =
       match c1, c2 with
       | _ when equal c1 c2 -> Equal
       | _, Any -> Less
@@ -93,7 +96,7 @@ module Layout = struct
     | Any, Any -> true
     | (Any | Sort _), _ -> false
 
-  let sub t1 t2 : Le_result.t =
+  let sub t1 t2 : Misc.Le_result.t =
     match t1, t2 with
     | Any, Any -> Equal
     | _, Any -> Less
@@ -134,13 +137,13 @@ module Nullability = Jkind_axis.Nullability
 module Modes = struct
   include Alloc.Const
 
-  let less_or_equal a b : Le_result.t =
+  let less_or_equal a b : Misc.Le_result.t =
     match le a b, le b a with
     | true, true -> Equal
     | true, false -> Less
     | false, _ -> Not_le
 
-  let equal a b = Le_result.is_equal (less_or_equal a b)
+  let equal a b = Misc.Le_result.is_equal (less_or_equal a b)
 end
 
 module History = struct
@@ -1588,7 +1591,7 @@ module Violation = struct
     let mismatch_type =
       match t.violation with
       | Not_a_subjkind (k1, k2) ->
-        if Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
+        if Misc.Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
         then Mode
         else Layout
       | No_intersection _ -> Layout

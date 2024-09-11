@@ -889,9 +889,9 @@ let equal_variant_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Variant_unboxed, Variant_unboxed ->
       true
   | Variant_boxed cstrs_and_jkinds1, Variant_boxed cstrs_and_jkinds2 ->
-      Misc.Stdlib.Array.equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
+      array_equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
           equal_constructor_representation cstr1 cstr2
-          && Misc.Stdlib.Array.equal (!jkind_equal ~type_equal:eq_type) jkinds1 jkinds2)
+          && array_equal (!jkind_equal ~type_equal:eq_type) jkinds1 jkinds2)
         cstrs_and_jkinds1
         cstrs_and_jkinds2
   | Variant_extensible, Variant_extensible ->
@@ -909,7 +909,7 @@ let equal_record_representation r1 r2 = match r1, r2 with
       ignore (cr2 : constructor_representation);
       equal_tag tag1 tag2 && equal_variant_representation vr1 vr2
   | Record_boxed lays1, Record_boxed lays2 ->
-      Misc.Stdlib.Array.equal (!jkind_equal ~type_equal:eq_type) lays1 lays2
+      array_equal (!jkind_equal ~type_equal:eq_type) lays1 lays2
   | Record_float, Record_float ->
       true
   | Record_ufloat, Record_ufloat ->

@@ -12,6 +12,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+module Misc = Misc_stdlib
+
 module Externality = struct
   type t =
     | External
