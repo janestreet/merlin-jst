@@ -21,4 +21,10 @@ when performing a locate query.
   > end
   > let () = List.map ~invalid_arg:2
   > EOF
-  "Not in environment 'List.map'"
+  {
+    "file": "test.ml",
+    "pos": {
+      "line": 2,
+      "col": 6
+    }
+  }
