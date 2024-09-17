@@ -129,6 +129,9 @@ module Locate_context = struct
     | Patt
     | Type
     | Constant
+    | Constructor
+    | Label
+    | Unknown
 
   let to_string = function
     | Expr -> "expr"
@@ -137,6 +140,9 @@ module Locate_context = struct
     | Patt -> "pattern"
     | Type -> "type"
     | Constant -> "constant"
+    | Constructor -> "constructor"
+    | Label -> "label"
+    | Unknown -> "unknown"
 
   let of_string = function
     | "expr" -> Some Expr
@@ -145,6 +151,9 @@ module Locate_context = struct
     | "pattern" -> Some Patt
     | "type" -> Some Type
     | "constant" -> Some Constant
+    | "constructor" -> Some Constructor
+    | "label" -> Some Label
+    | "unknown" -> Some Unknown
     | _ -> None
 
   let all = [
@@ -154,6 +163,9 @@ module Locate_context = struct
     Patt;
     Type;
     Constant;
+    Constructor;
+    Label;
+    Unknown
   ]
 end
 

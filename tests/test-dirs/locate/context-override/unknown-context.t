@@ -1,5 +1,5 @@
   $ locate () {
-  >   res=$(cat | $MERLIN single locate -prefix "$1" -position "$2" -ignore-context true -filename test.ml)
+  >   res=$(cat | $MERLIN single locate -prefix "$1" -position "$2" -context unknown -filename test.ml)
   >   if [[ $(echo "$res" | jq .value | jq -r type) == "string" ]]; then
   >     echo "$res" | jq -r .value
   >   else

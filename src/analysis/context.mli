@@ -31,8 +31,10 @@ type t =
     (* We attach the constructor description here so in the case of
       disambiguated constructors we actually directly look for the type
       path (cf. #486, #794). *)
+  | Unknown_constructor
   | Expr
   | Label of Types.label_description (* Similar to constructors. *)
+  | Unknown_label
   | Module_path
   | Module_type
   | Patt
