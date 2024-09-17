@@ -8086,7 +8086,7 @@ and type_application env app_loc expected_mode position_and_mode
             type_omitted_parameters expected_mode env ty_ret mode_ret args
           in
           (try check_curried_application_complete ~env ~app_loc untyped_args
-          with Error _ as exn -> raise_error exn);
+          with exn -> raise_error exn);
           ty_ret, mode_ret, args, position_and_mode
         end ~post:(fun (ty_ret, _, _, _) -> generalize_structure ty_ret)
       in
