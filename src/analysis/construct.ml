@@ -326,7 +326,9 @@ module Gen = struct
             make_i n 0
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
-      fun env label ty modes : (Asttypes.arg_label * _ * _) ->
+      fun env label ty : (Asttypes.arg_label * _ * _) ->
+        (* We intentionally choose not to include the arg's mode in the constructed
+           value to be consistent with the decision to not include the arg's type *)
         let open Ast_helper in
         match label with
         (* Pun for labelled arguments *)
@@ -335,7 +337,7 @@ module Gen = struct
             Pat.constraint_
               (Pat.var (Location.mknoloc s))
               (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
-              modes,
+              [],
             s
         | Labelled s ->
             Labelled s, Pat.var (Location.mknoloc s), s
@@ -495,7 +497,7 @@ module Gen = struct
             | Type_abstract _ | Type_open -> []
           end
         | Tarrow ((label,_,_), tyleft, tyright, _) ->
-          let label, argument, name = make_arg env label tyleft [] in
+          let label, argument, name = make_arg env label tyleft in
           let param =
             { Parsetree.pparam_desc =
                 Pparam_val (label, None, argument);
