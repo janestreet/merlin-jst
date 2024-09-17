@@ -1,7 +1,7 @@
 Test that Merlin can recover from a function taking local arguments being under-applied
 when performing a locate query.
 
-  $ ocamlmerlin single locate -position 4:15 -filename test.ml << EOF | jq .value
+  $ $MERLIN single locate -position 4:15 -filename test.ml << EOF | jq .value
   > module List = struct
   >   let map : f:('a -> 'b) -> 'a list -> 'b list = failwith ""
   > end
@@ -15,7 +15,7 @@ when performing a locate query.
     }
   }
 
-  $ ocamlmerlin single locate -position 4:15 -filename test.ml << EOF | jq .value
+  $ $MERLIN single locate -position 4:15 -filename test.ml << EOF | jq .value
   > module List = struct
   >   let map : f:local_ ('a -> 'b) -> 'a list -> 'b list = failwith ""
   > end
