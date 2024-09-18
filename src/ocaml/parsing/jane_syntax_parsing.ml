@@ -331,16 +331,17 @@ end
 
 open Error
 
-let assert_extension_enabled (type a) ~loc (ext : a Language_extension.t)
+let assert_extension_enabled (type a) ~loc:_ (ext : a Language_extension.t)
     (setting : a) =
   if not (Language_extension.is_at_least ext setting)
   then
-    let maturity : Language_extension.maturity option =
+    let _maturity : Language_extension.maturity option =
       match ext with
       | Layouts -> Some (setting : Language_extension.maturity)
       | _ -> None
     in
-    raise (Error (loc, Disabled_extension { ext; maturity }))
+    ()
+    (* raise (Error (loc, Disabled_extension { ext; maturity })) *)
 
 let report_error ~loc = function
   | Introduction_has_payload (what, name, _payload) ->

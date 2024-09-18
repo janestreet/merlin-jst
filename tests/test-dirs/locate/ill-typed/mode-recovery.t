@@ -13,7 +13,13 @@ escape lock
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'x'",
+    "value": {
+      "file": "*buffer*",
+      "pos": {
+        "line": 2,
+        "col": 6
+      }
+    },
     "notifications": []
   }
 
@@ -27,7 +33,13 @@ share lock
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'f'",
+    "value": {
+      "file": "*buffer*",
+      "pos": {
+        "line": 2,
+        "col": 6
+      }
+    },
     "notifications": []
   }
 
@@ -45,7 +57,13 @@ closure lock
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'count'",
+    "value": {
+      "file": "*buffer*",
+      "pos": {
+        "line": 7,
+        "col": 13
+      }
+    },
     "notifications": []
   }
 
@@ -60,7 +78,13 @@ closure lock
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'g'",
+    "value": {
+      "file": "*buffer*",
+      "pos": {
+        "line": 2,
+        "col": 4
+      }
+    },
     "notifications": []
   }
 
@@ -72,7 +96,13 @@ exclave lock
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'x'",
+    "value": {
+      "file": "*buffer*",
+      "pos": {
+        "line": 2,
+        "col": 6
+      }
+    },
     "notifications": []
   }
 
@@ -87,6 +117,12 @@ unboxed lock
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'x'",
+    "value": {
+      "file": "*buffer*",
+      "pos": {
+        "line": 3,
+        "col": 6
+      }
+    },
     "notifications": []
   }

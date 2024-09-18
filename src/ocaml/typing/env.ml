@@ -3268,7 +3268,7 @@ let walk_locks ~errors ~loc ~env ~item ~lid mode ty locks =
   let vmode = { mode; context = None } in
   List.fold_left
     (fun vmode lock ->
-      match lock with
+      try match lock with
       | Region_lock -> region_mode vmode
       | Escape_lock escaping_context ->
           escape_mode ~errors ~env ~loc ~item ~lid vmode escaping_context
@@ -3281,6 +3281,9 @@ let walk_locks ~errors ~loc ~env ~item ~lid mode ty locks =
       | Unboxed_lock ->
           unboxed_type ~errors ~env ~loc ~lid ty;
           vmode
+      with exn ->
+        Msupport_base.raise_error exn;
+        vmode
     ) vmode locks
 
 let lookup_ident_value ~errors ~use ~loc name env =
