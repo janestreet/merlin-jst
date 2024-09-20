@@ -929,23 +929,6 @@ let merloc startpos ?endpos x =
 
   let string_of_FLOAT = function
     | (s, None) -> Printf.sprintf "FLOAT(%s)" s
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-%token GREATER                ">"
-%token GREATERRBRACE          ">}"
-%token GREATERRBRACKET        ">]"
-%token IF                     "if"
-%token IN                     "in"
-%token INCLUDE                "include"
-=======
-%token GREATER                ">"
-%token GREATERRBRACE          ">}"
-%token GREATERRBRACKET        ">]"
-%token HASHLPAREN             "#("
-%token IF                     "if"
-%token IN                     "in"
-%token INCLUDE                "include"
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
     | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
 
   let string_of_STRING = function
@@ -1030,6 +1013,7 @@ let merloc startpos ?endpos x =
 %token GREATER [@symbol ">"]
 %token GREATERRBRACE [@symbol ">}"]
 %token GREATERRBRACKET [@symbol ">]"]
+%token HASHLPAREN [@symbol "#("]
 %token IF [@symbol "if"]
 %token IN [@symbol "in"]
 %token INCLUDE [@symbol "include"]
@@ -1202,17 +1186,9 @@ The precedences must be listed from low to high.
 /* Finally, the first tokens of simple_expr are above everything else. */
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT HASH_FLOAT INT HASH_INT OBJECT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LBRACKETCOLON LIDENT LPAREN
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
           NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
-          LBRACKETPERCENT QUOTED_STRING_EXPR STACK
-          DOTLESS DOTTILDE GREATERDOT
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-          NEW PREFIXOP STRING TRUE UIDENT
-          LBRACKETPERCENT QUOTED_STRING_EXPR STACK
-=======
-          NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLPAREN
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+          DOTLESS DOTTILDE GREATERDOT
 
 
 /* Entry points */
@@ -3234,13 +3210,9 @@ comprehension_clause:
   | mod_longident DOT
     LPAREN MODULE ext_attributes module_expr COLON error
       { unclosed "(" $loc($3) ")" $loc($8) }
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
   *)
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-=======
   | HASHLPAREN labeled_tuple RPAREN
       { Pexp_unboxed_tuple $2 }
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 ;
 labeled_simple_expr:
     simple_expr %prec below_HASH

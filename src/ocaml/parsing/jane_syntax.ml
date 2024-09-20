@@ -484,7 +484,7 @@ module Jkind = struct
     | Some ("abbrev", [item], loc) ->
       bind (Const.of_structure_item item) (fun c -> ret loc (Abbreviation c))
     | Some ("product", items, loc) ->
-      bind (Misc.Stdlib.List.map_option of_structure_item items) (fun tls ->
+      bind (Misc_stdlib.List.map_option of_structure_item items) (fun tls ->
           ret loc (Product (List.map (fun tl -> tl.txt) tls)))
     | Some _ | None -> None
 end

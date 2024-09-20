@@ -48,7 +48,7 @@ let expr_tail_positions = function
     end
   | Texp_instvar _ | Texp_setinstvar _ | Texp_override _ | Texp_assert _
   | Texp_lazy _ | Texp_object _ | Texp_pack _
-  | Texp_function _ | Texp_apply _ | Texp_tuple _
+  | Texp_function _ | Texp_apply _ | Texp_tuple _ | Texp_unboxed_tuple _
   | Texp_ident _ | Texp_constant _
   | Texp_construct _ | Texp_variant _ | Texp_record _
   | Texp_field _ | Texp_setfield _ | Texp_array _

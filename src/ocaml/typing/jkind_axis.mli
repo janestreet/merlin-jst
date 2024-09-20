@@ -22,7 +22,7 @@ module type Axis_s = sig
 
   val equal : t -> t -> bool
 
-  val less_or_equal : t -> t -> Misc.Le_result.t
+  val less_or_equal : t -> t -> Misc_stdlib.Le_result.t
 
   val le : t -> t -> bool
 
@@ -88,7 +88,7 @@ end
 
 (** A collection with one item for each jkind axis.
     [T] parametizes what element is being held for each axis. *)
-module Axis_collection (T : Misc.T1) : sig
+module Axis_collection (T : Misc_stdlib.T1) : sig
   type t =
     { locality : Mode.Locality.Const.t T.t;
       linearity : Mode.Linearity.Const.t T.t;

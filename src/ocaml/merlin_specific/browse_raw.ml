@@ -323,6 +323,8 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps ->
     list_fold (fun (_lbl, p) -> of_pattern p) ps
+  | Tpat_unboxed_tuple ps ->
+      list_fold (fun (_lbl, p, _sort) -> of_pattern p) ps
   | Tpat_construct (_,_,ps,None) | Tpat_array (_,_,ps) ->
     list_fold of_pattern ps
   | Tpat_construct (_,_,ps,Some (_, ct)) ->
@@ -361,6 +363,8 @@ let rec of_expression_desc loc = function
     list_fold of_case cs
   | Texp_tuple (es,_) ->
     list_fold (fun (_lbl, e) -> of_expression e) es
+  | Texp_unboxed_tuple es ->
+      list_fold (fun (_lbl, e, _sort) -> of_expression e) es
   | Texp_construct (_,_,es,_) | Texp_array (_,_,es,_) ->
     list_fold of_expression es
   | Texp_variant (_,Some (e,_))
@@ -569,7 +573,7 @@ and of_signature_item_desc = function
     list_fold (fun md -> app (Module_declaration md)) mds
   | Tsig_modtype mtd ->
     app (Module_type_declaration mtd)
-  | Tsig_include i ->
+  | Tsig_include (i, _modality) ->
     app (Include_description i)
   | Tsig_class cds ->
     list_fold (fun cd -> app (Class_description cd)) cds
@@ -592,6 +596,8 @@ and of_core_type_desc = function
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts ->
     list_fold (fun (_, ty) -> of_core_type ty) cts
+  | Ttyp_unboxed_tuple cts ->
+      list_fold (fun (_, ty) -> of_core_type ty) cts
   | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
     list_fold of_core_type cts
   | Ttyp_object (cts,_) ->

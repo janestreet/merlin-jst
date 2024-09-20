@@ -1279,33 +1279,12 @@ let out_jkind_option_of_jkind jkind =
       (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
       || (not Language_extension.(is_at_least Layouts Alpha)
           && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-    in
-    begin match is_value with
-    | true -> None
-    | false -> Some (out_jkind_of_const_jkind jkind)
-    end
-  | Var v -> (* This handles (X1). *)
-    if false (* !Clflags.verbose_types *)
-    then Some (Ojkind_var (Jkind.Sort.Var.name v))
-    else None
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-    in
-    begin match is_value with
-    | true -> None
-    | false -> Some (out_jkind_of_const_jkind jkind)
-    end
-  | Var v -> (* This handles (X1). *)
-    if !Clflags.verbose_types
-    then Some (Ojkind_var (Jkind.Sort.Var.name v))
-    else None
-=======
     | Var _ -> (* X1 *)
-      not !Clflags.verbose_types
+        (* not !Clflags.verbose_types *)
+        true
     | Product _ -> false
   in
   if elide then None else Some (desc_to_out_jkind desc)
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 
 let alias_nongen_row mode px ty =
     match get_desc ty with
@@ -1399,21 +1378,9 @@ let rec tree_of_typexp mode alloc_mode ty =
         Btype.backtrack snap;
         Otyp_arrow (lab, tree_of_modes arg_mode, t1, rm, t2)
     | Ttuple labeled_tyl ->
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
-    | Tconstr(p, tyl, _abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
-=======
-        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
-    | Tunboxed_tuple labeled_tyl ->
-        Otyp_unboxed_tuple (tree_of_labeled_typlist mode labeled_tyl)
-    | Tconstr(p, tyl, _abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
       Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
+    | Tunboxed_tuple labeled_tyl ->
+      Otyp_unboxed_tuple (tree_of_labeled_typlist mode labeled_tyl)
     | Tconstr(p, tyl, _abbrev) -> begin
         match best_type_path p with
         | Nth n -> tree_of_typexp mode Alloc.Const.legacy (apply_nth n tyl)

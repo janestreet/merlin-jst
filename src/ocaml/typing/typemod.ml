@@ -3786,18 +3786,8 @@ let type_implementation target modulename initial_env ast =
                      { new_arg_type = arg_type; old_source_file = source_intf;
                        old_arg_type = arg_type_from_cmi });
           let coercion, shape =
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
             Includemod.compunit initial_env ~mark:Mark_positive
-              sourcefile sg source_intf dclsig shape
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-            Profile.record_call "check_sig" (fun () ->
-              Includemod.compunit initial_env ~mark:Mark_positive
-                sourcefile sg source_intf dclsig shape)
-=======
-            Profile.record_call "check_sig" (fun () ->
-              Includemod.compunit initial_env ~mark:Mark_positive
-                sourcefile sg compiled_intf_file_name dclsig shape)
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+              sourcefile sg compiled_intf_file_name dclsig shape
           in
           (* Check the _mli_ against the argument type, since the mli determines
              the visible type of the module and that's what needs to conform to

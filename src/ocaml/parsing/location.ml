@@ -632,10 +632,7 @@ let lines_around
   List.rev !lines
 *)
 
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
 (*
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-=======
 (* Get lines from a file *)
 let lines_around_from_file
     ~(start_pos: position) ~(end_pos: position)
@@ -654,7 +651,6 @@ let lines_around_from_file
     lines
   with Sys_error _ -> []
 
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 (* Attempt to get lines from the lexing buffer. *)
 let lines_around_from_lexbuf
     ~(start_pos: position) ~(end_pos: position)
@@ -708,14 +704,6 @@ let lines_around_from_current_input ~start_pos ~end_pos =
       lines_around_from_phrasebuf pb ~start_pos ~end_pos
   | Some lb, _, _ ->
       lines_around_from_lexbuf lb ~start_pos ~end_pos
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-  | None, _, _ ->
-      []
-*)
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-  | None, _, _ ->
-      []
-=======
   | None, _, filename ->
       (* A situation where we have no input buffer and no phrase buffer
          is when the compiler is getting the binary AST directly as input. *)
@@ -728,7 +716,7 @@ let lines_around_from_current_input ~start_pos ~end_pos =
       if file_valid
       then lines_around_from_file filename ~start_pos ~end_pos
       else []
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+*)
 
 (******************************************************************************)
 (* Reporting errors and warnings *)

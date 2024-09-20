@@ -349,7 +349,7 @@ let print_out_jkind_const ppf ojkind =
         modes
     | Ojkind_const_product ts ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     | Ojkind_const_with _ | Ojkind_const_kind_of _ ->
       failwith "XXX unimplemented jkind syntax"
   in
@@ -362,7 +362,7 @@ let print_out_jkind ppf ojkind =
     | Ojkind_const jkind -> print_out_jkind_const ppf jkind
     | Ojkind_product ts ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
   in
   pp_element ~nested:false ppf ojkind
 

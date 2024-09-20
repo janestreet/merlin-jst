@@ -12,19 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-  | Non_value_sort_unknown_ty of Jkind.Sort.t
-  | Small_number_sort_without_extension of Jkind.Sort.t * type_expr option
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.const
-=======
-  | Non_value_sort_unknown_ty of Jkind.Sort.t
-  | Small_number_sort_without_extension of Jkind.Sort.t * type_expr option
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.Const.t
-  | Unsupported_product_in_structure of Jkind.Sort.Const.t
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 
 (* Auxiliaries for type-based optimizations, e.g. array kinds *)
 
@@ -167,34 +154,17 @@ let classify env ty sort : classification =
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ | Tunboxed_tuple _ ->
       assert false
   end
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-  | Float64 -> Unboxed_float Pfloat64
-  | Float32 -> Unboxed_float Pfloat32
-  | Bits32 -> Unboxed_int Pint32
-  | Bits64 -> Unboxed_int Pint64
-  | Word -> Unboxed_int Pnativeint
-  | Void ->
-    (* raise (Error (loc, Unsupported_sort Void)) *)
-    Misc.fatal_error "merlin-jst: void encountered in classify"
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-  | Float64 -> Unboxed_float Pfloat64
-  | Float32 -> Unboxed_float Pfloat32
-  | Bits32 -> Unboxed_int Pint32
-  | Bits64 -> Unboxed_int Pint64
-  | Word -> Unboxed_int Pnativeint
-  | Void ->
-    raise (Error (loc, Unsupported_sort Void))
-=======
   | Base Float64 -> Unboxed_float Pfloat64
   | Base Float32 -> Unboxed_float Pfloat32
   | Base Bits32 -> Unboxed_int Pint32
   | Base Bits64 -> Unboxed_int Pint64
   | Base Word -> Unboxed_int Pnativeint
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product _ as c ->
-    raise (Error (loc, Unsupported_product_in_structure c))
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+  | Base Void (* as c *) ->
+    (* raise (Error (loc, Unsupported_sort c)) *)
+    Misc.fatal_error "merlin-jst: void encountered in classify"
+  | Product _ (* as c *) ->
+    (* raise (Error (loc, Unsupported_product_in_structure c)) *)
+    Misc.fatal_error "merlin-jst: product encountered in classify"
 
 let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
@@ -527,7 +497,7 @@ and value_kind_variant env ~loc ~visited ~depth ~num_nodes_visited
     let for_one_mixed_constructor fields ~value_prefix_len ~flat_suffix
         ~field_to_type ~depth ~num_nodes_visited =
       let value_prefix, _ =
-        Misc.Stdlib.List.split_at value_prefix_len fields
+        Misc_stdlib.List.split_at value_prefix_len fields
       in
       assert (List.length value_prefix = value_prefix_len);
       let num_nodes_visited, value_prefix =
@@ -684,7 +654,7 @@ and value_kind_record env ~loc ~visited ~depth ~num_nodes_visited
                 shape
               in
               let labels_value_prefix, _ =
-                Misc.Stdlib.List.split_at value_prefix_len labels
+                Misc_stdlib.List.split_at value_prefix_len labels
               in
               assert (List.length labels_value_prefix = value_prefix_len);
               let num_nodes_visited, value_prefix =
@@ -860,25 +830,7 @@ let classify_lazy_argument : Typedtree.expression ->
 (*
 let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   if Lambda.equal_value_kind k1 k2 then k1
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
   else Pgenval
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-        (Jkind.Violation.report_with_offender
-           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet." Jkind.Sort.Const.format const
-=======
-        (Jkind.Violation.report_with_offender
-           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_structure const ->
-      fprintf ppf
-        "Product layout %a detected in structure in [Typeopt.Layout] \
-         Please report this error to the Jane Street compilers team."
-        Jkind.Sort.Const.format const
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 
 let rec layout_union l1 l2 =
   match l1, l2 with

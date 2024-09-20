@@ -298,6 +298,7 @@ let deep_copy () =
         | Tvariant _ as desc -> (* fixme *) desc
         | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
         | Ttuple tl -> Ttuple (List.map (fun (l, t) -> l, copy t) tl)
+        | Tunboxed_tuple tl -> Tunboxed_tuple (List.map (fun (l, t) -> l, copy t) tl)
         | Tconstr (p, tl, _) -> Tconstr (p, List.map copy tl, ref Mnil)
         | Tobject (t1, r) ->
           let r = match !r with

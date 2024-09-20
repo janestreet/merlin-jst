@@ -17,18 +17,7 @@
 
 (** The kind of recursive bindings, as computed by
     [Value_rec_check.classify_expression] *)
-    type recursive_binding_kind =
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-    | Static
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-| Static
-  (** Bindings for which some kind of pre-allocation scheme is possible.
-      The expression is allowed to be recursive, as long as its definition does
-      not inspect recursively defined values. *)
-| Dynamic
-  (** Bindings for which pre-allocation is not possible.
-      The expression is not allowed to refer to any recursive variable. *)
-=======
+type recursive_binding_kind =
 | Static
   (** Bindings for which some kind of pre-allocation scheme is possible.
       The expression is allowed to be recursive, as long as its definition does
@@ -37,10 +26,3 @@
 | Dynamic
   (** Bindings for which pre-allocation is not possible.
       The expression is not allowed to refer to any recursive variable. *)
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
-      (** Bindings for which some kind of pre-allocation scheme is possible.
-          The expression is allowed to be recursive, as long as its definition does
-          not inspect recursively defined values. *)
-    | Dynamic
-      (** Bindings for which pre-allocation is not possible.
-          The expression is not allowed to refer to any recursive variable. *)

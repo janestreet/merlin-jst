@@ -1216,13 +1216,7 @@ let loc_of_decl ~uid =
       ~f:(fun (_, name, _, uid') -> if uid = uid' then Some name else None)
       bound_idents in
     (match name with
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
     | Some name -> name
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-    | None -> 
-=======
-    | None ->
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
     | None ->
       (* The find_map will only fail if a bad uid was given. In that case, just
          use the location of the pattern on the left of the binding. *)

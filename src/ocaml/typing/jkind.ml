@@ -53,19 +53,13 @@ module Layout = struct
       | Product cs1, Product cs2 -> List.equal equal cs1 cs2
       | (Base _ | Any | Product _), _ -> false
 
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-    let sub (c1 : t) (c2 : t) : Le_result.t =
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-    let sub (c1 : t) (c2 : t) : Misc.Le_result.t =
-=======
-    let rec sub (c1 : t) (c2 : t) : Misc.Le_result.t =
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+    let rec sub (c1 : t) (c2 : t) : Le_result.t =
       match c1, c2 with
       | _ when equal c1 c2 -> Equal
       | _, Any -> Less
       | Product consts1, Product consts2 ->
         if List.compare_lengths consts1 consts2 = 0
-        then Misc.Le_result.combine_list (List.map2 sub consts1 consts2)
+        then Misc_stdlib.Le_result.combine_list (List.map2 sub consts1 consts2)
         else Not_le
       | (Any | Base _ | Product _), _ -> Not_le
 
@@ -102,7 +96,7 @@ module Layout = struct
       | Product ts ->
         Option.map
           (fun x -> Sort.Const.Product x)
-          (Misc.Stdlib.List.map_option get_sort ts)
+          (Misc_stdlib.List.map_option get_sort ts)
 
     let rec of_sort s =
       match Sort.get s with
@@ -111,7 +105,7 @@ module Layout = struct
       | Product sorts ->
         Option.map
           (fun x -> Product x)
-          (Misc.Stdlib.List.map_option of_sort sorts)
+          (Misc_stdlib.List.map_option of_sort sorts)
 
     let to_string t =
       let rec to_string nested (t : t) =
@@ -163,7 +157,7 @@ module Layout = struct
   and to_product_sort ts =
     Option.map
       (fun x -> Sort.Product x)
-      (Misc.Stdlib.List.map_option to_sort ts)
+      (Misc_stdlib.List.map_option to_sort ts)
 
   let sort_equal_result ~allow_mutation result =
     match (result : Sort.equate_result) with
@@ -190,13 +184,7 @@ module Layout = struct
     | Any, Any -> true
     | (Any | Sort _ | Product _), _ -> false
 
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-  let sub t1 t2 : Le_result.t =
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-  let sub t1 t2 : Misc.Le_result.t =
-=======
-  let rec sub t1 t2 : Misc.Le_result.t =
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+  let rec sub t1 t2 : Le_result.t =
     match t1, t2 with
     | Any, Any -> Equal
     | _, Any -> Less
@@ -204,7 +192,7 @@ module Layout = struct
     | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
     | Product ts1, Product ts2 ->
       if List.compare_lengths ts1 ts2 = 0
-      then Misc.Le_result.combine_list (List.map2 sub ts1 ts2)
+      then Misc_stdlib.Le_result.combine_list (List.map2 sub ts1 ts2)
       else Not_le
     | Product ts1, Sort s2 -> (
       match to_product_sort ts1 with
@@ -226,7 +214,7 @@ module Layout = struct
         let components = List.map2 intersection ts1 ts2 in
         Option.map
           (fun x -> Product x)
-          (Misc.Stdlib.List.some_if_all_elements_are_some components)
+          (Misc_stdlib.List.some_if_all_elements_are_some components)
       else None
     | (Product ts as t), Sort sort | Sort sort, (Product ts as t) -> (
       match to_product_sort ts with
@@ -249,7 +237,7 @@ module Layout = struct
       | Sort s -> Sort.format ppf s
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf " & " in
-        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf layout
 end
@@ -820,30 +808,22 @@ module Desc = struct
       | Var v -> fprintf ppf "%s" (Sort.Var.name v)
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf "@ & " in
-        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf
 
   (* considers sort variables < Any. Two sort variables are in a [sub]
      relationship only when they are equal.
      Never does mutation.
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
      Pre-condition: no filled-in sort variables. *)
-  let sub d1 d2 : Le_result.t =
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-     Pre-condition: no filled-in sort variables. *)
-  let sub d1 d2 : Misc.Le_result.t =
-=======
-     Pre-condition: no filled-in sort variables. product must contain a var. *)
-  let rec sub d1 d2 : Misc.Le_result.t =
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+  let rec sub d1 d2 : Le_result.t =
     match d1, d2 with
     | Const c1, Const c2 -> Const.sub c1 c2
     | Var _, Const c when Const.equal Const.max c -> Less
     | Var v1, Var v2 -> if v1 == v2 then Equal else Not_le
     | Product ds1, Product ds2 ->
       if List.compare_lengths ds1 ds2 = 0
-      then Misc.Le_result.combine_list (List.map2 sub ds1 ds2)
+      then Misc_stdlib.Le_result.combine_list (List.map2 sub ds1 ds2)
       else Not_le
     | Const _, Product _ | Product _, Const _ | Const _, Var _ | Var _, Const _
       ->
@@ -1276,7 +1256,7 @@ let get_layout jk : Layout.Const.t option =
     | Product layouts ->
       Option.map
         (fun x -> Layout.Const.Product x)
-        (Misc.Stdlib.List.map_option aux layouts)
+        (Misc_stdlib.List.map_option aux layouts)
   in
   aux jk.jkind.layout
 
@@ -1297,7 +1277,7 @@ let format ppf jkind =
     | Var v -> Format.fprintf ppf "%s" (Sort.Var.name v)
     | Product p ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf p
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf p
   in
   pp_element ~nested:false ppf (get jkind)
 
@@ -1853,7 +1833,7 @@ let is_nary_product n t =
   let bound =
     { Jkind_desc.max with layout = Jkind_types.Layout.Product components }
   in
-  if Misc.Le_result.is_le (Jkind_desc.sub t.jkind bound)
+  if Misc_stdlib.Le_result.is_le (Jkind_desc.sub t.jkind bound)
   then
     (* CR layouts v7.1: The histories here are wrong (we are giving each
        component the history of the whole product).  They don't show up in
@@ -1891,12 +1871,8 @@ module Debug_printers = struct
     | Statement -> fprintf ppf "Statement"
     | Optional_arg_default -> fprintf ppf "Optional_arg_default"
     | Layout_poly_in_external -> fprintf ppf "Layout_poly_in_external"
-<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
-    | Merlin -> fprintf ppf "Merlin"
-||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
-=======
     | Unboxed_tuple_element -> fprintf ppf "Unboxed_tuple_element"
->>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
+    | Merlin -> fprintf ppf "Merlin"
 
   let concrete_legacy_creation_reason ppf :
       History.concrete_legacy_creation_reason -> unit = function
