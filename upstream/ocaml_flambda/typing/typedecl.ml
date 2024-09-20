@@ -2757,14 +2757,6 @@ let type_sort_external ~is_layout_poly ~why env loc typ =
     in
     raise(Error (loc, Jkind_sort {kloc; typ; err}))
 
-<<<<<<< HEAD
-||||||| da20446810
-type sort_or_poly = Sort of Jkind.Sort.const | Poly
-
-=======
-type sort_or_poly = Sort of Jkind.Sort.Const.t | Poly
-
->>>>>>> main
 let make_native_repr env core_type ty ~global_repr ~is_layout_poly ~why =
   error_if_has_deep_native_repr_attributes core_type;
   let sort_or_poly =

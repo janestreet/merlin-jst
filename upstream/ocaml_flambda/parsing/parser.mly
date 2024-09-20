@@ -4616,7 +4616,6 @@ atomic_type:
     | tys = actual_type_parameters
       HASH
       cid = mkrhs(clty_longident)
-<<<<<<< HEAD
         { Ptyp_class (cid, tys) }
     | mod_ident = mkrhs(mod_ext_longident)
       DOT
@@ -4626,47 +4625,6 @@ atomic_type:
         { Ptyp_var ident }
     | UNDERSCORE
         { Ptyp_any }
-||||||| da20446810
-        { Ptyp_class(cid, tys) }
-    | LBRACKET tag_field RBRACKET
-        (* not row_field; see CONFLICTS *)
-        { Ptyp_variant([$2], Closed, None) }
-    | LBRACKET BAR row_field_list RBRACKET
-        { Ptyp_variant($3, Closed, None) }
-    | LBRACKET row_field BAR row_field_list RBRACKET
-        { Ptyp_variant($2 :: $4, Closed, None) }
-    | LBRACKETGREATER BAR? row_field_list RBRACKET
-        { Ptyp_variant($3, Open, None) }
-    | LBRACKETGREATER RBRACKET
-        { Ptyp_variant([], Open, None) }
-    | LBRACKETLESS BAR? row_field_list RBRACKET
-        { Ptyp_variant($3, Closed, Some []) }
-    | LBRACKETLESS BAR? row_field_list GREATER name_tag_list RBRACKET
-        { Ptyp_variant($3, Closed, Some $5) }
-    | extension
-        { Ptyp_extension $1 }
-=======
-        { Ptyp_class(cid, tys) }
-    | LBRACKET tag_field RBRACKET
-        (* not row_field; see CONFLICTS *)
-        { Ptyp_variant([$2], Closed, None) }
-    | LBRACKET BAR row_field_list RBRACKET
-        { Ptyp_variant($3, Closed, None) }
-    | LBRACKET row_field BAR row_field_list RBRACKET
-        { Ptyp_variant($2 :: $4, Closed, None) }
-    | LBRACKETGREATER BAR? row_field_list RBRACKET
-        { Ptyp_variant($3, Open, None) }
-    | LBRACKETGREATER RBRACKET
-        { Ptyp_variant([], Open, None) }
-    | LBRACKETLESS BAR? row_field_list RBRACKET
-        { Ptyp_variant($3, Closed, Some []) }
-    | LBRACKETLESS BAR? row_field_list GREATER name_tag_list RBRACKET
-        { Ptyp_variant($3, Closed, Some $5) }
-    | HASHLPAREN unboxed_tuple_type_body RPAREN
-        { Ptyp_unboxed_tuple $2 }
-    | extension
-        { Ptyp_extension $1 }
->>>>>>> main
   )
   { $1 } /* end mktyp group */
   | LPAREN QUOTE name=ident COLON jkind=jkind_annotation RPAREN
