@@ -280,7 +280,7 @@ let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
      let mk = if ghost then ghexp_with_modes else mkexp_with_modes in
      mk ~loc ~exp:e ~cty:(Some t) ~modes
   | Pcoerce(t1, t2)  ->
-     let mk = if ghost then ghexp ?attrs:None else mkexp ?attrs:None in
+     let mk = if ghost then ghexp else mkexp in
      mk ~loc (Pexp_coerce(e, t1, t2))
 
 let mkexp_opt_type_constraint ~loc ~modes e = function
