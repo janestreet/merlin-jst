@@ -497,7 +497,7 @@ and value_kind_variant env ~loc ~visited ~depth ~num_nodes_visited
     let for_one_mixed_constructor fields ~value_prefix_len ~flat_suffix
         ~field_to_type ~depth ~num_nodes_visited =
       let value_prefix, _ =
-        Misc_stdlib.List.split_at value_prefix_len fields
+        Misc.Stdlib.List.split_at value_prefix_len fields
       in
       assert (List.length value_prefix = value_prefix_len);
       let num_nodes_visited, value_prefix =
@@ -654,7 +654,7 @@ and value_kind_record env ~loc ~visited ~depth ~num_nodes_visited
                 shape
               in
               let labels_value_prefix, _ =
-                Misc_stdlib.List.split_at value_prefix_len labels
+                Misc.Stdlib.List.split_at value_prefix_len labels
               in
               assert (List.length labels_value_prefix = value_prefix_len);
               let num_nodes_visited, value_prefix =
