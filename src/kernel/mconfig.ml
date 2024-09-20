@@ -579,6 +579,8 @@ let ocaml_ignored_flags = [
   "-no-vectorize";
   "-dvectorize";
   "-dump-into-csv";
+  "-cfg-selection";
+  "-no-cfg-selection";
 ]
 
 let ocaml_ignored_parametrized_flags = [
