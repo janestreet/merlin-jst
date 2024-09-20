@@ -303,3 +303,10 @@ type tracing_probe =
 *)
 val get_tracing_probe_payload :
   Parsetree.payload -> (tracing_probe, unit) result
+
+(* Merlin specific *)
+
+(** The name of the attribute used to identify punned let expressions. When a let
+    expression is punned, an attribute with this name is added to the pattern and
+    expression nodes by the parser. *)
+val merlin_let_punned : string

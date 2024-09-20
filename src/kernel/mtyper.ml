@@ -283,7 +283,7 @@ let get_index t = t.index
 
 let get_stamp t = t.stamp
 
-let node_at ?(skip_recovered=false) t pos_cursor =
+let node_at ?(skip_recovered=false) ?let_pun_behavior t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   log ~title:"node_at" "Node: %s" (Mbrowse.print () node);
   let rec select = function
@@ -293,7 +293,7 @@ let node_at ?(skip_recovered=false) t pos_cursor =
       when Mbrowse.is_recovered node' -> select ancestors
     | l -> l
   in
-  match Mbrowse.deepest_before pos_cursor [node] with
+  match Mbrowse.deepest_before ?let_pun_behavior pos_cursor [node] with
   | [] -> [get_env t, Browse_raw.Dummy]
   | path when skip_recovered -> select path
   | path ->
