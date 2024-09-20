@@ -14,8 +14,7 @@ Test Merlin's behavior in the presense of let-punning
 
   $ highlight_line_colon_col_from_file () {
   >   line_col=$1
-  >   IFS=: read line col <<(echo "$line_col")
-  >   highlight_char_range_from_file "$line" "$col" "$((col + 1))"
+  >   echo "$line_col" | (IFS=: read line col; highlight_char_range_from_file "$line" "$col" "$((col + 1))")
   > }
 
   $ type_enclosing () {
