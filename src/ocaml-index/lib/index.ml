@@ -41,12 +41,16 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
   Shape.Uid.Tbl.fold add_loc fragments map
 
 module Reduce_conf (Loaded_shapes : sig
-  val shapes : (string, Shape.t) Hashtbl.t
+  val shapes : (Compilation_unit.t, Shape.t) Hashtbl.t
 end) = struct
   let fuel = 10
 
   let try_load ~unit_name () =
-    match Hashtbl.find_opt Loaded_shapes.shapes unit_name with
+    match
+      Hashtbl.find_opt
+        Loaded_shapes.shapes
+        (Compilation_unit.of_string unit_name)
+    with
     | Some shape ->
       Log.debug "Used loaded shape for %s" unit_name;
       Some shape

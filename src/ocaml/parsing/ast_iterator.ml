@@ -958,7 +958,6 @@ let default_iterator =
         | With (t, ty) ->
           this.jkind_annotation this t;
           this.typ this ty
-<<<<<<< HEAD
         | Kind_of ty -> this.typ this ty
         | Product ts -> List.iter (this.jkind_annotation this) ts);
 
@@ -979,10 +978,4 @@ let default_iterator =
          | Ptop_def s -> this.structure this s
          | Ptop_dir d -> this.toplevel_directive this d
       );
-||||||| da20446810
-        | Kind_of ty -> this.typ this ty);
-=======
-        | Kind_of ty -> this.typ this ty
-        | Product ts -> List.iter (this.jkind_annotation this) ts);
->>>>>>> main
   }

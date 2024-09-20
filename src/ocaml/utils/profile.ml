@@ -147,21 +147,6 @@ let record ?accumulate pass f x = record_call ?accumulate pass (fun () -> f x)
 let record_with_counters ?accumulate ~counter_f pass f x =
   record_call_internal ?accumulate ~counter_f pass (fun () -> f x)
 
-<<<<<<< HEAD
-let file_prefix = "file="
-
-(*
-let annotate_file_name name =
-  let file_path =
-    match !Clflags.directory with
-    | Some directory -> Filename.concat directory name
-    | None -> name
-  in
-  file_prefix ^ file_path
-*)
-
-||||||| da20446810
-=======
 let file_prefix = "file="
 
 (* [annotate_file_name] is imported from the compiler and unused in merlin.
@@ -177,7 +162,6 @@ let annotate_file_name name =
   file_prefix ^ file_path
 *)
 
->>>>>>> main
 type display = {
   to_string : max:float -> width:int -> string;
   worth_displaying : max:float -> bool;

@@ -451,6 +451,12 @@ let signature sub {sig_items; sig_final_env; _} =
   sub.env sub sig_final_env;
   List.iter (sub.signature_item sub) sig_items
 
+let sig_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
+  sub.location sub incl_loc;
+  sub.attributes sub incl_attributes;
+  sub.module_type sub incl_mod;
+  include_kind sub incl_kind
+
 let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   sub.location sub sig_loc;
   sub.env sub sig_env;
@@ -465,13 +471,7 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_recmodule list -> List.iter (sub.module_declaration sub) list
   | Tsig_modtype x -> sub.module_type_declaration sub x
   | Tsig_modtypesubst x -> sub.module_type_declaration sub x
-<<<<<<< HEAD
-  | Tsig_include (incl, _) -> sub.include_description sub incl
-||||||| da20446810
-  | Tsig_include incl -> sig_include_infos sub incl
-=======
   | Tsig_include (incl, _) -> sig_include_infos sub incl
->>>>>>> main
   | Tsig_class list -> List.iter (sub.class_description sub) list
   | Tsig_class_type list -> List.iter (sub.class_type_declaration sub) list
   | Tsig_open od -> sub.open_description sub od

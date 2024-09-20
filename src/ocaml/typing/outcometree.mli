@@ -57,14 +57,8 @@ type out_value =
   | Oval_tuple of (string option * out_value) list
   | Oval_unboxed_tuple of (string option * out_value) list
   | Oval_variant of string * out_value option
-<<<<<<< HEAD
   | Oval_lazy of out_value
-||||||| da20446810
 
-
-=======
-
->>>>>>> main
 type out_modality_legacy = Ogf_global
 
 type out_modality_new = string
@@ -120,24 +114,7 @@ type out_jkind_const =
 and out_jkind =
   | Ojkind_const of out_jkind_const
   | Ojkind_var of string
-<<<<<<< HEAD
   | Ojkind_product of out_jkind list
-||||||| da20446810
-
-and out_type_param =
-  { oparam_name : string;
-    oparam_variance : Asttypes.variance;
-    oparam_injectivity : Asttypes.injectivity;
-    oparam_jkind : out_jkind option }
-=======
-  | Ojkind_product of out_jkind list
-
-and out_type_param =
-  { oparam_name : string;
-    oparam_variance : Asttypes.variance;
-    oparam_injectivity : Asttypes.injectivity;
-    oparam_jkind : out_jkind option }
->>>>>>> main
 
 (* should be empty if all the jkind annotations are missing *)
 and out_vars_jkinds = (string * out_jkind option) list

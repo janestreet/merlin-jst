@@ -262,17 +262,9 @@ let iter_on_occurrences
       | Ttyp_open (path, lid, _ct) ->
           f ~namespace:Module ctyp_env path lid
       | Ttyp_var _ | Ttyp_arrow _ | Ttyp_tuple _ | Ttyp_object _
-<<<<<<< HEAD
-      | Ttyp_unboxed_tuple _
-      | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _ | Ttyp_call_pos -> ());
-||||||| da20446810
-      | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _
-      | Ttyp_call_pos -> ());
-=======
       | Ttyp_unboxed_tuple _
       | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _
       | Ttyp_call_pos -> ());
->>>>>>> main
       default_iterator.typ sub ct);
 
   pat =

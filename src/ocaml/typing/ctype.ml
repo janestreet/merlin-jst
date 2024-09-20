@@ -3736,17 +3736,9 @@ and unify3 uenv t1 t1' t2 t2' =
           | true, true -> ()
           end
       | (Ttuple labeled_tl1, Ttuple labeled_tl2) ->
-<<<<<<< HEAD
           unify_labeled_list uenv labeled_tl1 labeled_tl2
       | (Tunboxed_tuple labeled_tl1, Tunboxed_tuple labeled_tl2) ->
           unify_labeled_list uenv labeled_tl1 labeled_tl2
-||||||| da20446810
-          unify_labeled_list env labeled_tl1 labeled_tl2
-=======
-          unify_labeled_list env labeled_tl1 labeled_tl2
-      | (Tunboxed_tuple labeled_tl1, Tunboxed_tuple labeled_tl2) ->
-          unify_labeled_list env labeled_tl1 labeled_tl2
->>>>>>> main
       | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _)) when Path.same p1 p2 ->
           if not (can_generate_equations uenv) then
             unify_list uenv tl1 tl2

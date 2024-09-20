@@ -136,20 +136,12 @@ let dump_merlin x =
     "stdlib"       , Json.option Json.string x.stdlib;
     "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
-<<<<<<< HEAD
-    "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
-||||||| da20446810
-    "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
-    "source_root"  , Json.option Json.string x.source_root;
-=======
     "unit_name_for", (let alist =
                         x.unit_name_for
                         |> String.Map.map ~f:Json.string
                         |> String.Map.to_list
                       in `Assoc alist);
     "wrapping_prefix", Json.option Json.string x.wrapping_prefix;
-    "source_root"  , Json.option Json.string x.source_root;
->>>>>>> main
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -283,7 +275,7 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
     unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
     unit_name_for =
-      String.Map.merge ~f:(fun _ dot merlin -> 
+      String.Map.merge ~f:(fun _ dot merlin ->
                             match dot, merlin with
                             | Some dot, _ -> Some dot
                             | None, Some merlin -> Some merlin

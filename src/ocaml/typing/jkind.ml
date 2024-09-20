@@ -190,21 +190,6 @@ module Layout = struct
     | _, Any -> Less
     | Any, _ -> Not_le
     | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
-<<<<<<< HEAD
-    | Product ts1, Product ts2 ->
-      if List.compare_lengths ts1 ts2 = 0
-      then Misc_stdlib.Le_result.combine_list (List.map2 sub ts1 ts2)
-      else Not_le
-    | Product ts1, Sort s2 -> (
-      match to_product_sort ts1 with
-      | None -> Not_le
-      | Some s1 -> if Sort.equate s1 s2 then Equal else Not_le)
-    | Sort s1, Product ts2 -> (
-      match to_product_sort ts2 with
-      | None -> Not_le
-      | Some s2 -> if Sort.equate s1 s2 then Equal else Not_le)
-||||||| da20446810
-=======
     | Product ts1, Product ts2 ->
       if List.compare_lengths ts1 ts2 = 0
       then Le_result.combine_list (List.map2 sub ts1 ts2)
@@ -217,7 +202,6 @@ module Layout = struct
       match to_product_sort ts2 with
       | None -> Not_le
       | Some s2 -> if Sort.equate s1 s2 then Equal else Not_le)
->>>>>>> main
 
   let rec intersection t1 t2 =
     match t1, t2 with
@@ -831,32 +815,12 @@ module Desc = struct
   (* considers sort variables < Any. Two sort variables are in a [sub]
      relationship only when they are equal.
      Never does mutation.
-<<<<<<< HEAD
-     Pre-condition: no filled-in sort variables. *)
-  let rec sub d1 d2 : Le_result.t =
-||||||| da20446810
-     Pre-condition: no filled-in sort variables. *)
-  let sub d1 d2 : Le_result.t =
-=======
      Pre-condition: no filled-in sort variables. product must contain a var. *)
   let rec sub d1 d2 : Le_result.t =
->>>>>>> main
     match d1, d2 with
     | Const c1, Const c2 -> Const.sub c1 c2
     | Var _, Const c when Const.equal Const.max c -> Less
     | Var v1, Var v2 -> if v1 == v2 then Equal else Not_le
-<<<<<<< HEAD
-    | Product ds1, Product ds2 ->
-      if List.compare_lengths ds1 ds2 = 0
-      then Misc_stdlib.Le_result.combine_list (List.map2 sub ds1 ds2)
-      else Not_le
-    | Const _, Product _ | Product _, Const _ | Const _, Var _ | Var _, Const _
-      ->
-      Not_le
-    | Var _, Product _ | Product _, Var _ -> Not_le
-||||||| da20446810
-    | Const _, Var _ | Var _, Const _ -> Not_le
-=======
     | Product ds1, Product ds2 ->
       if List.compare_lengths ds1 ds2 = 0
       then Le_result.combine_list (List.map2 sub ds1 ds2)
@@ -865,7 +829,6 @@ module Desc = struct
       ->
       Not_le
     | Var _, Product _ | Product _, Var _ -> Not_le
->>>>>>> main
 end
 
 module Jkind_desc = struct
@@ -1863,30 +1826,6 @@ let is_max jkind = sub Builtin.any_dummy_jkind jkind
 let has_layout_any jkind =
   match jkind.jkind.layout with Any -> true | _ -> false
 
-<<<<<<< HEAD
-let is_nary_product n t =
-  let components =
-    List.init n (fun _ -> Jkind_types.Layout.Sort (Sort.new_var ()))
-  in
-  let bound =
-    { Jkind_desc.max with layout = Jkind_types.Layout.Product components }
-  in
-  if Misc_stdlib.Le_result.is_le (Jkind_desc.sub t.jkind bound)
-  then
-    (* CR layouts v7.1: The histories here are wrong (we are giving each
-       component the history of the whole product).  They don't show up in
-       errors, so it's fine for now, but we'll probably need to fix this as
-       part of improving errors around products. A couple options: re-work the
-       relevant bits of [Ctype.type_jkind_sub] to just work on layouts, or
-       introduce product histories. *)
-    Some
-      (List.map
-         (fun l -> { t with jkind = { t.jkind with layout = l } })
-         components)
-  else None
-
-||||||| da20446810
-=======
 let is_nary_product n t =
   let components =
     List.init n (fun _ -> Jkind_types.Layout.Sort (Sort.new_var ()))
@@ -1908,7 +1847,6 @@ let is_nary_product n t =
          components)
   else None
 
->>>>>>> main
 (*********************************)
 (* debugging *)
 

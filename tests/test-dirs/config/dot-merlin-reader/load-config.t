@@ -49,20 +49,12 @@ but we want to observe the stdlib being configured via the STDLIB directive.
     "stdlib": "/stdlib",
     "source_root": null,
     "unit_name": null,
-<<<<<<< HEAD
-    "wrapping_prefix": null,
-||||||| da20446810
-    "wrapping_prefix": null,
-    "source_root": null,
-=======
     "unit_name_for": {
       "c": "Prefix_c",
       "b": "b",
       "a": "Prefix__a"
     },
     "wrapping_prefix": "Prefix__",
-    "source_root": null,
->>>>>>> main
     "reader": [],
     "protocol": "json",
     "log_file": null,

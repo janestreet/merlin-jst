@@ -378,14 +378,8 @@ let rec subst_patt initial ~by patt =
     { patt with pat_desc = Tpat_alias (f p, x, y, uid, m) }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
-<<<<<<< HEAD
-  | Tpat_unboxed_tuple lst ->
-      { patt with pat_desc = Tpat_unboxed_tuple (List.map lst ~f:(fun (lbl, p, sort) -> lbl, f p, sort)) }
-||||||| da20446810
-=======
   | Tpat_unboxed_tuple lst ->
     { patt with pat_desc = Tpat_unboxed_tuple (List.map lst ~f:(fun (lbl, p, sort) -> lbl, f p, sort)) }
->>>>>>> main
   | Tpat_construct (lid, cd, lst, lco) ->
     { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
@@ -413,14 +407,8 @@ let rec rm_sub patt sub =
     { patt with pat_desc = Tpat_alias (f p, x, y,uid,m)  }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
-<<<<<<< HEAD
-  | Tpat_unboxed_tuple lst ->
-      { patt with pat_desc = Tpat_unboxed_tuple (List.map lst ~f:(fun (lbl, p, sort) -> lbl, f p, sort)) }
-||||||| da20446810
-=======
   | Tpat_unboxed_tuple lst ->
     { patt with pat_desc = Tpat_unboxed_tuple (List.map lst ~f:(fun (lbl, p, sort) -> lbl, f p, sort)) }
->>>>>>> main
   | Tpat_construct (lid, cd, lst, lco) ->
     { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
@@ -524,14 +512,8 @@ let find_branch patterns sub =
         is_sub_patt p ~sub
       | Tpat_tuple lst ->
         List.exists lst ~f:(fun (_lbl, p) -> is_sub_patt ~sub p)
-<<<<<<< HEAD
-      | Tpat_unboxed_tuple lst ->
-          List.exists lst ~f:(fun (_lbl, p, _sort) -> is_sub_patt ~sub p)
-||||||| da20446810
-=======
       | Tpat_unboxed_tuple lst ->
         List.exists lst ~f:(fun (_lbl, p, _sort) -> is_sub_patt ~sub p)
->>>>>>> main
       | Tpat_construct (_, _, lst, _)
       | Tpat_array (_, _, lst) ->
         List.exists lst ~f:(is_sub_patt ~sub)
