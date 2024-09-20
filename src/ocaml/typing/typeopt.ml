@@ -830,7 +830,16 @@ let classify_lazy_argument : Typedtree.expression ->
 (*
 let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   if Lambda.equal_value_kind k1 k2 then k1
-  else Pgenval
+        (Jkind.Violation.report_with_offender
+           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err
+  | Unsupported_sort const ->
+      fprintf ppf "Layout %a is not supported yet."
+        Jkind.Sort.Const.format const
+  | Unsupported_product_in_structure const ->
+      fprintf ppf
+        "Product layout %a detected in structure in [Typeopt.Layout] \
+         Please report this error to the Jane Street compilers team."
+        Jkind.Sort.Const.format const
 
 let rec layout_union l1 l2 =
   match l1, l2 with

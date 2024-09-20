@@ -326,7 +326,15 @@ module Gen = struct
             make_i n 0
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
+<<<<<<< HEAD
       fun env label ty modes ->
+||||||| da20446810
+      fun env label ty modes : (Asttypes.arg_label * _ * _) ->
+=======
+      fun env label ty : (Asttypes.arg_label * _ * _) ->
+        (* We intentionally choose not to include the arg's mode in the constructed
+           value to be consistent with the decision to not include the arg's type *)
+>>>>>>> main
         let open Ast_helper in
         let make_param arg_label pat =
           {
@@ -339,12 +347,26 @@ module Gen = struct
         match label with
         (* Pun for labelled arguments *)
         | Position s ->
+<<<<<<< HEAD
             make_param
               (Labelled s)
               (Pat.constraint_
                 (Pat.var (Location.mknoloc s))
                 (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
                 modes),
+||||||| da20446810
+            Labelled s,
+            Pat.constraint_
+              (Pat.var (Location.mknoloc s))
+              (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
+              modes,
+=======
+            Labelled s,
+            Pat.constraint_
+              (Pat.var (Location.mknoloc s))
+              (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
+              [],
+>>>>>>> main
             s
         | Labelled s ->
             make_param
@@ -509,6 +531,7 @@ module Gen = struct
             | Type_record (labels, _) -> record env rtyp path labels
             | Type_abstract _ | Type_open -> []
           end
+<<<<<<< HEAD
         | Tarrow _ ->
           let rec left_types acc env ty =
             match get_desc ty with
@@ -535,6 +558,79 @@ module Gen = struct
           let exps = arrow_rhs env body_type in
           List.map exps ~f:(fun e ->
               Ast_helper.Exp.function_ arguments None (Pfunction_body e))
+||||||| da20446810
+        | Tarrow ((label,_,_), tyleft, tyright, _) ->
+          let label, argument, name = make_arg env label tyleft [] in
+          let param =
+            { Parsetree.pparam_desc =
+                Pparam_val (label, None, argument);
+              pparam_loc = Location.none;
+            }
+          in
+          let value_description = {
+              val_type = tyleft;
+              val_kind = Val_reg;
+              val_loc = Location.none;
+              val_attributes = [];
+              val_zero_alloc = Zero_alloc.default;
+              val_modalities = Mode.Modality.Value.id;
+              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+            }
+          in
+          let env =
+            Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
+              value_description env
+          in
+          let exps = arrow_rhs env tyright in
+          List.map exps ~f:(fun expr ->
+              match expr.Parsetree.pexp_desc with
+              | Pexp_function (params, constraint_, body) ->
+                  { expr
+                    with pexp_desc =
+                           Pexp_function (param :: params, constraint_, body)
+                  }
+              | _ ->
+                  Ast_helper.Exp.function_
+                    [ param ]
+                    None
+                    (Pfunction_body expr))
+=======
+        | Tarrow ((label,_,_), tyleft, tyright, _) ->
+          let label, argument, name = make_arg env label tyleft in
+          let param =
+            { Parsetree.pparam_desc =
+                Pparam_val (label, None, argument);
+              pparam_loc = Location.none;
+            }
+          in
+          let value_description = {
+              val_type = tyleft;
+              val_kind = Val_reg;
+              val_loc = Location.none;
+              val_attributes = [];
+              val_zero_alloc = Zero_alloc.default;
+              val_modalities = Mode.Modality.Value.id;
+              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+            }
+          in
+          let env =
+            Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
+              value_description env
+          in
+          let exps = arrow_rhs env tyright in
+          List.map exps ~f:(fun expr ->
+              match expr.Parsetree.pexp_desc with
+              | Pexp_function (params, constraint_, body) ->
+                  { expr
+                    with pexp_desc =
+                           Pexp_function (param :: params, constraint_, body)
+                  }
+              | _ ->
+                  Ast_helper.Exp.function_
+                    [ param ]
+                    None
+                    (Pfunction_body expr))
+>>>>>>> main
         | Ttuple types ->
           let choices =
             List.map types ~f:(fun (lbl, ty) ->
@@ -544,6 +640,7 @@ module Gen = struct
           List.map choices ~f:(fun choice ->
             Jane_syntax.Labeled_tuples.expr_of choice
               ~loc:!Ast_helper.default_loc)
+<<<<<<< HEAD
         | Tunboxed_tuple types ->
             let choices =
               List.map types ~f:(fun (lbl, ty) ->
@@ -552,6 +649,17 @@ module Gen = struct
             in
             List.map choices ~f:(fun choice ->
                 Ast_helper.Exp.unboxed_tuple choice)
+||||||| da20446810
+=======
+        | Tunboxed_tuple types ->
+          let choices =
+            List.map types ~f:(fun (lbl, ty) ->
+              List.map (exp_or_hole env ty) ~f:(fun result -> lbl, result))
+            |> Util.combinations
+          in
+          List.map choices ~f:(fun choice ->
+            Ast_helper.Exp.unboxed_tuple choice)
+>>>>>>> main
         | Tvariant row_desc -> variant env rtyp row_desc
         | Tpackage (path, lids_args) -> begin
           let open Ast_helper in

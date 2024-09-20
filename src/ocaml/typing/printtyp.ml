@@ -1279,12 +1279,30 @@ let out_jkind_option_of_jkind jkind =
       (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
       || (not Language_extension.(is_at_least Layouts Alpha)
           && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
+<<<<<<< HEAD
     | Var _ -> (* X1 *)
         (* not !Clflags.verbose_types *)
         true
     | Product _ -> false
   in
   if elide then None else Some (desc_to_out_jkind desc)
+||||||| da20446810
+    in
+    begin match is_value with
+    | true -> None
+    | false -> Some (out_jkind_of_const_jkind jkind)
+    end
+  | Var v -> (* This handles (X1). *)
+    if false (* !Clflags.verbose_types *)
+    then Some (Ojkind_var (Jkind.Sort.Var.name v))
+    else None
+=======
+    | Var _ -> (* X1 *)
+      true (* not !Clflags.verbose_types *)
+    | Product _ -> false
+  in
+  if elide then None else Some (desc_to_out_jkind desc)
+>>>>>>> main
 
 let alias_nongen_row mode px ty =
     match get_desc ty with
@@ -2666,8 +2684,13 @@ let trees_of_type_expansion'
           let rec okind_of_desc : Jkind.Desc.t -> _ = function
             | Const clay -> out_jkind_of_const_jkind clay
             | Var v      -> Ojkind_var (Jkind.Sort.Var.name v)
+<<<<<<< HEAD
             | Product ds ->
               Ojkind_product (List.map okind_of_desc ds)
+||||||| da20446810
+=======
+            | Product ds -> Ojkind_product (List.map okind_of_desc ds)
+>>>>>>> main
           in
           let okind = okind_of_desc (Jkind.get jkind) in
           Otyp_jkind_annot (out, okind)

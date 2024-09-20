@@ -39,18 +39,22 @@ module Directive = struct
     | `CMT of string
     | `INDEX of string]
 
+  type unit_name_mapping = { basename : string; unit_name : string }
+
   type no_processing_required =
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
     | `SOURCE_ROOT of string
     | `UNIT_NAME of string
+    | `UNIT_NAME_FOR of unit_name_mapping
     | `WRAPPING_PREFIX of string
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
     | `USE_PPX_CACHE
-    | `UNKNOWN_TAG of string ]
+    | `UNKNOWN_TAG of string
+    | `UNIT_NAME_FOR_ERROR of string ]
 
   module Processed = struct
     type acceptable_in_input = [ include_path | no_processing_required ]
@@ -85,7 +89,7 @@ module Sexp = struct
   | List l -> String.concat ~sep:" "
     ( List.concat [["("]; List.map ~f:to_string l;[")"]])
 
-  let to_directive sexp =
+  let to_directive sexp : directive =
     match sexp with
     | List [ Atom tag; Atom value ] ->
       begin match tag with
@@ -108,6 +112,10 @@ module Sexp = struct
             `ERROR_MSG "No .merlin file found. Try building the project."
         | tag -> `UNKNOWN_TAG tag
       end
+    | List [ Atom "UNIT_NAME_FOR"; List [Atom basename; Atom unit_name] ] ->
+      `UNIT_NAME_FOR {basename; unit_name}
+    | List [ Atom "UNIT_NAME_FOR"; _ ] ->
+      `ERROR_MSG "Unexpected output from external config reader: unexpected args to UNIT_NAME_FOR"
     | List [ Atom tag; List l ] ->
         let value = strings_of_atoms l in
         begin match tag with
@@ -121,7 +129,7 @@ module Sexp = struct
     | _ -> `ERROR_MSG "Unexpected output from external config reader"
 
   let from_directives (directives : Directive.Processed.t list) =
-    let f t =
+    let f (t : directive) =
       let tag, body =
         let single s = [ Atom s ] in
         match t with
@@ -134,6 +142,8 @@ module Sexp = struct
         | `INDEX s -> ("INDEX", single s)
         | `SOURCE_ROOT s -> ("SOURCE_ROOT", single s)
         | `UNIT_NAME s -> ("UNIT_NAME", single s)
+        | `UNIT_NAME_FOR { basename; unit_name } ->
+          ("UNIT_NAME_FOR", [ List [Atom basename; Atom unit_name] ])
         | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
@@ -144,6 +154,7 @@ module Sexp = struct
         | `USE_PPX_CACHE -> ("USE_PPX_CACHE", [])
         | `UNKNOWN_TAG tag -> ("ERROR", single @@
             Printf.sprintf "Unknown tag in .merlin: %s" tag)
+        | `UNIT_NAME_FOR_ERROR s -> ("ERROR", single s)
         | `ERROR_MSG s -> ("ERROR", single s)
       in
       List (Atom tag :: body)

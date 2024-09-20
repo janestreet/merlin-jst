@@ -1485,6 +1485,7 @@ let solve_Ppat_tuple ~refine ~alloc_mode loc env args expected_ty =
   unify_pat_types_refine ~refine loc env ty expected_ty;
   ann
 
+<<<<<<< HEAD
 (* This assumes the [args] have already been reordered according to the
    [expected_ty], if needed.  *)
 let solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env args expected_ty =
@@ -1519,6 +1520,44 @@ let solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env args expected_ty =
 let solve_constructor_annotation
     tps (penv : Pattern_env.t) name_list sty ty_args ty_ex =
   let expansion_scope = penv.equations_scope in
+||||||| da20446810
+let solve_constructor_annotation tps env name_list sty ty_args ty_ex =
+  let expansion_scope = get_gadt_equations_level () in
+=======
+(* This assumes the [args] have already been reordered according to the
+   [expected_ty], if needed.  *)
+let solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env args expected_ty =
+  let arity = List.length args in
+  let arg_modes =
+    match alloc_mode.tuple_modes with
+    (* CR zqian: improve the modes of opened labeled tuple pattern. *)
+    | Some l when List.compare_length_with l arity = 0 -> l
+    | _ -> List.init arity (fun _ -> alloc_mode.mode)
+  in
+  let ann =
+    List.map2
+      (fun (label, p) mode ->
+         let jkind, sort =
+           Jkind.of_new_sort_var ~why:Jkind.History.Unboxed_tuple_element
+         in
+        ( label,
+          p,
+          newgenvar jkind,
+          simple_pat_mode mode,
+          sort
+        ))
+      args arg_modes
+  in
+  let ty =
+    newgenty (Tunboxed_tuple (List.map (fun (lbl, _, t, _, _) -> lbl, t) ann))
+  in
+  let expected_ty = generic_instance expected_ty in
+  unify_pat_types ~refine loc env ty expected_ty;
+  ann
+
+let solve_constructor_annotation tps env name_list sty ty_args ty_ex =
+  let expansion_scope = get_gadt_equations_level () in
+>>>>>>> main
   let ids =
     List.map
       (fun name ->
@@ -2552,6 +2591,38 @@ and type_pat_aux
       pat_attributes = sp.ppat_attributes;
       pat_env = !!penv }
   in
+  let type_unboxed_tuple_pat spl closed =
+    Jane_syntax_parsing.assert_extension_enabled ~loc Layouts
+      Language_extension.Beta;
+    let args =
+      match get_desc (expand_head !env expected_ty) with
+      (* If it's a principally-known tuple pattern, try to reorder *)
+      | Tunboxed_tuple labeled_tl when is_principal expected_ty ->
+        reorder_pat loc env spl closed labeled_tl expected_ty
+      (* If not, it's not allowed to be open (partial) *)
+      | _ ->
+        match closed with
+        | Open -> raise (Error (loc, !env, Partial_tuple_pattern_bad_type))
+        | Closed -> spl
+    in
+    let spl_ann =
+      solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env args expected_ty
+    in
+    let pl =
+      List.map (fun (lbl, p, t, alloc_mode, sort) ->
+        lbl, type_pat tps Value ~alloc_mode p t, sort)
+        spl_ann
+    in
+    let ty =
+      newty (Tunboxed_tuple (List.map (fun (lbl, p, _) -> lbl, p.pat_type) pl))
+    in
+    rvp {
+      pat_desc = Tpat_unboxed_tuple pl;
+      pat_loc = loc; pat_extra=[];
+      pat_type = ty;
+      pat_attributes = sp.ppat_attributes;
+      pat_env = !env }
+  in
   match Jane_syntax.Pattern.of_ast sp with
   | Some (jpat, attrs) -> begin
       (* Normally this would go to an auxiliary function, but this function
@@ -3310,6 +3381,7 @@ let rec check_counter_example_pat
            mkp k (Tpat_tuple pl)
              ~pat_type:(newty (Ttuple (List.map (fun (l,p) -> (l,p.pat_type))
                                          pl))))
+<<<<<<< HEAD
   | Tpat_unboxed_tuple tpl ->
       let tpl_ann =
         solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc penv
@@ -3329,6 +3401,28 @@ let rec check_counter_example_pat
              ~pat_type:(newty (Tunboxed_tuple
                                  (List.map (fun (l,p,_) -> (l,p.pat_type))
                                     pl))))
+||||||| da20446810
+=======
+  | Tpat_unboxed_tuple tpl ->
+      let tpl_ann =
+        solve_Ppat_unboxed_tuple ~refine ~alloc_mode loc env
+          (List.map (fun (l,t,_) -> l, t) tpl)
+          expected_ty
+      in
+      List.iter2
+        (fun (_, _, orig_sort) (_, _, _, _, sort) ->
+           (* Sanity check *)
+           assert (Jkind.Sort.equate orig_sort sort))
+        tpl tpl_ann;
+      map_fold_cont
+        (fun (l,p,t,_,sort) k -> check_rec p t (fun p -> k (l, p, sort)))
+        tpl_ann
+        (fun pl ->
+           mkp k (Tpat_unboxed_tuple pl)
+             ~pat_type:(newty (Tunboxed_tuple
+                                 (List.map (fun (l,p,_) -> (l,p.pat_type))
+                                    pl))))
+>>>>>>> main
   | Tpat_construct(cstr_lid, constr, targs, _) ->
       if constr.cstr_generalized && must_backtrack_on_gadt then
         raise Need_backtrack;

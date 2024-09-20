@@ -2730,8 +2730,13 @@ let trees_of_type_expansion'
           let rec okind_of_desc : Jkind.Desc.t -> _ = function
             | Const clay -> out_jkind_of_const_jkind clay
             | Var v      -> Ojkind_var (Jkind.Sort.Var.name v)
+<<<<<<< HEAD
             | Product ds ->
               Ojkind_product (List.map okind_of_desc ds)
+||||||| da20446810
+=======
+            | Product ds -> Ojkind_product (List.map okind_of_desc ds)
+>>>>>>> main
           in
           let okind = okind_of_desc (Jkind.get jkind) in
           Otyp_jkind_annot (out, okind)
