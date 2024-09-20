@@ -736,6 +736,23 @@ rule token state = parse
       (* newline is ('\013'* '\010') *)
       return (CHAR '\n') }
   | "\'" ([^ '\\' '\'' '\010' '\013'] as c) "\'"
+<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+  | "\'" { QUOTE }
+  | "("  { LPAREN }
+  | ")"  { RPAREN }
+  | "*"  { STAR }
+  | ","  { COMMA }
+  | "->" { MINUSGREATER }
+=======
+  | "\'" { QUOTE }
+  | "("  { LPAREN }
+  | ")"  { RPAREN }
+  | "#(" { HASHLPAREN }
+  | "*"  { STAR }
+  | ","  { COMMA }
+  | "->" { MINUSGREATER }
+>>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
     { return (CHAR c) }
   | "\'\\" (['\\' '\'' '\"' 'n' 't' 'b' 'r' ' '] as c) "\'"
     { return (CHAR (char_for_backslash c)) }

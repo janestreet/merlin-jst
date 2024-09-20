@@ -639,6 +639,8 @@ and raw_type_desc ppf = function
         (if is_commu_ok c then "Cok" else "Cunknown")
   | Ttuple tl ->
       fprintf ppf "@[<1>Ttuple@,%a@]" labeled_type_list tl
+  | Tunboxed_tuple tl ->
+      fprintf ppf "@[<1>Tunboxed_tuple@,%a@]" labeled_type_list tl
   | Tconstr (p, tl, abbrev) ->
       fprintf ppf "@[<hov1>Tconstr(@,%a,@,%a,@,%a)@]" path p
         raw_type_list tl
@@ -1251,6 +1253,8 @@ let out_jkind_of_user_jkind (jkind : Jane_syntax.Jkind.annotation) =
         List.map (fun {txt = (Parsetree.Mode s); _} -> s) modes
       in
       Ojkind_const_mod (base, modes)
+    | Product ts ->
+      Ojkind_const_product (List.map out_jkind_const_of_user_jkind ts)
     | With _ | Kind_of _ -> failwith "XXX unimplemented jkind syntax"
   in
   Ojkind_const (out_jkind_const_of_user_jkind jkind.txt)
@@ -1261,12 +1265,21 @@ let out_jkind_of_const_jkind jkind =
 (* returns None for [value], according to (C2.1) from
    Note [When to print jkind annotations] *)
 let out_jkind_option_of_jkind jkind =
-  match Jkind.get jkind with
-  | Const jkind ->
-    let is_value = Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
+  let rec desc_to_out_jkind : Jkind.Desc.t -> out_jkind = function
+    | Const jkind -> out_jkind_of_const_jkind jkind
+    | Var v -> Ojkind_var (Jkind.Sort.Var.name v)
+    | Product jkinds ->
+      Ojkind_product (List.map desc_to_out_jkind jkinds)
+  in
+  let desc = Jkind.get jkind in
+  let elide =
+    match desc with
+    | Const jkind -> (* C2.1 *)
+      Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
       (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
       || (not Language_extension.(is_at_least Layouts Alpha)
           && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
+<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
     in
     begin match is_value with
     | true -> None
@@ -1276,6 +1289,23 @@ let out_jkind_option_of_jkind jkind =
     if false (* !Clflags.verbose_types *)
     then Some (Ojkind_var (Jkind.Sort.Var.name v))
     else None
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+    in
+    begin match is_value with
+    | true -> None
+    | false -> Some (out_jkind_of_const_jkind jkind)
+    end
+  | Var v -> (* This handles (X1). *)
+    if !Clflags.verbose_types
+    then Some (Ojkind_var (Jkind.Sort.Var.name v))
+    else None
+=======
+    | Var _ -> (* X1 *)
+      not !Clflags.verbose_types
+    | Product _ -> false
+  in
+  if elide then None else Some (desc_to_out_jkind desc)
+>>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 
 let alias_nongen_row mode px ty =
     match get_desc ty with
@@ -1369,6 +1399,20 @@ let rec tree_of_typexp mode alloc_mode ty =
         Btype.backtrack snap;
         Otyp_arrow (lab, tree_of_modes arg_mode, t1, rm, t2)
     | Ttuple labeled_tyl ->
+<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
+    | Tconstr(p, tyl, _abbrev) ->
+        let p', s = best_type_path p in
+        let tyl' = apply_subst s tyl in
+=======
+        Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
+    | Tunboxed_tuple labeled_tyl ->
+        Otyp_unboxed_tuple (tree_of_labeled_typlist mode labeled_tyl)
+    | Tconstr(p, tyl, _abbrev) ->
+        let p', s = best_type_path p in
+        let tyl' = apply_subst s tyl in
+>>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
       Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
     | Tconstr(p, tyl, _abbrev) -> begin
         match best_type_path p with
@@ -2652,11 +2696,14 @@ let trees_of_type_expansion'
     if var_jkinds then
       match get_desc ty with
       | Tvar { jkind; _ } | Tunivar { jkind; _ } ->
-          let olay = match Jkind.get jkind with
+          let rec okind_of_desc : Jkind.Desc.t -> _ = function
             | Const clay -> out_jkind_of_const_jkind clay
             | Var v      -> Ojkind_var (Jkind.Sort.Var.name v)
+            | Product ds ->
+              Ojkind_product (List.map okind_of_desc ds)
           in
-          Otyp_jkind_annot (out, olay)
+          let okind = okind_of_desc (Jkind.get jkind) in
+          Otyp_jkind_annot (out, okind)
       | _ ->
           out
     else

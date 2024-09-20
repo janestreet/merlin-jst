@@ -283,6 +283,10 @@ let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
      let mk = if ghost then ghexp_with_modes else mkexp_with_modes in
      mk ~loc ~exp:e ~cty:(Some t) ~modes
   | Pcoerce(t1, t2)  ->
+     (* CR: This implementation is pretty sad.  The Pcoerce case just drops
+        ~modes.  It should always be empty here, but the code structure doesn't
+        make that clear.  Probably we should move the modes to the payload of
+        Pconstraint, which may also simplify some other things. *)
      let mk = if ghost then ghexp else mkexp ?attrs:None in
      mk ~loc (Pexp_coerce(e, t1, t2))
 
@@ -925,6 +929,23 @@ let merloc startpos ?endpos x =
 
   let string_of_FLOAT = function
     | (s, None) -> Printf.sprintf "FLOAT(%s)" s
+<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+%token GREATER                ">"
+%token GREATERRBRACE          ">}"
+%token GREATERRBRACKET        ">]"
+%token IF                     "if"
+%token IN                     "in"
+%token INCLUDE                "include"
+=======
+%token GREATER                ">"
+%token GREATERRBRACE          ">}"
+%token GREATERRBRACKET        ">]"
+%token HASHLPAREN             "#("
+%token IF                     "if"
+%token IN                     "in"
+%token INCLUDE                "include"
+>>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
     | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
 
   let string_of_STRING = function
@@ -1158,6 +1179,7 @@ The precedences must be listed from low to high.
 %nonassoc FUNCTOR                       /* include functor M */
 %right    MINUSGREATER                  /* function_type (t -> t -> t) */
 %right    OR BARBAR                     /* expr (e || e || e) */
+%nonassoc below_AMPERSAND
 %right    AMPERSAND AMPERAMPER          /* expr (e && e && e) */
 %nonassoc below_EQUAL
 %left     INFIXOP0 EQUAL LESS GREATER   /* expr (e OP e OP e) */
@@ -1180,9 +1202,17 @@ The precedences must be listed from low to high.
 /* Finally, the first tokens of simple_expr are above everything else. */
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT HASH_FLOAT INT HASH_INT OBJECT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LBRACKETCOLON LIDENT LPAREN
+<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
           NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
           LBRACKETPERCENT QUOTED_STRING_EXPR STACK
           DOTLESS DOTTILDE GREATERDOT
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+          NEW PREFIXOP STRING TRUE UIDENT
+          LBRACKETPERCENT QUOTED_STRING_EXPR STACK
+=======
+          NEW PREFIXOP STRING TRUE UIDENT
+          LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLPAREN
+>>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 
 
 /* Entry points */
@@ -1833,13 +1863,8 @@ structure [@recovery []]:
     )
     { $1 }
   | include_statement(module_expr)
-      { let is_functor, incl, ext = $1 in
-        let item =
-          if is_functor
-          then Jane_syntax.Include_functor.str_item_of ~loc:(make_loc $sloc)
-                (Ifstr_include_functor incl)
-          else mkstr ~loc:$sloc (Pstr_include incl)
-        in
+      { let incl, ext = $1 in
+        let item = mkstr ~loc:$sloc (Pstr_include incl) in
         wrap_str_ext ~loc:$sloc item ext
       }
   | kind_abbreviation_decl
@@ -1927,17 +1952,17 @@ module_binding_body:
 
 (* Shared material between structures and signatures. *)
 
-include_maybe_functor:
+include_kind:
   | INCLUDE %prec below_FUNCTOR
-      { false }
+      { Structure }
   | INCLUDE FUNCTOR
-      { true }
+      { Functor }
 ;
 
 (* An [include] statement can appear in a structure or in a signature,
    which is why this definition is parameterized. *)
 %inline include_statement(thing):
-  is_functor = include_maybe_functor
+  kind = include_kind
   ext = ext
   attrs1 = attributes
   thing = thing
@@ -1946,8 +1971,8 @@ include_maybe_functor:
     let attrs = attrs1 @ attrs2 in
     let loc = make_loc $sloc in
     let docs = symbol_docs $sloc in
-    let incl = Incl.mk thing ~attrs ~loc ~docs in
-    is_functor, incl, ext
+    let incl = Incl.mk ~kind thing ~attrs ~loc ~docs in
+    incl, ext
   }
 ;
 
@@ -2119,14 +2144,9 @@ signature_item:
         { let (ext, l) = $1 in (Psig_class_type l, ext) }
     )
     { $1 }
-  | include_statement(module_type)
-      { let is_functor, incl, ext = $1 in
-        let item =
-          if is_functor
-          then Jane_syntax.Include_functor.sig_item_of ~loc:(make_loc $sloc)
-                 (Ifsig_include_functor incl)
-          else mksig ~loc:$sloc (Psig_include incl)
-        in
+  | include_statement(module_type) modalities = optional_atat_modalities_expr
+      { let incl, ext = $1 in
+        let item = mksig ~loc:$sloc (Psig_include (incl, modalities)) in
         wrap_sig_ext ~loc:$sloc item ext
       }
   | kind_abbreviation_decl
@@ -3214,7 +3234,13 @@ comprehension_clause:
   | mod_longident DOT
     LPAREN MODULE ext_attributes module_expr COLON error
       { unclosed "(" $loc($3) ")" $loc($8) }
+<<<<<<< janestreet/merlin-jst:merge-with-upstream-merlin-round-2-of-conflict-fixing
   *)
+||||||| ocaml-flambda/flambda-backend:2d672b4f4ed9e63c57aef3925cc5a74a9a00b6a4
+=======
+  | HASHLPAREN labeled_tuple RPAREN
+      { Pexp_unboxed_tuple $2 }
+>>>>>>> ocaml-flambda/flambda-backend:cbc35f98fe9785b315ed09c5cd7268c579d08945
 ;
 labeled_simple_expr:
     simple_expr %prec below_HASH
@@ -3840,6 +3866,9 @@ simple_delimited_pattern:
             (fun elts -> Ppat_array elts)
             $1
         }
+    | HASHLPAREN reversed_labeled_tuple_pattern(pattern) RPAREN
+        { let (closed, fields) = $2 in
+          Ppat_unboxed_tuple (List.rev fields, closed) }
   ) { $1 }
   | array_patterns(LBRACKETCOLON, COLONRBRACKET)
       { Generic_array.Pattern.to_ast
@@ -4065,7 +4094,21 @@ jkind:
   | UNDERSCORE {
       Jane_syntax.Jkind.Default
     }
+  | reverse_product_jkind %prec below_AMPERSAND {
+      Jane_syntax.Jkind.Product (List.rev $1)
+    }
+  | LPAREN jkind RPAREN {
+      $2
+    }
 ;
+
+reverse_product_jkind :
+  | jkind1 = jkind AMPERSAND jkind2 = jkind %prec below_EQUAL
+      { [jkind2; jkind1] }
+  | jkinds = reverse_product_jkind
+    AMPERSAND
+    jkind = jkind %prec below_EQUAL
+    { jkind :: jkinds }
 
 jkind_annotation: (* : jkind_annotation *)
   mkrhs(jkind) { $1 }
@@ -4647,6 +4690,22 @@ tuple_type:
     ltys = separated_nonempty_llist(STAR, labeled_tuple_typ_element)
       { ty, ltys }
 
+(* In the case of an unboxed tuple, we don't need the nonsense above because
+   the [#( ... )] disambiguates.  However, we still must write out
+   the first element explicitly because [labeled_tuple_typ_element] is
+   restricted to tail position by its %prec annotation. *)
+%inline unboxed_tuple_type_body:
+  | ty1 = atomic_type
+    STAR
+    ltys = separated_nonempty_llist(STAR, labeled_tuple_typ_element)
+    { (None, ty1) :: ltys }
+  | label = LIDENT
+    COLON
+    ty1 = atomic_type
+    STAR
+    ltys = separated_nonempty_llist(STAR, labeled_tuple_typ_element)
+    { (Some label, ty1) :: ltys }
+
 %inline labeled_tuple_typ_element :
   | atomic_type %prec STAR
      { None, $1 }
@@ -4707,6 +4766,8 @@ delimited_type_supporting_local_open:
       tags = name_tag_list
       RBRACKET
         { Ptyp_variant(fields, Closed, Some tags) }
+    | HASHLPAREN unboxed_tuple_type_body RPAREN
+        { Ptyp_unboxed_tuple $2 }
   )
   { $1 }
 ;
