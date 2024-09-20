@@ -148,7 +148,11 @@ let record_with_counters ?accumulate ~counter_f pass f x =
   record_call_internal ?accumulate ~counter_f pass (fun () -> f x)
 
 let file_prefix = "file="
-(*
+
+(* [annotate_file_name] is imported from the compiler and unused in merlin.
+   We comment it out because it refers to an flag unknown to merlin,
+   [Clflags.directory].
+
 let annotate_file_name name =
   let file_path =
     match !Clflags.directory with
@@ -157,6 +161,7 @@ let annotate_file_name name =
   in
   file_prefix ^ file_path
 *)
+
 type display = {
   to_string : max:float -> width:int -> string;
   worth_displaying : max:float -> bool;
