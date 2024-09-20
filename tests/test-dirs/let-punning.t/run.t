@@ -242,3 +242,52 @@ sequential let*
   Occurrence at 29:13-14:
       Some (a, b)
                ^
+
+Test that finding occurrences of a variable includes usages in a punned let. i.e., in:
+ 1. let x = ... in
+ 2. let%bind x in
+finding occurrences of x on line 1 returns the definition on line 1 and the usage on
+line 2.
+
+TODO: fix these tests
+
+let*
+  $ occurrences 12:8
+  Occurrences of:
+      let a = return 1 in
+          ^
+  Occurrence at 12:8-9:
+      let a = return 1 in
+          ^
+
+parallel let*
+  $ occurrences 18:8
+  Occurrences of:
+      let a = return 1 in
+          ^
+  Occurrence at 18:8-9:
+      let a = return 1 in
+          ^
+  $ occurrences 19:8
+  Occurrences of:
+      let b = return 1 in
+          ^
+  Occurrence at 19:8-9:
+      let b = return 1 in
+          ^
+
+sequential let*
+  $ occurrences 25:8
+  Occurrences of:
+      let a = return 1 in
+          ^
+  Occurrence at 25:8-9:
+      let a = return 1 in
+          ^
+  $ occurrences 26:8
+  Occurrences of:
+      let b = return 1 in
+          ^
+  Occurrence at 26:8-9:
+      let b = return 1 in
+          ^
