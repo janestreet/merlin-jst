@@ -14,7 +14,7 @@ Test Merlin's behavior in the presense of let-punning
 
   $ highlight_line_colon_col_from_file () {
   >   line_col=$1
-  >   IFS=: read line col <<< "$line_col"
+  >   IFS=: read line col <<(echo "$line_col")
   >   highlight_char_range_from_file "$line" "$col" "$((col + 1))"
   > }
 
@@ -27,7 +27,7 @@ Test Merlin's behavior in the presense of let-punning
   >   echo "Locating:"
   >   highlight_line_colon_col_from_file "$1"
   >   res=$($MERLIN single locate -position "$1" -filename "$file" < "$file")
-  >   if jq -e '.value | type == "string"' <<< "$res" > /dev/null; then
+  >   if (echo "$res" | jq -e '.value | type == "string"' > /dev/null); then
   >     # an error occurred, so print the error
   >     echo "$res" | jq -r
   >   else
@@ -42,7 +42,7 @@ Test Merlin's behavior in the presense of let-punning
   >   echo "Occurrences of:"
   >   highlight_line_colon_col_from_file "$1"
   >   res=$($MERLIN single occurrences -identifier-at "$1" -filename "$file" < "$file")
-  >   jq -c .value[] <<< "$res" | while read -r occurrence; do
+  >   echo "$res" | jq -c .value[] | while read -r occurrence; do
   >     line=$(echo "$occurrence" | jq .start.line)
   >     start=$(echo "$occurrence" | jq .start.col)
   >     end=$(echo "$occurrence" | jq .end.col)
