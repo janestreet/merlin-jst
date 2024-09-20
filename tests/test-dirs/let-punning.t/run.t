@@ -1,12 +1,12 @@
 Test Merlin's behavior in the presense of let-punning
 
-  $ function type_enclosing {
+  $ type_enclosing () {
   >   $MERLIN single type-enclosing -position "$1" -filename test.ml < test.ml | jq '.value[0].type' -r
   > }
 
-  $ function locate {
+  $ locate () {
   >   res=$($MERLIN single locate -position "$1" -filename test.ml < test.ml)
-  >   if jq -e '.value | type == "string"' <<< "$res" > /dev/null; then
+  >   if (echo "$res" | jq -e '.value | type == "string"' > /dev/null); then
   >     # an error occurred, so print the error
   >     echo "$res" | jq -r .value
   >   else
@@ -16,9 +16,9 @@ Test Merlin's behavior in the presense of let-punning
   >   fi
   > }
 
-  $ function occurrences {
+  $ occurrences () {
   >   res=$($MERLIN single occurrences -identifier-at "$1" -filename test.ml < test.ml)
-  >   jq -c .value[] <<< "$res" | while read -r occurrence; do
+  >   echo "$res" | jq -c '.value[]' | while read -r occurrence; do
   >     line=$(echo "$occurrence" | jq .start.line)
   >     start=$(echo "$occurrence" | jq .start.col)
   >     end=$(echo "$occurrence" | jq .end.col)
