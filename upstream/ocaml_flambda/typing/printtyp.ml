@@ -44,12 +44,10 @@ module Style = Misc.Style
    printed. Specifically, we print the user-written jkind in any of these
    cases:
 
-   (C1.1) The type declaration is abstract and has no manifest (i.e.,
-   it's written without any [=]-signs).
+   (C1.1) The type declaration is abstract, has no manifest (i.e.,
+   it's written without any [=]-signs), and the annotation is not equivalent to value.
 
    In this case, there is no way to know the jkind without the annotation.
-   It is possible we might print a redundant [ : value ] annotation, but if the
-   user included this, they are probably happy to have it be printed, too.
 
    (C1.2) The type is [@@unboxed]. If an [@@unboxed] type is recursive, it can
    be impossible to deduce the jkind.  We thus defer to the user in determining
@@ -646,6 +644,8 @@ and raw_type_desc ppf = function
         (if is_commu_ok c then "Cok" else "Cunknown")
   | Ttuple tl ->
       fprintf ppf "@[<1>Ttuple@,%a@]" labeled_type_list tl
+  | Tunboxed_tuple tl ->
+      fprintf ppf "@[<1>Tunboxed_tuple@,%a@]" labeled_type_list tl
   | Tconstr (p, tl, abbrev) ->
       fprintf ppf "@[<hov1>Tconstr(@,%a,@,%a,@,%a)@]" path p
         raw_type_list tl
@@ -1320,11 +1320,11 @@ let out_jkind_of_user_jkind (jkind : Jane_syntax.Jkind.annotation) =
     | Mod (base, modes) ->
       let base = out_jkind_const_of_user_jkind base in
       let modes =
-        List.map
-          (fun mode -> (mode : Jane_syntax.Mode_expr.Const.t :> string Location.loc).txt)
-          modes.txt
+        List.map (fun {txt = (Parsetree.Mode s); _} -> s) modes
       in
       Ojkind_const_mod (base, modes)
+    | Product ts ->
+      Ojkind_const_product (List.map out_jkind_const_of_user_jkind ts)
     | With _ | Kind_of _ -> failwith "XXX unimplemented jkind syntax"
   in
   Ojkind_const (out_jkind_const_of_user_jkind jkind.txt)
@@ -1335,21 +1335,25 @@ let out_jkind_of_const_jkind jkind =
 (* returns None for [value], according to (C2.1) from
    Note [When to print jkind annotations] *)
 let out_jkind_option_of_jkind jkind =
-  match Jkind.get jkind with
-  | Const jkind ->
-    let is_value = Jkind.Const.equal jkind Jkind.Const.Primitive.value.jkind
+  let rec desc_to_out_jkind : Jkind.Desc.t -> out_jkind = function
+    | Const jkind -> out_jkind_of_const_jkind jkind
+    | Var v -> Ojkind_var (Jkind.Sort.Var.name v)
+    | Product jkinds ->
+      Ojkind_product (List.map desc_to_out_jkind jkinds)
+  in
+  let desc = Jkind.get jkind in
+  let elide =
+    match desc with
+    | Const jkind -> (* C2.1 *)
+      Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
       (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
       || (not Language_extension.(is_at_least Layouts Alpha)
-          && Jkind.Const.equal jkind Jkind.Const.Primitive.value_or_null.jkind)
-    in
-    begin match is_value with
-    | true -> None
-    | false -> Some (out_jkind_of_const_jkind jkind)
-    end
-  | Var v -> (* This handles (X1). *)
-    if !Clflags.verbose_types
-    then Some (Ojkind_var (Jkind.Sort.Var.name v))
-    else None
+          && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
+    | Var _ -> (* X1 *)
+      not !Clflags.verbose_types
+    | Product _ -> false
+  in
+  if elide then None else Some (desc_to_out_jkind desc)
 
 let alias_nongen_row mode px ty =
     match get_desc ty with
@@ -1364,36 +1368,21 @@ let outcome_label : Types.arg_label -> Outcometree.arg_label = function
   | Optional l -> Optional l
   | Position l -> Position l
 
-let tree_of_modality_new (t : Mode.Modality.t) =
-  if Mode.Modality.is_id t then None
-  else match t with
-  | Atom (Comonadic Areality, Meet_with Global) -> Some "global"
-  | Atom (Comonadic Linearity, Meet_with Many) -> Some "many"
-  | Atom (Monadic Uniqueness, Join_with Shared) -> Some "shared"
-  | Atom (Comonadic Portability, Meet_with Portable) -> Some "portable"
-  | Atom (Monadic Contention, Join_with Contended) -> Some "contended"
-  | e -> Misc.fatal_errorf "Unexpected modality %a" Mode.Modality.print e
+let tree_of_modality_new (t: Parsetree.modality loc) =
+  let Modality s = t.txt in s
 
-let tree_of_modality (t : Mode.Modality.t) =
-  match t with
-  | Atom (Comonadic Areality, Meet_with Global) ->
-      Some (Ogf_legacy Ogf_global)
-  | _ -> Option.map (fun x -> Ogf_new x) (tree_of_modality_new t)
+let tree_of_modality (t: Parsetree.modality loc) =
+  match t.txt with
+  | Modality "global" -> Ogf_legacy Ogf_global
+  | _ -> Ogf_new (tree_of_modality_new t)
 
-let tree_of_modalities ~has_mutable_implied_modalities t =
-  let l = Mode.Modality.Value.Const.to_list t in
-  (* CR zqian: decouple mutable and modalities *)
-  let l =
-    if has_mutable_implied_modalities then
-      List.filter (fun m -> not @@ Typemode.is_mutable_implied_modality m) l
-    else
-      l
-  in
-  List.filter_map tree_of_modality l
+let tree_of_modalities mut attrs t =
+  let t = Typemode.untransl_modalities mut attrs t in
+  List.map tree_of_modality t
 
-let tree_of_modalities_new t =
-  let l = Mode.Modality.Value.Const.to_list t in
-  List.filter_map tree_of_modality_new l
+let tree_of_modalities_new mut attrs t =
+  let l = Typemode.untransl_modalities mut attrs t in
+  List.map tree_of_modality_new l
 
 (** [tree_of_mode m l] finds the outcome node in [l] that corresponds to [m].
 Raise if not found. *)
@@ -1459,6 +1448,8 @@ let rec tree_of_typexp mode alloc_mode ty =
         Otyp_arrow (lab, tree_of_modes arg_mode, t1, rm, t2)
     | Ttuple labeled_tyl ->
         Otyp_tuple (tree_of_labeled_typlist mode labeled_tyl)
+    | Tunboxed_tuple labeled_tyl ->
+        Otyp_unboxed_tuple (tree_of_labeled_typlist mode labeled_tyl)
     | Tconstr(p, tyl, _abbrev) ->
         let p', s = best_type_path p in
         let tyl' = apply_subst s tyl in
@@ -1581,7 +1572,7 @@ and tree_of_labeled_typlist mode tyl =
 
 and tree_of_typ_gf {ca_type=ty; ca_modalities=gf; _} =
   (tree_of_typexp Type Alloc.Const.legacy ty,
-   tree_of_modalities ~has_mutable_implied_modalities:false gf)
+   tree_of_modalities Immutable [] gf)
 
 (** We are on the RHS of an arrow type, where [ty] is the return type, and [m]
     is the return mode. This function decides the printed modes on [ty].
@@ -1660,9 +1651,12 @@ let typexp mode ppf ty =
   !Oprint.out_type ppf (tree_of_typexp mode ty)
 
 let modality ?(id = fun _ppf -> ()) ppf modality =
-  match tree_of_modality modality with
-  | None -> id ppf
-  | Some m -> !Oprint.out_modality ppf m
+  if Mode.Modality.is_id modality then id ppf
+  else
+    modality
+    |> Typemode.untransl_modality
+    |> tree_of_modality
+    |> !Oprint.out_modality ppf
 
 let prepared_type_expr ppf ty = typexp Type ppf ty
 
@@ -1768,14 +1762,8 @@ let tree_of_label l =
         mut
     | Immutable -> Om_immutable
   in
-  let has_mutable_implied_modalities =
-    if is_mutable l.ld_mutable then
-      not (Builtin_attributes.has_no_mutable_implied_modalities l.ld_attributes)
-    else
-      false
-  in
   let ld_modalities =
-    tree_of_modalities ~has_mutable_implied_modalities l.ld_modalities
+    tree_of_modalities l.ld_mutable l.ld_attributes l.ld_modalities
   in
   (Ident.name l.ld_id, mut, tree_of_typexp Type l.ld_type, ld_modalities)
 
@@ -1946,8 +1934,13 @@ let tree_of_type_decl id decl =
   in
   (* The algorithm for setting [lay] here is described as Case (C1) in
      Note [When to print jkind annotations] *)
-  let jkind_annotation = match ty, unboxed, decl.type_has_illegal_crossings with
-    | (Otyp_abstract, _, _) | (_, true, _) | (_, _, true) ->
+  let is_value =
+    match decl.type_jkind_annotation with
+    | Some (jkind, _) -> Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
+    | None -> false
+  in
+  let jkind_annotation = match ty, unboxed, is_value, decl.type_has_illegal_crossings with
+    | (Otyp_abstract, _, false, _) | (_, true, _, _) | (_, _, _, true) ->
         (* The two cases of (C1) from the Note correspond to Otyp_abstract.
            Anything but the default must be user-written, so we print the
            user-written annotation. *)
@@ -2164,7 +2157,8 @@ let tree_of_value_description id decl =
   let vd =
     { oval_name = id;
       oval_type = Otyp_poly(qtvs, ty);
-      oval_modalities = tree_of_modalities_new moda;
+      oval_modalities =
+        tree_of_modalities_new Immutable decl.val_attributes moda;
       oval_prims = [];
       oval_attributes = attrs
     }
@@ -2392,7 +2386,7 @@ let dummy =
     type_params = [];
     type_arity = 0;
     type_kind = Type_abstract Definition;
-    type_jkind = Jkind.Primitive.any ~why:Dummy_jkind;
+    type_jkind = Jkind.Builtin.any ~why:Dummy_jkind;
     type_jkind_annotation = None;
     type_private = Public;
     type_manifest = None;
@@ -2733,11 +2727,14 @@ let trees_of_type_expansion'
     if var_jkinds then
       match get_desc ty with
       | Tvar { jkind; _ } | Tunivar { jkind; _ } ->
-          let olay = match Jkind.get jkind with
+          let rec okind_of_desc : Jkind.Desc.t -> _ = function
             | Const clay -> out_jkind_of_const_jkind clay
             | Var v      -> Ojkind_var (Jkind.Sort.Var.name v)
+            | Product ds ->
+              Ojkind_product (List.map okind_of_desc ds)
           in
-          Otyp_jkind_annot (out, olay)
+          let okind = okind_of_desc (Jkind.get jkind) in
+          Otyp_jkind_annot (out, okind)
       | _ ->
           out
     else
@@ -2856,7 +2853,7 @@ let hide_variant_name t =
         (Tvariant
            (create_row ~fields ~fixed ~closed ~name:None
               ~more:(newvar2 (get_level more)
-                       (Jkind.Primitive.value ~why:Row_variable))))
+                       (Jkind.Builtin.value ~why:Row_variable))))
   | _ -> t
 
 let prepare_expansion Errortrace.{ty; expanded} =

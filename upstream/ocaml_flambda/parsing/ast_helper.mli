@@ -70,9 +70,11 @@ module Typ :
 
     val any: ?loc:loc -> ?attrs:attrs -> unit -> core_type
     val var: ?loc:loc -> ?attrs:attrs -> string -> core_type
-    val arrow: ?loc:loc -> ?attrs:attrs -> arg_label -> core_type -> core_type
-               -> core_type
+    val arrow: ?loc:loc -> ?attrs:attrs -> arg_label -> core_type -> core_type ->
+      mode with_loc list -> mode with_loc list -> core_type
     val tuple: ?loc:loc -> ?attrs:attrs -> core_type list -> core_type
+    val unboxed_tuple: ?loc:loc -> ?attrs:attrs
+                       -> (string option * core_type) list -> core_type
     val constr: ?loc:loc -> ?attrs:attrs -> lid -> core_type list -> core_type
     val object_: ?loc:loc -> ?attrs:attrs -> object_field list
                    -> closed_flag -> core_type
@@ -112,6 +114,9 @@ module Pat:
     val constant: ?loc:loc -> ?attrs:attrs -> constant -> pattern
     val interval: ?loc:loc -> ?attrs:attrs -> constant -> constant -> pattern
     val tuple: ?loc:loc -> ?attrs:attrs -> pattern list -> pattern
+    val unboxed_tuple: ?loc:loc -> ?attrs:attrs
+                       -> (string option * pattern) list -> closed_flag
+                       -> pattern
     val construct: ?loc:loc -> ?attrs:attrs ->
       lid -> (str list * pattern) option -> pattern
     val variant: ?loc:loc -> ?attrs:attrs -> label -> pattern option -> pattern
@@ -119,7 +124,8 @@ module Pat:
                 -> pattern
     val array: ?loc:loc -> ?attrs:attrs -> pattern list -> pattern
     val or_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern -> pattern
-    val constraint_: ?loc:loc -> ?attrs:attrs -> pattern -> core_type -> pattern
+    val constraint_: ?loc:loc -> ?attrs:attrs -> pattern -> core_type option
+                     -> mode with_loc list -> pattern
     val type_: ?loc:loc -> ?attrs:attrs -> lid -> pattern
     val lazy_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern
     val unpack: ?loc:loc -> ?attrs:attrs -> str_opt -> pattern
@@ -147,6 +153,8 @@ module Exp:
                 -> expression
     val try_: ?loc:loc -> ?attrs:attrs -> expression -> case list -> expression
     val tuple: ?loc:loc -> ?attrs:attrs -> expression list -> expression
+    val unboxed_tuple: ?loc:loc -> ?attrs:attrs
+                       -> (string option * expression) list -> expression
     val construct: ?loc:loc -> ?attrs:attrs -> lid -> expression option
                    -> expression
     val variant: ?loc:loc -> ?attrs:attrs -> label -> expression option
@@ -167,8 +175,8 @@ module Exp:
               -> direction_flag -> expression -> expression
     val coerce: ?loc:loc -> ?attrs:attrs -> expression -> core_type option
                 -> core_type -> expression
-    val constraint_: ?loc:loc -> ?attrs:attrs -> expression -> core_type
-                     -> expression
+    val constraint_: ?loc:loc -> ?attrs:attrs -> expression -> core_type option
+                     -> mode with_loc list -> expression
     val send: ?loc:loc -> ?attrs:attrs -> expression -> str -> expression
     val new_: ?loc:loc -> ?attrs:attrs -> lid -> expression
     val setinstvar: ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
@@ -192,6 +200,7 @@ module Exp:
                -> binding_op list -> expression -> expression
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> expression
     val unreachable: ?loc:loc -> ?attrs:attrs -> unit -> expression
+    val stack : ?loc:loc -> ?attrs:attrs -> expression -> expression
 
     val case: pattern -> ?guard:expression -> expression -> case
     val binding_op: str -> pattern -> expression -> loc -> binding_op
@@ -301,7 +310,8 @@ module Sig:
     val modtype: ?loc:loc -> module_type_declaration -> signature_item
     val modtype_subst: ?loc:loc -> module_type_declaration -> signature_item
     val open_: ?loc:loc -> open_description -> signature_item
-    val include_: ?loc:loc -> include_description -> signature_item
+    val include_: ?loc:loc -> ?modalities:modalities -> include_description ->
+      signature_item
     val class_: ?loc:loc -> class_description list -> signature_item
     val class_type: ?loc:loc -> class_type_declaration list -> signature_item
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> signature_item
@@ -370,15 +380,16 @@ module Opn:
 (** Includes *)
 module Incl:
   sig
-    val mk: ?loc: loc -> ?attrs:attrs -> ?docs:docs -> 'a -> 'a include_infos
+    val mk: ?loc: loc -> ?attrs:attrs -> ?docs:docs -> ?kind:include_kind -> 'a
+      -> 'a include_infos
   end
 
 (** Value bindings *)
 module Vb:
   sig
     val mk: ?loc: loc -> ?attrs:attrs -> ?docs:docs -> ?text:text ->
-      ?value_constraint:value_constraint -> pattern -> expression ->
-      value_binding
+      ?value_constraint:value_constraint -> ?modes:mode with_loc list -> pattern ->
+      expression -> value_binding
   end
 
 

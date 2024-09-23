@@ -62,24 +62,29 @@ type _ pattern_category =
 | Value : value pattern_category
 | Computation : computation pattern_category
 
-(* The following will be used in the future when overwriting is introduced and
-  code-motion need to be checked. This will be associated to each field
-  projection, and represents the usage of the record immediately after this
-  projection. If it points to unique, that means this projection must be
-  borrowed and cannot be moved *)
-type unique_barrier = Mode.Uniqueness.r option
+(* CR zqian: use this field when overwriting is supported. *)
+(** Access mode for a field projection, represented by the usage of the record
+  immediately following the projection. If the following usage is unique, the
+  projection must be borrowed and cannot be moved. If the following usage is
+  aliased, the projection can be aliased and moved. *)
+type unique_barrier = Mode.Uniqueness.r
 
 type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
+type alloc_mode = {
+  mode : Mode.Alloc.r;
+  closure_context : Env.closure_context option;
+}
+
 type texp_field_boxing =
-  | Boxing of Mode.Alloc.r * unique_use
+  | Boxing of alloc_mode * unique_use
   (** Projection requires boxing. [unique_use] describes the usage of the
       unboxed field as argument to boxing. *)
   | Non_boxing of unique_use
   (** Projection does not require boxing. [unique_use] describes the usage of
       the field as the result of direct projection. *)
 
-val shared_many_use : unique_use
+val aliased_many_use : unique_use
 
 type pattern = value general_pattern
 and 'k general_pattern = 'k pattern_desc pattern_data
@@ -129,6 +134,15 @@ and 'k pattern_desc =
         (** (P1, ..., Pn)                  [(None,P1); ...; (None,Pn)])
             (L1:P1, ... Ln:Pn)             [(Some L1,P1); ...; (Some Ln,Pn)])
             Any mix, e.g. (L1:P1, P2)      [(Some L1,P1); ...; (None,P2)])
+
+            Invariant: n >= 2
+         *)
+  | Tpat_unboxed_tuple :
+      (string option * value general_pattern * Jkind.sort) list ->
+      value pattern_desc
+        (** #(P1, ..., Pn)              [(None,P1,s1); ...; (None,Pn,sn)])
+            #(L1:P1, ... Ln:Pn)         [(Some L1,P1,s1); ...; (Some Ln,Pn,sn)])
+            Any mix, e.g. #(L1:P1, P2)  [(Some L1,P1,s1); ...; (None,P2,s2)])
 
             Invariant: n >= 2
          *)
@@ -206,8 +220,8 @@ and expression =
    }
 
 and exp_extra =
-  | Texp_constraint of core_type
-        (** E : T *)
+  | Texp_constraint of core_type option * Mode.Alloc.Const.Option.t
+        (** E : T @@ M *)
   | Texp_coerce of core_type option * core_type
         (** E :> T           [Texp_coerce (None, T)]
             E : T0 :> T      [Texp_coerce (Some T0, T)]
@@ -216,18 +230,14 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of string * Jkind.annotation option
         (** fun (type t : immediate) ->  *)
+  | Texp_stack
+      (** stack_ E *)
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
   (** merlin-specific: keep enough information to correctly implement
       occurrences for local-types.
       Merlin typechecker uses [Texp_newtype'] constructor, while upstream
       OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
       files. By adding a new constructor, we can still safely uses these. *)
-  | Texp_mode_coerce of Jane_syntax.Mode_expr.t
-        (** local_ E *)
-
-(* CR modes: Consider fusing [Texp_mode_coerce] and [Texp_constraint] when
-   the syntax changes.
-*)
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -264,12 +274,11 @@ and expression_desc =
   | Texp_function of
       { params : function_param list;
         body : function_body;
-        region : bool;
         ret_mode : Mode.Alloc.l;
         (* Mode where the function allocates, ie local for a function of
            type 'a -> local_ 'b, and heap for a function of type 'a -> 'b *)
         ret_sort : Jkind.sort;
-        alloc_mode : Mode.Alloc.r;
+        alloc_mode : alloc_mode;
         (* Mode at which the closure is allocated *)
         zero_alloc : Zero_alloc.t;
         (* zero-alloc attributes *)
@@ -314,15 +323,27 @@ and expression_desc =
          *)
   | Texp_try of expression * value case list
         (** try E with P1 -> E1 | ... | PN -> EN *)
-  | Texp_tuple of (string option * expression) list * Mode.Alloc.r
+  | Texp_tuple of (string option * expression) list * alloc_mode
         (** [Texp_tuple(el)] represents
-            - [(E1, ..., En)]       when [el] is [(None, E1);...;(None, En)],
-            - [(L1:E1, ..., Ln:En)] when [el] is [(Some L1, E1);...;(Some Ln, En)],
-            - Any mix, e.g. [(L1: E1, E2)] when [el] is [(Some L1, E1); (None, E2)]
+            - [(E1, ..., En)]
+                when [el] is [(None, E1);...;(None, En)],
+            - [(L1:E1, ..., Ln:En)]
+                when [el] is [(Some L1, E1);...;(Some Ln, En)],
+            - Any mix, e.g. [(L1: E1, E2)]
+                when [el] is [(Some L1, E1); (None, E2)]
+          *)
+  | Texp_unboxed_tuple of (string option * expression * Jkind.sort) list
+        (** [Texp_unboxed_tuple(el)] represents
+            - [#(E1, ..., En)]
+                when [el] is [(None, E1, s1);...;(None, En, sn)],
+            - [#(L1:E1, ..., Ln:En)]
+                when [el] is [(Some L1, E1, s1);...;(Some Ln, En, sn)],
+            - Any mix, e.g. [#(L1: E1, E2)]
+                when [el] is [(Some L1, E1, s1); (None, E2, s2)]
           *)
   | Texp_construct of
       Longident.t loc * Types.constructor_description *
-      expression list * Mode.Alloc.r option
+      expression list * alloc_mode option
         (** C                []
             C E              [E]
             C (E1, ..., En)  [E1;...;En]
@@ -331,7 +352,7 @@ and expression_desc =
             or [None] if the constructor is [Cstr_unboxed] or [Cstr_constant],
             in which case it does not need allocation.
          *)
-  | Texp_variant of label * (expression * Mode.Alloc.r) option
+  | Texp_variant of label * (expression * alloc_mode) option
         (** [alloc_mode] is the allocation mode of the variant,
             or [None] if the variant has no argument,
             in which case it does not need allocation.
@@ -340,7 +361,7 @@ and expression_desc =
       fields : ( Types.label_description * record_label_definition ) array;
       representation : Types.record_representation;
       extended_expression : expression option;
-      alloc_mode : Mode.Alloc.r option
+      alloc_mode : alloc_mode option
     }
         (** { l1=P1; ...; ln=Pn }           (extended_expression = None)
             { E0 with l1=P1; ...; ln=Pn }   (extended_expression = Some E0)
@@ -364,7 +385,7 @@ and expression_desc =
       expression * Mode.Locality.l * Longident.t loc *
       Types.label_description * expression
     (** [alloc_mode] translates to the [modify_mode] of the record *)
-  | Texp_array of Types.mutability * Jkind.Sort.t * expression list * Mode.Alloc.r
+  | Texp_array of Types.mutability * Jkind.Sort.t * expression list * alloc_mode
   | Texp_list_comprehension of comprehension
   | Texp_array_comprehension of Types.mutability * Jkind.sort * comprehension
   | Texp_ifthenelse of expression * expression * expression option
@@ -794,7 +815,7 @@ and signature_item_desc =
   | Tsig_modtype of module_type_declaration
   | Tsig_modtypesubst of module_type_declaration
   | Tsig_open of open_description
-  | Tsig_include of include_description
+  | Tsig_include of include_description * Mode.Modality.Value.Const.t
   | Tsig_class of class_description list
   | Tsig_class_type of class_type_declaration list
   | Tsig_attribute of attribute
@@ -887,6 +908,7 @@ and core_type_desc =
   | Ttyp_var of string option * Jkind.annotation option
   | Ttyp_arrow of arg_label * core_type * core_type
   | Ttyp_tuple of (string option * core_type) list
+  | Ttyp_unboxed_tuple of (string option * core_type) list
   | Ttyp_constr of Path.t * Longident.t loc * core_type list
   | Ttyp_object of object_field list * closed_flag
   | Ttyp_class of Path.t * Longident.t loc * core_type list
@@ -1203,6 +1225,9 @@ val exp_is_nominal : expression -> bool
 
 (** Calculates the syntactic arity of a function based on its parameters and body. *)
 val function_arity : function_param list -> function_body -> int
+
+(** Given a declaration, return the location of the bound identifier *)
+val loc_of_decl : uid:Shape.Uid.t -> item_declaration -> string Location.loc
 
 (* Merlin specific *)
 

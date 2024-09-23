@@ -7,8 +7,8 @@ let usage_msg =
 
 let verbose = ref false
 let debug = ref false
-let input_files = ref []
-let build_path = ref []
+let input_files_rev = ref []
+let build_path_rev = ref ({ visible = []; hidden = [] } : Load_path.paths)
 let output_file = ref "project.ocaml-index"
 let root = ref ""
 let rewrite_root = ref false
@@ -33,8 +33,8 @@ let anon_fun arg =
       | Some cmd -> command := Some cmd
       | None ->
           command := Some Aggregate;
-          input_files := arg :: !input_files)
-  | Some _ -> input_files := arg :: !input_files
+          input_files_rev := arg :: !input_files_rev)
+  | Some _ -> input_files_rev := arg :: !input_files_rev
 
 let speclist =
   [
@@ -51,8 +51,15 @@ let speclist =
       Arg.Set store_shapes,
       "Aggregate input-indexes shapes and store them in the new index" );
     ( "-I",
-      Arg.String (fun arg -> build_path := arg :: !build_path),
+      Arg.String (fun arg ->
+        build_path_rev := { !build_path_rev with
+                            visible = arg :: !build_path_rev.visible }),
       "An extra directory to add to the load path" );
+    ( "-H",
+      Arg.String (fun arg ->
+        build_path_rev := { !build_path_rev with
+                            hidden = arg :: !build_path_rev.hidden }),
+      "An extra hidden directory to add to the load path" );
     ( "--no-cmt-load-path",
       Arg.Set do_not_use_cmt_loadpath,
       "Do not initialize the load path with the paths found in the first input \
@@ -72,16 +79,17 @@ let () =
       let root = if String.equal "" !root then None else Some !root in
       Index.from_files ~store_shapes:!store_shapes ~root
         ~rewrite_root:!rewrite_root ~output_file:!output_file
-        ~build_path:!build_path
-        ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files
+        ~build_path:{ visible = List.rev !build_path_rev.visible;
+                      hidden = List.rev !build_path_rev.hidden }
+        ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath (List.rev !input_files_rev)
   | Some Dump ->
       List.iter
         (fun file ->
           Index_format.(
             read_exn ~file |> pp Format.std_formatter))
-        !input_files
+        (List.rev !input_files_rev)
   | Some Gather_shapes ->
-      Index.gather_shapes ~output_file:!output_file !input_files
+      Index.gather_shapes ~output_file:!output_file (List.rev !input_files_rev)
   | Some Stats ->
       List.iter
         (fun file ->
@@ -103,6 +111,6 @@ let () =
             (Uid_map.cardinal approximated)
             (Hashtbl.length cu_shape)
             (Option.value ~default:"none" root_directory))
-        !input_files
+        (List.rev !input_files_rev)
   | _ -> Printf.printf "Nothing to do.\n%!");
   exit 0

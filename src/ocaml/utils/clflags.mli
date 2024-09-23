@@ -13,6 +13,7 @@ val include_dirs         : string list ref
 val hidden_include_dirs  : string list ref
 val fast                 : bool ref
 val classic              : bool ref
+val all_ppx              : string list ref
 val principal            : bool ref
 val real_paths           : bool ref
 val recursive_types      : bool ref
@@ -48,4 +49,3 @@ val unboxed_types        : bool ref
 val profile_columns : profile_column list ref
 
 val locations            : bool ref
-val all_ppx              : string list ref

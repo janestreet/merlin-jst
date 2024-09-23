@@ -20,7 +20,7 @@
                 <def>
                   pattern (test.ml[2,79+6]..test.ml[2,79+13])
                     Tpat_var \"problem/275\"
-                    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
+                    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
                   expression (test.ml[2,79+16]..test.ml[2,79+24])
                     Texp_variant \"Problem\"
                     None
@@ -35,8 +35,7 @@
                     None
                   expression (test.ml[3,104+11]..test.ml[3,104+28])
                     Texp_function
-                    region true
-                    alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[shared,contended .. unique,uncontended])
+                    alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[aliased,contended .. unique,uncontended])
                     []
                     Tfunction_body
                       expression (test.ml[3,104+11]..test.ml[3,104+28])
@@ -70,13 +69,12 @@
         <def>
           pattern (type.ml[1,0+4]..type.ml[1,0+5])
             Tpat_var \"f/275\"
-            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
               Texp_newtype'  t/277
             Texp_function
-            region true
-            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[shared,contended .. unique,uncontended])
+            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[aliased,contended .. unique,uncontended])
             [
               Nolabel
               Param_pat
@@ -91,7 +89,7 @@
                           []
                       ]
                   Tpat_var \"foo/278\"
-                  value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable .. local,once,nonportable]);join(shared,contended)(modevar#5[shared,contended .. unique,uncontended])
+                  value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable .. local,once,nonportable]);join(aliased,contended)(modevar#5[aliased,contended .. unique,uncontended])
             ]
             Tfunction_body
               expression (type.ml[1,0+39]..type.ml[1,0+61])
@@ -195,7 +193,7 @@
                     "attrs": [],
                     "kind": "pattern (test.ml[1,0+4]..test.ml[1,0+5])
     Tpat_var \"f/275\"
-    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(shared,contended)(modevar#1[shared,uncontended .. unique,uncontended])
+    value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
   ",
                     "children": []
                   },
@@ -227,7 +225,7 @@
                         "attrs": [],
                         "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
     Tpat_var \"x/277\"
-    value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable .. local,once,nonportable]);join(shared,contended)(modevar#5[shared,contended .. unique,uncontended])
+    value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable .. local,once,nonportable]);join(aliased,contended)(modevar#5[aliased,contended .. unique,uncontended])
   ",
                         "children": []
                       },

@@ -713,8 +713,8 @@ let interface_mismatch ppf (diff: _ Err.diff) =
 
 let parameter_mismatch ppf (diff: _ Err.diff) =
   Format.fprintf ppf
-    "The argument module %s@ does not match the parameter signature %s:@ "
-    diff.got diff.expected
+    "The argument module %a@ does not match the parameter signature %a:@ "
+    Style.inline_code diff.got Style.inline_code diff.expected
 
 let compilation_unit_mismatch comparison ppf diff =
   match (comparison : Err.compilation_unit_comparison) with

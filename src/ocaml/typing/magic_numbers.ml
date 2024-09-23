@@ -49,8 +49,13 @@ module Cmi = struct
     | "Caml1999I532" -> Some "5.1.1minus-18"
     | "Caml1999I533" -> Some "5.1.1minus-19"
     | "Caml1999I534" -> Some "5.1.1minus-20"
+    | "Caml1999I535" -> Some "5.1.1minus-21"
+    | "Caml1999I536" -> Some "5.1.1minus-23"
+    | "Caml1999I537" -> Some "5.1.1minus-24"
+    | "Caml1999I550" -> Some "5.2.0minus-0"
     | "Caml1999I032" -> Some "5.0"
     | "Caml1999I033" -> Some "5.1"
+    | "Caml1999I034" -> Some "5.2"
     | _ -> None
 
   let () = assert (to_version_opt Config.cmi_magic_number <> None)
@@ -89,8 +94,7 @@ module Cmi = struct
           merlin_ocaml_version
       end
     | Corrupted_interface filename ->
-      fprintf ppf
-        "Corrupted compiled interface@ %a"
+        fprintf ppf "Corrupted compiled interface@ %a"
         (Style.as_inline_code Location.print_filename) filename
 
   let () =

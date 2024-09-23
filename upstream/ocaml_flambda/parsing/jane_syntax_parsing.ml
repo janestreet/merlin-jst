@@ -13,8 +13,7 @@
     In particular, for an language extension named [EXTNAME] (i.e., one that is
     enabled by [-extension EXTNAME] on the command line), the attribute (if
     used) must be [[@jane.ERASABILITY.EXTNAME]], and the extension node (if
-    used) must be [[%jane.ERASABILITY.EXTNAME]]. For built-in syntax, we use
-    [_builtin] instead of an language extension name.
+    used) must be [[%jane.ERASABILITY.EXTNAME]].
 
     The [ERASABILITY] component indicates to tools such as ocamlformat and
     ppxlib whether or not the attribute is erasable. See the documentation of
@@ -668,20 +667,23 @@ module Signature_item0 = Make_with_extension_node (struct
     Ast_helper.Sig.include_
       { pincl_mod = Ast_helper.Mty.signature [extension_node; sigi];
         pincl_loc = !Ast_helper.default_loc;
-        pincl_attributes = []
+        pincl_attributes = [];
+        pincl_kind = Structure
       }
 
   let match_extension_use sigi =
     match sigi.psig_desc with
     | Psig_include
-        { pincl_mod =
-            { pmty_desc =
-                Pmty_signature
-                  [{ psig_desc = Psig_extension (ext, []); _ }; sigi];
-              _
-            };
-          _
-        } ->
+        ( { pincl_mod =
+              { pmty_desc =
+                  Pmty_signature
+                    [{ psig_desc = Psig_extension (ext, []); _ }; sigi];
+                _
+              };
+            pincl_kind = Structure;
+            _
+          },
+          [] ) ->
       Some (ext, sigi)
     | _ -> None
 end)
@@ -705,7 +707,8 @@ module Structure_item0 = Make_with_extension_node (struct
     Ast_helper.Str.include_
       { pincl_mod = Ast_helper.Mod.structure [extension_node; stri];
         pincl_loc = !Ast_helper.default_loc;
-        pincl_attributes = []
+        pincl_attributes = [];
+        pincl_kind = Structure
       }
 
   let match_extension_use stri =
@@ -717,6 +720,7 @@ module Structure_item0 = Make_with_extension_node (struct
                   [{ pstr_desc = Pstr_extension (ext, []); _ }; stri];
               _
             };
+          pincl_kind = Structure;
           _
         } ->
       Some (ext, stri)

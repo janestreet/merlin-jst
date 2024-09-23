@@ -157,6 +157,7 @@ let hidden_dirs = s_ref []
 let no_auto_include _ _ = raise Not_found
 let auto_include_callback = ref no_auto_include
 
+
 let reset () =
   assert (not Config.merlin || Local_store.is_bound ());
   Path_cache.reset ();
@@ -315,3 +316,6 @@ let find_normalized_with_visibility fn =
     (!auto_include_callback Dir.find_normalized fn_uncap, Visible)
 
 let find_normalized fn = fst (find_normalized_with_visibility fn)
+
+(* Merlin: expose standard reset function *)
+let reset () = reset ()

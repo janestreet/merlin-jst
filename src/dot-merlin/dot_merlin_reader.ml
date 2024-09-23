@@ -72,10 +72,10 @@ module Cache = File_cache.Make (struct
 
           else if String.is_prefixed ~by:"B " line then
             tell (`B (String.drop 2 line))
-          else if String.is_prefixed ~by:"S " line then
-            tell (`S (String.drop 2 line))
           else if String.is_prefixed ~by:"BH " line then
             tell (`BH (String.drop 3 line))
+          else if String.is_prefixed ~by:"S " line then
+            tell (`S (String.drop 2 line))
           else if String.is_prefixed ~by:"SH " line then
             tell (`SH (String.drop 3 line))
           else if String.is_prefixed ~by:"SRC " line then
@@ -98,12 +98,21 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
-          else if String.is_prefixed ~by:"UNIT_NAME " line then
-            tell (`UNIT_NAME (String.drop 10 line))
-          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
-            tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"SOURCE_ROOT " line then
             tell (`SOURCE_ROOT (String.drop 12 line))
+          else if String.is_prefixed ~by:"UNIT_NAME " line then
+            tell (`UNIT_NAME (String.drop 10 line))
+          else if String.is_prefixed ~by:"UNIT_NAME_FOR " line then
+            (match List.rev (rev_split_words (String.drop 14 line)) with
+            | [ basename; unit_name ] ->
+              let mapping : Merlin_dot_protocol.Directive.unit_name_mapping =
+                { basename; unit_name }
+              in
+              tell (`UNIT_NAME_FOR mapping)
+            | _ ->
+              tell (`UNIT_NAME_FOR_ERROR "Expected two arguments to UNIT_NAME_FOR directive"))
+          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
+            tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -344,8 +353,10 @@ let prepend_config ~cwd ~cfg =
     | (`EXCLUDE_QUERY_DIR
       | `USE_PPX_CACHE
       | `UNIT_NAME _
+      | `UNIT_NAME_FOR _
       | `WRAPPING_PREFIX _
-      | `UNKNOWN_TAG _) as directive ->
+      | `UNKNOWN_TAG _
+      | `UNIT_NAME_FOR_ERROR _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }

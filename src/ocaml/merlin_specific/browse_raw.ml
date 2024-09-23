@@ -255,13 +255,13 @@ let option_fold f' o env (f : _ f0) acc = match o with
 let of_core_type ct = app (Core_type ct)
 
 let of_exp_extra (exp,_,_) = match exp with
-  | Texp_constraint ct ->
-    of_core_type ct
+  | Texp_constraint (ct, _) ->
+    option_fold of_core_type ct
   | Texp_coerce (cto,ct) ->
     of_core_type ct ** option_fold of_core_type cto
   | Texp_poly cto ->
     option_fold of_core_type cto
-  | Texp_mode_coerce _
+  | Texp_stack
   | Texp_newtype' _
   | Texp_newtype _ ->
     id_fold
@@ -323,6 +323,8 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps ->
     list_fold (fun (_lbl, p) -> of_pattern p) ps
+  | Tpat_unboxed_tuple ps ->
+    list_fold (fun (_lbl, p, _sort) -> of_pattern p) ps
   | Tpat_construct (_,_,ps,None) | Tpat_array (_,_,ps) ->
     list_fold of_pattern ps
   | Tpat_construct (_,_,ps,Some (_, ct)) ->
@@ -340,31 +342,13 @@ let of_method_call obj meth loc =
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
-let of_function_param (param : Typedtree.function_param) =
-  (* We should consider taking into account param.fp_loc at some point, as it
-     allows us to respond with the *parameter*'s type (as opposed to the
-     function's type) when the user queries the label:
-
-     let f ?y:(x = 3) () = x
-           ^
-  *)
-  match param.fp_kind with
-  | Tparam_pat pat -> of_pattern pat
-  | Tparam_optional_default (pat, expr, _) ->
-      of_pattern pat ** of_expression expr
-
-let of_expression_desc loc = function
+let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ | Texp_src_pos | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { params; body; _ } ->
-    let body =
-      match body with
-      | Tfunction_body expr -> of_expression expr
-      | Tfunction_cases {fc_cases; _} -> list_fold of_case fc_cases
-    in
-    list_fold of_function_param params ** body
+    list_fold of_function_param params ** of_function_body body
   | Texp_apply (e,ls,_,_, _) ->
     of_expression e **
     list_fold (function
@@ -379,6 +363,8 @@ let of_expression_desc loc = function
     list_fold of_case cs
   | Texp_tuple (es,_) ->
     list_fold (fun (_lbl, e) -> of_expression e) es
+  | Texp_unboxed_tuple es ->
+    list_fold (fun (_lbl, e, _sort) -> of_expression e) es
   | Texp_construct (_,_,es,_) | Texp_array (_,_,es,_) ->
     list_fold of_expression es
   | Texp_variant (_,Some (e,_))
@@ -447,6 +433,25 @@ let of_expression_desc loc = function
   | Texp_probe_is_enabled _ ->
     id_fold
   | Texp_exclave e -> of_expression e
+
+
+(* We should consider taking into account param.fp_loc at some point, as it
+   allows us to respond with the *parameter*'s type (as opposed to the
+   function's type) when the user queries the label:
+
+   let f ?y:(x = 3) () = x
+         ^
+*)
+and of_function_param fp = of_function_param_kind fp.fp_kind
+
+and of_function_param_kind = function
+  | Tparam_pat pat -> of_pattern pat
+  | Tparam_optional_default (pat, exp, _) ->
+    of_pattern pat ** of_expression exp
+
+and of_function_body = function
+  | Tfunction_body exp -> of_expression exp
+  | Tfunction_cases fc -> list_fold of_case fc.fc_cases
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
@@ -568,7 +573,7 @@ and of_signature_item_desc = function
     list_fold (fun md -> app (Module_declaration md)) mds
   | Tsig_modtype mtd ->
     app (Module_type_declaration mtd)
-  | Tsig_include i ->
+  | Tsig_include (i, _modality) ->
     app (Include_description i)
   | Tsig_class cds ->
     list_fold (fun cd -> app (Class_description cd)) cds
@@ -590,6 +595,8 @@ and of_core_type_desc = function
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts ->
+    list_fold (fun (_, ty) -> of_core_type ty) cts
+  | Ttyp_unboxed_tuple cts ->
     list_fold (fun (_, ty) -> of_core_type ty) cts
   | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
     list_fold of_core_type cts

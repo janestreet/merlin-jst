@@ -188,6 +188,13 @@ type contention_context =
   | Read_mutable
   | Write_mutable
 
+type unsupported_stack_allocation =
+  | Lazy
+  | Module
+  | Object
+  | List_comprehension
+  | Array_comprehension
+
 type error =
   | Constructor_arity_mismatch of Longident.t * int * int
   | Constructor_labeled_arg
@@ -225,7 +232,8 @@ type error =
       Datatype_kind.t * Longident.t * (Path.t * Path.t) * (Path.t * Path.t) list
   | Invalid_format of string
   | Not_an_object of type_expr * type_forcing_context option
-  | Not_a_value of Jkind.Violation.t * type_forcing_context option
+  | Non_value_object of Jkind.Violation.t * type_forcing_context option
+  | Non_value_let_rec of Jkind.Violation.t * type_expr
   | Undefined_method of type_expr * string * string list option
   | Undefined_self_method of string * string list
   | Virtual_class of Longident.t
@@ -290,7 +298,8 @@ type error =
       Env.closure_context option *
       contention_context option *
       Env.shared_context option
-  | Local_application_complete of arg_label * [`Prefix|`Single_arg|`Entire_apply]
+  | Curried_application_complete of
+      arg_label * Mode.Alloc.error * [`Prefix|`Single_arg|`Entire_apply]
   | Param_mode_mismatch of Mode.Alloc.equate_error
   | Uncurried_function_escapes of Mode.Alloc.error
   | Local_return_annotation_mismatch of Location.t
@@ -302,9 +311,11 @@ type error =
   | Exclave_returns_not_local
   | Unboxed_int_literals_not_supported
   | Function_type_not_rep of type_expr * Jkind.Violation.t
-  | Modes_on_pattern
   | Invalid_label_for_src_pos of arg_label
   | Nonoptional_call_pos_label of string
+  | Cannot_stack_allocate of Env.closure_context option
+  | Unsupported_stack_allocation of unsupported_stack_allocation
+  | Not_allocation
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -340,7 +351,7 @@ val annotate_recursive_bindings :
 val check_recursive_class_bindings :
   Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
 
-val src_pos : Location.t -> Typedtree.attributes -> Env.t -> Typedtree.expression 
+val src_pos : Location.t -> Typedtree.attributes -> Env.t -> Typedtree.expression
 
 (* Merlin specific *)
 val partial_pred :

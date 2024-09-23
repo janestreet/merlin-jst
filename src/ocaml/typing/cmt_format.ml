@@ -235,7 +235,8 @@ let iter_on_occurrences
       | Texp_extension_constructor (lid, path) ->
           f ~namespace:Extension_constructor exp_env path lid
       | Texp_constant _ | Texp_let _ | Texp_function _ | Texp_apply _
-      | Texp_match _ | Texp_try _ | Texp_tuple _ | Texp_variant _ | Texp_array _
+      | Texp_match _ | Texp_try _ | Texp_tuple _ | Texp_unboxed_tuple _
+      | Texp_variant _ | Texp_array _
       | Texp_ifthenelse _ | Texp_sequence _ | Texp_while _ | Texp_for _
       | Texp_send _
       | Texp_letmodule _ | Texp_letexception _ | Texp_assert _ | Texp_lazy _
@@ -261,7 +262,9 @@ let iter_on_occurrences
       | Ttyp_open (path, lid, _ct) ->
           f ~namespace:Module ctyp_env path lid
       | Ttyp_var _ | Ttyp_arrow _ | Ttyp_tuple _ | Ttyp_object _
-      | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _ | Ttyp_call_pos -> ());
+      | Ttyp_unboxed_tuple _
+      | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _
+      | Ttyp_call_pos -> ());
       default_iterator.typ sub ct);
 
   pat =
@@ -285,6 +288,7 @@ let iter_on_occurrences
           add_label pat_env lid label_descr)
         fields
       | Tpat_any | Tpat_var _ | Tpat_alias _ | Tpat_constant _ | Tpat_tuple _
+      | Tpat_unboxed_tuple _
       | Tpat_variant _ | Tpat_array _ | Tpat_lazy _ | Tpat_value _
       | Tpat_exception _ | Tpat_or _ -> ());
       List.iter  ~f:(fun (pat_extra, _, _) ->
@@ -379,7 +383,7 @@ let iter_declarations binary_annots ~f =
 let index_declarations binary_annots =
   let index : item_declaration Types.Uid.Tbl.t = Types.Uid.Tbl.create 16 in
   let f uid fragment = Types.Uid.Tbl.add index uid fragment in
-  iter_declarations binary_annots ~f;
+  iter_on_annots (iter_on_declarations ~f) binary_annots;
   index
 
 let index_occurrences binary_annots =
@@ -401,11 +405,18 @@ let index_occurrences binary_annots =
 
 exception Error of error
 
-let input_cmt ic = (input_value ic : cmt_infos)
+let input_cmt ic : cmt_infos =
+  (* CR ocaml 5 compressed-marshal mshinwell:
+     (Compression.input_value ic : cmt_infos)
+  *)
+  Marshal.from_channel ic
 
 let output_cmt oc cmt =
+  ignore (oc, cmt)
+  (*
   output_string oc Config.cmt_magic_number;
-  output_value oc (cmt : cmt_infos)
+  Marshal.(to_channel oc (cmt : cmt_infos) [Compression])
+  *)
 
 let read filename =
 (*  Printf.fprintf stderr "Cmt_format.read %s\n%!" filename; *)

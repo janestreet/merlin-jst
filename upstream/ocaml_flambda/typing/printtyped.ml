@@ -227,7 +227,7 @@ let attributes i ppf l =
   ) l
 
 let jkind_annotation i ppf (jkind, _) =
-  line i ppf "%a" Jkind.Const.format jkind
+  line i ppf "%a" Jkind.Debug_printers.Const.t jkind
 
 let zero_alloc_assume i ppf : Zero_alloc.assume -> unit = function
     { strict; never_returns_normally; never_raises; arity; loc = _ } ->
@@ -252,6 +252,9 @@ let rec core_type i ppf x =
       core_type i ppf ct2;
   | Ttyp_tuple l ->
       line i ppf "Ttyp_tuple\n";
+      list i labeled_core_type ppf l;
+  | Ttyp_unboxed_tuple l ->
+      line i ppf "Ttyp_unboxed_tuple\n";
       list i labeled_core_type ppf l;
   | Ttyp_constr (li, _, l) ->
       line i ppf "Ttyp_constr %a\n" fmt_path li;
@@ -326,6 +329,9 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
   | Tpat_tuple (l) ->
       line i ppf "Tpat_tuple\n";
       list i labeled_pattern ppf l;
+  | Tpat_unboxed_tuple (l) ->
+      line i ppf "Tpat_unboxed_tuple\n";
+      list i labeled_pattern_with_sorts ppf l;
   | Tpat_construct (li, _, po, vto) ->
       line i ppf "Tpat_construct %a\n" fmt_longident li;
       list i pattern ppf po;
@@ -364,6 +370,13 @@ and labeled_pattern : type k . _ -> _ -> string option * k general_pattern -> un
     tuple_component_label i ppf label;
     pattern i ppf x
 
+and labeled_pattern_with_sorts :
+  type k . _ -> _ -> string option * k general_pattern * Jkind.sort -> unit =
+  fun i ppf (label, x, sort) ->
+    tuple_component_label i ppf label;
+    pattern i ppf x;
+    line i ppf "%a\n" Jkind.Sort.format sort
+
 and pattern_extra i ppf (extra_pat, _, attrs) =
   match extra_pat with
   | Tpat_unpack ->
@@ -392,7 +405,7 @@ and function_body i ppf (body : function_body) =
       line i ppf "Tfunction_cases%a %a\n"
         fmt_partiality fc_partial
         fmt_location fc_loc;
-      alloc_mode i ppf fc_arg_mode;
+      alloc_mode_raw i ppf fc_arg_mode;
       line i ppf "%a\n" Jkind.Sort.format fc_arg_sort;
       attributes (i+1) ppf fc_attributes;
       Option.iter (fun e -> expression_extra (i+1) ppf e []) fc_exp_extra;
@@ -400,10 +413,11 @@ and function_body i ppf (body : function_body) =
 
 and expression_extra i ppf x attrs =
   match x with
-  | Texp_constraint ct ->
+  | Texp_constraint (ct, m) ->
       line i ppf "Texp_constraint\n";
       attributes i ppf attrs;
-      core_type i ppf ct;
+      option i core_type ppf ct;
+      alloc_const_option_mode i ppf m;
   | Texp_coerce (cto1, cto2) ->
       line i ppf "Texp_coerce\n";
       attributes i ppf attrs;
@@ -416,17 +430,14 @@ and expression_extra i ppf x attrs =
   | Texp_newtype (s, lay) ->
       line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
       attributes i ppf attrs;
-  | Texp_mode_coerce modes ->
-      let modes = (modes :> string Location.loc list Location.loc) in
-      line i ppf "Texp_mode_coerce %s\n"
-        (String.concat ","
-          (List.map
-            (fun loc -> Printf.sprintf "\"%s\"" loc.txt)
-            modes.txt));
-      attributes i ppf attrs;
+  | Texp_stack ->
+      line i ppf "Texp_stack\n";
+      attributes i ppf attrs
 
-and alloc_mode: type l r. _ -> _ -> (l * r) Mode.Alloc.t -> _
+and alloc_mode_raw: type l r. _ -> _ -> (l * r) Mode.Alloc.t -> _
   = fun i ppf m -> line i ppf "alloc_mode %a\n" (Mode.Alloc.print ()) m
+
+and alloc_mode i ppf (m : alloc_mode) = alloc_mode_raw i ppf m.mode
 
 and alloc_mode_option i ppf m = Option.iter (alloc_mode i ppf) m
 
@@ -436,6 +447,9 @@ and locality_mode i ppf m =
 
 and value_mode i ppf m =
   line i ppf "value_mode %a\n" (Mode.Value.print ()) m
+
+and alloc_const_option_mode i ppf m =
+  line i ppf "alloc_const_option_mode %a\n" Mode.Alloc.Const.Option.print m
 
 and expression_alloc_mode i ppf (expr, am) =
   alloc_mode i ppf am;
@@ -459,9 +473,8 @@ and expression i ppf x =
       line i ppf "Texp_let %a\n" fmt_rec_flag rf;
       list i (value_binding rf) ppf l;
       expression i ppf e;
-  | Texp_function { params; body; region; alloc_mode = am } ->
+  | Texp_function { params; body; alloc_mode = am } ->
       line i ppf "Texp_function\n";
-      line i ppf "region %b\n" region;
       alloc_mode i ppf am;
       list i function_param ppf params;
       function_body i ppf body;
@@ -490,6 +503,9 @@ and expression i ppf x =
       line i ppf "Texp_tuple\n";
       alloc_mode i ppf am;
       list i labeled_expression ppf l;
+  | Texp_unboxed_tuple l ->
+      line i ppf "Texp_unboxed_tuple\n";
+      list i labeled_sorted_expression ppf l;
   | Texp_construct (li, _, eo, am) ->
       line i ppf "Texp_construct %a\n" fmt_longident li;
       alloc_mode_option i ppf am;
@@ -936,7 +952,7 @@ and signature_item i ppf x =
         fmt_override_flag od.open_override
         fmt_path (fst od.open_expr);
       attributes i ppf od.open_attributes
-  | Tsig_include incl ->
+  | Tsig_include (incl, _) ->
       line i ppf "Tsig_include\n";
       attributes i ppf incl.incl_attributes;
       module_type i ppf incl.incl_mod
@@ -1175,6 +1191,12 @@ and labeled_expression i ppf (l, e) =
   line i ppf "<tuple component>\n";
   tuple_component_label i ppf l;
   expression (i+1) ppf e;
+
+and labeled_sorted_expression i ppf (l, e, s) =
+  line i ppf "<tuple component>\n";
+  tuple_component_label i ppf l;
+  expression (i+1) ppf e;
+  line i ppf "%a\n" Jkind.Sort.format s;
 
 and ident_x_expression_def i ppf (l, e) =
   line i ppf "<def> \"%a\"\n" fmt_ident l;

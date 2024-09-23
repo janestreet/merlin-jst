@@ -128,6 +128,7 @@ let keyword_table : keywords =
     "private", PRIVATE;
     "rec", REC;
     "sig", SIG;
+    "stack_", STACK;
     "struct", STRUCT;
     "then", THEN;
     "to", TO;
@@ -434,6 +435,7 @@ let is_keyword name =
   match lookup_keyword name with
   | LIDENT _ -> false
   | _ -> true
+let () = Lexer.is_keyword_ref := is_keyword
 
 let check_label_name lexbuf name =
   if is_keyword name
@@ -460,6 +462,7 @@ let update_loc lexbuf _file line absolute chars =
 let warn_latin1 lexbuf =
   Location.deprecated (Location.curr lexbuf)
     "ISO-Latin1 characters in identifiers"
+;;
 
 let float ~maybe_hash lit modifier =
   match maybe_hash with
@@ -472,6 +475,7 @@ let int ~maybe_hash lit modifier =
   | "#" -> return (HASH_INT (lit, modifier))
   | "" -> return (INT (lit, modifier))
   | unexpected -> fatal_error ("expected # or empty string: " ^ unexpected)
+;;
 
 (* Error report *)
 
@@ -577,6 +581,7 @@ let raw_ident_escape = "\\#"
 
 
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
+
 
 rule token state = parse
   | ("\\" as bs) newline {
@@ -782,6 +787,7 @@ rule token state = parse
   | "\'" { return QUOTE }
   | "("  { return LPAREN }
   | ")"  { return RPAREN }
+  | "#(" { return HASHLPAREN }
   | "*"  { return STAR }
   | ","  { return COMMA }
   | "->" { return MINUSGREATER }
@@ -961,7 +967,7 @@ and comment state = parse
         Buffer.add_char state.buffer '}';
         comment state lexbuf }
 
-  | "''"
+  | "\'\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "'" (newline as nl) "'"
       { update_loc lexbuf None 1 false 1;
@@ -970,15 +976,15 @@ and comment state = parse
         store_string_char state.buffer '\'';
         comment state lexbuf
       }
-  | "'" [^ '\\' '\'' '\010' '\013' ] "'"
+  | "\'" [^ '\\' '\'' '\010' '\013' ] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
+  | "\'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
+  | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
+  | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | eof
       { match state.comment_start_loc with

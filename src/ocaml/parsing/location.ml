@@ -113,6 +113,27 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 
 
+let merge ?(ghost = true) locs =
+  let hd, tl =
+    match locs with
+    | hd :: tl -> hd, tl
+    | [] -> failwith "Compiler bug: Called [Location.merge] with an empty list"
+  in
+  List.fold_left
+    (fun acc x ->
+      let loc_start =
+        if compare_position x.loc_start acc.loc_start < 0
+        then x.loc_start else acc.loc_start
+      in
+      let loc_end =
+        if compare_position x.loc_end acc.loc_end > 0
+        then x.loc_end else acc.loc_end
+      in
+      let loc_ghost = x.loc_ghost || acc.loc_ghost in
+      { loc_start; loc_end; loc_ghost })
+    { hd with loc_ghost = hd.loc_ghost || ghost }
+    tl
+
 type 'a loc = {
   txt : 'a;
   loc : t;
@@ -199,6 +220,11 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
+(*
+let setup_tags () =
+  Misc.Style.setup !Clflags.color
+*)
+
 (******************************************************************************)
 (* Printing locations, e.g. 'File "foo.ml", line 3, characters 10-12' *)
 
@@ -268,6 +294,7 @@ let print_filename ppf file =
    location might be invalid; in which case we do not print it.
  *)
 let print_loc ~capitalize_first ppf loc =
+  (* setup_tags (); *)
   let file_valid = function
     | "_none_" ->
         (* This is a dummy placeholder, but we print it anyway to please editors
@@ -606,6 +633,24 @@ let lines_around
 *)
 
 (*
+(* Get lines from a file *)
+let lines_around_from_file
+    ~(start_pos: position) ~(end_pos: position)
+    (filename: string):
+  input_line list
+  =
+  try
+    let cin = open_in_bin filename in
+    let read_char () =
+      try Some (input_char cin) with End_of_file -> None
+    in
+    let lines =
+      lines_around ~start_pos ~end_pos ~seek:(seek_in cin) ~read_char
+    in
+    close_in cin;
+    lines
+  with Sys_error _ -> []
+
 (* Attempt to get lines from the lexing buffer. *)
 let lines_around_from_lexbuf
     ~(start_pos: position) ~(end_pos: position)
@@ -659,8 +704,18 @@ let lines_around_from_current_input ~start_pos ~end_pos =
       lines_around_from_phrasebuf pb ~start_pos ~end_pos
   | Some lb, _, _ ->
       lines_around_from_lexbuf lb ~start_pos ~end_pos
-  | None, _, _ ->
-      []
+  | None, _, filename ->
+      (* A situation where we have no input buffer and no phrase buffer
+         is when the compiler is getting the binary AST directly as input. *)
+      (* Be a bit defensive, and do not try to open one of the possible
+         [!input_name] values that we know do not denote valid filenames. *)
+      let file_valid = match filename with
+        | "//toplevel//" | "_none_" | "" -> false
+        | _ -> true
+      in
+      if file_valid
+      then lines_around_from_file filename ~start_pos ~end_pos
+      else []
 *)
 
 (******************************************************************************)
@@ -779,6 +834,7 @@ let batch_mode_printer : report_printer =
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
+    (* setup_tags (); *)
     separate_new_message ppf;
     (* Make sure we keep [num_loc_lines] updated.
         The tabulation box is here to give submessage the option
@@ -956,6 +1012,7 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
+
 
 module Style = Misc.Style
 

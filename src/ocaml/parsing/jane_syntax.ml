@@ -41,7 +41,7 @@ end
 module Of_ast (Ext : Extension) : sig
   type unwrapped := string list * payload * attributes
 
-  (* Find and remove a jane-syntax attribute marker, throwing an error
+  (* Find and remove a jane-syntax attribute marker, throwing an exception
      if the attribute name does not have the right format or extension. *)
   val unwrap_jane_syntax_attributes_exn :
     loc:Location.t -> attributes -> unwrapped
@@ -335,143 +335,23 @@ module Arrow_curry = struct
       (PStr [])
 end
 
-module Mode_expr = struct
-  module Const : sig
-    type t = Parsetree.mode_const_expression
+(* only used for [Jkind] below *)
+module Mode = struct
+  module Protocol = Make_payload_protocol_of_stringable (struct
+    type t = mode
 
-    val mk : string -> Location.t -> t
+    let indefinite_article_and_name = "a", "mode"
 
-    val list_as_payload : t list -> payload
+    let to_string (Mode s) = s
 
-    val list_from_payload : loc:Location.t -> payload -> t list
+    let of_string' s = Mode s
 
-    val ghostify : t -> t
-  end = struct
-    type raw = string
+    let of_string s = Some (of_string' s)
+  end)
 
-    module Protocol = Make_payload_protocol_of_stringable (struct
-      type t = raw
+  let list_as_payload = Protocol.Encode.list_as_payload
 
-      let indefinite_article_and_name = "a", "mode"
-
-      let to_string s = s
-
-      let of_string' s = s
-
-      let of_string s = Some (of_string' s)
-    end)
-
-    let list_as_payload = Protocol.Encode.list_as_payload
-
-    let list_from_payload = Protocol.Decode.list_from_payload
-
-    type t = Parsetree.mode_const_expression
-
-    let mk txt loc : t = { txt; loc }
-
-    let ghostify { txt; loc } =
-      let loc = { loc with loc_ghost = true } in
-      { txt; loc }
-  end
-
-  type t = Parsetree.mode_expression
-
-  let empty = Location.mknoloc []
-
-  let singleton const =
-    let const' = (const : Const.t :> _ Location.loc) in
-    Location.mkloc [const] const'.loc
-
-  let concat mode0 mode1 =
-    let txt = mode0.txt @ mode1.txt in
-    Location.mknoloc txt
-
-  let feature : Feature.t = Language_extension Mode
-
-  let attribute_or_extension_name =
-    Embedded_name.of_feature feature [] |> Embedded_name.to_string
-
-  let attribute_name = attribute_or_extension_name
-
-  let payload_of { txt; _ } =
-    match txt with
-    | [] -> None
-    | _ :: _ as txt -> Some (Const.list_as_payload txt)
-
-  let of_payload ~loc payload =
-    let l = Const.list_from_payload ~loc payload in
-    match l with
-    | [] -> Misc.fatal_error "Payload encoding empty mode expression"
-    | _ :: _ -> Location.mkloc l loc
-
-  let extract_attr attrs =
-    let attrs, rest =
-      List.partition
-        (fun { attr_name; _ } -> attr_name.txt = attribute_name)
-        attrs
-    in
-    match attrs with
-    | [] -> None, rest
-    | [attr] -> Some attr, rest
-    | _ :: _ :: _ -> Misc.fatal_error "More than one mode attribute"
-
-  let of_attr { attr_payload; attr_loc; _ } =
-    of_payload ~loc:attr_loc attr_payload
-
-  let maybe_of_attrs attrs =
-    let attr, rest = extract_attr attrs in
-    let mode = Option.map of_attr attr in
-    mode, rest
-
-  let of_attrs attrs =
-    let mode, rest = maybe_of_attrs attrs in
-    let mode = Option.value mode ~default:empty in
-    mode, rest
-
-  let attr_of modes =
-    match payload_of modes with
-    | None -> None
-    | Some attr_payload ->
-      let attr_name = Location.mknoloc attribute_name in
-      let attr_loc = modes.loc in
-      Some { attr_name; attr_loc; attr_payload }
-
-  let ghostify { txt; loc } =
-    let loc = { loc with loc_ghost = true } in
-    let txt = List.map Const.ghostify txt in
-    { loc; txt }
-end
-
-(** Some mode-related constructs *)
-module Modes = struct
-  let feature : Feature.t = Language_extension Mode
-
-  type nonrec expression = Coerce of Mode_expr.t * expression
-
-  let extension_name = Mode_expr.attribute_or_extension_name
-
-  let of_expr ({ pexp_desc; pexp_attributes; _ } as expr) =
-    match pexp_desc with
-    | Pexp_apply
-        ( { pexp_desc = Pexp_extension ({ txt; _ }, payload); pexp_loc; _ },
-          [(Nolabel, body)] )
-      when txt = extension_name ->
-      let modes = Mode_expr.of_payload ~loc:pexp_loc payload in
-      Coerce (modes, body), pexp_attributes
-    | _ ->
-      Misc.fatal_errorf "Improperly encoded modes expression: %a"
-        (Printast.expression 0) expr
-
-  let expr_of ~loc (Coerce (modes, body)) =
-    match Mode_expr.payload_of modes with
-    | None -> body
-    | Some payload ->
-      let ext =
-        Ast_helper.Exp.extension ~loc:modes.loc
-          (Location.mknoloc extension_name, payload)
-      in
-      Expression.make_entire_jane_syntax ~loc feature (fun () ->
-          Ast_helper.Exp.apply ~loc ext [Nolabel, body])
+  let list_from_payload = Protocol.Decode.list_from_payload
 end
 
 module Jkind = struct
@@ -508,9 +388,10 @@ module Jkind = struct
   type t = Parsetree.jkind_annotation =
     | Default
     | Abbreviation of Const.t
-    | Mod of t * Mode_expr.t
+    | Mod of t * modes
     | With of t * core_type
     | Kind_of of core_type
+    | Product of t list
 
   type annotation = t loc
 
@@ -566,12 +447,12 @@ module Jkind = struct
     | Default -> struct_item_of_list "default" [] t_loc.loc
     | Abbreviation c ->
       struct_item_of_list "abbrev" [Const.to_structure_item c] t_loc.loc
-    | Mod (t, mode_list) ->
+    | Mod (t, modes) ->
       let mode_list_item =
         struct_item_of_attr
           { attr_name = Location.mknoloc (prefix ^ "mod");
-            attr_payload = Mode_expr.Const.list_as_payload mode_list.txt;
-            attr_loc = mode_list.loc
+            attr_payload = Mode.list_as_payload modes;
+            attr_loc = Location.none
           }
       in
       struct_item_of_list "mod" [to_structure_item t; mode_list_item] t_loc.loc
@@ -581,6 +462,8 @@ module Jkind = struct
         t_loc.loc
     | Kind_of ty ->
       struct_item_of_list "kind_of" [struct_item_of_type ty] t_loc.loc
+    | Product ts ->
+      struct_item_of_list "product" (List.map to_structure_item ts) t_loc.loc
 
   let rec of_structure_item item =
     let bind = Option.bind in
@@ -590,10 +473,8 @@ module Jkind = struct
     | Some ("mod", [item_of_t; item_of_mode_expr], loc) ->
       bind (of_structure_item item_of_t) (fun { txt = t } ->
           bind (struct_item_to_attr item_of_mode_expr) (fun attr ->
-              let mode_list =
-                Mode_expr.Const.list_from_payload ~loc attr.attr_payload
-              in
-              ret loc (Mod (t, { txt = mode_list; loc = attr.attr_loc }))))
+              let modes = Mode.list_from_payload ~loc attr.attr_payload in
+              ret loc (Mod (t, modes))))
     | Some ("with", [item_of_t; item_of_ty], loc) ->
       bind (of_structure_item item_of_t) (fun { txt = t } ->
           bind (struct_item_to_type item_of_ty) (fun ty ->
@@ -602,6 +483,9 @@ module Jkind = struct
       bind (struct_item_to_type item_of_ty) (fun ty -> ret loc (Kind_of ty))
     | Some ("abbrev", [item], loc) ->
       bind (Const.of_structure_item item) (fun c -> ret loc (Abbreviation c))
+    | Some ("product", items, loc) ->
+      bind (Misc_stdlib.List.map_option of_structure_item items) (fun tls ->
+          ret loc (Product (List.map (fun tl -> tl.txt) tls)))
     | Some _ | None -> None
 end
 
@@ -1064,37 +948,6 @@ module Labeled_tuples = struct
       in
       (labeled_components, closed), ppat_attributes
     | _ -> Desugaring_error.raise pat.ppat_loc Malformed
-end
-
-(** [include functor] *)
-module Include_functor = struct
-  type signature_item = Ifsig_include_functor of include_description
-
-  type structure_item = Ifstr_include_functor of include_declaration
-
-  let feature : Feature.t = Language_extension Include_functor
-
-  let sig_item_of ~loc = function
-    | Ifsig_include_functor incl ->
-      (* See Note [Wrapping with make_entire_jane_syntax] *)
-      Signature_item.make_entire_jane_syntax ~loc feature (fun () ->
-          Ast_helper.Sig.include_ incl)
-
-  let of_sig_item sigi =
-    match sigi.psig_desc with
-    | Psig_include incl -> Ifsig_include_functor incl
-    | _ -> failwith "Malformed [include functor] in signature"
-
-  let str_item_of ~loc = function
-    | Ifstr_include_functor incl ->
-      (* See Note [Wrapping with make_entire_jane_syntax] *)
-      Structure_item.make_entire_jane_syntax ~loc feature (fun () ->
-          Ast_helper.Str.include_ incl)
-
-  let of_str_item stri =
-    match stri.pstr_desc with
-    | Pstr_include incl -> Ifstr_include_functor incl
-    | _ -> failwith "Malformed [include functor] in structure"
 end
 
 (** Module strengthening *)
@@ -1629,7 +1482,6 @@ module Expression = struct
     | Jexp_immutable_array of Immutable_arrays.expression
     | Jexp_layout of Layouts.expression
     | Jexp_tuple of Labeled_tuples.expression
-    | Jexp_modes of Modes.expression
 
   let of_ast_internal (feat : Feature.t) expr =
     match feat with
@@ -1645,9 +1497,6 @@ module Expression = struct
     | Language_extension Labeled_tuples ->
       let expr, attrs = Labeled_tuples.of_expr expr in
       Some (Jexp_tuple expr, attrs)
-    | Language_extension Mode ->
-      let expr, attrs = Modes.of_expr expr in
-      Some (Jexp_modes expr, attrs)
     | _ -> None
 
   let of_ast = Expression.make_of_ast ~of_ast_internal
@@ -1659,7 +1508,6 @@ module Expression = struct
       | Jexp_immutable_array x -> Immutable_arrays.expr_of ~loc x
       | Jexp_layout x -> Layouts.expr_of ~loc x
       | Jexp_tuple x -> Labeled_tuples.expr_of ~loc x
-      | Jexp_modes x -> Modes.expr_of ~loc x
     in
     (* Performance hack: save an allocation if [attrs] is empty. *)
     match attrs with
@@ -1728,14 +1576,10 @@ module Module_type = struct
 end
 
 module Signature_item = struct
-  type t =
-    | Jsig_include_functor of Include_functor.signature_item
-    | Jsig_layout of Layouts.signature_item
+  type t = Jsig_layout of Layouts.signature_item
 
   let of_ast_internal (feat : Feature.t) sigi =
     match feat with
-    | Language_extension Include_functor ->
-      Some (Jsig_include_functor (Include_functor.of_sig_item sigi))
     | Language_extension Layouts ->
       Some (Jsig_layout (Layouts.of_sig_item sigi))
     | _ -> None
@@ -1744,14 +1588,10 @@ module Signature_item = struct
 end
 
 module Structure_item = struct
-  type t =
-    | Jstr_include_functor of Include_functor.structure_item
-    | Jstr_layout of Layouts.structure_item
+  type t = Jstr_layout of Layouts.structure_item
 
   let of_ast_internal (feat : Feature.t) stri =
     match feat with
-    | Language_extension Include_functor ->
-      Some (Jstr_include_functor (Include_functor.of_str_item stri))
     | Language_extension Layouts ->
       Some (Jstr_layout (Layouts.of_str_item stri))
     | _ -> None

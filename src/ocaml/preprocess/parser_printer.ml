@@ -36,6 +36,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRUCT) -> "struct"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRING) -> "STRING"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STAR) -> "*"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STACK) -> "stack_"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SIG) -> "sig"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) -> ";;"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMI) -> ";"
@@ -107,6 +108,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH_INT) -> "HASH_INT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH_FLOAT) -> "HASH_FLOAT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) -> "#<op>"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASHLPAREN) -> "#("
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH) -> "#"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) -> ">]"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE) -> ">}"
@@ -232,6 +234,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_declaration_) -> "reversed_bar_llist_extension_constructor_declaration_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_) -> "reversed_bar_llist_extension_constructor_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_constructor_declaration_) -> "reversed_bar_llist_constructor_declaration_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reverse_product_jkind) -> "reverse_product_jkind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_record_expr_content) -> "record_expr_content"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_rec_flag) -> "rec_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_private_virtual_flags) -> "private_virtual_flags"
@@ -306,7 +309,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_no_hash_) -> "mk_longident_mod_ext_longident_type_trailing_no_hash_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_hash_) -> "mk_longident_mod_ext_longident_type_trailing_hash_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_ident_) -> "mk_longident_mod_ext_longident_ident_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_50_) -> "mk_longident_mod_ext_longident___anonymous_50_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_47_) -> "mk_longident_mod_ext_longident___anonymous_47_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_UIDENT_) -> "mk_longident_mod_ext_longident_UIDENT_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_LIDENT_) -> "mk_longident_mod_ext_longident_LIDENT_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_method_) -> "method_"
@@ -330,6 +333,8 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_list_and_class_declaration_) -> "list_and_class_declaration_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_letop_bindings) -> "letop_bindings"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_letop_binding_body) -> "letop_binding_body"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_pattern_required_modes) -> "let_pattern_required_modes"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_pattern_no_modes) -> "let_pattern_no_modes"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_pattern) -> "let_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_bindings_no_ext_) -> "let_bindings_no_ext_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_) -> "let_bindings_ext_"
@@ -351,7 +356,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_index_mod) -> "index_mod"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_include_maybe_functor) -> "include_maybe_functor"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_include_kind) -> "include_kind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_implementation) -> "implementation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ident) -> "ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_) -> "generic_type_declaration_nonrec_flag_type_kind_"
@@ -431,6 +436,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_STRUCT -> (fun _ -> "struct")
   | MenhirInterpreter.T MenhirInterpreter.T_STRING -> (string_of_STRING)
   | MenhirInterpreter.T MenhirInterpreter.T_STAR -> (fun _ -> "*")
+  | MenhirInterpreter.T MenhirInterpreter.T_STACK -> (fun _ -> "stack_")
   | MenhirInterpreter.T MenhirInterpreter.T_SIG -> (fun _ -> "sig")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> (fun _ -> ";;")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMI -> (fun _ -> ";")
@@ -502,6 +508,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_HASH_INT -> (string_of_INT)
   | MenhirInterpreter.T MenhirInterpreter.T_HASH_FLOAT -> (string_of_FLOAT)
   | MenhirInterpreter.T MenhirInterpreter.T_HASHOP -> (Printf.sprintf "HASHOP(%S)")
+  | MenhirInterpreter.T MenhirInterpreter.T_HASHLPAREN -> (fun _ -> "#(")
   | MenhirInterpreter.T MenhirInterpreter.T_HASH -> (fun _ -> "#")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET -> (fun _ -> ">]")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE -> (fun _ -> ">}")
@@ -627,6 +634,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_declaration_ -> (fun _ -> "reversed_bar_llist_extension_constructor_declaration_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_ -> (fun _ -> "reversed_bar_llist_extension_constructor_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_constructor_declaration_ -> (fun _ -> "reversed_bar_llist_constructor_declaration_")
+  | MenhirInterpreter.N MenhirInterpreter.N_reverse_product_jkind -> (fun _ -> "reverse_product_jkind")
   | MenhirInterpreter.N MenhirInterpreter.N_record_expr_content -> (fun _ -> "record_expr_content")
   | MenhirInterpreter.N MenhirInterpreter.N_rec_flag -> (fun _ -> "rec_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_private_virtual_flags -> (fun _ -> "private_virtual_flags")
@@ -701,7 +709,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_no_hash_ -> (fun _ -> "mk_longident_mod_ext_longident_type_trailing_no_hash_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_hash_ -> (fun _ -> "mk_longident_mod_ext_longident_type_trailing_hash_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_ident_ -> (fun _ -> "mk_longident_mod_ext_longident_ident_")
-  | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_50_ -> (fun _ -> "mk_longident_mod_ext_longident___anonymous_50_")
+  | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_47_ -> (fun _ -> "mk_longident_mod_ext_longident___anonymous_47_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_UIDENT_ -> (fun _ -> "mk_longident_mod_ext_longident_UIDENT_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_LIDENT_ -> (fun _ -> "mk_longident_mod_ext_longident_LIDENT_")
   | MenhirInterpreter.N MenhirInterpreter.N_method_ -> (fun _ -> "method_")
@@ -725,6 +733,8 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_list_and_class_declaration_ -> (fun _ -> "list_and_class_declaration_")
   | MenhirInterpreter.N MenhirInterpreter.N_letop_bindings -> (fun _ -> "letop_bindings")
   | MenhirInterpreter.N MenhirInterpreter.N_letop_binding_body -> (fun _ -> "letop_binding_body")
+  | MenhirInterpreter.N MenhirInterpreter.N_let_pattern_required_modes -> (fun _ -> "let_pattern_required_modes")
+  | MenhirInterpreter.N MenhirInterpreter.N_let_pattern_no_modes -> (fun _ -> "let_pattern_no_modes")
   | MenhirInterpreter.N MenhirInterpreter.N_let_pattern -> (fun _ -> "let_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_let_bindings_no_ext_ -> (fun _ -> "let_bindings_no_ext_")
   | MenhirInterpreter.N MenhirInterpreter.N_let_bindings_ext_ -> (fun _ -> "let_bindings_ext_")
@@ -746,7 +756,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")
   | MenhirInterpreter.N MenhirInterpreter.N_index_mod -> (fun _ -> "index_mod")
-  | MenhirInterpreter.N MenhirInterpreter.N_include_maybe_functor -> (fun _ -> "include_maybe_functor")
+  | MenhirInterpreter.N MenhirInterpreter.N_include_kind -> (fun _ -> "include_kind")
   | MenhirInterpreter.N MenhirInterpreter.N_implementation -> (fun _ -> "implementation")
   | MenhirInterpreter.N MenhirInterpreter.N_ident -> (fun _ -> "ident")
   | MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_ -> (fun _ -> "generic_type_declaration_nonrec_flag_type_kind_")
@@ -825,6 +835,7 @@ let print_token = function
   | STRUCT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRUCT) ()
   | STRING v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRING) v
   | STAR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STAR) ()
+  | STACK -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STACK) ()
   | SIG -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SIG) ()
   | SEMISEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) ()
   | SEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMI) ()
@@ -896,6 +907,7 @@ let print_token = function
   | HASH_INT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH_INT) v
   | HASH_FLOAT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH_FLOAT) v
   | HASHOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) v
+  | HASHLPAREN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASHLPAREN) ()
   | HASH -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH) ()
   | GREATERRBRACKET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) ()
   | GREATERRBRACE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE) ()
@@ -970,6 +982,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_STRUCT -> STRUCT
   | MenhirInterpreter.T_STRING -> STRING v
   | MenhirInterpreter.T_STAR -> STAR
+  | MenhirInterpreter.T_STACK -> STACK
   | MenhirInterpreter.T_SIG -> SIG
   | MenhirInterpreter.T_SEMISEMI -> SEMISEMI
   | MenhirInterpreter.T_SEMI -> SEMI
@@ -1041,6 +1054,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_HASH_INT -> HASH_INT v
   | MenhirInterpreter.T_HASH_FLOAT -> HASH_FLOAT v
   | MenhirInterpreter.T_HASHOP -> HASHOP v
+  | MenhirInterpreter.T_HASHLPAREN -> HASHLPAREN
   | MenhirInterpreter.T_HASH -> HASH
   | MenhirInterpreter.T_GREATERRBRACKET -> GREATERRBRACKET
   | MenhirInterpreter.T_GREATERRBRACE -> GREATERRBRACE

@@ -69,6 +69,17 @@ let parse_identifier (config, source) pos =
       ~f:(fun l -> l.Location.txt)));
   path
 
+module Compat = struct
+  open Typedtree
+  let pat_var_id_and_loc = function
+    | { pat_desc = Tpat_var (id, loc, _, _); _ } -> Some (id, loc)
+    | _ -> None
+
+  let pat_alias_pat_id_and_loc = function
+    | { pat_desc = Tpat_alias (pat, id, loc, _, _); _ } -> Some (pat, id, loc)
+    | _ -> None
+end
+
 let loc_of_decl ~uid =
   let of_option name =
     match name.Location.txt with
@@ -96,5 +107,5 @@ let loc_of_decl ~uid =
 let is_current_unit comp_unit =
   match Env.get_unit_name () with
   | Some current_unit ->
-    String.equal (Compilation_unit.name_as_string current_unit) comp_unit
+      String.equal (Compilation_unit.name_as_string current_unit) comp_unit
   | None -> false

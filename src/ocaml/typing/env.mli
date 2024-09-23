@@ -353,7 +353,7 @@ val add_value_lazy:
     Ident.t -> Subst.Lazy.value_description -> t -> t
 val add_value:
     ?check:(string -> Warnings.t) -> mode:(Mode.allowed * 'r) Mode.Value.t ->
-    Ident.t -> Types.value_description -> t -> t
+    Ident.t -> value_description -> t -> t
 val add_type: check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
 val add_type_long_path: check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
 val add_extension:
