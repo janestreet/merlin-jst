@@ -94,11 +94,13 @@ let uid_tables_of_binary_annots binary_annots =
     );
   cms_uid_to_loc, cms_uid_to_attributes
 
-let save_cms filename modname binary_annots sourcefile initial_env shape =
+let save_cms target modname binary_annots initial_env shape =
   if (!Clflags.binary_annotations_cms && not !Clflags.print_types) then begin
     Misc.output_to_file_via_temporary
-       ~mode:[Open_binary] filename
+       ~mode:[Open_binary] (Unit_info.Artifact.filename target)
        (fun _temp_file_name oc ->
+
+        let sourcefile = Unit_info.Artifact.source_file target in
         let source_digest = Option.map Digest.file sourcefile in
         let cms_ident_occurrences, cms_initial_env =
           if !Clflags.store_occurrences then
@@ -109,13 +111,20 @@ let save_cms filename modname binary_annots sourcefile initial_env shape =
           else
             [| |], None
          in
-         let cms_uid_to_loc, cms_uid_to_attributes = 
-           uid_tables_of_binary_annots binary_annots 
+         let cms_uid_to_loc, cms_uid_to_attributes =
+           uid_tables_of_binary_annots binary_annots
          in
          let cms = {
            cms_modname = modname;
            cms_comments = [];
               (* XXX merlin: upstream does
+            cms_sourcefile = sourcefile;
+            cms_builddir = Location.rewrite_absolute_path (Sys.getcwd ());
+            cms_source_digest = source_digest;
+            cms_initial_env;
+            cms_uid_to_loc;
+            cms_uid_to_attributes;
+            cms_impl_shape = shape;
                    `cms_comments = Lexer.comments ()`
                  here.  But we don't seem to have the same lexer, so we can't
                  do that straightforwardly.  On the other hand, this function

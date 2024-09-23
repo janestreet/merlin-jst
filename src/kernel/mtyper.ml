@@ -194,7 +194,8 @@ let type_interface config caught parsetree =
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
-      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_uid, x.part_warnings)
+      (x.part_env, x.part_rev_sg, x.part_snapshot, x.part_stamp, x.part_uid,
+       x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';

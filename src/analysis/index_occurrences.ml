@@ -22,7 +22,7 @@ let decl_of_path_or_lid env namespace path lid =
     | {lbl_uid; lbl_loc; _ } ->
       Some { Env_lookup.uid = lbl_uid; loc = lbl_loc; namespace }
     end
-  | _ -> Env_lookup.loc path namespace env
+  | _ -> Env_lookup.by_path path namespace env
 
 let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
   let add uid loc =
@@ -75,11 +75,11 @@ let items ~index ~stamp (config : Mconfig.t) items =
         log ~title:"read_unit_shape" "inspecting %s" unit_name;
         let read unit_name =
           let cms = Format.sprintf "%s.cms" unit_name in
-          match Locate.Artifact.read (Load_path.find_uncap cms) with
+          match Locate.Artifact.read (Load_path.find_normalized cms) with
           | artifact -> Some artifact
           | exception _ ->
             let cmt = Format.sprintf "%s.cmt" unit_name in
-            match Locate.Artifact.read (Load_path.find_uncap cmt) with
+            match Locate.Artifact.read (Load_path.find_normalized cmt) with
             | artifact -> Some artifact
             | exception _ ->
               None

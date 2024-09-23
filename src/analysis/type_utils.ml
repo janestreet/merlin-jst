@@ -31,7 +31,7 @@ open Std
 module Verbosity = Mconfig.Verbosity
 
 let protect expr =
-  Pprintast.protect_ident (Format.str_formatter) expr;
+  Pprintast.ident_of_name (Format.str_formatter) expr;
   Format.flush_str_formatter ()
 
 let parse_expr ?(keywords=Lexer_raw.keywords []) expr =

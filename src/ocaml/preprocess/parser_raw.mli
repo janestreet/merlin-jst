@@ -459,6 +459,7 @@ module MenhirInterpreter : sig
     | N_operator : (string) nonterminal
     | N_open_description : (Longident.t Location.loc Parsetree.open_infos * string Location.loc option) nonterminal
     | N_open_declaration : (Parsetree.module_expr Parsetree.open_infos * string Location.loc option) nonterminal
+    | N_object_type : (Parsetree.core_type) nonterminal
     | N_nonempty_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
     | N_nonempty_list_raw_string_ : (string list) nonterminal
     | N_nonempty_list_newtype_ : ((string Location.loc * Parsetree.jkind_annotation Location.loc option) list) nonterminal
@@ -489,7 +490,7 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_ext_longident_type_trailing_no_hash_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_type_trailing_hash_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
-    | N_mk_longident_mod_ext_longident___anonymous_44_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident___anonymous_47_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_LIDENT_ : (Longident.t) nonterminal
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
@@ -566,11 +567,14 @@ module MenhirInterpreter : sig
     | N_fun_body : (Parsetree.function_body) nonterminal
     | N_formal_class_parameters : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_floating_attribute : (Parsetree.attribute) nonterminal
+    | N_extension_type : (Parsetree.core_type) nonterminal
     | N_extension_constructor_rebind_epsilon_ : (Parsetree.extension_constructor) nonterminal
     | N_extension_constructor_rebind_BAR_ : (Parsetree.extension_constructor) nonterminal
     | N_extension : (Parsetree.extension) nonterminal
     | N_ext : (string Location.loc option) nonterminal
     | N_direction_flag : (Asttypes.direction_flag) nonterminal
+    | N_delimited_type_supporting_local_open : (Parsetree.core_type) nonterminal
+    | N_delimited_type : (Parsetree.core_type) nonterminal
     | N_core_type : (Parsetree.core_type) nonterminal
     | N_constructor_declarations : (Parsetree.constructor_declaration list) nonterminal
     | N_constructor_arguments : (Parsetree.constructor_arguments) nonterminal

@@ -110,7 +110,9 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         List.map labels ~f:(fun lbl_descr ->
           let lidloc = mk_id lbl_descr.lbl_name in
           lidloc, lbl_descr,
-          Tast_helper.Pat.var env type_expr (mk_var lbl_descr.lbl_name)
+          Tast_helper.Pat.var
+            (Uid.internal_not_actually_unique)
+            env type_expr (mk_var lbl_descr.lbl_name)
         )
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
@@ -126,9 +128,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         let res =
           try
             ignore (
-              Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive_equations:true (* really? *)
-                (ref env) type_expr typ
+              let pattern_env = Ctype.Pattern_env.make env
+                  ~equations_scope:0
+                  ~allow_recursive_equations:true
+              in
+              Ctype.unify_gadt pattern_env type_expr typ
             );
             true
           with Ctype.Unify _trace -> false
@@ -254,7 +258,6 @@ let rec get_match = function
     (* We were not in a match *)
     let s = Mbrowse.print_node () parent in
     raise  (Not_allowed s)
-
 
 let collect_every_pattern_for_expression parent =
   let patterns =
@@ -428,8 +431,13 @@ let rec qualify_constructors ~unmangling_tables f pat  =
   let qualify_constructors = qualify_constructors ~unmangling_tables in
   let pat_desc =
     match pat.pat_desc with
-    | Tpat_alias (p, id, loc, uid, m) -> Tpat_alias (qualify_constructors f p, id, loc, uid, m)
+    | Tpat_alias (p, id, loc, uid, m) ->
+      Tpat_alias (qualify_constructors f p, id, loc, uid, m)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(fun (lbl, p) -> lbl, qualify_constructors f p))
+    | Tpat_unboxed_tuple ps ->
+      Tpat_unboxed_tuple
+        (List.map ps
+           ~f:(fun (lbl, p, sort) -> lbl, qualify_constructors f p, sort))
     | Tpat_record (labels, closed) ->
       let labels =
         let open Longident in
@@ -515,11 +523,30 @@ let find_branch patterns sub =
         is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
   in
   let rec aux before = function
-    | [] -> raise Not_found
+    | [] -> raise Nothing_to_do
     | p :: after when is_sub_patt p ~sub -> before, after, p
     | p :: ps -> aux (p :: before) ps
   in
   aux [] patterns
+
+(* In the presence of record punning fields, the definition must be
+   reconstructed with the label. ie: [{a; b}] with destruction on [a]
+   becomes [{a = destruct_result; b}]. *)
+let find_field_name_for_punned_field patt = function
+  | Pattern {pat_desc = Tpat_record (fields, _); _} :: _ ->
+      List.find_opt ~f:(fun (_, _, opat) ->
+          let ppat_loc = patt.Typedtree.pat_loc
+          and opat_loc = opat.Typedtree.pat_loc in
+          Int.equal (Location_aux.compare ppat_loc opat_loc) 0
+        ) fields |> Option.map ~f:(fun (_, label, _) -> label)
+  | _ -> None
+
+let print_pretty ?punned_field config source subject =
+  let result = Mreader.print_pretty config source subject in
+  match punned_field with
+  | None -> result
+  | Some label ->
+      label.Types.lbl_name ^ " = " ^ result
 
 
 (* conversion from Typedtree.pattern to Parsetree.pattern list *)
@@ -687,9 +714,10 @@ let filter_new_branches new_branches patterns =
         if branch != p then branch else
           List.fold_left lst ~init:branch ~f:rm_sub))
 
-let refine_current_pattern patt config source generated_pattern =
+let refine_current_pattern parents patt config source generated_pattern =
+  let punned_field = find_field_name_for_punned_field patt parents in
   let ppat = filter_pat_attr (Untypeast.untype_pattern generated_pattern) in
-  let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
+  let str = print_pretty ?punned_field config source (Pretty_pattern ppat) in
   patt.Typedtree.pat_loc, str
 
 let refine_and_generate_branches patt config source patterns sub_patterns =
@@ -714,7 +742,7 @@ let refine_and_generate_branches patt config source patterns sub_patterns =
     top_patt.Typedtree.pat_loc, str
 
 let refine_complete_match
-    (type a) (patt: a Typedtree.general_pattern)
+    (type a) parents (patt: a Typedtree.general_pattern)
     config source patterns =
   match Typedtree.classify_pattern patt with
   | Computation -> raise (Not_allowed ("computation pattern"))
@@ -728,7 +756,7 @@ let refine_complete_match
       | [more_precise_pattern] ->
         (* If only one pattern is generated, then we're only refining the
           current pattern, not generating new branches. *)
-        refine_current_pattern patt config source more_precise_pattern
+        refine_current_pattern parents patt config source more_precise_pattern
       | sub_patterns ->
         (* If more than one pattern is generated, then we're generating new
            branches. *)
@@ -751,7 +779,7 @@ let destruct_pattern
   match Parmatch.complete_partial ~pred pss with
   | [] ->
     (* The match is already complete, we try to refine it *)
-    refine_complete_match patt config source patterns
+    refine_complete_match parents patt config source patterns
   | patterns ->
     refine_partial_match last_case_loc config source patterns
 

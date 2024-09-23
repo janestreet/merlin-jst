@@ -1,3 +1,5 @@
+This test comes from: https://github.com/janestreet/merlin-jst/pull/59
+
 Test "-H".  We want to check both that merlin can check things that require
 indirect use of hidden dependencies, and that it doesn't check things which
 would require direct use of hidden dependencies.

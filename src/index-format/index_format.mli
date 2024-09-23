@@ -17,7 +17,7 @@ type stat = {
 type index = {
   defs : Lid_set.t Uid_map.t;
   approximated : Lid_set.t Uid_map.t;
-  cu_shape : (string, Shape.t) Hashtbl.t;
+  cu_shape : (Compilation_unit.t, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
   root_directory: string option;
 }

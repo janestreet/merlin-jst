@@ -88,6 +88,8 @@ let deserialize data =
   in
   Deserialize.signature {map_signature; map_type_expr}
 
+(* Serialization is unused by merlin.
+
 module Serialize = Types.Map_wrapped(Subst.Lazy)(Serialized)
 
 let serialize oc base =
@@ -105,6 +107,7 @@ let serialize oc base =
   in
   let map_type_expr _ ty = Subst.Lazy.force_type_expr ty |> marshal in
   Serialize.signature {map_signature; map_type_expr}
+*)
 
 let input_cmi_lazy ic =
   let read_bytes n =
@@ -123,6 +126,7 @@ let input_cmi_lazy ic =
     } = (input_value ic : header) in
   let crcs = (input_value ic : crcs) in
   let flags = (input_value ic : flags) in
+  (* CR ocaml 5 compressed-marshal mshinwell: upstream uses [Compression] *)
   {
       cmi_name = name;
       cmi_kind = kind;
@@ -161,6 +165,8 @@ let read_cmi_lazy filename =
       raise (Error e)
 
 let output_cmi filename oc cmi =
+  ignore (filename, oc, cmi); ""
+(*
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
   let output_int64 oc n =
@@ -179,9 +185,6 @@ let output_cmi filename oc cmi =
   let len = Int64.sub val_pos data_pos in
   output_int64 oc len;
   Out_channel.seek oc val_pos;
-  (* BACKPORT BEGIN *)
-  (* CR ocaml 5 compressed-marshal mshinwell:
-     upstream uses [Compression] here *)
   output_value oc
     {
       header_name = cmi.cmi_name;
@@ -189,7 +192,6 @@ let output_cmi filename oc cmi =
       header_sign = sign;
       header_params = cmi.cmi_params;
     };
-  (* BACKPORT END *)
   flush oc;
   let crc = Digest.file filename in
   let my_info =
@@ -203,6 +205,7 @@ let output_cmi filename oc cmi =
   output_value oc (crcs : crcs);
   output_value oc (cmi.cmi_flags : flags);
   crc
+*)
 
 let input_cmi ic = input_cmi_lazy ic |> force_cmi_infos
 let read_cmi filename = read_cmi_lazy filename |> force_cmi_infos

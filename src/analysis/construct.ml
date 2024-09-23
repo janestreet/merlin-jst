@@ -326,31 +326,46 @@ module Gen = struct
             make_i n 0
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
-      fun env label ty : (Asttypes.arg_label * _ * _) ->
+      fun env label ty ->
         (* We intentionally choose not to include the arg's mode in the constructed
            value to be consistent with the decision to not include the arg's type *)
         let open Ast_helper in
+        let make_param arg_label pat =
+          {
+            Parsetree.pparam_loc = Location.none;
+            pparam_desc = Pparam_val (arg_label, None, pat)
+
+          }
+        in
+
         match label with
         (* Pun for labelled arguments *)
         | Position s ->
-            Labelled s,
-            Pat.constraint_
-              (Pat.var (Location.mknoloc s))
-              (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
-              [],
+            make_param
+              (Labelled s)
+              (Pat.constraint_
+                (Pat.var (Location.mknoloc s))
+                (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
+                []),
             s
         | Labelled s ->
-            Labelled s, Pat.var (Location.mknoloc s), s
+            make_param
+              (Labelled s)
+              (Pat.var (Location.mknoloc s)),
+            s
         | Optional s ->
-            Optional s, Pat.var (Location.mknoloc s), s
+            make_param
+              (Optional s)
+              (Pat.var (Location.mknoloc s)),
+            s
         | Nolabel -> begin match get_desc ty with
           | Tpoly (poly, []) ->
               begin match get_desc poly with
                 | Tconstr (path, _, _) ->
                     let name = uniq_name env (Path.last path) in
-                    Nolabel, Pat.var (Location.mknoloc name), name
-                | _ -> Nolabel, Pat.any (), "_" end
-          | _ -> Nolabel, Pat.any (), "_" end
+                    make_param Nolabel (Pat.var (Location.mknoloc name)), name
+                | _ -> make_param Nolabel (Pat.any ()), "_" end
+          | _ -> make_param Nolabel (Pat.any ()), "_" end
     in
 
     let constructor env type_expr path constrs =
@@ -442,7 +457,7 @@ module Gen = struct
           (List.map labels ~f:(fun l -> l.Types.lbl_name)));
 
       let labels = List.map labels ~f:(fun ({ lbl_name; _ } as lbl) ->
-        let _, arg, res = Ctype.instance_label true lbl in
+        let _, arg, res = Ctype.instance_label ~fixed:true lbl in
         Ctype.unify env res typ ;
         let lid =
           Util.maybe_prefix env
@@ -496,41 +511,32 @@ module Gen = struct
             | Type_record (labels, _) -> record env rtyp path labels
             | Type_abstract _ | Type_open -> []
           end
-        | Tarrow ((label,_,_), tyleft, tyright, _) ->
-          let label, argument, name = make_arg env label tyleft in
-          let param =
-            { Parsetree.pparam_desc =
-                Pparam_val (label, None, argument);
-              pparam_loc = Location.none;
-            }
-          in
-          let value_description = {
-              val_type = tyleft;
-              val_kind = Val_reg;
-              val_loc = Location.none;
-              val_attributes = [];
-              val_zero_alloc = Zero_alloc.default;
-              val_modalities = Mode.Modality.Value.id;
-              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
-            }
-          in
-          let env =
-            Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
-              value_description env
-          in
-          let exps = arrow_rhs env tyright in
-          List.map exps ~f:(fun expr ->
-              match expr.Parsetree.pexp_desc with
-              | Pexp_function (params, constraint_, body) ->
-                  { expr
-                    with pexp_desc =
-                           Pexp_function (param :: params, constraint_, body)
-                  }
-              | _ ->
-                  Ast_helper.Exp.function_
-                    [ param ]
-                    None
-                    (Pfunction_body expr))
+        | Tarrow _ ->
+          let rec left_types acc env ty =
+            match get_desc ty with
+            | Tarrow ((label, _, _), tyleft, tyright, _) ->
+                let arg, name = make_arg env label tyleft in
+                let value_description = {
+                  val_type = tyleft;
+                  val_kind = Val_reg;
+                  val_loc = Location.none;
+                  val_attributes = [];
+                  val_zero_alloc = Zero_alloc.default;
+                  val_modalities = Mode.Modality.Value.id;
+                  val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+                }
+                in
+                let env =
+                  Env.add_value ~mode:Mode.Value.legacy (Ident.create_local name)
+                    value_description env
+                in
+                left_types (arg :: acc) env tyright
+            | _ -> List.rev acc, ty, env
+         in
+          let arguments, body_type, env = left_types [] env rtyp in
+          let exps = arrow_rhs env body_type in
+          List.map exps ~f:(fun e ->
+              Ast_helper.Exp.function_ arguments None (Pfunction_body e))
         | Ttuple types ->
           let choices =
             List.map types ~f:(fun (lbl, ty) ->
@@ -600,7 +606,7 @@ module Gen = struct
 end
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
-  | Pexp_function (_, _, Pfunction_body _)
+  | Pexp_function _
   | Pexp_lazy _
   | Pexp_apply _
   | Pexp_variant (_, Some _)

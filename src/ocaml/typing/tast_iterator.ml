@@ -35,6 +35,8 @@ type iterator =
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
     jkind_annotation: iterator -> Jkind.annotation -> unit;
+    include_declaration: iterator -> include_declaration -> unit;
+    include_description: iterator -> include_description -> unit;
     location: iterator -> Location.t -> unit;
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
@@ -123,11 +125,17 @@ let include_kind sub = function
   | Tincl_gen_functor ccs ->
       List.iter (fun (_, cc) -> sub.module_coercion sub cc) ccs
 
-let str_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
+let include_infos sub f {incl_loc; incl_mod; incl_attributes; incl_kind; _} =
   sub.location sub incl_loc;
   sub.attributes sub incl_attributes;
-  sub.module_expr sub incl_mod;
-  include_kind sub incl_kind
+  include_kind sub incl_kind;
+  f incl_mod
+
+let include_description sub incl =
+  include_infos sub (sub.module_type sub) incl
+
+let include_declaration sub incl =
+  include_infos sub (sub.module_expr sub) incl
 
 let class_type_declaration sub x =
   sub.item_declaration sub (Class_type x);
@@ -155,7 +163,7 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_class_type list ->
       List.iter (fun (_, s, cltd) ->
         iter_loc sub s; sub.class_type_declaration sub cltd) list
-  | Tstr_include incl -> str_include_infos sub incl
+  | Tstr_include incl -> sub.include_declaration sub incl
   | Tstr_open od -> sub.open_declaration sub od
   | Tstr_attribute attr -> sub.attribute sub attr
 
@@ -299,10 +307,14 @@ let function_param sub { fp_loc; fp_kind; fp_newtypes; _ } =
       sub.expr sub default_arg
 
 let function_body sub body =
-  match body with
+  match[@warning "+9"] body with
   | Tfunction_body body ->
       sub.expr sub body
-  | Tfunction_cases { fc_cases; fc_exp_extra; fc_loc; fc_attributes; fc_env } ->
+  | Tfunction_cases
+      { fc_cases; fc_exp_extra; fc_loc; fc_attributes; fc_env;
+        fc_arg_mode = _; fc_arg_sort = _; fc_ret_type = _;
+        fc_partial = _; fc_param = _;
+      } ->
       List.iter (sub.case sub) fc_cases;
       Option.iter (extra sub) fc_exp_extra;
       sub.location sub fc_loc;
@@ -649,6 +661,9 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       List.iter (fun (_, l) -> Option.iter (sub.jkind_annotation sub) l) vars;
       sub.typ sub ct
   | Ttyp_package pack -> sub.package_type sub pack
+  | Ttyp_open (_, mod_ident, t) ->
+      iter_loc sub mod_ident;
+      sub.typ sub t
   | Ttyp_call_pos -> ()
 
 let class_structure sub {cstr_self; cstr_fields; _} =
@@ -725,6 +740,8 @@ let default_iterator =
     expr;
     extension_constructor;
     jkind_annotation;
+    include_description;
+    include_declaration;
     location;
     module_binding;
     module_coercion;

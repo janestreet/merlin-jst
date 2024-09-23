@@ -41,25 +41,29 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
   Shape.Uid.Tbl.fold add_loc fragments map
 
 module Reduce_conf (Loaded_shapes : sig
-  val shapes : (string, Shape.t) Hashtbl.t
+  val shapes : (Compilation_unit.t, Shape.t) Hashtbl.t
 end) = struct
   let fuel = 10
 
   let try_load ~unit_name () =
-    match Hashtbl.find_opt Loaded_shapes.shapes unit_name with
+    match
+      Hashtbl.find_opt
+        Loaded_shapes.shapes
+        (Compilation_unit.of_string unit_name)
+    with
     | Some shape ->
       Log.debug "Used loaded shape for %s" unit_name;
       Some shape
     | None -> begin
     let artifact =
     let cms = Format.sprintf "%s.cms" unit_name in
-    match Locate.Artifact.read (Load_path.find_uncap cms) with
+    match Locate.Artifact.read (Load_path.find_normalized cms) with
     | artifact ->
       Log.debug "Loaded CMS %s" cms;
       Some artifact
     | exception Not_found ->
       let cmt = Format.sprintf "%s.cmt" unit_name in
-      match Locate.Artifact.read (Load_path.find_uncap cmt) with
+      match Locate.Artifact.read (Load_path.find_normalized cmt) with
       | artifact ->
         Log.debug "Loaded CMT %s" cmt;
         Some artifact
@@ -141,7 +145,6 @@ let index_of_artifact
       cmt_ident_occurrences
   in
   let cu_shape = Hashtbl.create 1 in
-  let cmt_modname = Compilation_unit.name_as_string cmt_modname in
   Option.iter (Hashtbl.add cu_shape cmt_modname) cmt_impl_shape;
   let stats =
     match cmt_sourcefile with
@@ -163,7 +166,6 @@ let index_of_artifact
 
 let shape_of_artifact ~impl_shape ~modname =
   let cu_shape = Hashtbl.create 1 in
-  let modname = Compilation_unit.name_as_string modname in
   Option.iter (Hashtbl.add cu_shape modname) impl_shape;
   {
     defs = Shape.Uid.Map.empty;

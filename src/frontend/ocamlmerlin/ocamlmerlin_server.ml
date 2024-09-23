@@ -33,7 +33,6 @@ module Server = struct
 
   let server_accept merlinid server =
     let rec loop total =
-      Mocaml.flush_caches ~older_than:300.0 ();
       let merlinid' = File_id.get Sys.executable_name in
       if total > merlin_timeout ||
          not (File_id.check merlinid merlinid') then
@@ -66,7 +65,7 @@ module Server = struct
       Logger.log ~section:"server" ~title:"cannot setup listener" ""
     | Some server ->
       (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
-      let (_ : Sys.signal_behavior) = Sys.signal Sys.sigpipe Sys.Signal_ignore in
+      if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
       loop (File_id.get Sys.executable_name) server;
       Os_ipc.server_close server
 end

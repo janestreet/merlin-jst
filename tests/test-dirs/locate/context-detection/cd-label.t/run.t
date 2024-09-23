@@ -57,6 +57,7 @@
   > EOF
 
   $ $OCAMLC -c -bin-annot record.ml
+
   $ $MERLIN single locate -look-for mli -position 2:24 \
   > -filename ./other_module.ml < ./other_module.ml | jq '.value'
   {

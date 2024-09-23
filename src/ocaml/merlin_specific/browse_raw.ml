@@ -342,31 +342,13 @@ let of_method_call obj meth loc =
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
-let of_function_param (param : Typedtree.function_param) =
-  (* We should consider taking into account param.fp_loc at some point, as it
-     allows us to respond with the *parameter*'s type (as opposed to the
-     function's type) when the user queries the label:
-
-     let f ?y:(x = 3) () = x
-           ^
-  *)
-  match param.fp_kind with
-  | Tparam_pat pat -> of_pattern pat
-  | Tparam_optional_default (pat, expr, _) ->
-      of_pattern pat ** of_expression expr
-
-let of_expression_desc loc = function
+let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ | Texp_src_pos | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { params; body; _ } ->
-    let body =
-      match body with
-      | Tfunction_body expr -> of_expression expr
-      | Tfunction_cases {fc_cases; _} -> list_fold of_case fc_cases
-    in
-    list_fold of_function_param params ** body
+    list_fold of_function_param params ** of_function_body body
   | Texp_apply (e,ls,_,_, _) ->
     of_expression e **
     list_fold (function
@@ -451,6 +433,25 @@ let of_expression_desc loc = function
   | Texp_probe_is_enabled _ ->
     id_fold
   | Texp_exclave e -> of_expression e
+
+
+(* We should consider taking into account param.fp_loc at some point, as it
+   allows us to respond with the *parameter*'s type (as opposed to the
+   function's type) when the user queries the label:
+
+   let f ?y:(x = 3) () = x
+         ^
+*)
+and of_function_param fp = of_function_param_kind fp.fp_kind
+
+and of_function_param_kind = function
+  | Tparam_pat pat -> of_pattern pat
+  | Tparam_optional_default (pat, exp, _) ->
+    of_pattern pat ** of_expression exp
+
+and of_function_body = function
+  | Tfunction_body exp -> of_expression exp
+  | Tfunction_cases fc -> list_fold of_case fc.fc_cases
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
@@ -590,6 +591,7 @@ and of_signature_item_desc = function
 
 and of_core_type_desc = function
   | Ttyp_var _ | Ttyp_call_pos -> id_fold
+  | Ttyp_open (_,_,ct) -> of_core_type ct
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts ->
