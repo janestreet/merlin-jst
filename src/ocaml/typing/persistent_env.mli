@@ -92,7 +92,8 @@ type 'a sig_reader =
    [-instantiate] branch. We should remove this parameter. *)
 val read : 'a t -> 'a sig_reader
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> Compilation_unit.Name.t -> filepath -> add_binding:bool -> Subst.Lazy.signature
+  -> Compilation_unit.Name.t -> Unit_info.Artifact.t -> add_binding:bool
+  -> Subst.Lazy.signature
 val find : allow_hidden:bool -> 'a t -> 'a sig_reader
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Compilation_unit.Name.t -> 'a

@@ -77,6 +77,11 @@ let tail_positions = function
 (* If the expression is a function, return all of its entry-points (which are
    in tail-positions). Returns an empty list otherwise *)
 let expr_entry_points = function
+  (* A comment upstream says the following: *)
+  (* FIXME This was broken with the upgrade to 5.2
+     It seems like that feature was already broket before that upgrade.
+  *)
+  (* We haven't checked whether this analysis works internally. *)
   | Texp_function {body = Tfunction_body expr; _} -> [Expression expr]
   | Texp_function {body = Tfunction_cases {fc_cases; _}; _} ->
     List.map fc_cases ~f:(fun c -> Case c)

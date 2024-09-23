@@ -6,6 +6,7 @@ let include_dirs        = ref []
 let hidden_include_dirs = ref []
 let fast                = ref false
 let classic             = ref false
+let all_ppx             = ref []
 let principal           = ref false
 let real_paths          = ref true
 let recursive_types     = ref false
@@ -40,4 +41,3 @@ let unboxed_types       = ref false
 let profile_columns     = ref []
 
 let locations = ref true
-let all_ppx = ref []

@@ -81,12 +81,11 @@ let marg_completion_kind f = Marg.param "completion-kind"
           str
     )
 
-let rec find_command name = function
-  | [] -> raise Not_found
-  | (Command (name', _, _, _, _) as command) :: xs ->
-    if name = name' then
-      command
-    else find_command name xs
+let command_is ~name (Command (name', _, _, _, _)) = String.equal name name'
+
+let find_command name = List.find ~f:(command_is ~name)
+
+let find_command_opt name = List.find_opt ~f:(command_is ~name)
 
 let run pipeline query =
   Logger.log ~section:"New_commands" ~title:"run(query)"
@@ -236,10 +235,25 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
     ]
     ~default: `None
     begin fun buffer pos ->
-      match pos with 
+      match pos with
       | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos -> 
+      | #Msource.position as pos ->
         run buffer (Query_protocol.Syntax_document pos)
+    end
+  ;
+
+  command "expand-ppx"
+    ~doc: "Returns the generated code of a PPX."
+    ~spec: [
+      arg "-position" "<position> Position to expand"
+          (marg_position (fun pos _pos -> pos));
+    ]
+    ~default: `None
+    begin fun buffer pos ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Expand_ppx pos)
     end
   ;
 
@@ -371,8 +385,8 @@ compiler settings in an IDE."
         (marg_position (fun pos (target,_pos) -> (target,pos)));
     ]
 ~doc:"This command can be used to assist navigation in a source code buffer.
-Target is a string that can contain one or more of the 'fun', 'let', 'module' \
-and 'match' words.
+Target is a string that can contain one or more of the 'fun', 'let', 'module', \
+'module-type' and 'match' words.
 It returns the starting position of the function, let definition, module or \
 match expression that contains the cursor
 "

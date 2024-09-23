@@ -16,6 +16,7 @@
       "col": 9
     }
   }
+
   $ $MERLIN single locate  -look-for ml -position 2:14 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {

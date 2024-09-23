@@ -302,9 +302,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Stack_or_heap_enclosing.No_alloc { reason }, true ->
               ret (`String ("not an allocation (" ^ reason ^ ")"))
           | Stack_or_heap_enclosing.Alloc_mode alloc_mode, true ->
-            let locality = alloc_mode 
-                           |> Mode.Alloc.proj (Comonadic Areality) 
-                           |> Mode.Locality.Guts.check_const_conservative 
+            let locality = alloc_mode
+                           |> Mode.Alloc.proj (Comonadic Areality)
+                           |> Mode.Locality.Guts.check_const_conservative
             in
             let str = match locality with
               | Some Global -> "heap"
@@ -320,7 +320,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let all_results =
       match all_results with
       | _ :: _ -> all_results
-      | [] -> 
+      | [] ->
           let pos' : Lexing.position = { pos with pos_cnum = pos.pos_cnum - 1 } in
           let loc : Location.t = { loc_start=pos'; loc_end=pos; loc_ghost=false } in
           [ (loc, `String "no relevant allocation to show") ]
@@ -579,6 +579,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some res -> `Found res
     | None -> `No_documentation)
 
+  | Expand_ppx pos -> (
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let parsetree = Mpipeline.reader_parsetree pipeline in
+    let ppxed_parsetree = Mpipeline.ppx_parsetree pipeline in
+    let ppx_kind_with_attr = Ppx_expand.check_extension ~parsetree ~pos in
+    match ppx_kind_with_attr with
+    | Some _ ->
+        `Found
+          (Ppx_expand.get_ppxed_source ~ppxed_parsetree ~pos
+              (Option.get ppx_kind_with_attr))
+    | None -> `No_ppx)
+
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
@@ -826,10 +838,23 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let rec aux = function
       | [] -> raise Not_found
       | x :: xs ->
+        (* Here there is drift between janestreet/merlin-jst and ocaml/merlin:
+           In merlin-jst, we look in both visible and hidden paths. In upstream
+           merlin, we look in only visible paths.
+
+           We ought to be able to reduce drift here by either:
+            - upstreaming the looking-in of hidden paths.
+            - fixing merlin-jst to make it so it's not necessary to also look
+              in hidden paths here.
+
+           Nobody has closely investigated the source of the drift. Liam thinks
+           that some -H functionality doesn't work upstream; this might be one
+           such case, or it might not.
+        *)
         try
-          find_in_path_uncap (Mconfig.source_path config @ Mconfig.hidden_source_path config) x
+          find_in_path_normalized (Mconfig.source_path config) x
         with Not_found -> try
-            find_in_path_uncap (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
+            find_in_path_normalized (Mconfig.build_path config @ Mconfig.hidden_build_path config) x
           with Not_found ->
             aux xs
     in

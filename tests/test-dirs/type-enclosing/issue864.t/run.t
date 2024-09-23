@@ -1,3 +1,4 @@
+FIXME: with 5.2 new function representation we lost some granularity
   $ $MERLIN single type-enclosing -position 5:24 -verbosity 0 \
   > -filename ./issue864.ml < ./issue864.ml
   {

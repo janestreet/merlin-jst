@@ -12,6 +12,12 @@
 (*                                                                        *)
 (**************************************************************************)
 
+(* Merlin-specific: change some module paths to match the compiler *)
+module Misc = struct
+  let fatal_error = Misc.fatal_error
+  include Misc_stdlib
+end
+
 module Sort = struct
   type base =
     | Void
@@ -69,7 +75,7 @@ module Sort = struct
         | Base b -> Format.fprintf ppf "%s" (to_string_base b)
         | Product cs ->
           let pp_sep ppf () = Format.fprintf ppf "@ & " in
-          Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf cs
+          Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf cs
       in
       pp_element ~nested:false ppf c
 
@@ -89,7 +95,7 @@ module Sort = struct
           | Product cs ->
             let pp_sep ppf () = Format.fprintf ppf "@ , " in
             Format.fprintf ppf "Product [%a]"
-              (Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep)
+              (Misc.pp_nested_list ~nested ~pp_element ~pp_sep)
               cs
         in
         pp_element ~nested:false ppf c
@@ -210,7 +216,7 @@ module Sort = struct
         | Product cs ->
           Option.map
             (fun x -> Product x)
-            (Misc_stdlib.List.map_option of_const cs)
+            (Misc.List.map_option of_const cs)
     end
 
     module Const = struct
@@ -412,7 +418,7 @@ module Sort = struct
       | Var v -> Format.fprintf ppf "%s" (Var.name v)
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf " & " in
-        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf t
 

@@ -47,6 +47,7 @@ but we want to observe the stdlib being configured via the STDLIB directive.
       }
     ],
     "stdlib": "/stdlib",
+    "source_root": null,
     "unit_name": null,
     "unit_name_for": {
       "c": "Prefix_c",
@@ -54,7 +55,6 @@ but we want to observe the stdlib being configured via the STDLIB directive.
       "a": "Prefix__a"
     },
     "wrapping_prefix": "Prefix__",
-    "source_root": null,
     "reader": [],
     "protocol": "json",
     "log_file": null,
@@ -70,7 +70,8 @@ but we want to observe the stdlib being configured via the STDLIB directive.
         "extension": ".rei",
         "reader": "reason"
       }
-    ]
+    ],
+    "cache_lifespan": "5"
   }
 
   $ rm .merlin

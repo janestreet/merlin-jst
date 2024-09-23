@@ -90,10 +90,9 @@ val read_cmi : string -> Cmi_format.cmi_infos_lazy
 (** [save_cmt filename modname binary_annots sourcefile initial_env cmi]
     writes a cmt(i) file.  *)
 val save_cmt :
-  string ->  (* filename.cmt to generate *)
+  Unit_info.Artifact.t ->
   Compilation_unit.t ->  (* module name *)
   binary_annots ->
-  string option ->  (* source file *)
   Env.t -> (* initial env *)
   Cmi_format.cmi_infos_lazy option -> (* if a .cmi was generated *)
   Shape.t option ->
@@ -117,8 +116,8 @@ val index_occurrences :
 
 val iter_declarations
   : binary_annots
-    -> f:(Shape.Uid.t -> Typedtree.item_declaration -> unit)
-    -> unit
+  -> f:(Shape.Uid.t -> Typedtree.item_declaration -> unit)
+  -> unit
 
 (** Whether only the summary of the environment should be stored. This is based on
     whether the environment variable OCAML_BINANNOT_WITHENV is set *)

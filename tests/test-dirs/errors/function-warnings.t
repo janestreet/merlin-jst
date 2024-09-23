@@ -40,7 +40,7 @@
           }
         ],
         "valid": true,
-        "message": "The function 'f' has type unit -> unit
+        "message": "The function f has type unit -> unit
   It is applied to too many arguments"
       }
     ],

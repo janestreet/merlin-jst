@@ -29,7 +29,7 @@ type stat = { mtime : float; size : int; source_digest : string option }
 type index = {
   defs : Lid_set.t Uid_map.t;
   approximated : Lid_set.t Uid_map.t;
-  cu_shape : (string, Shape.t) Hashtbl.t;
+  cu_shape : (Compilation_unit.t, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
   root_directory: string option;
 }
@@ -69,7 +69,8 @@ let pp (fmt : Format.formatter) pl =
     (Uid_map.cardinal pl.approximated)
     pp_partials pl.approximated;
   Format.fprintf fmt "and shapes for CUS %s.@ "
-    (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq))
+    (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq
+                         |> List.map Compilation_unit.full_path_as_string))
 
 let ext = "ocaml-index"
 

@@ -278,6 +278,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_operator) -> "operator"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_open_description) -> "open_description"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_open_declaration) -> "open_declaration"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_object_type) -> "object_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_type_kind) -> "nonempty_type_kind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_raw_string_) -> "nonempty_list_raw_string_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_) -> "nonempty_list_newtype_"
@@ -308,7 +309,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_no_hash_) -> "mk_longident_mod_ext_longident_type_trailing_no_hash_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_hash_) -> "mk_longident_mod_ext_longident_type_trailing_hash_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_ident_) -> "mk_longident_mod_ext_longident_ident_"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_44_) -> "mk_longident_mod_ext_longident___anonymous_44_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_47_) -> "mk_longident_mod_ext_longident___anonymous_47_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_UIDENT_) -> "mk_longident_mod_ext_longident_UIDENT_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_LIDENT_) -> "mk_longident_mod_ext_longident_LIDENT_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_method_) -> "method_"
@@ -373,11 +374,14 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_fun_body) -> "fun_body"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_formal_class_parameters) -> "formal_class_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_floating_attribute) -> "floating_attribute"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension_type) -> "extension_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension_constructor_rebind_epsilon_) -> "extension_constructor_rebind_epsilon_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension_constructor_rebind_BAR_) -> "extension_constructor_rebind_BAR_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension) -> "extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ext) -> "ext"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_direction_flag) -> "direction_flag"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_delimited_type_supporting_local_open) -> "delimited_type_supporting_local_open"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_delimited_type) -> "delimited_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_core_type) -> "core_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_constructor_declarations) -> "constructor_declarations"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_constructor_arguments) -> "constructor_arguments"
@@ -674,6 +678,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_operator -> (fun _ -> "operator")
   | MenhirInterpreter.N MenhirInterpreter.N_open_description -> (fun _ -> "open_description")
   | MenhirInterpreter.N MenhirInterpreter.N_open_declaration -> (fun _ -> "open_declaration")
+  | MenhirInterpreter.N MenhirInterpreter.N_object_type -> (fun _ -> "object_type")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_type_kind -> (fun _ -> "nonempty_type_kind")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_raw_string_ -> (fun _ -> "nonempty_list_raw_string_")
   | MenhirInterpreter.N MenhirInterpreter.N_nonempty_list_newtype_ -> (fun _ -> "nonempty_list_newtype_")
@@ -704,7 +709,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_no_hash_ -> (fun _ -> "mk_longident_mod_ext_longident_type_trailing_no_hash_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_type_trailing_hash_ -> (fun _ -> "mk_longident_mod_ext_longident_type_trailing_hash_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_ident_ -> (fun _ -> "mk_longident_mod_ext_longident_ident_")
-  | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_44_ -> (fun _ -> "mk_longident_mod_ext_longident___anonymous_44_")
+  | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident___anonymous_47_ -> (fun _ -> "mk_longident_mod_ext_longident___anonymous_47_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_UIDENT_ -> (fun _ -> "mk_longident_mod_ext_longident_UIDENT_")
   | MenhirInterpreter.N MenhirInterpreter.N_mk_longident_mod_ext_longident_LIDENT_ -> (fun _ -> "mk_longident_mod_ext_longident_LIDENT_")
   | MenhirInterpreter.N MenhirInterpreter.N_method_ -> (fun _ -> "method_")
@@ -769,11 +774,14 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_fun_body -> (fun _ -> "fun_body")
   | MenhirInterpreter.N MenhirInterpreter.N_formal_class_parameters -> (fun _ -> "formal_class_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_floating_attribute -> (fun _ -> "floating_attribute")
+  | MenhirInterpreter.N MenhirInterpreter.N_extension_type -> (fun _ -> "extension_type")
   | MenhirInterpreter.N MenhirInterpreter.N_extension_constructor_rebind_epsilon_ -> (fun _ -> "extension_constructor_rebind_epsilon_")
   | MenhirInterpreter.N MenhirInterpreter.N_extension_constructor_rebind_BAR_ -> (fun _ -> "extension_constructor_rebind_BAR_")
   | MenhirInterpreter.N MenhirInterpreter.N_extension -> (fun _ -> "extension")
   | MenhirInterpreter.N MenhirInterpreter.N_ext -> (fun _ -> "ext")
   | MenhirInterpreter.N MenhirInterpreter.N_direction_flag -> (fun _ -> "direction_flag")
+  | MenhirInterpreter.N MenhirInterpreter.N_delimited_type_supporting_local_open -> (fun _ -> "delimited_type_supporting_local_open")
+  | MenhirInterpreter.N MenhirInterpreter.N_delimited_type -> (fun _ -> "delimited_type")
   | MenhirInterpreter.N MenhirInterpreter.N_core_type -> (fun _ -> "core_type")
   | MenhirInterpreter.N MenhirInterpreter.N_constructor_declarations -> (fun _ -> "constructor_declarations")
   | MenhirInterpreter.N MenhirInterpreter.N_constructor_arguments -> (fun _ -> "constructor_arguments")

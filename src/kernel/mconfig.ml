@@ -89,10 +89,10 @@ type merlin = {
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
+  source_root : string option;
   unit_name   : string option;
   unit_name_for : string String.Map.t;
   wrapping_prefix : string option;
-  source_root : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -108,8 +108,9 @@ type merlin = {
   flags_applied : string list with_workdir list;
 
   failures : string list;
-  extension_to_reader : (string * string) list
+  extension_to_reader : (string * string) list;
 
+  cache_lifespan : int
 }
 
 let dump_merlin x =
@@ -133,6 +134,7 @@ let dump_merlin x =
         ]) x.suffixes
     );
     "stdlib"       , Json.option Json.string x.stdlib;
+    "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
     "unit_name_for", (let alist =
                         x.unit_name_for
@@ -140,7 +142,6 @@ let dump_merlin x =
                         |> String.Map.to_list
                       in `Assoc alist);
     "wrapping_prefix", Json.option Json.string x.wrapping_prefix;
-    "source_root"  , Json.option Json.string x.source_root;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -156,7 +157,8 @@ let dump_merlin x =
           "extension", `String suffix;
           "reader", `String reader;
         ]) x.extension_to_reader
-    )
+    );
+    "cache_lifespan"   , Json.string (string_of_int x.cache_lifespan)
   ]
 
 module Verbosity = struct
@@ -273,7 +275,7 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
     unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
     unit_name_for =
-      String.Map.merge ~f:(fun _ dot merlin -> 
+      String.Map.merge ~f:(fun _ dot merlin ->
                             match dot, merlin with
                             | Some dot, _ -> Some dot
                             | None, Some merlin -> Some merlin
@@ -422,6 +424,15 @@ let merlin_flags = [
     "<path> Change path of ocaml standard library"
   );
   (
+    "-cache-lifespan",
+    Marg.param "int" (fun prot merlin ->
+        try {merlin with cache_lifespan = (int_of_string prot)}
+        with _ -> invalid_arg "Valid value is int";
+      ),
+    "Change file cache retention period. It's measured in minutes. \
+      Default value is 5."
+  );
+  (
     (* Legacy support for janestreet. Ignored. To be removed soon. *)
     "-attributes-allowed",
     Marg.unit_ignore,
@@ -467,11 +478,11 @@ let ocaml_ignored_flags = [
   "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
   "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
   "-no-strict-sequence"; "-no-unbox-free-vars-of-clos";
-  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic";
+  "-no-unbox-specialised-args"; "-no-unboxed-types"; "-O2"; "-O3"; "-Oclassic";
   "-only-erasable-extensions"; "-opaque";
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
-  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
-  "-verbose"; "-where";
+  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures";
+  "-unboxed-types"; "-v"; "-verbose"; "-where";
   "-no-absname"; "-no-g"; "-safe-matching"; "-bin-annot-occurrences";
 
   (* flambda-backend specific *)
@@ -857,10 +868,10 @@ let initial = {
     extensions  = [];
     suffixes    = [(".ml", ".mli"); (".re", ".rei")];
     stdlib      = None;
+    source_root = None;
     unit_name   = None;
     unit_name_for = String.Map.empty;
     wrapping_prefix = None;
-    source_root = None;
     reader      = [];
     protocol    = `Json;
     log_file    = None;
@@ -876,6 +887,7 @@ let initial = {
 
     failures = [];
     extension_to_reader = [(".re","reason");(".rei","reason")];
+    cache_lifespan = 5;
   };
   query = {
     filename = "*buffer*";
@@ -929,7 +941,8 @@ let () =
     args, (upd a b)
   in
   let add prj upd (name,flag,_doc) =
-    assert (not (Hashtbl.mem arguments_table name));
+    if Hashtbl.mem arguments_table name then
+      failwith ("Duplicate flag spec: " ^ name);
     Hashtbl.add arguments_table name (lens prj upd flag)
   in
   List.iter
@@ -968,7 +981,8 @@ let source_path config =
   List.concat
     [[config.query.directory];
      stdlib;
-     config.merlin.source_path]
+     config.merlin.source_path;
+     config.merlin.hidden_source_path]
   |> List.filter_dup
 
 let hidden_source_path config =
@@ -1016,6 +1030,7 @@ let cmt_path config = (
   let dirs =
     config.merlin.cmt_path @
     config.merlin.build_path @
+    config.merlin.hidden_build_path @
     dirs
   in
   let stdlib = stdlib config in

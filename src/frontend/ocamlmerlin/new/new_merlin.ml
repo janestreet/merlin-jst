@@ -41,7 +41,9 @@ let commands_help () =
       print_endline doc
     ) New_commands.all_commands
 
-let run = function
+let run =
+  let query_num = ref (-1) in
+  function
   | [] ->
     usage ();
     1
@@ -62,6 +64,7 @@ let run = function
     commands_help ();
     0
   | query :: raw_args ->
+    incr query_num;
     match New_commands.find_command query New_commands.all_commands with
     | exception Not_found ->
       prerr_endline ("Unknown command " ^ query ^ ".\n");
@@ -91,6 +94,8 @@ let run = function
         (* Start processing query *)
         Logger.with_log_file Mconfig.(config.merlin.log_file)
           ~sections:Mconfig.(config.merlin.log_sections) @@ fun () ->
+        Mocaml.flush_caches
+          ~older_than:(float_of_int (60 * Mconfig.(config.merlin.cache_lifespan))) ();
         File_id.with_cache @@ fun () ->
         let source = Msource.make (Misc.string_of_file stdin) in
         let pipeline = Mpipeline.make config source in
@@ -136,7 +141,8 @@ let run = function
             "notifications", `List (List.rev_map notify !notifications);
             "timing", `Assoc (List.map format_timing timing);
             "heap_mbytes", `Int heap_mbytes;
-            "cache", Mpipeline.cache_information pipeline
+            "cache", Mpipeline.cache_information pipeline;
+            "query_num", `Int !query_num;
           ]
         in
         log ~title:"run(result)" "%a" Logger.json (fun () -> json);

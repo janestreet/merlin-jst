@@ -12,7 +12,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
-module Le_result = Misc_stdlib.Le_result
+(* Merlin-specific: Change the module path of Misc_stdlib.Le_result to Misc.Le_result to
+   match the compiler *)
+module Misc = struct
+  module Le_result = Misc_stdlib.Le_result
+end
 
 module Externality = struct
   type t =
@@ -31,7 +35,7 @@ module Externality = struct
     | Internal, Internal -> true
     | (External | External64 | Internal), _ -> false
 
-  let less_or_equal t1 t2 : Le_result.t =
+  let less_or_equal t1 t2 : Misc.Le_result.t =
     match t1, t2 with
     | External, External -> Equal
     | External, (External64 | Internal) -> Less
@@ -41,7 +45,7 @@ module Externality = struct
     | Internal, (External | External64) -> Not_le
     | Internal, Internal -> Equal
 
-  let le t1 t2 = Le_result.is_le (less_or_equal t1 t2)
+  let le t1 t2 = Misc.Le_result.is_le (less_or_equal t1 t2)
 
   let meet t1 t2 =
     match t1, t2 with
@@ -80,14 +84,14 @@ module Nullability = struct
     | Maybe_null, Maybe_null -> true
     | (Non_null | Maybe_null), _ -> false
 
-  let less_or_equal n1 n2 : Le_result.t =
+  let less_or_equal n1 n2 : Misc.Le_result.t =
     match n1, n2 with
     | Non_null, Non_null -> Equal
     | Non_null, Maybe_null -> Less
     | Maybe_null, Non_null -> Not_le
     | Maybe_null, Maybe_null -> Equal
 
-  let le n1 n2 = Le_result.is_le (less_or_equal n1 n2)
+  let le n1 n2 = Misc.Le_result.is_le (less_or_equal n1 n2)
 
   let meet n1 n2 =
     match n1, n2 with
@@ -113,7 +117,7 @@ module type Axis_s = sig
 
   val equal : t -> t -> bool
 
-  val less_or_equal : t -> t -> Le_result.t
+  val less_or_equal : t -> t -> Misc.Le_result.t
 
   val le : t -> t -> bool
 
@@ -150,13 +154,13 @@ module Axis = struct
     (* A functor to add some convenient functions to modal axes *)
     include M
 
-    let less_or_equal a b : Le_result.t =
+    let less_or_equal a b : Misc.Le_result.t =
       match le a b, le b a with
       | true, true -> Equal
       | true, false -> Less
       | false, _ -> Not_le
 
-    let equal a b = Le_result.is_equal (less_or_equal a b)
+    let equal a b = Misc.Le_result.is_equal (less_or_equal a b)
   end
 
   let get (type a) : a t -> (module Axis_s with type t = a) = function

@@ -3,9 +3,9 @@ on:
   push:
 
 # Overall approach to running the tests:
-#  - Install OCaml 5.1, as this is the version of dependencies our merlin expects.
+#  - Install OCaml 5.2, as this is the version of dependencies our merlin expects.
 #  - Build flambda-backend (which requires installing OCaml 4.14).
-#  - Build merlin using OCaml 5.1, and then run the tests while pointing merlin at
+#  - Build merlin using OCaml 5.2, and then run the tests while pointing merlin at
 #    flambda-backend's stdlib and ocamlc.
 #
 # The second step only needs to be run when we update the flambda-backend version,
@@ -26,7 +26,7 @@ jobs:
           - os: ubuntu-latest
             flambda-backend-config: --enable-middle-end=flambda2 --disable-naked-pointers
             name: flambda2
-            ocaml-compiler: 5.1.x
+            ocaml-compiler: 5.2.x
 
     env:
       MERLIN_TESTS: all

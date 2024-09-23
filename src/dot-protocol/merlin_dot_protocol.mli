@@ -57,6 +57,7 @@ module Directive : sig
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
+    | `SOURCE_ROOT of string
     | `UNIT_NAME of string
     | `UNIT_NAME_FOR of unit_name_mapping
     | `WRAPPING_PREFIX of string
