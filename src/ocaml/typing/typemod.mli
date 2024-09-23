@@ -45,7 +45,7 @@ val type_interface:
   sourcefile:string -> Compilation_unit.t -> Env.t ->
   Parsetree.signature -> Typedtree.signature
 val transl_signature:
-        Env.t -> Parsetree.signature -> Typedtree.signature
+  Env.t -> Parsetree.signature -> Typedtree.signature
 val check_nongen_signature:
         Env.t -> Types.signature -> unit
         (*
@@ -150,6 +150,7 @@ type error =
   | Unpackable_local_modtype_subst of Path.t
   | With_cannot_remove_packed_modtype of Path.t * module_type
   | Toplevel_nonvalue of string * Jkind.sort
+  | Toplevel_unnamed_nonvalue of Jkind.sort
   | Strengthening_mismatch of Longident.t * Includemod.explanation
   | Cannot_pack_parameter
   | Compiling_as_parameterised_parameter

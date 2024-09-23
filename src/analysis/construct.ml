@@ -327,6 +327,8 @@ module Gen = struct
           with Not_found -> Hashtbl.add idents_table n 0; n
       in
       fun env label ty ->
+        (* We intentionally choose not to include the arg's mode in the constructed
+           value to be consistent with the decision to not include the arg's type *)
         let open Ast_helper in
         let make_param arg_label pat =
           {
@@ -343,7 +345,8 @@ module Gen = struct
               (Labelled s)
               (Pat.constraint_
                 (Pat.var (Location.mknoloc s))
-                (Typ.extension (Location.mknoloc "call_pos", PStr []))),
+                (Some (Typ.extension (Location.mknoloc "call_pos", PStr [])))
+                []),
             s
         | Labelled s ->
             make_param
@@ -543,6 +546,14 @@ module Gen = struct
           List.map choices ~f:(fun choice ->
             Jane_syntax.Labeled_tuples.expr_of choice
               ~loc:!Ast_helper.default_loc)
+        | Tunboxed_tuple types ->
+          let choices =
+            List.map types ~f:(fun (lbl, ty) ->
+              List.map (exp_or_hole env ty) ~f:(fun result -> lbl, result))
+            |> Util.combinations
+          in
+          List.map choices ~f:(fun choice ->
+            Ast_helper.Exp.unboxed_tuple choice)
         | Tvariant row_desc -> variant env rtyp row_desc
         | Tpackage (path, lids_args) -> begin
           let open Ast_helper in
@@ -553,7 +564,8 @@ module Gen = struct
             let ast =
               Exp.constraint_
                 (Exp.pack (module_ env ty))
-                (Ptyp_of_type.core_type typ)
+                (Some (Ptyp_of_type.core_type typ))
+                []
             in
             [ ast ]
           with Typemod.Error _ ->

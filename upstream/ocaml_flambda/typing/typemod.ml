@@ -89,6 +89,7 @@ type error =
   | Unpackable_local_modtype_subst of Path.t
   | With_cannot_remove_packed_modtype of Path.t * module_type
   | Toplevel_nonvalue of string * Jkind.sort
+  | Toplevel_unnamed_nonvalue of Jkind.sort
   | Strengthening_mismatch of Longident.t * Includemod.explanation
   | Cannot_pack_parameter
   | Compiling_as_parameterised_parameter
@@ -656,11 +657,11 @@ let merge_constraint initial_env loc sg lid constr =
               (* jkind any is fine on the params because they get thrown away
                  below *)
               List.map
-                (fun _ -> Btype.newgenvar (Jkind.Primitive.any ~why:Dummy_jkind))
+                (fun _ -> Btype.newgenvar (Jkind.Builtin.any ~why:Dummy_jkind))
                 sdecl.ptype_params;
             type_arity = arity;
             type_kind = Type_abstract Definition;
-            type_jkind = Jkind.Primitive.value ~why:(Unknown "merge_constraint");
+            type_jkind = Jkind.Builtin.value ~why:(Unknown "merge_constraint");
             type_jkind_annotation = None;
             type_private = Private;
             type_manifest = None;
@@ -804,7 +805,7 @@ let merge_constraint initial_env loc sg lid constr =
         let mty = Mtype.scrape_for_type_of ~remove_aliases sig_env mty in
         let mty =
           remove_modality_and_zero_alloc_variables_mty sig_env
-            ~zap_modality:Mode.Modality.Value.zap_to_floor mty
+            ~zap_modality:Mode.Modality.Value.zap_to_id mty
         in
         let md'' = { md' with md_type = mty } in
         let newmd = Mtype.strengthen_decl ~aliasable:false md'' path in
@@ -828,6 +829,13 @@ let merge_constraint initial_env loc sg lid constr =
         let sig_env = Env.add_signature sg_for_env outer_sig_env in
         let sg = extract_sig sig_env loc md.md_type in
         let ((path, _, tcstr), newsg) = merge_signature sig_env sg namelist in
+        let newsg =
+          if destructive_substitution then
+            remove_modality_and_zero_alloc_variables_sg sig_env
+              ~zap_modality:Mode.Modality.Value.zap_to_id newsg
+          else
+            newsg
+        in
         let path = path_concat id path in
         real_ids := path :: !real_ids;
         let item =
@@ -971,6 +979,19 @@ let map_ext fn exts =
   | [] -> []
   | d1 :: dl -> fn Text_first d1 :: List.map (fn Text_next) dl
 
+let apply_modalities_signature modalities sg =
+  List.map (function
+  | Sig_value (id, vd, vis) ->
+      let val_modalities =
+        vd.val_modalities
+        |> Mode.Modality.Value.to_const_exn
+        |> (fun then_ -> Mode.Modality.Value.Const.concat ~then_ modalities)
+        |> Mode.Modality.Value.of_const
+      in
+      let vd = {vd with val_modalities} in
+      Sig_value (id, vd, vis)
+  | item -> item) sg
+
 (* Auxiliary for translating recursively-defined module types.
    Return a module type that approximates the shape of the given module
    type AST.  Retain only module, type, and module type
@@ -1058,15 +1079,8 @@ and approx_module_declaration env pmd =
     md_uid = Uid.internal_not_actually_unique;
   }
 
-and approx_include_functor
-      env (ifincl : Jane_syntax.Include_functor.signature_item) _srem =
-  match ifincl with
-  | Ifsig_include_functor sincl ->
-      raise (Error(sincl.pincl_loc, env, Recursive_include_functor))
-
-and approx_sig_jst' env (jitem : Jane_syntax.Signature_item.t) srem =
+and approx_sig_jst' _env (jitem : Jane_syntax.Signature_item.t) _srem =
   match jitem with
-  | Jsig_include_functor ifincl -> approx_include_functor env ifincl srem
   | Jsig_layout (Lsig_kind_abbrev _) ->
       Misc.fatal_error "kind_abbrev not supported!"
 
@@ -1153,13 +1167,22 @@ and approx_sig env ssg =
       | Psig_open sod ->
           let _, env = type_open_descr env sod in
           approx_sig env srem
-      | Psig_include sincl ->
-          let smty = sincl.pincl_mod in
-          let mty = approx_modtype env smty in
-          let scope = Ctype.create_scope () in
-          let sg, newenv = Env.enter_signature ~scope
-              (extract_sig env smty.pmty_loc mty) env in
-          sg @ approx_sig newenv srem
+      | Psig_include ({pincl_loc=loc; pincl_mod=mod_; pincl_kind=kind; _}, moda) ->
+          begin match kind with
+          | Functor ->
+              Jane_syntax_parsing.assert_extension_enabled ~loc Include_functor ();
+              raise (Error(loc, env, Recursive_include_functor))
+          | Structure ->
+              let mty = approx_modtype env mod_ in
+              let scope = Ctype.create_scope () in
+              let sg = extract_sig env loc mty in
+              let modalities =
+                Typemode.transl_modalities ~maturity:Alpha Immutable [] moda
+              in
+              let sg = apply_modalities_signature modalities sg in
+              let sg, newenv = Env.enter_signature ~scope sg env in
+              sg @ approx_sig newenv srem
+          end
       | Psig_class sdecls | Psig_class_type sdecls ->
           let decls, env = Typeclass.approx_class_declarations env sdecls in
           let rem = approx_sig env srem in
@@ -1649,10 +1672,10 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
 
 
 
-and transl_signature ?(toplevel = false) env sg =
+and transl_signature env sg =
   let names = Signature_names.create () in
 
-  let transl_include ~functor_ ~loc env sig_acc sincl =
+  let transl_include ~loc env sig_acc sincl modalities =
     let smty = sincl.pincl_mod in
     let tmty =
       Builtin_attributes.warning_scope sincl.pincl_attributes
@@ -1661,14 +1684,20 @@ and transl_signature ?(toplevel = false) env sg =
     let mty = tmty.mty_type in
     let scope = Ctype.create_scope () in
     let incl_kind, sg =
-      if functor_ then
+      match sincl.pincl_kind with
+      | Functor ->
+        Jane_syntax_parsing.assert_extension_enabled ~loc Include_functor ();
         let sg, incl_kind =
           extract_sig_functor_open false env smty.pmty_loc mty sig_acc
         in
         incl_kind, sg
-      else
+      | Structure ->
         Tincl_structure, extract_sig env smty.pmty_loc mty
     in
+    let modalities =
+      Typemode.transl_modalities ~maturity:Alpha Immutable [] modalities
+    in
+    let sg = apply_modalities_signature modalities sg in
     let sg, newenv = Env.enter_signature ~scope sg env in
     Signature_group.iter
       (Signature_names.check_sig_item names loc)
@@ -1681,19 +1710,11 @@ and transl_signature ?(toplevel = false) env sg =
         incl_loc = sincl.pincl_loc;
       }
     in
-    mksig (Tsig_include incl) env loc, sg, newenv
+    mksig (Tsig_include (incl, modalities)) env loc, sg, newenv
   in
 
-  let transl_include_functor ~loc env sig_acc
-    : Jane_syntax.Include_functor.signature_item -> _ = function
-    | Ifsig_include_functor sincl ->
-        transl_include ~functor_:true ~loc env sig_acc sincl
-  in
-
-  let transl_sig_item_jst ~loc env sig_acc : Jane_syntax.Signature_item.t -> _ =
+  let transl_sig_item_jst ~loc:_ _env _sig_acc : Jane_syntax.Signature_item.t -> _ =
     function
-    | Jsig_include_functor ifincl ->
-        transl_include_functor ~loc env sig_acc ifincl
     | Jsig_layout (Lsig_kind_abbrev _) ->
         Misc.fatal_error "kind_abbrev not supported!"
   in
@@ -1906,8 +1927,8 @@ and transl_signature ?(toplevel = false) env sg =
     | Psig_open sod ->
         let (od, newenv) = type_open_descr env sod in
         mksig (Tsig_open od) env loc, [], newenv
-    | Psig_include sincl ->
-        transl_include ~functor_:false ~loc env sig_acc sincl
+    | Psig_include (sincl, modalities) ->
+        transl_include ~loc env sig_acc sincl modalities
     | Psig_class cl ->
         let (classes, newenv) = Typeclass.class_descriptions env cl in
         List.iter (fun cls ->
@@ -1958,8 +1979,6 @@ and transl_signature ?(toplevel = false) env sg =
         typedtree, tsg, newenv
     | Psig_attribute attr ->
         Builtin_attributes.parse_standard_interface_attributes attr;
-        if toplevel || not (Warnings.is_active (Misplaced_attribute ""))
-        then Builtin_attributes.mark_alert_used attr;
         mksig (Tsig_attribute attr) env loc, [], env
     | Psig_extension (ext, _attrs) ->
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
@@ -2828,7 +2847,7 @@ and type_open_decl_aux ?used_slot ?toplevel funct_body names env od =
 and type_structure ?(toplevel = None) funct_body anchor env sstr =
   let names = Signature_names.create () in
 
-  let type_str_include ~functor_ ~loc env shape_map sincl sig_acc =
+  let type_str_include ~loc env shape_map sincl sig_acc =
     let smodl = sincl.pincl_mod in
     let modl, modl_shape =
       Builtin_attributes.warning_scope sincl.pincl_attributes
@@ -2836,13 +2855,15 @@ and type_structure ?(toplevel = None) funct_body anchor env sstr =
     in
     let scope = Ctype.create_scope () in
     let incl_kind, sg =
-      if functor_ then
+      match sincl.pincl_kind with
+      | Functor ->
+        Jane_syntax_parsing.assert_extension_enabled ~loc Include_functor ();
         let sg, incl_kind =
           extract_sig_functor_open funct_body env smodl.pmod_loc
             modl.mod_type sig_acc
         in
         incl_kind, sg
-      else
+      | Structure ->
         Tincl_structure, extract_sig_open env smodl.pmod_loc modl.mod_type
     in
     (* Rename all identifiers bound by this signature to avoid clashes *)
@@ -2862,18 +2883,22 @@ and type_structure ?(toplevel = None) funct_body anchor env sstr =
     Tstr_include incl, sg, shape, new_env
   in
 
-  let type_str_include_functor ~loc env shape_map ifincl sig_acc =
-    match (ifincl : Jane_syntax.Include_functor.structure_item) with
-    | Ifstr_include_functor incl ->
-        type_str_include ~functor_:true ~loc env shape_map incl sig_acc
-  in
-
-  let type_str_item_jst ~loc env shape_map jitem sig_acc =
+  let type_str_item_jst ~loc:_ _env _shape_map jitem _sig_acc =
     match (jitem : Jane_syntax.Structure_item.t) with
-    | Jstr_include_functor ifincl ->
-        type_str_include_functor ~loc env shape_map ifincl sig_acc
     | Jstr_layout (Lstr_kind_abbrev _) ->
         Misc.fatal_error "kind_abbrev not supported!"
+  in
+
+  let force_toplevel =
+    (* A couple special cases are needed for the toplevel:
+
+       - Expressions bound by '_' still escape in the toplevel, because they may
+         be printed even though they are not named, and therefore can't be local
+       - Those expressions and also all [Pstr_eval]s must have types of layout
+         value for the same reason (see the special case in
+         [Opttoploop.execute_phrase]).
+    *)
+    Option.is_some toplevel
   in
 
   let type_str_item
@@ -2884,27 +2909,43 @@ and type_structure ?(toplevel = None) funct_body anchor env sstr =
     | None ->
     match desc with
     | Pstr_eval (sexpr, attrs) ->
-        (* We restrict [Tstr_eval] expressions to representable jkinds to
-           support the native toplevel.  See the special handling of [Tstr_eval]
-           near the top of [execute_phrase] in [opttoploop.ml]. *)
         let expr, sort =
+          (* We could consider allowing [any] here when not in the toplevel,
+             though for now the sort is used in the void safety check. *)
           Builtin_attributes.warning_scope attrs
             (fun () -> Typecore.type_representable_expression
                          ~why:Structure_item_expression env sexpr)
         in
+        if force_toplevel then
+          (* See comment on [force_toplevel]. *)
+          begin match Jkind.Sort.default_to_value_and_get sort with
+          | Base Value -> ()
+          | Product _
+          | Base (Void | Float64 | Float32 | Word | Bits32 | Bits64) ->
+            raise (Error (sexpr.pexp_loc, env, Toplevel_unnamed_nonvalue sort))
+          end;
         Tstr_eval (expr, sort, attrs), [], shape_map, env
-    | Pstr_value(rec_flag, sdefs) ->
-        let force_toplevel =
-          (* Values bound by '_' still escape in the toplevel, because
-             they may be printed even though they are not named *)
-          Option.is_some toplevel
-        in
+    | Pstr_value (rec_flag, sdefs) ->
         let (defs, newenv) =
           Typecore.type_binding env rec_flag ~force_toplevel sdefs in
         let defs = match rec_flag with
           | Recursive -> Typecore.annotate_recursive_bindings env defs
           | Nonrecursive -> defs
         in
+        if force_toplevel then
+          (* See comment on [force_toplevel] *)
+          List.iter (fun vb ->
+            match vb.vb_pat.pat_desc with
+            | Tpat_any ->
+              begin match Jkind.Sort.default_to_value_and_get vb.vb_sort with
+              | Base Value -> ()
+              | Product _
+              | Base (Void | Float64 | Float32 | Word | Bits32 | Bits64) ->
+                raise (Error (vb.vb_loc, env,
+                              Toplevel_unnamed_nonvalue vb.vb_sort))
+              end
+            | _ -> ()
+          ) defs;
         (* Note: Env.find_value does not trigger the value_used event. Values
            will be marked as being used during the signature inclusion test. *)
         let items, shape_map =
@@ -3225,7 +3266,7 @@ and type_structure ?(toplevel = None) funct_body anchor env sstr =
         shape_map,
         new_env
     | Pstr_include sincl ->
-        type_str_include ~functor_:false ~loc env shape_map sincl sig_acc
+        type_str_include ~loc env shape_map sincl sig_acc
     | Pstr_extension (ext, _attrs) ->
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
     | Pstr_attribute x ->
@@ -3440,7 +3481,7 @@ let type_package env m p fl =
   List.iter
     (fun (n, ty) ->
       try Ctype.unify env ty
-            (Ctype.newvar (Jkind.Primitive.any ~why:Dummy_jkind))
+            (Ctype.newvar (Jkind.Builtin.any ~why:Dummy_jkind))
       with Ctype.Unify _ ->
         raise (Error(modl.mod_loc, env, Scoping_pack (n,ty))))
     fl';
@@ -3489,7 +3530,7 @@ let gen_annot target annots =
     annots
 
 let cms_register_toplevel_attributes ~sourcefile ~uid ~f ast =
-  (* Cms files do not store the typetree. This can be a problem for Merlin has
+  (* Cms files do not store the typetree. This can be a problem for Merlin as
     it uses attributes - which is why we manually construct a mapping from uid
     to attributes while typing.
     Generally `Pstr_attribute` and `Psig_attribute` are not needed by Merlin,
@@ -3553,7 +3594,7 @@ let type_implementation target modulename initial_env ast =
     Cmt_format.save_cmt (Unit_info.cmt target) modulename
       annots initial_env cmi shape;
     Cms_format.save_cms (Unit_info.cms target) modulename
-      annots shape;
+      annots initial_env shape;
     gen_annot target annots;
   in
   Cmt_format.clear ();
@@ -3621,6 +3662,11 @@ let type_implementation target modulename initial_env ast =
               in
               Unit_info.Artifact.from_filename cmi_file
           in
+          (* We use pre-5.2 behaviour as regards which interface-related file
+             is reported in error messages. *)
+          let compiled_intf_file_name =
+            Unit_info.Artifact.filename compiled_intf_file
+          in
           let dclsig =
             Env.read_signature import compiled_intf_file ~add_binding:false
           in
@@ -3635,7 +3681,7 @@ let type_implementation target modulename initial_env ast =
           let coercion, shape =
             Profile.record_call "check_sig" (fun () ->
               Includemod.compunit initial_env ~mark:Mark_positive
-                sourcefile sg source_intf dclsig shape)
+                sourcefile sg compiled_intf_file_name dclsig shape)
           in
           (* Check the _mli_ against the argument type, since the mli determines
              the visible type of the module and that's what needs to conform to
@@ -3691,8 +3737,8 @@ let type_implementation target modulename initial_env ast =
              declarations like "let x = true;; let x = 1;;", because in this
              case, the inferred signature contains only the last declaration. *)
           let shape = Shape_reduce.local_reduce Env.empty shape in
+          let alerts = Builtin_attributes.alerts_of_str ~mark:true ast in
           if not !Clflags.dont_write_files then begin
-            let alerts = Builtin_attributes.alerts_of_str ast in
             let name = Compilation_unit.name modulename in
             let kind =
               Cmi_format.Normal { cmi_impl = modulename; cmi_arg_for = arg_type }
@@ -3728,7 +3774,7 @@ let save_signature target modname tsg initial_env cmi =
   Cmt_format.save_cmt (Unit_info.cmti target) modname
     (Cmt_format.Interface tsg) initial_env (Some cmi) None;
   Cms_format.save_cms  (Unit_info.cmsi target) modname
-    (Cmt_format.Interface tsg) None
+    (Cmt_format.Interface tsg) initial_env None
 
 let cms_register_toplevel_signature_attributes ~sourcefile ~uid ast =
   cms_register_toplevel_attributes ~sourcefile ~uid ast
@@ -3751,7 +3797,7 @@ let type_interface ~sourcefile modulename env ast =
     let uid = Shape.Uid.of_compilation_unit_id modulename in
     cms_register_toplevel_signature_attributes ~uid ~sourcefile ast
   end;
-  let sg = transl_signature ~toplevel:true env ast in
+  let sg = transl_signature env ast in
   let arg_type =
     !Clflags.as_argument_for
     |> Option.map Compilation_unit.Name.of_string
@@ -3759,9 +3805,6 @@ let type_interface ~sourcefile modulename env ast =
   ignore (check_argument_type_if_given env sourcefile sg.sig_type arg_type
           : Typedtree.argument_interface option);
   sg
-
-let transl_signature env ast =
-  transl_signature ~toplevel:false env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
@@ -3851,7 +3894,7 @@ let package_units initial_env objfiles target_cmi modulename =
     Cmt_format.save_cmt  (Unit_info.companion_cmt target_cmi) modulename
       (Cmt_format.Packed (sg, objfiles)) initial_env  None (Some shape);
     Cms_format.save_cms  (Unit_info.companion_cms target_cmi) modulename
-      (Cmt_format.Packed (sg, objfiles)) (Some shape);
+      (Cmt_format.Packed (sg, objfiles)) initial_env (Some shape);
     cc
   end else begin
     (* Determine imports *)
@@ -3877,7 +3920,7 @@ let package_units initial_env objfiles target_cmi modulename =
       Cmt_format.save_cmt (Unit_info.companion_cmt target_cmi)  modulename
         (Cmt_format.Packed (sign, objfiles)) initial_env (Some cmi) (Some shape);
       Cms_format.save_cms (Unit_info.companion_cms target_cmi)  modulename
-        (Cmt_format.Packed (sign, objfiles)) (Some shape);
+        (Cmt_format.Packed (sign, objfiles)) initial_env (Some shape);
     end;
     Tcoerce_none
   end
@@ -4138,6 +4181,11 @@ let report_error ~loc _env = function
          the type of %a has layout@ %a.@]"
         Style.inline_code "value"
         Style.inline_code id
+        (Style.as_inline_code Jkind.Sort.format) sort
+  | Toplevel_unnamed_nonvalue sort ->
+      Location.errorf ~loc
+        "@[Types of unnamed expressions must have layout value when using@ \
+           the toplevel, but this expression has layout@ %a.@]"
         (Style.as_inline_code Jkind.Sort.format) sort
  | Strengthening_mismatch(lid, explanation) ->
       let main = Includemod_errorprinter.err_msgs explanation in

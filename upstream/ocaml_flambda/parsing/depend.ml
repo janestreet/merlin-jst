@@ -108,8 +108,9 @@ let rec add_type bv ty =
   match ty.ptyp_desc with
     Ptyp_any -> ()
   | Ptyp_var _ -> ()
-  | Ptyp_arrow(_, t1, t2) -> add_type bv t1; add_type bv t2
+  | Ptyp_arrow(_, t1, t2, _, _) -> add_type bv t1; add_type bv t2
   | Ptyp_tuple tl -> List.iter (add_type bv) tl
+  | Ptyp_unboxed_tuple tl -> add_type_labeled_tuple bv tl
   | Ptyp_constr(c, tl) -> add bv c; List.iter (add_type bv) tl
   | Ptyp_object (fl, _) ->
       List.iter
@@ -133,7 +134,7 @@ let rec add_type bv ty =
 
 and add_type_jst bv : Jane_syntax.Core_type.t -> _ = function
   | Jtyp_layout typ -> add_type_jst_layouts bv typ
-  | Jtyp_tuple x -> add_type_jst_labeled_tuple bv x
+  | Jtyp_tuple x -> add_type_labeled_tuple bv x
 
 and add_type_jst_layouts bv : Jane_syntax.Layouts.core_type -> _ = function
   | Ltyp_var { name = _; jkind } ->
@@ -145,8 +146,8 @@ and add_type_jst_layouts bv : Jane_syntax.Layouts.core_type -> _ = function
     add_type bv aliased_type;
     add_jkind bv jkind
 
-and add_type_jst_labeled_tuple bv : Jane_syntax.Labeled_tuples.core_type -> _ =
-  fun tl -> List.iter (fun (_, ty) -> add_type bv ty) tl
+and add_type_labeled_tuple bv tl =
+  List.iter (fun (_, ty) -> add_type bv ty) tl
 
 and add_package_type bv (lid, l) =
   add bv lid;
@@ -219,6 +220,7 @@ let rec add_pattern bv pat =
   | Ppat_interval _
   | Ppat_constant _ -> ()
   | Ppat_tuple pl -> List.iter (add_pattern bv) pl
+  | Ppat_unboxed_tuple (pl, _)-> add_pattern_labeled_tuple bv pl
   | Ppat_construct(c, opt) ->
       add bv c;
       add_opt
@@ -228,7 +230,9 @@ let rec add_pattern bv pat =
       List.iter (fun (lbl, p) -> add bv lbl; add_pattern bv p) pl
   | Ppat_array pl -> List.iter (add_pattern bv) pl
   | Ppat_or(p1, p2) -> add_pattern bv p1; add_pattern bv p2
-  | Ppat_constraint(p, ty) -> add_pattern bv p; add_type bv ty
+  | Ppat_constraint(p, ty, _) ->
+      add_pattern bv p;
+      Option.iter (fun ty -> add_type bv ty) ty;
   | Ppat_variant(_, op) -> add_opt add_pattern bv op
   | Ppat_type li -> add bv li
   | Ppat_lazy p -> add_pattern bv p
@@ -242,8 +246,10 @@ and add_pattern_jane_syntax bv : Jane_syntax.Pattern.t -> _ = function
   | Jpat_immutable_array (Iapat_immutable_array pl) ->
       List.iter (add_pattern bv) pl
   | Jpat_layout (Lpat_constant _) -> add_constant
-  | Jpat_tuple (labeled_pl, _) ->
-      List.iter (fun (_, p) -> add_pattern bv p) labeled_pl
+  | Jpat_tuple (labeled_pl, _) -> add_pattern_labeled_tuple bv labeled_pl
+
+and add_pattern_labeled_tuple bv labeled_pl =
+  List.iter (fun (_, p) -> add_pattern bv p) labeled_pl
 
 let add_pattern bv pat =
   pattern_bv := bv;
@@ -268,6 +274,7 @@ let rec add_expr bv exp =
   | Pexp_match(e, pel) -> add_expr bv e; add_cases bv pel
   | Pexp_try(e, pel) -> add_expr bv e; add_cases bv pel
   | Pexp_tuple el -> List.iter (add_expr bv) el
+  | Pexp_unboxed_tuple el -> add_labeled_tuple_expr bv el
   | Pexp_construct(c, opte) -> add bv c; add_opt add_expr bv opte
   | Pexp_variant(_, opte) -> add_opt add_expr bv opte
   | Pexp_record(lblel, opte) ->
@@ -286,9 +293,9 @@ let rec add_expr bv exp =
       add_expr bv e1;
       add_opt add_type bv oty2;
       add_type bv ty3
-  | Pexp_constraint(e1, ty2) ->
+  | Pexp_constraint(e1, ty2, _) ->
       add_expr bv e1;
-      add_type bv ty2
+      Option.iter (add_type bv) ty2
   | Pexp_send(e, _m) -> add_expr bv e
   | Pexp_new li -> add bv li
   | Pexp_setinstvar(_v, e) -> add_expr bv e
@@ -329,6 +336,7 @@ let rec add_expr bv exp =
       | Ok { arg; _ } -> add_expr bv arg
       end
   | Pexp_extension e -> handle_extension e
+  | Pexp_stack e -> add_expr bv e
   | Pexp_unreachable -> ()
 
 and add_expr_jane_syntax bv : Jane_syntax.Expression.t -> _ = function
@@ -336,11 +344,6 @@ and add_expr_jane_syntax bv : Jane_syntax.Expression.t -> _ = function
   | Jexp_immutable_array x -> add_immutable_array_expr bv x
   | Jexp_layout x -> add_layout_expr bv x
   | Jexp_tuple x -> add_labeled_tuple_expr bv x
-  | Jexp_modes x -> add_modes_expr bv x
-
-and add_modes_expr bv : Jane_syntax.Modes.expression -> _ =
-  function
-  | Coerce (_modes, exp) -> add_expr bv exp
 
 and add_comprehension_expr bv : Jane_syntax.Comprehensions.expression -> _ =
   function
@@ -385,8 +388,7 @@ and add_layout_expr bv : Jane_syntax.Layouts.expression -> _ = function
     add_jkind bv jkind;
     add_expr bv inner_expr
 
-and add_labeled_tuple_expr bv : Jane_syntax.Labeled_tuples.expression -> _ =
-  function el -> List.iter (add_expr bv) (List.map snd el)
+and add_labeled_tuple_expr bv el = List.iter (add_expr bv) (List.map snd el)
 
 and add_function_param bv param =
   match param.pparam_desc with
@@ -525,10 +527,6 @@ and add_include_description (bv, m) incl =
   (add bv, add m)
 
 and add_sig_item_jst (bv, m) : Jane_syntax.Signature_item.t -> _ = function
-  | Jsig_include_functor (Ifsig_include_functor incl) ->
-      (* It seems to be correct to treat [include functor] the same as
-         [include], but it's possible we could do something cleverer. *)
-      add_include_description (bv, m) incl
   | Jsig_layout (Lsig_kind_abbrev (_, jkind)) ->
       add_jkind bv jkind; (bv, m)
 
@@ -577,7 +575,7 @@ and add_sig_item (bv, m) item =
       (bv, m)
   | Psig_open od ->
       (open_description bv od, m)
-  | Psig_include incl ->
+  | Psig_include (incl, _) ->
       add_include_description (bv, m) incl
   | Psig_class cdl ->
       List.iter (add_class_description bv) cdl; (bv, m)
@@ -681,10 +679,6 @@ and add_include_declaration (bv, m) incl =
   (add bv, add m)
 
 and add_struct_item_jst (bv, m) : Jane_syntax.Structure_item.t -> _ = function
-  | Jstr_include_functor (Ifstr_include_functor incl) ->
-      (* It seems to be correct to treat [include functor] the same as
-         [include], but it's possible we could do something cleverer. *)
-      add_include_declaration (bv, m) incl
   | Jstr_layout (Lstr_kind_abbrev (_name, jkind)) ->
       add_jkind bv jkind; (bv, m)
 

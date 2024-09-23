@@ -46,6 +46,7 @@ type config = {
   stdlib       : string option;
   source_root  : string option;
   unit_name    : string option;
+  unit_name_for : string String.Map.t;
   wrapping_prefix : string option;
   reader       : string list;
   exclude_query_dir : bool;
@@ -66,6 +67,7 @@ let empty_config = {
   stdlib       = None;
   source_root  = None;
   unit_name    = None;
+  unit_name_for = String.Map.empty;
   wrapping_prefix = None;
   reader       = [];
   exclude_query_dir = false;
@@ -243,8 +245,8 @@ end = struct
 end
 
 let prepend_config ~dir:cwd configurator (directives : directive list) config =
-  List.fold_left ~init:(config, []) ~f:(fun (config, errors) ->
-    function
+  List.fold_left ~init:(config, []) ~f:(fun (config, errors) directive ->
+    match (directive : directive) with
     | `B path -> {config with build_path = path :: config.build_path}, errors
     | `S path -> {config with source_path = path :: config.source_path}, errors
     | `BH path -> {config with hidden_build_path = path :: config.hidden_build_path}, errors
@@ -266,6 +268,11 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
       {config with source_root = Some path}, errors
     | `UNIT_NAME name ->
       {config with unit_name = Some name}, errors
+    | `UNIT_NAME_FOR { basename; unit_name } ->
+      let unit_name_for =
+        String.Map.add ~key:basename ~data:unit_name config.unit_name_for
+      in
+      {config with unit_name_for}, errors
     | `WRAPPING_PREFIX prefix ->
       {config with wrapping_prefix = Some prefix}, errors
     | `READER reader ->
@@ -283,6 +290,7 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
     | `UNKNOWN_TAG tag  ->
       let error =  Printf.sprintf "Unknown configuration tag \"%s\"" tag in
       config, error :: errors
+    | `UNIT_NAME_FOR_ERROR error -> config, error :: errors
   ) directives
 
 let postprocess_config config =
@@ -301,6 +309,7 @@ let postprocess_config config =
     stdlib      = config.stdlib;
     source_root = config.source_root;
     unit_name   = config.unit_name;
+    unit_name_for = config.unit_name_for;
     wrapping_prefix = config.wrapping_prefix;
     reader      = config.reader;
     exclude_query_dir = config.exclude_query_dir;

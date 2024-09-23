@@ -130,8 +130,8 @@ val check_alerts_inclusion:
 
 (** Find alerts (and mark them used, wrt misplaced attribute warnings) *)
 val alerts_of_attrs: Parsetree.attributes -> Misc.alerts
-val alerts_of_sig: Parsetree.signature -> Misc.alerts
-val alerts_of_str: Parsetree.structure -> Misc.alerts
+val alerts_of_sig: mark:bool -> Parsetree.signature -> Misc.alerts
+val alerts_of_str: mark:bool -> Parsetree.structure -> Misc.alerts
 
 val check_deprecated_mutable:
     Location.t -> Parsetree.attributes -> string -> unit
@@ -204,6 +204,7 @@ val has_no_mutable_implied_modalities: Parsetree.attributes -> bool
 val has_local_opt: Parsetree.attributes -> bool
 val has_layout_poly: Parsetree.attributes -> bool
 val has_curry: Parsetree.attributes -> bool
+val has_or_null_reexport : Parsetree.attributes -> bool
 
 val tailcall : Parsetree.attributes ->
     ([`Tail|`Nontail|`Tail_if_possible] option, [`Conflict]) result

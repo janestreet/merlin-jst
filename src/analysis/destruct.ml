@@ -378,6 +378,8 @@ let rec subst_patt initial ~by patt =
     { patt with pat_desc = Tpat_alias (f p, x, y, uid, m) }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
+  | Tpat_unboxed_tuple lst ->
+    { patt with pat_desc = Tpat_unboxed_tuple (List.map lst ~f:(fun (lbl, p, sort) -> lbl, f p, sort)) }
   | Tpat_construct (lid, cd, lst, lco) ->
     { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
@@ -405,6 +407,8 @@ let rec rm_sub patt sub =
     { patt with pat_desc = Tpat_alias (f p, x, y,uid,m)  }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f:(fun (lbl, p) -> lbl, f p)) }
+  | Tpat_unboxed_tuple lst ->
+    { patt with pat_desc = Tpat_unboxed_tuple (List.map lst ~f:(fun (lbl, p, sort) -> lbl, f p, sort)) }
   | Tpat_construct (lid, cd, lst, lco) ->
     { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
@@ -430,6 +434,10 @@ let rec qualify_constructors ~unmangling_tables f pat  =
     | Tpat_alias (p, id, loc, uid, m) ->
       Tpat_alias (qualify_constructors f p, id, loc, uid, m)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(fun (lbl, p) -> lbl, qualify_constructors f p))
+    | Tpat_unboxed_tuple ps ->
+      Tpat_unboxed_tuple
+        (List.map ps
+           ~f:(fun (lbl, p, sort) -> lbl, qualify_constructors f p, sort))
     | Tpat_record (labels, closed) ->
       let labels =
         let open Longident in
@@ -504,6 +512,8 @@ let find_branch patterns sub =
         is_sub_patt p ~sub
       | Tpat_tuple lst ->
         List.exists lst ~f:(fun (_lbl, p) -> is_sub_patt ~sub p)
+      | Tpat_unboxed_tuple lst ->
+        List.exists lst ~f:(fun (_lbl, p, _sort) -> is_sub_patt ~sub p)
       | Tpat_construct (_, _, lst, _)
       | Tpat_array (_, _, lst) ->
         List.exists lst ~f:(is_sub_patt ~sub)
@@ -577,6 +587,9 @@ module Conv = struct
           let lst = List.map ~f:(fun (lbl, p) -> lbl, loop p) lst in
           Jane_syntax.Labeled_tuples.pat_of (lst, Closed)
             ~loc:!Ast_helper.default_loc
+      | Tpat_unboxed_tuple lst ->
+          let lst = List.map ~f:(fun (lbl, p, _sort) -> lbl, loop p) lst in
+          mkpat (Ppat_unboxed_tuple (lst, Closed))
       | Tpat_construct (cstr_lid, cstr, lst, _) ->
           let id = fresh cstr.cstr_name in
           let lid = { cstr_lid with txt = Longident.Lident id } in

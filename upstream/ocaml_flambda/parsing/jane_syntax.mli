@@ -111,87 +111,6 @@ module Arrow_curry : sig
   val curry_attr : Location.t -> Parsetree.attribute
 end
 
-module Mode_expr : sig
-  (** [Mode_expr] appears in several places:
-  - let local_ x = ...
-  - local_ exp
-  - local string -> string
-
-  Note that in the first two cases, axes other than locality are not specified;
-  in the second case, other axes are defaulted to legacy.
-
-  In the future the two annotations will be quite different, but for now they
-  are just lists of modes. [Typemode] has the two different
-  interpretations of the annotation.
-
-  (TODO: in the future we will have mutable(...), which is similar to the second
-  occurrence above and should be covered by this module)
-  *)
-
-  module Const : sig
-    (** Constant modes *)
-
-    (** Represent a user-written mode constant, containing a string and its
-        location *)
-    type t = Parsetree.mode_const_expression
-
-    (** Constructs a mode constant mode *)
-    val mk : string -> Location.t -> t
-  end
-
-  type t = Parsetree.mode_expression
-
-  (** The empty mode expression. *)
-  val empty : t
-
-  (** The mode expression containing a single mode constant. *)
-  val singleton : Const.t -> t
-
-  (** Merging two mode expressions. This will be hard to define as mode
-      expressions gets complex. Currently it's for merging legacy and new syntax
-      *)
-  val concat : t -> t -> t
-
-  (** Extract the mode attribute (if any) from a list of attributes; also
-      returns the rest of the attributes; Raises if multiple relevant attributes
-      are found *)
-  val extract_attr :
-    Parsetree.attributes -> Parsetree.attribute option * Parsetree.attributes
-
-  (** Encode a mode expression into a [attribute]. If the expression is safe to
-      empty (and thus safe to ignore), returns [None]. *)
-  val attr_of : t -> Parsetree.attribute option
-
-  (** Given a list of attributes, extracts the mode expression and returns the
-      rest of attributes. Raises if multiple relevant attributes are found.
-      Raises if attributes encodes empty mode expression *)
-  val maybe_of_attrs : Parsetree.attributes -> t option * Parsetree.attributes
-
-  (* Similar to [maybe_of_attrs], but default to [empty] if no relevant
-      attribute is found. *)
-  val of_attrs : Parsetree.attributes -> t * Parsetree.attributes
-
-  (** In some cases, a single mode expression appears twice in the parsetree;
-      one of them needs to be made ghost to make our internal tools happy. *)
-  val ghostify : t -> t
-end
-
-(** A subset of the mode-related syntax extensions that is embedded
-    using full-blown Jane Syntax. By "full-blown" Jane Syntax, we
-    mean the [Expression], [Pattern], (etc.) modules below that
-    attempt to create a variant of all possible Jane Street syntax
-    for the syntactic form.
-
-    We avoid full-blown Jane Syntax when it isn't very lightweight to fit the
-    new construct into the (somewhat opinionated) framework. Mode coercions are
-    lightweight to fit into full-blown Jane Syntax.
-*)
-module Modes : sig
-  type expression = Coerce of Mode_expr.t * Parsetree.expression
-
-  val expr_of : loc:Location.t -> expression -> Parsetree.expression
-end
-
 module Jkind : sig
   module Const : sig
     (** Constant jkind *)
@@ -207,9 +126,10 @@ module Jkind : sig
   type t = Parsetree.jkind_annotation =
     | Default
     | Abbreviation of Const.t
-    | Mod of t * Mode_expr.t
+    | Mod of t * Parsetree.modes
     | With of t * Parsetree.core_type
     | Kind_of of Parsetree.core_type
+    | Product of t list
 
   type annotation = t Location.loc
 end
@@ -265,19 +185,6 @@ module Labeled_tuples : sig
       if the pattern is open. Otherwise, returns a normal [Ppat_tuple].
   *)
   val pat_of : loc:Location.t -> pattern -> Parsetree.pattern
-end
-
-(** The ASTs for [include functor].  When we merge this upstream, we'll merge
-    these into the existing [P{sig,str}_include] constructors (similar to what
-    we did with [T{sig,str}_include], but without depending on typechecking). *)
-module Include_functor : sig
-  type signature_item = Ifsig_include_functor of Parsetree.include_description
-
-  type structure_item = Ifstr_include_functor of Parsetree.include_declaration
-
-  val sig_item_of : loc:Location.t -> signature_item -> Parsetree.signature_item
-
-  val str_item_of : loc:Location.t -> structure_item -> Parsetree.structure_item
 end
 
 (** The ASTs for module type strengthening. *)
@@ -531,7 +438,6 @@ module Expression : sig
     | Jexp_immutable_array of Immutable_arrays.expression
     | Jexp_layout of Layouts.expression
     | Jexp_tuple of Labeled_tuples.expression
-    | Jexp_modes of Modes.expression
 
   include
     AST
@@ -573,18 +479,14 @@ end
 
 (** Novel syntax in signature items *)
 module Signature_item : sig
-  type t =
-    | Jsig_include_functor of Include_functor.signature_item
-    | Jsig_layout of Layouts.signature_item
+  type t = Jsig_layout of Layouts.signature_item
 
   include AST with type t := t and type ast := Parsetree.signature_item
 end
 
 (** Novel syntax in structure items *)
 module Structure_item : sig
-  type t =
-    | Jstr_include_functor of Include_functor.structure_item
-    | Jstr_layout of Layouts.structure_item
+  type t = Jstr_layout of Layouts.structure_item
 
   include AST with type t := t and type ast := Parsetree.structure_item
 end

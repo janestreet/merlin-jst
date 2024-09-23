@@ -2330,8 +2330,6 @@ let add_value_lazy ?check ?shape ~mode id desc env =
   store_value ?check ~mode id addr desc shape env
 
 let add_type ~check ?shape id info env =
-  (* CR layouts: there should be a safety check for extension universe when the type's
-     kind allows mode crossing *)
   let shape = shape_or_leaf info.type_uid shape in
   store_type ~check id info shape env
 
@@ -2390,8 +2388,6 @@ let add_module ?arg ?shape id presence mty env =
   add_module_declaration ~check:false ?arg ?shape id presence (md mty) env
 
 let add_local_constraint path info env =
-  (* CR layouts: there should be a safety check for extension universe when the type's
-     kind allows mode crossing *)
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
 
@@ -2790,17 +2786,18 @@ let initial =
     empty
 
 let add_language_extension_types env =
-  let add ext f env  =
-    match Language_extension.is_enabled ext with
+  let add ext lvl f env  =
+    match Language_extension.is_at_least ext lvl with
     | true ->
       (* CR-someday poechsel: Pass a correct shape here *)
       f (add_type ?shape:None ~check:false) env
     | false -> env
   in
   lazy
-    (env
-    |> add SIMD Predef.add_simd_extension_types
-    |> add Small_numbers Predef.add_small_number_extension_types)
+    Language_extension.(env
+    |> add SIMD () Predef.add_simd_extension_types
+    |> add Small_numbers Stable Predef.add_small_number_extension_types
+    |> add Layouts Alpha Predef.add_or_null)
 
 (* Some predefined types are part of language extensions, and we don't want to
    make them available in the initial environment if those extensions are not
@@ -3052,9 +3049,8 @@ let share_mode ~errors ~env ~loc ~item ~lid vmode shared_context =
         (Once_value_used_in (item, lid, shared_context))
   | Ok () ->
     let mode =
-      Mode.Value.join [
-        Mode.Value.min_with (Monadic Uniqueness) Mode.Uniqueness.shared;
-        vmode.mode]
+      Mode.Value.join_with (Monadic Uniqueness) Mode.Uniqueness.Const.Aliased
+        vmode.mode
     in
     {mode; context = Some shared_context}
 
@@ -3099,7 +3095,12 @@ let unboxed_type ~errors ~env ~loc ~lid ty =
   match ty with
   | None -> ()
   | Some ty ->
-    match !constrain_type_jkind env ty Jkind.Primitive.(value ~why:Captured_in_object) with
+    (* The type is the type of a variable in the environment. It thus is likely generic. Despite
+       the fact that instantiated variables work better in [constrain_type_jkind] (because they
+       can be assigned more specific jkinds), we actually want to work on these generic types
+       here. After all, it's the value in the environment that is getting captured by the object,
+       not a specific instance of that variable. *)
+    match !constrain_type_jkind env ty Jkind.Builtin.(value_or_null ~why:Captured_in_object) with
     | Ok () -> ()
     | Result.Error err ->
       may_lookup_error errors loc env (Non_value_used_in_object (lid, ty, err))
@@ -4027,7 +4028,7 @@ let sharedness_hint ppf : shared_context -> _ = function
     Format.fprintf ppf
         "@[Hint: This identifier was defined outside of the current closure.@ \
           Either this closure has to be once, or the identifier can be used only@ \
-          as shared.@]"
+          as aliased.@]"
   | Module ->
     Format.fprintf ppf
         "@[Hint: This identifier cannot be used uniquely,@ \

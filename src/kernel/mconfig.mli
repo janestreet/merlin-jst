@@ -46,6 +46,7 @@ type merlin = {
   stdlib      : string option;
   source_root : string option;
   unit_name   : string option;
+  unit_name_for : string String.Map.t;
   wrapping_prefix : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];

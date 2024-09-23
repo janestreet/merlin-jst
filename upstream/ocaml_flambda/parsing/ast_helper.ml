@@ -62,8 +62,9 @@ module Typ = struct
 
   let any ?loc ?attrs () = mk ?loc ?attrs Ptyp_any
   let var ?loc ?attrs a = mk ?loc ?attrs (Ptyp_var a)
-  let arrow ?loc ?attrs a b c = mk ?loc ?attrs (Ptyp_arrow (a, b, c))
+  let arrow ?loc ?attrs a b c d e = mk ?loc ?attrs (Ptyp_arrow (a, b, c, d, e))
   let tuple ?loc ?attrs a = mk ?loc ?attrs (Ptyp_tuple a)
+  let unboxed_tuple ?loc ?attrs a = mk ?loc ?attrs (Ptyp_unboxed_tuple a)
   let constr ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_constr (a, b))
   let object_ ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_object (a, b))
   let class_ ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_class (a, b))
@@ -97,9 +98,11 @@ module Typ = struct
         | Ptyp_var x ->
             check_variable var_names t.ptyp_loc x;
             Ptyp_var x
-        | Ptyp_arrow (label,core_type,core_type') ->
-            Ptyp_arrow(label, loop core_type, loop core_type')
+        | Ptyp_arrow (label,core_type,core_type',modes,modes') ->
+            Ptyp_arrow(label, loop core_type, loop core_type', modes, modes')
         | Ptyp_tuple lst -> Ptyp_tuple (List.map loop lst)
+        | Ptyp_unboxed_tuple lst ->
+          Ptyp_unboxed_tuple (List.map (fun (l, t) -> l, loop t) lst)
         | Ptyp_constr( { txt = Longident.Lident s }, [])
           when List.mem s var_names ->
             Ptyp_var s
@@ -166,12 +169,13 @@ module Pat = struct
   let constant ?loc ?attrs a = mk ?loc ?attrs (Ppat_constant a)
   let interval ?loc ?attrs a b = mk ?loc ?attrs (Ppat_interval (a, b))
   let tuple ?loc ?attrs a = mk ?loc ?attrs (Ppat_tuple a)
+  let unboxed_tuple ?loc ?attrs a b = mk ?loc ?attrs (Ppat_unboxed_tuple (a, b))
   let construct ?loc ?attrs a b = mk ?loc ?attrs (Ppat_construct (a, b))
   let variant ?loc ?attrs a b = mk ?loc ?attrs (Ppat_variant (a, b))
   let record ?loc ?attrs a b = mk ?loc ?attrs (Ppat_record (a, b))
   let array ?loc ?attrs a = mk ?loc ?attrs (Ppat_array a)
   let or_ ?loc ?attrs a b = mk ?loc ?attrs (Ppat_or (a, b))
-  let constraint_ ?loc ?attrs a b = mk ?loc ?attrs (Ppat_constraint (a, b))
+  let constraint_ ?loc ?attrs a b c = mk ?loc ?attrs (Ppat_constraint (a, b, c))
   let type_ ?loc ?attrs a = mk ?loc ?attrs (Ppat_type a)
   let lazy_ ?loc ?attrs a = mk ?loc ?attrs (Ppat_lazy a)
   let unpack ?loc ?attrs a = mk ?loc ?attrs (Ppat_unpack a)
@@ -196,6 +200,7 @@ module Exp = struct
   let match_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_match (a, b))
   let try_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_try (a, b))
   let tuple ?loc ?attrs a = mk ?loc ?attrs (Pexp_tuple a)
+  let unboxed_tuple ?loc ?attrs a = mk ?loc ?attrs (Pexp_unboxed_tuple a)
   let construct ?loc ?attrs a b = mk ?loc ?attrs (Pexp_construct (a, b))
   let variant ?loc ?attrs a b = mk ?loc ?attrs (Pexp_variant (a, b))
   let record ?loc ?attrs a b = mk ?loc ?attrs (Pexp_record (a, b))
@@ -206,7 +211,7 @@ module Exp = struct
   let sequence ?loc ?attrs a b = mk ?loc ?attrs (Pexp_sequence (a, b))
   let while_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_while (a, b))
   let for_ ?loc ?attrs a b c d e = mk ?loc ?attrs (Pexp_for (a, b, c, d, e))
-  let constraint_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_constraint (a, b))
+  let constraint_ ?loc ?attrs a b c = mk ?loc ?attrs (Pexp_constraint (a, b, c))
   let coerce ?loc ?attrs a b c = mk ?loc ?attrs (Pexp_coerce (a, b, c))
   let send ?loc ?attrs a b = mk ?loc ?attrs (Pexp_send (a, b))
   let new_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_new a)
@@ -225,6 +230,7 @@ module Exp = struct
     mk ?loc ?attrs (Pexp_letop {let_; ands; body})
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
+  let stack ?loc ?attrs e = mk ?loc ?attrs (Pexp_stack e)
 
   let case lhs ?guard rhs =
     {
@@ -286,7 +292,7 @@ module Sig = struct
   let modtype ?loc a = mk ?loc (Psig_modtype a)
   let modtype_subst ?loc a = mk ?loc (Psig_modtypesubst a)
   let open_ ?loc a = mk ?loc (Psig_open a)
-  let include_ ?loc a = mk ?loc (Psig_include a)
+  let include_ ?loc ?(modalities = []) a = mk ?loc (Psig_include (a, modalities))
   let class_ ?loc a = mk ?loc (Psig_class a)
   let class_type ?loc a = mk ?loc (Psig_class_type a)
   let extension ?loc ?(attrs = []) a = mk ?loc (Psig_extension (a, attrs))
@@ -485,8 +491,10 @@ module Opn = struct
 end
 
 module Incl = struct
-  let mk ?(loc = !default_loc) ?(attrs = []) ?(docs = empty_docs) mexpr =
+  let mk ?(loc = !default_loc) ?(attrs = []) ?(docs = empty_docs)
+    ?(kind = Structure) mexpr =
     {
+     pincl_kind = kind;
      pincl_mod = mexpr;
      pincl_loc = loc;
      pincl_attributes = add_docs_attrs docs attrs;
@@ -496,11 +504,12 @@ end
 
 module Vb = struct
   let mk ?(loc = !default_loc) ?(attrs = []) ?(docs = empty_docs)
-        ?(text = []) ?value_constraint pat expr =
+        ?(text = []) ?value_constraint ?(modes = []) pat expr =
     {
      pvb_pat = pat;
      pvb_expr = expr;
      pvb_constraint=value_constraint;
+     pvb_modes=modes;
      pvb_attributes =
        add_text_attrs text (add_docs_attrs docs attrs);
      pvb_loc = loc;

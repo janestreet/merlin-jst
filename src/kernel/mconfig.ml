@@ -91,6 +91,7 @@ type merlin = {
   stdlib      : string option;
   source_root : string option;
   unit_name   : string option;
+  unit_name_for : string String.Map.t;
   wrapping_prefix : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
@@ -135,7 +136,12 @@ let dump_merlin x =
     "stdlib"       , Json.option Json.string x.stdlib;
     "source_root"  , Json.option Json.string x.source_root;
     "unit_name"    , Json.option Json.string x.unit_name;
-    "wrapping_prefix" , Json.option Json.string x.wrapping_prefix;
+    "unit_name_for", (let alist =
+                        x.unit_name_for
+                        |> String.Map.map ~f:Json.string
+                        |> String.Map.to_list
+                      in `Assoc alist);
+    "wrapping_prefix", Json.option Json.string x.wrapping_prefix;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -268,6 +274,13 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     suffixes = dot.suffixes @ merlin.suffixes;
     stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
     unit_name = (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
+    unit_name_for =
+      String.Map.merge ~f:(fun _ dot merlin ->
+                            match dot, merlin with
+                            | Some dot, _ -> Some dot
+                            | None, Some merlin -> Some merlin
+                            | None, None -> None)
+                       dot.unit_name_for merlin.unit_name_for;
     wrapping_prefix =
       if dot.wrapping_prefix = None
       then merlin.wrapping_prefix
@@ -573,6 +586,12 @@ let ocaml_ignored_flags = [
   "-cfg-zero-alloc-checker";
   "-no-cfg-zero-alloc-checker";
   "-dcounters";
+  "-vectorize";
+  "-no-vectorize";
+  "-dvectorize";
+  "-dump-into-csv";
+  "-cfg-selection";
+  "-no-cfg-selection";
 ]
 
 let ocaml_ignored_parametrized_flags = [
@@ -851,6 +870,7 @@ let initial = {
     stdlib      = None;
     source_root = None;
     unit_name   = None;
+    unit_name_for = String.Map.empty;
     wrapping_prefix = None;
     reader      = [];
     protocol    = `Json;
@@ -1038,7 +1058,11 @@ let unitname t =
   | Some name -> Misc.unitname name
   | None ->
     let basename = Misc.unitname t.query.filename in
+    (* CR: get rid of wrapping_prefix. it is only here for legacy reasons at the moment *)
     begin match t.merlin.wrapping_prefix with
-    | Some prefix -> prefix ^ basename
-    | None -> basename
+    | Some prefix -> Misc.unitname (prefix ^ basename)
+    | None ->
+      String.Map.find_opt basename t.merlin.unit_name_for
+      |> Option.map ~f:Misc.unitname
+      |> Option.value ~default:basename
     end

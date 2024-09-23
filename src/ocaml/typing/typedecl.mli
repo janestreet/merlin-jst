@@ -138,6 +138,7 @@ type error =
     }
   | Null_arity_external
   | Missing_native_external
+  | Unboxed_product_in_external
   | Unbound_type_var of type_expr * type_declaration
   | Cannot_extend_private_type of Path.t
   | Not_extensible_type of Path.t
@@ -164,7 +165,7 @@ type error =
       }
   | Jkind_empty_record
   | Non_value_in_sig of Jkind.Violation.t * string * type_expr
-  | Invalid_jkind_in_block of type_expr * Jkind.Sort.const * jkind_sort_loc
+  | Invalid_jkind_in_block of type_expr * Jkind.Sort.Const.t * jkind_sort_loc
   | Illegal_mixed_product of mixed_product_violation
   | Separability of Typedecl_separability.error
   | Bad_unboxed_attribute of string
@@ -177,6 +178,11 @@ type error =
   | Zero_alloc_attr_unsupported of Builtin_attributes.zero_alloc_attribute
   | Zero_alloc_attr_non_function
   | Zero_alloc_attr_bad_user_arity
+  | Invalid_reexport of
+      { definition: Path.t
+      ; expected: Path.t
+      }
+  | Non_abstract_reexport of Path.t
 
 exception Error of Location.t * error
 

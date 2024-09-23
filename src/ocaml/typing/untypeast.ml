@@ -203,17 +203,7 @@ let structure_item sub item =
              (fun (_id, _name, ct) -> sub.class_type_declaration sub ct)
              list)
     | Tstr_include incl ->
-        let pincl = sub.include_declaration sub incl in
-        begin match incl.incl_kind with
-        | Tincl_structure ->
-            Pstr_include pincl
-        | Tincl_functor _ | Tincl_gen_functor _ ->
-          let stri =
-            Jane_syntax.Include_functor.str_item_of ~loc
-              (Jane_syntax.Include_functor.Ifstr_include_functor pincl)
-          in
-          stri.pstr_desc
-        end
+        Pstr_include (sub.include_declaration sub incl)
     | Tstr_attribute x ->
         Pstr_attribute x
   in
@@ -265,7 +255,7 @@ let type_kind sub tk = match tk with
 
 let constructor_argument sub {ca_loc; ca_type; ca_modalities} =
   let loc = sub.location sub ca_loc in
-  let pca_modalities = Typemode.untransl_modalities ~loc ca_modalities in
+  let pca_modalities = Typemode.untransl_modalities Immutable [] ca_modalities in
   { pca_loc = loc; pca_type = sub.typ sub ca_type; pca_modalities }
 
 let constructor_arguments sub = function
@@ -297,9 +287,11 @@ let label_declaration sub ld =
   let loc = sub.location sub ld.ld_loc in
   let attrs = sub.attributes sub ld.ld_attributes in
   let mut = mutable_ ld.ld_mutable in
-  Type.field ~loc ~attrs
-    ~mut
-    ~modalities:(Typemode.untransl_modalities ~loc ld.ld_modalities)
+  let modalities =
+    Typemode.untransl_modalities ld.ld_mutable ld.ld_attributes
+      ld.ld_modalities
+  in
+  Type.field ~loc ~attrs ~mut ~modalities
     (map_loc sub ld.ld_name)
     (sub.typ sub ld.ld_type)
 
@@ -353,8 +345,9 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
     | { pat_extra=[Tpat_type (_path, lid), _, _attrs]; _ } ->
         Ppat_type (map_loc sub lid)
     | { pat_extra= (Tpat_constraint ct, _, _attrs) :: rem; _ } ->
+        (* CR cgunn: recover mode constraint info here *)
         Ppat_constraint (sub.pat sub { pat with pat_extra=rem },
-                         sub.typ sub ct)
+                         Some (sub.typ sub ct), [])
     | _ ->
     match pat.pat_desc with
       Tpat_any -> Ppat_any
@@ -387,6 +380,10 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
         Jane_syntax.Labeled_tuples.pat_of ~loc
           (List.map (fun (label, p) -> label, sub.pat sub p) list, Closed)
         |> add_jane_syntax_attributes
+    | Tpat_unboxed_tuple list ->
+        Ppat_unboxed_tuple
+          (List.map (fun (label, p, _) -> label, sub.pat sub p) list,
+           Closed)
     | Tpat_construct (lid, _, args, vto) ->
         let tyo =
           match vto with
@@ -406,7 +403,8 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
         Ppat_construct (map_loc sub lid,
           match tyo, arg with
           | Some (vl, ty), Some arg ->
-              Some (vl, Pat.mk ~loc (Ppat_constraint (arg, ty)))
+              (* CR cgunn: recover mode constraint info here *)
+              Some (vl, Pat.mk ~loc (Ppat_constraint (arg, Some ty, [])))
           | None, Some arg -> Some ([], arg)
           | _, None -> None)
     | Tpat_variant (label, pato, _) ->
@@ -450,8 +448,11 @@ let exp_extra sub (extra, loc, attrs) sexp =
         Pexp_coerce (sexp,
                      Option.map (sub.typ sub) cty1,
                      sub.typ sub cty2)
-    | Texp_constraint cty ->
-        Pexp_constraint (sexp, sub.typ sub cty)
+    | Texp_constraint (cty, modes) ->
+      Pexp_constraint
+        (sexp,
+         Option.map (sub.typ sub) cty,
+         Typemode.untransl_mode_annots ~loc modes)
     | Texp_poly cto -> Pexp_poly (sexp, Option.map (sub.typ sub) cto)
     | Texp_newtype (s, None) ->
         Pexp_newtype (add_loc s, sexp)
@@ -459,15 +460,12 @@ let exp_extra sub (extra, loc, attrs) sexp =
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(add_loc s, jkind, sexp))
         |> add_jane_syntax_attributes
+    | Texp_stack -> Pexp_stack sexp
     | Texp_newtype' (_id, label_loc, None, _) ->
         Pexp_newtype (label_loc, sexp)
     | Texp_newtype' (_id, label_loc, Some (_, jkind), _) ->
         Jane_syntax.Layouts.expr_of ~loc
           (Lexp_newtype(label_loc, jkind, sexp))
-        |> add_jane_syntax_attributes
-    | Texp_mode_coerce modes ->
-        Jane_syntax.Modes.expr_of ~loc
-          (Coerce (modes, sexp))
         |> add_jane_syntax_attributes
   in
   Exp.mk ~loc ~attrs:!attrs desc
@@ -566,17 +564,20 @@ let expression sub exp =
                 match exp_extra with
                 | Some (Texp_coerce (ty1, ty2)) ->
                     Some
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2))
-                | Some (Texp_constraint ty) ->
-                    Some (Pconstraint (sub.typ sub ty))
-                | Some (Texp_poly _ | Texp_newtype _ | Texp_mode_coerce _
-                       | Texp_newtype' _)
+                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2), [])
+                | Some (Texp_constraint (Some ty, modes)) ->
+                  Some (
+                    Pconstraint (sub.typ sub ty),
+                    Typemode.untransl_mode_annots ~loc modes
+                  )
+                | Some (Texp_poly _ | Texp_newtype _ | Texp_newtype' _)
+                | Some (Texp_constraint (None, _))
+                | Some Texp_stack
                 | None -> None
               in
               let constraint_ =
                 Option.map
-                  (fun x -> { mode_annotations = Jane_syntax.Mode_expr.empty;
-                              type_constraint = x })
+                  (fun (type_constraint, mode_annotations) -> { mode_annotations; type_constraint })
                   constraint_
               in
               Pfunction_cases (cases, loc, attributes), constraint_
@@ -623,6 +624,9 @@ let expression sub exp =
         Jane_syntax.Labeled_tuples.expr_of ~loc
           (List.map (fun (lbl, e) -> lbl, sub.expr sub e) list)
         |> add_jane_syntax_attributes
+    | Texp_unboxed_tuple list ->
+        Pexp_unboxed_tuple
+          (List.map (fun (lbl, e, _) -> lbl, sub.expr sub e) list)
     | Texp_construct (lid, _, args, _) ->
         Pexp_construct (map_loc sub lid,
           (match args with
@@ -821,18 +825,9 @@ let signature_item sub item =
         Psig_modtypesubst (sub.module_type_declaration sub mtd)
     | Tsig_open od ->
         Psig_open (sub.open_description sub od)
-    | Tsig_include incl ->
-        let pincl = sub.include_description sub incl in
-        begin match incl.incl_kind with
-        | Tincl_structure ->
-            Psig_include pincl
-        | Tincl_functor _ | Tincl_gen_functor _ ->
-          let sigi =
-            Jane_syntax.Include_functor.sig_item_of ~loc
-              (Jane_syntax.Include_functor.Ifsig_include_functor pincl)
-          in
-          sigi.psig_desc
-        end
+    | Tsig_include (incl, moda) ->
+        let pmoda = Typemode.untransl_modalities Immutable [] moda in
+        Psig_include (sub.include_description sub incl, pmoda)
     | Tsig_class list ->
         Psig_class (List.map (sub.class_description sub) list)
     | Tsig_class_type list ->
@@ -859,7 +854,12 @@ let module_substitution sub ms =
 let include_infos f sub incl =
   let loc = sub.location sub incl.incl_loc in
   let attrs = sub.attributes sub incl.incl_attributes in
-  Incl.mk ~loc ~attrs (f sub incl.incl_mod)
+  let kind =
+    match incl.incl_kind with
+    | Tincl_structure -> Structure
+    | Tincl_functor _ | Tincl_gen_functor _ -> Functor
+  in
+  Incl.mk ~loc ~attrs ~kind (f sub incl.incl_mod)
 
 let include_declaration sub = include_infos sub.module_expr sub
 let include_description sub = include_infos sub.module_type sub
@@ -1051,11 +1051,15 @@ let core_type sub ct =
           (Ltyp_var { name; jkind = jkind_annotation }) |>
         add_jane_syntax_attributes
     | Ttyp_arrow (arg_label, ct1, ct2) ->
-        Ptyp_arrow (label arg_label, sub.typ sub ct1, sub.typ sub ct2)
+        (* CR cgunn: recover mode annotation here *)
+        Ptyp_arrow (label arg_label, sub.typ sub ct1, sub.typ sub ct2, [], [])
     | Ttyp_tuple list ->
         Jane_syntax.Labeled_tuples.typ_of ~loc
           (List.map (fun (lbl, t) -> lbl, sub.typ sub t) list)
         |> add_jane_syntax_attributes
+    | Ttyp_unboxed_tuple list ->
+        Ptyp_unboxed_tuple
+          (List.map (fun (lbl, t) -> lbl, sub.typ sub t) list)
     | Ttyp_constr (_path, lid, list) ->
         Ptyp_constr (map_loc sub lid,
           List.map (sub.typ sub) list)

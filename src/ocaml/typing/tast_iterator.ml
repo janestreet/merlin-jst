@@ -265,6 +265,7 @@ let pat
   | Tpat_var (_, s, _, _) -> iter_loc sub s
   | Tpat_constant _ -> ()
   | Tpat_tuple l -> List.iter (fun (_, p) -> sub.pat sub p) l
+  | Tpat_unboxed_tuple l -> List.iter (fun (_, p, _) -> sub.pat sub p) l
   | Tpat_construct (lid, _, l, vto) ->
       iter_loc sub lid;
       List.iter (sub.pat sub) l;
@@ -283,14 +284,14 @@ let pat
       sub.pat sub p2
 
 let extra sub = function
-  | Texp_constraint cty -> sub.typ sub cty
+  | Texp_constraint (cty, _modes) -> Option.iter (sub.typ sub) cty
   | Texp_coerce (cty1, cty2) ->
       Option.iter (sub.typ sub) cty1;
       sub.typ sub cty2
   | Texp_newtype _ -> ()
   | Texp_newtype' _ -> ()
   | Texp_poly cto -> Option.iter (sub.typ sub) cto
-  | Texp_mode_coerce _ -> ()
+  | Texp_stack -> ()
 
 let function_param sub { fp_loc; fp_kind; fp_newtypes; _ } =
   sub.location sub fp_loc;
@@ -348,6 +349,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
       sub.expr sub exp;
       List.iter (sub.case sub) cases
   | Texp_tuple (list, _) -> List.iter (fun (_,e) -> sub.expr sub e) list
+  | Texp_unboxed_tuple list -> List.iter (fun (_,e,_) -> sub.expr sub e) list
   | Texp_construct (lid, _, args, _) ->
       iter_loc sub lid;
       List.iter (sub.expr sub) args
@@ -449,6 +451,12 @@ let signature sub {sig_items; sig_final_env; _} =
   sub.env sub sig_final_env;
   List.iter (sub.signature_item sub) sig_items
 
+let sig_include_infos sub {incl_loc; incl_mod; incl_attributes; incl_kind; _ } =
+  sub.location sub incl_loc;
+  sub.attributes sub incl_attributes;
+  sub.module_type sub incl_mod;
+  include_kind sub incl_kind
+
 let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   sub.location sub sig_loc;
   sub.env sub sig_env;
@@ -463,7 +471,7 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_recmodule list -> List.iter (sub.module_declaration sub) list
   | Tsig_modtype x -> sub.module_type_declaration sub x
   | Tsig_modtypesubst x -> sub.module_type_declaration sub x
-  | Tsig_include incl -> sub.include_description sub incl
+  | Tsig_include (incl, _) -> sig_include_infos sub incl
   | Tsig_class list -> List.iter (sub.class_description sub) list
   | Tsig_class_type list -> List.iter (sub.class_type_declaration sub) list
   | Tsig_open od -> sub.open_description sub od
@@ -637,6 +645,7 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
       sub.typ sub ct1;
       sub.typ sub ct2
   | Ttyp_tuple list -> List.iter (fun (_, t) -> sub.typ sub t) list
+  | Ttyp_unboxed_tuple list -> List.iter (fun (_, t) -> sub.typ sub t) list
   | Ttyp_constr (_, lid, list) ->
       iter_loc sub lid;
       List.iter (sub.typ sub) list
