@@ -13,6 +13,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
+let msupport_raise_error =
+  ref (fun ?ignore_unify:_ _ ->
+        failwith "Env.raise_error should be filled in with Msupport.raise_error")
+
 (* Environment handling *)
 
 open Cmi_format
@@ -3282,7 +3286,7 @@ let walk_locks ~errors ~loc ~env ~item ~lid mode ty locks =
           unboxed_type ~errors ~env ~loc ~lid ty;
           vmode
       with exn ->
-        Msupport_base.raise_error exn;
+        !msupport_raise_error exn;
         vmode
     ) vmode locks
 

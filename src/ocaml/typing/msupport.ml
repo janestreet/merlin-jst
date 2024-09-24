@@ -28,43 +28,36 @@
 
 open Std
 
-module RawTypeHash = Msupport_base.Internal.RawTypeHash
+module RawTypeHash = Hashtbl.Make(Types.TransientTypeOps)
 
-let errors : (exn list ref * unit RawTypeHash.t) option ref = Msupport_base.Internal.errors
+let errors : (exn list ref * unit RawTypeHash.t) option ref = ref None
 
-let monitor_errors' = Msupport_base.Internal.monitor_errors'
+let monitor_errors' = ref (ref false)
 let monitor_errors () =
   if !(!monitor_errors') then
     monitor_errors' := (ref false);
   !monitor_errors'
 
 let raise_error ?(ignore_unify=false) exn =
-  (* Jane Street specific:
-     Env can raise mode errors when performing a lookup, which we want to recover from.
-     When recovering, those errors should be passed to [Msupport.raise_error]. But
-     Msupport depends on Env, so we circumvent the cyclic dependency issue by introducing
-     [Msupport_base.raise_error]. Since Ctype depends on Env, we cannot match on it in
-     [Msupport_base.raise_error], which is why we define this handler function that is
-     passed to [Msupport_base.raise_error]. Any upstream changes to this function should
-     be reflected either in the handler function or in [Msupport_base.raise_error].  *)
-  let handle_exn exn =
+  !monitor_errors' := true;
+  match !errors with
+  | Some (l,_) ->
     begin match exn with
-      | Ctype.Unify _ when ignore_unify -> true
+      | Ctype.Unify _ when ignore_unify -> ()
       | Ctype.Unify _ | Failure _ ->
         Logger.log ~section:"Typing_aux.raise_error"
           ~title:(Printexc.exn_slot_name exn) "%a"
           Logger.fmt (fun fmt ->
               Printexc.record_backtrace true;
               Format.pp_print_string  fmt (Printexc.get_backtrace ())
-            );
-        true
-      | _ -> false
+            )
+      | exn -> l := exn :: !l
     end
-  in
-  Msupport_base.raise_error ~handler:handle_exn exn
+  | None -> raise exn
 
 let () =
-  Msupport_parsing.msupport_raise_error := raise_error
+  Msupport_parsing.msupport_raise_error := raise_error;
+  Env.msupport_raise_error := raise_error
 
 exception Resume
 
