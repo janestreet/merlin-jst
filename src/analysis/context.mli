@@ -55,4 +55,5 @@ val to_string : t -> string
   breaking the context inference.
 *)
 val inspect_browse_tree :
+  ?let_pun_behavior:Mbrowse.Let_pun_behavior.t ->
   cursor:Std.Lexing.position -> Longident.t -> Mbrowse.t list -> t option

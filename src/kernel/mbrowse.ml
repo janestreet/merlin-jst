@@ -33,6 +33,12 @@ open Browse_raw
 type node = Browse_raw.node
 type t = (Env.t * node) list
 
+module Let_pun_behavior = struct
+  type t =
+    | Prefer_expression
+    | Prefer_pattern
+end
+
 let node_of_binary_part = Browse_raw.node_of_binary_part
 
 let fold_node f env t acc =
@@ -71,7 +77,6 @@ let node_loc node = approximate_loc Browse_raw.node_real_loc node
 let node_merlin_loc node = approximate_loc Browse_raw.node_merlin_loc node
 
 let leaf_node = List.hd
-let leaf_loc t = node_loc (snd (leaf_node t))
 
 let drop_leaf t =
   match t with
@@ -112,20 +117,34 @@ let select_leafs pos root =
   (try traverse root with Exit -> ());
   !branches
 
-let compare_locations pos l1 l2 =
+module Favorability = struct
+  type t =
+    | Neutral
+    | Unfavored
+
+  let based_on_ghostliness (loc : Location.t) =
+    match loc.loc_ghost with
+    | true -> Unfavored
+    | false -> Neutral
+end
+type node_loc = { loc : Location.t; favorability : Favorability.t }
+
+let compare_locations pos (l1 : node_loc) (l2 : node_loc) =
   let t2_first = +1 in
   let t1_first = -1 in
   match
-    Location_aux.compare_pos pos l1,
-    Location_aux.compare_pos pos l2
+    Location_aux.compare_pos pos l1.loc,
+    Location_aux.compare_pos pos l2.loc
   with
   | 0, 0 ->
-    (* Cursor inside both locations: favor non-ghost closer to the end *)
-    begin match l1.Location.loc_ghost, l2.Location.loc_ghost with
-    | true, false -> 1
-    | false, true -> -1
+    (* Cursor inside both locations:
+       If one is unfavored, favor the other one.
+       Otherwise, favor the one closer to the end *)
+    begin match l1.favorability, l2.favorability with
+    | Unfavored, Neutral -> 1
+    | Neutral, Unfavored -> -1
     | _ ->
-        Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
+        Lexing.compare_pos l1.loc.loc_end l2.loc.loc_end
     end
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
@@ -135,25 +154,45 @@ let compare_locations pos l1 l2 =
   | n, m when m > 0 && n < 0 -> t2_first
   (* Cursor is after both, select the closest one *)
   | _, _ ->
-      Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end
+      Lexing.compare_pos l2.loc.loc_end l1.loc.loc_end
 
-let best_node pos = function
+let compare_nodes ?(let_pun_behavior = Let_pun_behavior.Prefer_pattern) pos (n1, loc1) (n2, loc2) =
+  let loc_with_favorability node (loc : Location.t) : node_loc =
+    let is_punned = Browse_raw.has_attr ~name:Builtin_attributes.merlin_let_punned node in
+    let favorability : Favorability.t =
+      match is_punned, node, let_pun_behavior with
+      | true, Expression _, Prefer_expression -> Neutral
+      | true, Expression _, Prefer_pattern -> Unfavored
+      | true, Pattern _, Prefer_expression -> Unfavored
+      | true, Pattern _, Prefer_pattern -> Neutral
+      | _ -> Favorability.based_on_ghostliness loc
+    in
+    { loc = node_loc node; favorability }
+  in
+  compare_locations pos (loc_with_favorability n1 loc1) (loc_with_favorability n2 loc2)
+
+let best_node ?let_pun_behavior pos = function
   | [] -> []
   | init :: xs ->
     let f acc x =
-      if compare_locations pos (leaf_loc acc) (leaf_loc x) <= 0
+      let leaf_with_loc leaf =
+        let _, node = leaf_node leaf in
+        let loc = node_loc node in
+        node, loc
+      in
+      if compare_nodes ?let_pun_behavior pos (leaf_with_loc acc) (leaf_with_loc x) <= 0
       then acc
       else x
     in
     List.fold_left ~f ~init xs
 
-let enclosing pos roots =
-  match best_node pos roots with
+let enclosing ?let_pun_behavior pos roots =
+  match best_node ?let_pun_behavior pos roots with
   | [] -> []
-  | root -> best_node pos (select_leafs pos root)
+  | root -> best_node ?let_pun_behavior pos (select_leafs pos root)
 
-let deepest_before pos roots =
-  match enclosing pos roots with
+let deepest_before ?let_pun_behavior pos roots =
+  match enclosing ?let_pun_behavior pos roots with
   | [] -> []
   | root ->
     let rec aux path =
@@ -165,7 +204,7 @@ let deepest_before pos roots =
            Location_aux.compare_pos pos loc = 0 ||
            Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
         then match acc with
-          | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
+          | Some (_,loc',node') when compare_nodes pos (node', loc') (node, loc) <= 0 -> acc
           | Some _ | None -> Some (env,loc,node)
         else acc
       in

@@ -132,12 +132,12 @@ let inspect_expression ~cursor ~lid e : t =
   | _ ->
     Expr
 
-let inspect_browse_tree ~cursor lid browse : t option =
+let inspect_browse_tree ?let_pun_behavior ~cursor lid browse : t option =
   log ~title:"inspect_context" "current node is: [%s]"
     (String.concat ~sep:"|" (
       List.map ~f:(Mbrowse.print ()) browse
     ));
-  match Mbrowse.enclosing cursor browse with
+  match Mbrowse.enclosing ?let_pun_behavior cursor browse with
   | [] ->
     log ~title:"inspect_context"
       "no enclosing around: %a" Lexing.print_position cursor;
