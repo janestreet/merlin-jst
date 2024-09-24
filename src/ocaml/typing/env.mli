@@ -653,3 +653,7 @@ val add_merlin_extension_module: Ident.t -> module_type -> t -> t
 val cleanup_functor_caches : stamp:int -> unit
 val scrape: (t -> module_type -> module_type) ref
 val cleanup_usage_tables : stamp:int -> unit
+
+(** This value should be filled in with [Msupport.raise_error]. [Env] cannot use this
+    function directly because [Msupport] depends on [Env] *)
+val msupport_raise_error : (?ignore_unify:bool -> exn -> unit) ref

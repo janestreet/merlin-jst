@@ -13,6 +13,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
+let msupport_raise_error =
+  ref (fun ?ignore_unify:_ _ ->
+        failwith "Env.raise_error should be filled in with Msupport.raise_error")
+
 (* Environment handling *)
 
 open Cmi_format
@@ -3268,7 +3272,7 @@ let walk_locks ~errors ~loc ~env ~item ~lid mode ty locks =
   let vmode = { mode; context = None } in
   List.fold_left
     (fun vmode lock ->
-      match lock with
+      try match lock with
       | Region_lock -> region_mode vmode
       | Escape_lock escaping_context ->
           escape_mode ~errors ~env ~loc ~item ~lid vmode escaping_context
@@ -3281,6 +3285,9 @@ let walk_locks ~errors ~loc ~env ~item ~lid mode ty locks =
       | Unboxed_lock ->
           unboxed_type ~errors ~env ~loc ~lid ty;
           vmode
+      with exn ->
+        !msupport_raise_error exn;
+        vmode
     ) vmode locks
 
 let lookup_ident_value ~errors ~use ~loc name env =
