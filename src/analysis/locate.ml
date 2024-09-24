@@ -836,7 +836,7 @@ let from_path ~config ~env ~local_defs ~namespace path =
   | None -> `Not_in_env (Path.name path)
   | Some decl -> from_path ~config ~env ~local_defs ~decl path
 
-let infer_namespace ?namespaces ~pos lid browse is_label =
+let infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label =
   match namespaces with
   | Some nss ->
     if not is_label
@@ -850,7 +850,7 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
       `Error `Missing_labels_namespace
     )
   | None ->
-    match Context.inspect_browse_tree ~cursor:pos lid [browse], is_label with
+    match Context.inspect_browse_tree ?let_pun_behavior ~cursor:pos lid [browse], is_label with
     | None, _ ->
       log ~title:"from_string" "already at origin, doing nothing" ;
       `Error `At_origin
@@ -864,13 +864,13 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ]
 
-let from_string ~config ~env ~local_defs ~pos ?namespaces path =
+let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior ?namespaces path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lid = Type_utils.parse_longident path in
   let from_lid lid =
     let ident, is_label = Longident.keep_suffix lid in
-    match infer_namespace ?namespaces ~pos lid browse is_label with
+    match infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label with
     | `Error e -> e
     | `Ok nss ->
       log ~title:"from_string"

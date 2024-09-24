@@ -59,4 +59,4 @@ val get_cache_stat : result -> typer_cache_stats
  *      inside x definition.
  *)
 val node_at :
-  ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
+  ?skip_recovered:bool -> ?let_pun_behavior:Mbrowse.Let_pun_behavior.t -> result -> Lexing.position -> Mbrowse.t

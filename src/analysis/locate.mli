@@ -79,6 +79,7 @@ val from_string
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
+  -> ?let_pun_behavior:Mbrowse.Let_pun_behavior.t
   -> ?namespaces:Env_lookup.Namespace.inferred_basic list
   -> string
   -> [> `File_not_found of string

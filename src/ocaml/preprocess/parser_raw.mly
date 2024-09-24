@@ -115,19 +115,19 @@ let mkexpvar ~loc (name : string) =
 let mkoperator =
   mkexpvar
 
-let mkpatvar ~loc name =
-  mkpat ~loc (Ppat_var (mkrhs name loc))
+let mkpatvar ~loc ?attrs name =
+  mkpat ~loc ?attrs (Ppat_var (mkrhs name loc))
 
 (* See commentary about ghost locations at the declaration of Location.t *)
-let ghexp ~loc d = Exp.mk ~loc:(ghost_loc loc) d
+let ghexp ~loc ?attrs d = Exp.mk ~loc:(ghost_loc loc) ?attrs d
 let ghpat ~loc d = Pat.mk ~loc:(ghost_loc loc) d
 let ghtyp ~loc ?attrs d = Typ.mk ~loc:(ghost_loc loc) ?attrs d
 let ghloc ~loc d = { txt = d; loc = ghost_loc loc }
 let ghstr ~loc d = Str.mk ~loc:(ghost_loc loc) d
 let ghsig ~loc d = Sig.mk ~loc:(ghost_loc loc) d
 
-let ghexpvar ~loc name =
-  ghexp ~loc (Pexp_ident (ghrhs (Lident name) loc))
+let ghexpvar ~loc ?attrs name =
+  ghexp ~loc ?attrs (Pexp_ident (ghrhs (Lident name) loc))
 
 let mkinfix arg1 op arg2 =
   Pexp_apply(op, [Nolabel, arg1; Nolabel, arg2])
@@ -287,7 +287,7 @@ let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
         ~modes.  It should always be empty here, but the code structure doesn't
         make that clear.  Probably we should move the modes to the payload of
         Pconstraint, which may also simplify some other things. *)
-     let mk = if ghost then ghexp else mkexp ?attrs:None in
+     let mk = if ghost then ghexp else mkexp in
      mk ~loc (Pexp_coerce(e, t1, t2))
 
 let mkexp_opt_type_constraint ~loc ~modes e = function
@@ -732,6 +732,9 @@ let mklbs ext rf lb =
     lbs_extension = ext;
   } in
   addlb lbs lb
+
+let pun_attr =
+  Attr.mk ~loc:Location.none (Location.mkloc Builtin_attributes.merlin_let_punned Location.none) (PStr [])
 
 let val_of_let_bindings ~loc lbs =
   let bindings =
@@ -3317,7 +3320,7 @@ let_binding_body:
       { let p,e,c,modes = $1 in (p,e,c,modes,false) }
 /* BEGIN AVOID */
   | val_ident %prec below_HASH
-      { (mkpatvar ~loc:$loc $1, ghexpvar ~loc:$loc $1, None, [], true) }
+      { (mkpatvar ~loc:$loc ~attrs:[pun_attr] $1, ghexpvar ~loc:$loc ~attrs:[pun_attr] $1, None, [], true) }
   (* The production that allows puns is marked so that [make list-parse-errors]
      does not attempt to exploit it. That would be problematic because it
      would then generate bindings such as [let x], which are rejected by the
@@ -3357,7 +3360,7 @@ letop_binding_body:
       { (pat, exp) }
   | val_ident
       (* Let-punning *)
-      { (mkpatvar ~loc:$loc $1, ghexpvar ~loc:$loc $1) }
+      { (mkpatvar ~loc:$loc ~attrs:[pun_attr] $1, ghexpvar ~loc:$loc ~attrs:[pun_attr] $1) }
   (* CR zqian: support mode annotation on letop. *)
   | pat = simple_pattern COLON typ = core_type EQUAL exp = seq_expr
       { let loc = ($startpos(pat), $endpos(typ)) in
