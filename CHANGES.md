@@ -1,5 +1,6 @@
-unreleased
+merlin 5.2
 ==========
+Thu Sep 26 18:48:42 CEST 2024
 
   + merlin binary
     - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
@@ -9,6 +10,10 @@ unreleased
     - Implement new expand-node command for expanding PPX annotations (#1745)
     - Implement new inlay-hints command for adding hints on a sourcetree (#1812)
     - Implement new search-by-type command for searching values by types (#1828)
+    - Canonicalize paths in occurrences. This helps deduplicate the results and
+      show more user-friendly paths. (#1840)
+    - Fix dot-merlin-reader ignoring `SOURCE_ROOT` and `STDLIB` directives
+      (#1839, #1803)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
