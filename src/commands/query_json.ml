@@ -163,6 +163,14 @@ let dump (type a) : a t -> json =
       );
       "depth", `Int depth
     ]
+  | Inlay_hints (start, stop, hint_let_binding, hint_pattern_var, ghost) ->
+    mk "inlay-hints" [
+      "start", mk_position start;
+      "stop", mk_position stop;
+      "hint-let-binding", `Bool hint_let_binding;
+      "hint-pattern-variable", `Bool hint_pattern_var;
+      "avoid-ghost-location", `Bool ghost
+    ]
   | Outline -> mk "outline" []
   | Errors { lexing; parsing; typing } ->
     let args =
@@ -226,6 +234,10 @@ let dump (type a) : a t -> json =
       "action", `String (match action with `Qualify -> "qualify"
                                          | `Unqualify -> "unqualify");
       "position", mk_position pos;
+    ]
+  | Signature_help {position;_} ->
+    mk "signature-help" [
+      "position", mk_position position
     ]
   | Version -> mk "version" []
 
@@ -367,6 +379,30 @@ let json_of_locate resp =
   | `Found (Some file,pos) ->
     `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
 
+let json_of_inlay_hints hints =
+  let json_of_hint (position, label) =
+     `Assoc [
+       "pos", Lexing.json_of_position position;
+       "label", `String label
+     ]
+  in `List (List.map ~f:json_of_hint hints)
+
+let json_of_signature_help resp =
+  let param { label_start; label_end } =
+    `Assoc ["label", `List [`Int label_start; `Int label_end]] in
+  match resp with
+  | None -> `Assoc []
+  | Some { label; parameters; active_param; active_signature } ->
+    let signature =
+      `Assoc
+        ["label", `String label;
+          "parameters", `List (List.map ~f:param parameters);] in
+    `Assoc
+      ["signatures", `List [signature];
+       "activeParameter", `Int active_param;
+       "activeSignature", `Int active_signature;
+      ]
+
 let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
@@ -459,6 +495,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List (json_of_outline outlines)
   | Shape _, shapes ->
     `List (List.map ~f:json_of_shape shapes)
+  | Inlay_hints _, result ->
+    json_of_inlay_hints result
   | Errors _, errors ->
     `List (List.map ~f:json_of_error errors)
   | Dump _, json -> json
@@ -471,5 +509,6 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     let with_file = scope = `Project in
     `List (List.map locations
              ~f:(fun loc -> with_location ~with_file loc []))
+  | Signature_help _, s -> json_of_signature_help s
   | Version, version ->
     `String version

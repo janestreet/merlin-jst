@@ -26,6 +26,7 @@ end
     the location of each of its components. *)
 val parse_identifier :
   (Mconfig.t * Msource.t) -> Lexing.position -> modname Location.loc list
+<<<<<<< HEAD
 
 module Compat : sig
   val pat_var_id_and_loc :
@@ -44,3 +45,21 @@ val loc_of_decl : uid:Shape.Uid.t -> Typedtree.item_declaration -> string Locati
 
 (* [is_current_unit cu] returns true if [cu] is the current compilation unit *)
 val is_current_unit : string -> bool
+||||||| 9fa77dbe8
+
+module Compat : sig
+  val pat_var_id_and_loc :
+    Typedtree.pattern -> (Ident.t * string Location.loc) option
+
+  val pat_alias_pat_id_and_loc
+    : Typedtree.pattern
+    -> (Typedtree.pattern * Ident.t * string Location.loc) option
+end
+
+(** Extracts the location of a [uid] from a [Typedtree.item_declaration] *)
+val loc_of_decl :
+  uid:Shape.Uid.t ->
+  Typedtree.item_declaration ->
+  string Location.loc option
+=======
+>>>>>>> 2824c76101f3c533554628e6e0360362435539fd

@@ -685,7 +685,29 @@ let find_source ~config loc path =
   This function lookups a uid's location in the appropriate table. *)
 let find_loc_of_uid ~config ~local_defs uid comp_unit =
   let title = "find_loc_of_uid" in
+<<<<<<< HEAD
   if Misc_utils.is_current_unit comp_unit then begin
+||||||| 9fa77dbe8
+  let loc_of_decl ~uid def =
+    match Misc_utils.loc_of_decl ~uid def  with
+    | Some loc ->
+      log ~title "Found location: %a"
+        Logger.fmt (fun fmt -> Location.print_loc fmt loc.loc);
+      `Some (uid, loc.loc)
+    | None -> log ~title "The declaration has no location."; `None
+  in
+  if Env.get_unit_name () = comp_unit then begin
+=======
+  let loc_of_decl ~uid def =
+    match Typedtree_utils.location_of_declaration ~uid def  with
+    | Some loc ->
+      log ~title "Found location: %a"
+        Logger.fmt (fun fmt -> Location.print_loc fmt loc.loc);
+      `Some (uid, loc.loc)
+    | None -> log ~title "The declaration has no location."; `None
+  in
+  if Env.get_unit_name () = comp_unit then begin
+>>>>>>> 2824c76101f3c533554628e6e0360362435539fd
     log ~title "We look for %a in the current compilation unit."
       Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
     log ~title "Looking for %a in the uid_to_loc table"
@@ -970,7 +992,7 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
   match doc_from_uid_result with
   | `Found_doc doc -> `Found doc
   | `Found_decl (uid, decl, comments) ->
-      (match Misc_utils.loc_of_decl ~uid decl with
+      (match Typedtree_utils.location_of_declaration ~uid decl with
       | None -> `No_documentation
       | Some loc ->
         let after_only = match decl with

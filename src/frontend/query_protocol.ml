@@ -110,6 +110,26 @@ type ppxed_source =
   attr_end : Lexing.position;
 }
 
+type signature_help_param = {
+  label_start : int;
+  label_end : int;
+}
+
+type signature_help_result = {
+  label : string;
+  parameters : signature_help_param list;
+  active_param : int;
+  active_signature: int;
+}
+
+type trigger_kind = Invoked | Trigger_character of string | Content_change
+type signature_help = {
+  position: Msource.position;
+  trigger_kind: trigger_kind option;
+  is_retrigger: bool;
+  active_signature_help: signature_help_result option;
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -202,6 +222,9 @@ type _ t =
   | Construct
     : Msource.position * [`None | `Local] option * int option
     -> (Location.t * string list) t
+  | Inlay_hints
+    : Msource.position * Msource.position * bool * bool * bool
+    -> (Lexing.position * string) list t
   | Outline(* *)
     :  outline t
   | Shape(* *)
@@ -230,5 +253,11 @@ type _ t =
   | Occurrences(* *)
     : [`Ident_at of Msource.position] * [`Project | `Buffer]
     -> (Location.t list * occurrences_status) t
+  | Signature_help
+    : signature_help
+    -> signature_help_result option t
+    (** In current version, Merlin only uses the parameter [position] to answer
+        signature_help queries. The additionnal parameters are described in the
+        LSP protocol and might enable finer behaviour in the future. *)
   | Version
     : string t
