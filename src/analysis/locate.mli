@@ -79,6 +79,7 @@ val from_string
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
+  -> context:Query_protocol.Locate_context.t option
   -> ?let_pun_behavior:Mbrowse.Let_pun_behavior.t
   -> ?namespaces:Env_lookup.Namespace.inferred_basic list
   -> string

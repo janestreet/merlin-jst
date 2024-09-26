@@ -121,6 +121,42 @@ type occurrences_status = [
   | `Included
 ]
 
+module Locate_context = struct
+  type t =
+    | Expr
+    | Module_path
+    | Module_type
+    | Patt
+    | Type
+    | Constant
+
+  let to_string = function
+    | Expr -> "expr"
+    | Module_path -> "module_path"
+    | Module_type -> "module_type"
+    | Patt -> "pattern"
+    | Type -> "type"
+    | Constant -> "constant"
+
+  let of_string = function
+    | "expr" -> Some Expr
+    | "module_path" -> Some Module_path
+    | "module_type" -> Some Module_type
+    | "pattern" -> Some Patt
+    | "type" -> Some Type
+    | "constant" -> Some Constant
+    | _ -> None
+
+  let all = [
+    Expr;
+    Module_path;
+    Module_type;
+    Patt;
+    Type;
+    Constant;
+  ]
+end
+
 type _ t =
   | Type_expr(* *)
     :  string * Msource.position
@@ -178,7 +214,7 @@ type _ t =
          | `At_origin
          ] t
   | Locate(* *)
-    : string option * [ `ML | `MLI ] * Msource.position
+    : string option * [ `ML | `MLI ] * Msource.position * Locate_context.t option
     -> [ `Found of string option * Lexing.position
        | `Invalid_context
        | `Builtin of string

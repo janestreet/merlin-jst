@@ -591,7 +591,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               (Option.get ppx_kind_with_attr))
     | None -> `No_ppx)
 
-  | Locate (patho, ml_or_mli, pos) ->
+  | Locate (patho, ml_or_mli, pos, context) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -615,7 +615,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         traverse_aliases = true
       }
     in
-    begin match Locate.from_string ~config ~env ~local_defs ~pos ~let_pun_behavior path with
+    begin match Locate.from_string ~config ~env ~local_defs ~pos ~context ~let_pun_behavior path with
     | `Found { file; location; _ } ->
       Locate.log ~title:"result"
         "found: %s"  file;

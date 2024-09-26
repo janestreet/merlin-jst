@@ -42,6 +42,8 @@ type t =
 
 val to_string : t -> string
 
+val of_locate_context : Query_protocol.Locate_context.t -> t
+
 (**
   [inspect_browse_tree lid ~cursor mbrowse] tries to provide contextual
   information given the selected identifier, the position of the cursor and the

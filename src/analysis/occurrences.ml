@@ -130,7 +130,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
   let locate_result =
     Locate.from_string
     ~config:{ mconfig = config; traverse_aliases=false; ml_or_mli = `ML}
-    ~env ~local_defs ~pos path
+    ~env ~local_defs ~pos ~context:None path
   in
   (* When we fail to find an exact definition we restrict scope to `Buffer *)
   let def, scope =

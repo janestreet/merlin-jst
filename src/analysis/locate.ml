@@ -864,13 +864,21 @@ let infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ]
 
-let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior ?namespaces path =
+let from_string ~config ~env ~local_defs ~pos ~context ?let_pun_behavior ?namespaces path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lid = Type_utils.parse_longident path in
   let from_lid lid =
     let ident, is_label = Longident.keep_suffix lid in
-    match infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label with
+    let namespaces =
+      match context with
+      | Some ctxt ->
+        let ctxt = Context.of_locate_context ctxt in
+        log ~title:"from_string" "overrode context: %s" (Context.to_string ctxt);
+        `Ok (Env_lookup.Namespace.from_context ctxt)
+      | None -> infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label
+    in
+    match namespaces with
     | `Error e -> e
     | `Ok nss ->
       log ~title:"from_string"
@@ -957,7 +965,7 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
       end
     | `User_input path ->
       log ~title:"get_doc" "looking for the doc of '%s'" path;
-      begin match from_string ~config ~env ~local_defs ~pos path with
+      begin match from_string ~config ~env ~local_defs ~pos ~context:None path with
       | `Found { uid; location = loc; _ } ->
         doc_from_uid ~config ~loc uid
       | `At_origin ->

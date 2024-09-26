@@ -55,6 +55,14 @@ let to_string = function
   | Type -> "type"
   | Unknown -> "unknown"
 
+let of_locate_context : Query_protocol.Locate_context.t -> t = function
+  | Expr -> Expr
+  | Module_path -> Module_path
+  | Module_type -> Module_type
+  | Patt -> Patt
+  | Type -> Type
+  | Constant -> Constant
+
 (* Distinguish between "Mo[d]ule.something" and "Module.some[t]hing" *)
 let cursor_on_longident_end
     ~cursor:cursor_pos
