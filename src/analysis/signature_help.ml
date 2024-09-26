@@ -3,7 +3,7 @@ open Std
 let {Logger. log} = Logger.for_section "signature-help"
 
 type parameter_info =
-  { label : Asttypes.arg_label
+  { label : Typedtree.arg_label
   ; param_start : int
   ; param_end : int
   ; argument : Typedtree.expression option
@@ -27,7 +27,7 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
     | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1 longident p2
   in
   match exp_desc with
-  | Texp_ident (_, { txt = li; _ }, _) ->
+  | Texp_ident (_, { txt = li; _ }, _, _, _) ->
     let ppf, to_string = Format.to_string () in
     longident ppf li;
     Some (to_string ())
@@ -56,19 +56,21 @@ let pp_parameter_type env ppf ty =
 
 (* print parameter labels and types *)
 let pp_parameter env label ppf ty =
-  match (label : Asttypes.arg_label) with
+  match (label : Typedtree.arg_label) with
   | Nolabel -> pp_parameter_type env ppf ty
   | Labelled l -> Format.fprintf ppf "%s:%a" l (pp_parameter_type env) ty
   | Optional l ->
     (* unwrap option for optional labels the same way as
        [Raw_compat.labels_of_application] *)
-    let unwrap_option ty =
+    let rec unwrap_option ty =
       match Types.get_desc ty with
       | Types.Tconstr (path, [ ty ], _) when Path.same path Predef.path_option
         -> ty
+      | Types.Tpoly (ty, []) -> unwrap_option ty
       | _ -> ty
     in
     Format.fprintf ppf "?%s:%a" l (pp_parameter_type env) (unwrap_option ty)
+  | Position l -> Format.fprintf ppf "%s:[%%call_pos]" l
 
 (* record buffer offsets to be able to underline parameter types *)
 let print_parameter_offset ?arg:argument ppf buffer env label ty =
@@ -88,12 +90,17 @@ let separate_function_signature ~args (e : Typedtree.expression) =
   let ppf = Format.formatter_of_buffer buffer in
   let rec separate ?(parameters = []) args ty =
     match (args, Types.get_desc ty) with
-    | (_l, arg) :: args, Tarrow (label, ty1, ty2, _) ->
+    | (_l, arg) :: args, Tarrow ((label, _, _), ty1, ty2, _) ->
+      let arg = 
+        match (arg : Typedtree.apply_arg) with
+        | Arg (arg, _) -> Some arg
+        | Omitted _ -> None
+      in
       let parameter =
         print_parameter_offset ppf buffer e.exp_env label ty1 ?arg
       in
       separate args ty2 ~parameters:(parameter :: parameters)
-    | [], Tarrow (label, ty1, ty2, _) ->
+    | [], Tarrow ((label, _, _), ty1, ty2, _) ->
       let parameter = print_parameter_offset ppf buffer e.exp_env label ty1 in
       separate args ty2 ~parameters:(parameter :: parameters)
     (* end of function type, print remaining type without recording offsets *)
@@ -117,11 +124,11 @@ let active_parameter_by_arg ~arg params =
 
 let first_unassigned_argument params =
   let positional = function
-    | { argument = None; label = Asttypes.Nolabel; _ } -> true
+    | { argument = None; label = Typedtree.Nolabel; _ } -> true
     | _ -> false
   in
   let labelled = function
-    | { argument = None; label = Asttypes.Labelled _ | Optional _; _ } -> true
+    | { argument = None; label = Typedtree.Labelled _ | Optional _; _ } -> true
     | _ -> false
   in
   try Some (List.index params ~f:positional) with Not_found ->
@@ -129,7 +136,7 @@ let first_unassigned_argument params =
 
 let active_parameter_by_prefix ~prefix params =
   let common = function
-    | Asttypes.Nolabel -> Some 0
+    | Typedtree.Nolabel -> Some 0
     | l
       when String.is_prefixed ~by:"~" prefix
            || String.is_prefixed ~by:"?" prefix ->
@@ -157,7 +164,7 @@ let is_arrow t =
 let application_signature ~prefix ~cursor = function
   | (_, Browse_raw.Expression arg)
     :: ( _
-       , Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args); _ }
+       , Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args, _, _, _); _ }
        )
     :: _
     when is_arrow exp_type ->

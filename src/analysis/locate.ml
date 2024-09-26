@@ -187,7 +187,9 @@ module Artifact : sig
   val source_digest : t -> string option
   val comments : t -> (string * Location.t) list
   val impl_shape : t -> Shape.t option
-  val uid_to_loc : Shape.Uid.t -> t -> Location.t option
+  val uid_to_loc :
+    loc_of_decl:(uid:Shape.Uid.t -> Typedtree.item_declaration -> (Shape.Uid.t * Location.t) option)
+    -> Shape.Uid.t -> t -> Location.t option
 
   (** When we look for docstring in external compilation unit we can perform
       a uid-based search and return the attached comment in the attributes.
@@ -225,11 +227,11 @@ end = struct
     | Cmt cmt_infos -> cmt_infos.cmt_impl_shape
     | Cms cms_infos -> cms_infos.cms_impl_shape
 
-  let uid_to_loc uid = function
+  let uid_to_loc ~loc_of_decl uid = function
     | Cmt cmt_infos ->
       Shape.Uid.Tbl.find_opt cmt_infos.cmt_uid_to_decl uid
-      |> Option.bind ~f:(Misc_utils.loc_of_decl ~uid)
-      |> Option.map ~f:(fun { Location.loc; _ } -> loc)
+      |> Option.bind ~f:(loc_of_decl ~uid)
+      |> Option.map ~f:(fun (_, loc) -> loc)
     | Cms cms_infos ->
       Shape.Uid.Tbl.find_opt cms_infos.cms_uid_to_loc uid
       |> Option.map ~f:(fun { Location.loc; _ } -> loc)
@@ -685,29 +687,15 @@ let find_source ~config loc path =
   This function lookups a uid's location in the appropriate table. *)
 let find_loc_of_uid ~config ~local_defs uid comp_unit =
   let title = "find_loc_of_uid" in
-<<<<<<< HEAD
-  if Misc_utils.is_current_unit comp_unit then begin
-||||||| 9fa77dbe8
-  let loc_of_decl ~uid def =
-    match Misc_utils.loc_of_decl ~uid def  with
-    | Some loc ->
-      log ~title "Found location: %a"
-        Logger.fmt (fun fmt -> Location.print_loc fmt loc.loc);
-      `Some (uid, loc.loc)
-    | None -> log ~title "The declaration has no location."; `None
-  in
-  if Env.get_unit_name () = comp_unit then begin
-=======
   let loc_of_decl ~uid def =
     match Typedtree_utils.location_of_declaration ~uid def  with
     | Some loc ->
       log ~title "Found location: %a"
         Logger.fmt (fun fmt -> Location.print_loc fmt loc.loc);
-      `Some (uid, loc.loc)
-    | None -> log ~title "The declaration has no location."; `None
+      Some (uid, loc.loc)
+    | None -> log ~title "The declaration has no location."; None
   in
-  if Env.get_unit_name () = comp_unit then begin
->>>>>>> 2824c76101f3c533554628e6e0360362435539fd
+  if Misc_utils.is_current_unit comp_unit then begin
     log ~title "We look for %a in the current compilation unit."
       Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
     log ~title "Looking for %a in the uid_to_loc table"
@@ -722,7 +710,7 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
     | Ok (_pos_fname, artifact) ->
       log ~title "Shapes successfully loaded, looking for %a"
         Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
-      begin match Artifact.uid_to_loc uid artifact with
+      begin match Artifact.uid_to_loc ~loc_of_decl uid artifact with
         | Some decl -> `Some (uid, decl)
         | None -> log ~title "Uid not found in the cmt's table."; `None
       end

@@ -1,5 +1,5 @@
 type parameter_info =
-  { label : Asttypes.arg_label
+  { label : Typedtree.arg_label
   ; param_start : int
   ; param_end : int
   ; argument : Typedtree.expression option

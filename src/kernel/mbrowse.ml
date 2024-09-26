@@ -136,25 +136,13 @@ let compare_locations pos (l1 : node_loc) (l2 : node_loc) =
     Location_aux.compare_pos pos l1.loc,
     Location_aux.compare_pos pos l2.loc
   with
-  (* Cursor inside both locations: favor non-ghost closer to the end *)
-  | 0, 0 ->
-<<<<<<< HEAD
-    (* Cursor inside both locations:
+  (* Cursor inside both locations:
        If one is unfavored, favor the other one.
        Otherwise, favor the one closer to the end *)
+  | 0, 0 ->
     begin match l1.favorability, l2.favorability with
     | Unfavored, Neutral -> 1
     | Neutral, Unfavored -> -1
-||||||| 9fa77dbe8
-    (* Cursor inside both locations: favor non-ghost closer to the end *)
-    begin match l1.Location.loc_ghost, l2.Location.loc_ghost with
-    | true, false -> 1
-    | false, true -> -1
-=======
-    begin match l1.Location.loc_ghost, l2.Location.loc_ghost with
-    | true, false -> 1
-    | false, true -> -1
->>>>>>> 2824c76101f3c533554628e6e0360362435539fd
     | _ ->
         Lexing.compare_pos l1.loc.loc_end l2.loc.loc_end
     end

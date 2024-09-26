@@ -7,16 +7,8 @@ let usage_msg =
 
 let verbose = ref false
 let debug = ref false
-<<<<<<< HEAD
 let input_files_rev = ref []
 let build_path_rev = ref ({ visible = []; hidden = [] } : Load_path.paths)
-||||||| 9fa77dbe8
-let input_files = ref []
-let build_path = ref []
-=======
-let input_files = ref []
-let build_path_rev = ref ({ visible = []; hidden = [] } : Load_path.paths)
->>>>>>> 2824c76101f3c533554628e6e0360362435539fd
 let output_file = ref "project.ocaml-index"
 let root = ref ""
 let rewrite_root = ref false
@@ -87,18 +79,9 @@ let () =
       let root = if String.equal "" !root then None else Some !root in
       Index.from_files ~store_shapes:!store_shapes ~root
         ~rewrite_root:!rewrite_root ~output_file:!output_file
-<<<<<<< HEAD
         ~build_path:{ visible = List.rev !build_path_rev.visible;
                       hidden = List.rev !build_path_rev.hidden }
         ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath (List.rev !input_files_rev)
-||||||| 9fa77dbe8
-        ~build_path:!build_path
-        ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files
-=======
-        ~build_path:{ visible = List.rev !build_path_rev.visible;
-                      hidden = List.rev !build_path_rev.hidden }
-        ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files
->>>>>>> 2824c76101f3c533554628e6e0360362435539fd
   | Some Dump ->
       List.iter
         (fun file ->
