@@ -8,19 +8,15 @@ module Lid_set : Set.S with type elt = Lid.t
 module Stats : Map.S with type key = String.t
 module Uid_map = Shape.Uid.Map
 
-type stat = {
-  mtime : float;
-  size : int;
-  source_digest : string option
-}
+type stat = { mtime : float; size : int; source_digest : string option }
 
-type index = {
-  defs : Lid_set.t Uid_map.t;
-  approximated : Lid_set.t Uid_map.t;
-  cu_shape : (Compilation_unit.t, Shape.t) Hashtbl.t;
-  stats : stat Stats.t;
-  root_directory: string option;
-}
+type index =
+  { defs : Lid_set.t Uid_map.t;
+    approximated : Lid_set.t Uid_map.t;
+    cu_shape : (Compilation_unit.t, Shape.t) Hashtbl.t;
+    stats : stat Stats.t;
+    root_directory : string option
+  }
 
 val pp : Format.formatter -> index -> unit
 

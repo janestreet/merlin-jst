@@ -16,7 +16,9 @@ module Path : sig
   val to_shortest_lid :
     env:Env.t ->
     ?name:string ->
-    env_check:(Longident.t -> Env.t -> 'a) -> Path.t -> Longident.t
+    env_check:(Longident.t -> Env.t -> 'a) ->
+    Path.t ->
+    Longident.t
 
   (* Return whether the given path is opened in the given environment *)
   val is_opened : Env.t -> Path.t -> bool
@@ -25,7 +27,7 @@ end
 (** [parse_identifier] attempts to re-parse a longident so that we get
     the location of each of its components. *)
 val parse_identifier :
-  (Mconfig.t * Msource.t) -> Lexing.position -> modname Location.loc list
+  Mconfig.t * Msource.t -> Lexing.position -> modname Location.loc list
 
 (* Add parenthesis to qualified operators *)
 val parenthesize_name : string -> string
