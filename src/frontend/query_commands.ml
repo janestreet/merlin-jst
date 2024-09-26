@@ -615,7 +615,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         traverse_aliases = true
       }
     in
-    begin match Locate.from_string ~config ~env ~local_defs ~pos ~context ~let_pun_behavior path with
+    let namespaces = Option.map context ~f:(fun ctx -> Locate.Namespace_resolution.From_context ctx) in
+    begin match Locate.from_string ~config ~env ~local_defs ~pos ?namespaces ~let_pun_behavior path with
     | `Found { file; location; _ } ->
       Locate.log ~title:"result"
         "found: %s"  file;
