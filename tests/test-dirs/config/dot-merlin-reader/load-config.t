@@ -14,13 +14,7 @@
   $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
   > (4:File${#FILE}:$FILE)
   > EOF
-<<<<<<< HEAD
-  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:WRAPPING_PREFIX?:Prefix__)(?:UNIT_NAME_FOR(?:a?:Prefix__a))(?:UNIT_NAME_FOR(?:b?:b))(?:UNIT_NAME_FOR(?:c?:Prefix_c))(?:STDLIB?:/stdlib))
-||||||| 40e0cdb95
-  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:STDLIB?:/stdlib))
-=======
-  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:STDLIB?:/stdlib)(?:SOURCE_ROOT?:/root))
->>>>>>> 04b59dc6c680cdd04cebf474ad650f3e5a90dc5b
+  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:WRAPPING_PREFIX?:Prefix__)(?:UNIT_NAME_FOR(?:a?:Prefix__a))(?:UNIT_NAME_FOR(?:b?:b))(?:UNIT_NAME_FOR(?:c?:Prefix_c))(?:STDLIB?:/stdlib)(?:SOURCE_ROOT?:/root))
 
 Use ocamlmerlin instead of $MERLIN for this test because $MERLIN configures the stdlib,
 but we want to observe the stdlib being configured via the STDLIB directive.

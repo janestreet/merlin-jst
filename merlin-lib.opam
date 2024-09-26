@@ -13,20 +13,10 @@ depends: [
   "ocaml" {>= "5.2" & < "5.3"}
   "dune" {>= "3.0.0"}
   "csexp" {>= "1.5.1"}
-<<<<<<< HEAD
+  "alcotest" {with-test}
   "menhir"    {dev & = "20210419"}
   "menhirLib" {dev & = "20210419"}
   "menhirSdk" {dev & = "20210419"}
-||||||| 40e0cdb95
-  "menhir"    {dev & >= "20201216"}
-  "menhirLib" {dev & >= "20201216"}
-  "menhirSdk" {dev & >= "20201216"}
-=======
-  "alcotest" {with-test}
-  "menhir"    {dev & >= "20201216"}
-  "menhirLib" {dev & >= "20201216"}
-  "menhirSdk" {dev & >= "20201216"}
->>>>>>> 04b59dc6c680cdd04cebf474ad650f3e5a90dc5b
 ]
 synopsis:
   "Merlin's libraries"
