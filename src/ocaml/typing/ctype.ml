@@ -1948,7 +1948,7 @@ let try_expand_safe env ty =
     Btype.backtrack snap; cleanup_abbrev (); raise Cannot_expand
 
 (* Fully expand the head of a type. *)
-let rec try_expand_head ?(fuel = 1000)
+let rec try_expand_head ?(fuel = 5000)
     (try_once : Env.t -> type_expr -> type_expr) env ty =
   (* Merlin-jst: we give this function a fuel parameter because this function sometimes
      loops forever. See tests tests/test-dirs/type-enclosing/issue1335.t
