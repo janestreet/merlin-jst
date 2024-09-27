@@ -1104,7 +1104,7 @@ module Shortest = struct
            | Desc.Module_type(id, desc, conc, dpr) ->
                Component.Module_type(origin, id, desc, local_or_open conc, dpr)
            | Desc.Module(id, desc, conc, dpr) ->
-               Component.Module(origin, id, desc, local_or_open conc, dpr)
+               Component.Module(origin, id, desc, local_or_open conc, Visible, dpr)
            | Desc.Declare_type id ->
                Component.Declare_type(origin, id)
            | Desc.Declare_class_type id ->
@@ -1743,6 +1743,7 @@ module Basis = struct
       depends : string list;
       alias_depends : string list;
       desc : Desc.Module.t;
+      visibility : Desc.module_visibility;
       deprecated : Desc.deprecated; }
 
   type t =
@@ -1790,11 +1791,11 @@ module Basis = struct
   let update_shortest t additions loads =
     let components =
       List.map
-        (fun { name; desc; deprecated; _ } ->
+        (fun { name; desc; visibility; deprecated; _ } ->
            let index = String_map.find name t.assignment in
            let origin = Origin.Dependency index in
            let id = Ident.global name in
-           Component.Module(origin, id, desc, Component.Global, deprecated))
+           Component.Module(origin, id, desc, Component.Global, visibility, deprecated))
         loads
     in
     let components =
@@ -1838,8 +1839,8 @@ module Basis = struct
   let add t name =
     t.pending_additions <- String_set.add name t.pending_additions
 
-  let load t name depends alias_depends desc deprecated =
-    let load = { name; depends; alias_depends; desc; deprecated } in
+  let load t name depends alias_depends desc visibility deprecated =
+    let load = { name; depends; alias_depends; desc; visibility; deprecated } in
     t.pending_loads <- load :: t.pending_loads
 
 end

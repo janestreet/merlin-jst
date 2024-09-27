@@ -44,6 +44,10 @@ module Desc = struct
     | Deprecated
     | Not_deprecated
 
+  type module_visibility = Load_path.visibility =
+    | Visible
+    | Hidden
+
   module Type = struct
 
     type t =
@@ -225,10 +229,10 @@ let hidden_definition deprecated name =
   | Desc.Deprecated -> true
   | Desc.Not_deprecated -> hidden_name name
 
-let hidden_base_definition deprecated id =
-  match deprecated with
-  | Desc.Deprecated -> true
-  | Desc.Not_deprecated -> hidden_ident id
+let hidden_base_definition ?(module_visibility = Desc.Visible) (deprecated : Desc.deprecated) id =
+  match module_visibility, deprecated with
+  | Hidden, _ | _, Deprecated -> true
+  | Visible, Not_deprecated -> hidden_ident id
 
 module rec Type : sig
 
@@ -662,7 +666,7 @@ and Module : sig
   type normalized
 
   val base :
-    Origin.t -> Ident.t -> Desc.Module.t option -> Desc.deprecated -> t
+    Origin.t -> Ident.t -> Desc.Module.t option -> Desc.module_visibility -> Desc.deprecated -> t
 
   val child :
     normalized -> string -> Desc.Module.t option -> Desc.deprecated -> t
@@ -742,9 +746,9 @@ end = struct
           sort : Sort.t;
           definition : definition; }
 
-  let base origin id desc deprecated =
+  let base origin id desc module_visibility deprecated =
     let path = Path.Pident id in
-    let hidden = hidden_base_definition deprecated id in
+    let hidden = hidden_base_definition ~module_visibility deprecated id in
     let sort = Sort.Defined in
     let definition =
       match desc with
@@ -1083,7 +1087,7 @@ and Component : sig
     | Module_type of
         Origin.t * Ident.t * Desc.Module_type.t * source * Desc.deprecated
     | Module of
-        Origin.t * Ident.t * Desc.Module.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Module.t * source * Desc.module_visibility * Desc.deprecated
     | Declare_type of Origin.t * Ident.t
     | Declare_class_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
@@ -1239,9 +1243,9 @@ end = struct
           let diff = item :: diff in
           let acc = { acc with module_types; module_type_names } in
           loop acc diff declarations rest
-      | Component.Module(origin,id, desc, source, dpr) :: rest ->
+      | Component.Module(origin,id, desc, source, visibility, dpr) :: rest ->
           let prev = previous_module acc id in
-          let md = Module.base origin id (Some desc) dpr in
+          let md = Module.base origin id (Some desc) visibility dpr in
           let modules = Ident_map.add id md acc.modules in
           let module_names = add_name source id acc.module_names in
           let item = Diff.Item.Module(id, md, prev) in

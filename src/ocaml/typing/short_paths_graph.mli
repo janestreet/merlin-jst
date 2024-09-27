@@ -54,6 +54,10 @@ module Desc : sig
     | Deprecated
     | Not_deprecated
 
+  type module_visibility = Load_path.visibility =
+    | Visible
+    | Hidden
+
   module Type : sig
 
     type t =
@@ -264,7 +268,7 @@ module Component : sig
     | Module_type of
         Origin.t * Ident.t * Desc.Module_type.t * source * Desc.deprecated
     | Module of
-        Origin.t * Ident.t * Desc.Module.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Module.t * source * Desc.module_visibility * Desc.deprecated
     | Declare_type of Origin.t * Ident.t
     | Declare_class_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
