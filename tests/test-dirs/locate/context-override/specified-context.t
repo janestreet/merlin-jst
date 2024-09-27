@@ -30,27 +30,10 @@
   > }
 
 Iterate over each interesting identifier in each possible context and print results
-  $ declare -a identifiers
-  $ identifiers[0]="foo"
-  $ identifiers[1]="Foo"
-  $ identifiers[2]="Foo.foo"
-  $ identifiers[3]="Foo.Foo"
-
-  $ declare -a contexts
-  $ contexts[0]="expr"
-  $ contexts[1]="module_path"
-  $ contexts[2]="module_type"
-  $ contexts[3]="pattern"
-  $ contexts[4]="type"
-  $ contexts[5]="constant"
-  $ contexts[6]="constructor"
-  $ contexts[7]="label"
-  $ contexts[8]="unknown"
-
-  $ for context in "${contexts[@]}"
+  $ for context in expr module_path module_type pattern type constant constructor label unknown
   > do
   >   echo "Context: $context"
-  >   for identifier in "${identifiers[@]}"
+  >   for identifier in foo Foo Foo.foo Foo.Foo
   >   do
   >     res=$(cat | $MERLIN single locate -prefix "$identifier" -position 17:0 -context "$context" -filename test.ml < test.ml)
   >     if [[ $(echo "$res" | jq .value | jq -r type) == "string" ]]; then
