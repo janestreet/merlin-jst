@@ -30,11 +30,13 @@
   > }
 
 Iterate over each interesting identifier in each possible context and print results
+  $ declare -a identifiers
   $ identifiers[0]="foo"
   $ identifiers[1]="Foo"
   $ identifiers[2]="Foo.foo"
   $ identifiers[3]="Foo.Foo"
 
+  $ declare -a contexts
   $ contexts[0]="expr"
   $ contexts[1]="module_path"
   $ contexts[2]="module_type"
