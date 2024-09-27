@@ -30,8 +30,21 @@
   > }
 
 Iterate over each interesting identifier in each possible context and print results
-  $ identifiers=("foo" "Foo" "Foo.foo" "Foo.Foo")
-  $ contexts=("expr" "module_path" "module_type" "pattern" "type" "constant" "constructor" "label" "unknown")
+  $ identifiers[0]="foo"
+  $ identifiers[1]="Foo"
+  $ identifiers[2]="Foo.foo"
+  $ identifiers[3]="Foo.Foo"
+
+  $ contexts[0]="expr"
+  $ contexts[1]="module_path"
+  $ contexts[2]="module_type"
+  $ contexts[3]="pattern"
+  $ contexts[4]="type"
+  $ contexts[5]="constant"
+  $ contexts[6]="constructor"
+  $ contexts[7]="label"
+  $ contexts[8]="unknown"
+
   $ for context in "${contexts[@]}"
   > do
   >   echo "Context: $context"
