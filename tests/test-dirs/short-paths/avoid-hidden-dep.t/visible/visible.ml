@@ -5,3 +5,4 @@ module Foo = struct
 end
 
 let foo : Hidden.t = failwith ""
+let bar : Hidden.u = failwith ""
