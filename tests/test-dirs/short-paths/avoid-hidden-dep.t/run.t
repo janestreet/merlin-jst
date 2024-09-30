@@ -1,8 +1,17 @@
 Test that short paths will prefer a visible dependency over a hidden one
 
+Start by compiling deps of the test file
   $ $OCAMLC -c hidden/hidden.ml
-
   $ $OCAMLC -c visible/visible.ml -I hidden
+
+Create a .merlin file
+  $ cat > test/.merlin << EOF
+  > FLG -short-paths
+  > B ../visible
+  > S ../visible
+  > BH ../hidden
+  > SH ../hidden
+  > EOF
 
 The type of `Test.foo` either `Hidden.t` or `Visible.Foo.Bar.t`. But `Hidden.t` is not a
 valid identifier to write because `Hidden` is a hidden dependency, so Merlin should prefer
