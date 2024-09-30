@@ -20,7 +20,7 @@
 
   $ locate () {
   >   res=$(cat | $MERLIN single locate -prefix "$2" -position "$3" -context "$1" -filename test.ml < test.ml)
-  >   if [[ $(echo "$res" | jq .value | jq -r type) == "string" ]]; then
+  >   if [ $(echo "$res" | jq .value | jq -r type) == "string" ]; then
   >     echo "$res" | jq -r .value
   >   else
   >     line=$(echo "$res" | jq .value.pos.line)
@@ -36,7 +36,7 @@ Iterate over each interesting identifier in each possible context and print resu
   >   for identifier in foo Foo Foo.foo Foo.Foo
   >   do
   >     res=$(cat | $MERLIN single locate -prefix "$identifier" -position 17:0 -context "$context" -filename test.ml < test.ml)
-  >     if [[ $(echo "$res" | jq .value | jq -r type) == "string" ]]; then
+  >     if [ $(echo "$res" | jq .value | jq -r type) == "string" ]; then
   >       output=$(echo "$res" | jq -r .value)
   >     else
   >       line_num=$(echo "$res" | jq .value.pos.line)
