@@ -5134,6 +5134,10 @@ and type_function_ret_info =
     ret_sort: Jkind.sort;
   }
 
+type recursive_block =
+  | Entirely_functions of Value.lr
+  | Not_entirely_functions
+
 (* Generalize expressions *)
 let generalize_structure_exp exp = generalize_structure exp.exp_type
 let may_lower_contravariant_then_generalize env exp =
@@ -5215,7 +5219,23 @@ let pat_modes ~force_toplevel rec_mode_var (attrs, spat) =
             let mode = Value.newvar () in
             tuple_pat_mode mode modes, mode_tuple mode modes
       end
-    | Some mode ->
+    | Some Not_entirely_functions -> begin
+      match pat_tuple_arity spat with
+      | Not_local_tuple | Maybe_local_tuple ->
+          let mode, _ =
+            Value.newvar_below (Value.max_with (Comonadic Areality)
+              Regionality.global)
+          in
+          simple_pat_mode mode, mode_default mode
+      | Local_tuple arity ->
+          let modes = List.init arity (fun _ -> Value.newvar ()) in
+          let mode, _ =
+            Value.newvar_below (Value.max_with (Comonadic Areality)
+              Regionality.global)
+          in
+          tuple_pat_mode mode modes, mode_tuple mode modes
+    end
+    | Some (Entirely_functions mode) ->
         simple_pat_mode mode, mode_default mode
   in
   attrs, pat_mode, exp_mode, spat
@@ -8849,8 +8869,9 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
   let entirely_functions = List.for_all vb_is_fun spat_sexp_list in
   let rec_mode_var =
     match rec_flag with
-    | Recursive when entirely_functions -> Some (Value.newvar ())
-    | Recursive -> Some Value.legacy
+    | Recursive when entirely_functions ->
+        Some (Entirely_functions (Value.newvar ()))
+    | Recursive -> Some Not_entirely_functions
     | Nonrecursive -> None
   in
   let spatl =  List.map vb_pat_constraint spat_sexp_list in
