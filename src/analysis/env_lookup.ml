@@ -21,6 +21,8 @@ module Namespace = struct
     | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
     | Expr | Constant ->
       [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+    | Unknown_constructor -> [ `Constr; `Vals ; `Mod ; `Modtype ; `Labels ; `Type ]
+    | Unknown_label -> [ `Labels ; `Vals ; `Mod ; `Modtype ; `Constr ; `Type ]
     | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
     | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
     | Label lbl     -> [ `This_label lbl ]
