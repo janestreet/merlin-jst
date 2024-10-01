@@ -1975,10 +1975,18 @@ let try_expand_safe env ty =
     Btype.backtrack snap; cleanup_abbrev (); raise Cannot_expand
 
 (* Fully expand the head of a type. *)
-let rec try_expand_head
+let rec try_expand_head ?(fuel = 5000)
     (try_once : Env.t -> type_expr -> type_expr) env ty =
+  (* Merlin-jst: we give this function a fuel parameter because this function sometimes
+     loops forever. See tests tests/test-dirs/type-enclosing/issue1335.t
+     and tests/test-dirs/type-enclosing/issue1755.t
+
+     This issue is resolved in upstream Merlin, but the upstream Merlin maintainers are
+     unsure why (they believe is was due to merging changes in Printtyp when merging
+     5.2 compiler changes). This is a cheap and dirty solution to prevent crashing. *)
+  if fuel <= 0 then raise Cannot_expand;
   let ty' = try_once env ty in
-  try try_expand_head try_once env ty'
+  try try_expand_head ~fuel:(fuel - 1) try_once env ty'
   with Cannot_expand -> ty'
 
 (* Unsafe full expansion, may raise [Unify [Escape _]]. *)
