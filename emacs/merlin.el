@@ -1090,26 +1090,70 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
     (cons (if bounds (car bounds) (point))
           (point))))
 
-;;;;;;;;;;;;;;;;;;;;;
-;; POLARITY SEARCH ;;
-;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;
+;; SEARCH ;;
+;;;;;;;;;;;;
 
 (defun merlin--search (query)
-  (merlin-call "search-by-polarity"
-               "-query" query
-               "-position" (merlin-unmake-point (point))))
+  (merlin-call "search-by-type"
+	       "-query" query
+	       "-position" (merlin-unmake-point (point))))
+
+(defun merlin--search-format-key (name type doc)
+  (let ((plain-name (string-remove-prefix "Stdlib__" name)))
+    (concat
+     (propertize plain-name 'face (intern "font-lock-function-name-face"))
+     " : "
+     (propertize type 'face (intern "font-lock-doc-face"))
+     " "
+     (propertize doc 'face (intern "font-lock-comment-face")))))
+
+(defun merlin--get-documentation-line-from-entry (entry)
+  (let* ((doc-entry (cdr (assoc 'doc entry)))
+         (doc (if (eq doc-entry 'null) "" doc-entry))
+	 (doc-lines (split-string doc "[\r\n]+")))
+    (car doc-lines)))
+
+(defun merlin--search-entry-to-completion-entry (entry)
+  (let ((value-name (cdr (assoc 'name entry)))
+	(value-hole (cdr (assoc 'constructible entry)))
+	(value-type (cdr (assoc 'type entry)))
+        (value-docs (merlin--get-documentation-line-from-entry entry)))
+    (let ((key (merlin--search-format-key value-name value-type value-docs))
+	  (value value-hole))
+      (cons key value))))
+
+(defun merlin--search-select-completion-result (choices selected)
+  (alist-get selected choices nil nil #'equal))
+
+(defun merlin--search-substitute-constructible (elt)
+  (progn
+    (when (region-active-p)
+      (delete-region (region-beginning) (region-end)))
+    (insert (concat "(" elt ")"))))
+
+(defun merlin--search-completion-presort (choices)
+  (lambda (string pred action)
+    (if (eq action 'metadata)
+	'(metadata (display-sort-function . identity)
+		   (cycle-sort-function . identity))
+      (complete-with-action action choices string pred))))
 
 (defun merlin-search (query)
-  (interactive "sSearch pattern: ")
-  (let* ((result (merlin--search query))
-         (entries (cdr (assoc 'entries result)))
-         (transform
-          (lambda (entry)
-            (let ((text (merlin-completion-entry-text "" entry))
-                  (desc (merlin-completion-entry-short-description entry)))
-              (vector (concat text " : " desc)
-                      `(lambda () (insert ,text)))))))
-    (popup-menu (easy-menu-create-menu "Results" (mapcar transform entries)))))
+  "Search values by types or polarity"
+  (interactive "sSearch query: ")
+  (let* ((entries (merlin--search query))
+	 (choices
+	  (mapcar #'merlin--search-entry-to-completion-entry entries)))
+    (let ((constructible
+	   (merlin--search-select-completion-result
+	    choices
+	    (completing-read (concat "Candidates: ")
+			     (merlin--search-completion-presort choices)
+			     nil nil nil t))))
+      (merlin--search-substitute-constructible constructible))))
+
 
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
