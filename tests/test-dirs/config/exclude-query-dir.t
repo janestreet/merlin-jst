@@ -45,8 +45,8 @@ Remove the old .cmt files
   $ rm **/*.cmt
 
 Create the .cms files
-  $ $OCAMLC -c -bin-annot b/foo.ml
-  $ touch a/foo.cmt
+  $ $OCAMLC -c -bin-annot-cms b/foo.ml
+  $ touch a/foo.cms
 
 Perform the query again
   $ $MERLIN single locate -position 1:13 -filename a/test.ml < a/test.ml
