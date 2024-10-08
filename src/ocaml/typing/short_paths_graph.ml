@@ -44,6 +44,14 @@ module Desc = struct
     | Deprecated
     | Not_deprecated
 
+  type visibility =
+    | Visible
+    | Hidden
+
+  let visibility_of_deprecated = function
+    | Deprecated -> Hidden
+    | Not_deprecated -> Visible
+
   module Type = struct
 
     type t =
@@ -220,24 +228,24 @@ let hidden_ident id =
     Since 5.0.0 unsafe_string is always false *)
  hidden_name (Ident.name id)
 
-let hidden_definition deprecated name =
-  match deprecated with
-  | Desc.Deprecated -> true
-  | Desc.Not_deprecated -> hidden_name name
+let hidden_definition visibility name =
+  match visibility with
+  | Desc.Hidden -> true
+  | Desc.Visible -> hidden_name name
 
-let hidden_base_definition deprecated id =
-  match deprecated with
-  | Desc.Deprecated -> true
-  | Desc.Not_deprecated -> hidden_ident id
+let hidden_base_definition visibility id =
+  match visibility with
+  | Desc.Hidden -> true
+  | Desc.Visible -> hidden_ident id
 
 module rec Type : sig
 
   type t
 
-  val base : Origin.t -> Ident.t -> Desc.Type.t option -> Desc.deprecated -> t
+  val base : Origin.t -> Ident.t -> Desc.Type.t option -> Desc.visibility -> t
 
   val child :
-    Module.normalized -> string -> Desc.Type.t option -> Desc.deprecated -> t
+    Module.normalized -> string -> Desc.Type.t option -> Desc.visibility -> t
 
   val declare : Origin.t -> Ident.t -> t
 
@@ -288,18 +296,18 @@ end = struct
     | Some (Subst(p, ns)) -> Subst(p, ns)
     | Some (Alias alias) -> Alias alias
 
-  let base origin id desc deprecated =
+  let base origin id desc visibility =
     let path = Path.Pident id in
-    let hidden = hidden_base_definition deprecated id in
+    let hidden = hidden_base_definition visibility id in
     let sort = Sort.Defined in
     let definition = definition_of_desc desc in
     Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc deprecated =
+  let child md name desc visibility =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot(Module.raw_path md, name) in
-    let hidden = hidden_definition deprecated name in
+    let hidden = hidden_definition visibility name in
     let definition = definition_of_desc desc in
     Definition { origin; path; hidden; sort; definition }
 
@@ -387,11 +395,11 @@ and Class_type : sig
   type t
 
   val base :
-    Origin.t -> Ident.t -> Desc.Class_type.t option -> Desc.deprecated -> t
+    Origin.t -> Ident.t -> Desc.Class_type.t option -> Desc.visibility -> t
 
   val child :
     Module.normalized -> string ->
-    Desc.Class_type.t option -> Desc.deprecated -> t
+    Desc.Class_type.t option -> Desc.visibility -> t
 
   val declare : Origin.t -> Ident.t -> t
 
@@ -438,18 +446,18 @@ end = struct
     | Some (Subst(p, ns)) -> Subst(p, ns)
     | Some (Alias alias) -> Alias alias
 
-  let base origin id desc deprecated =
+  let base origin id desc visibility =
     let path = Path.Pident id in
-    let hidden = hidden_base_definition deprecated id in
+    let hidden = hidden_base_definition visibility id in
     let sort = Sort.Defined in
     let definition = definition_of_desc desc in
     Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc deprecated =
+  let child md name desc visibility =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot(Module.raw_path md, name) in
-    let hidden = hidden_definition deprecated name in
+    let hidden = hidden_definition visibility name in
     let definition = definition_of_desc desc in
     Definition { origin; path; hidden; sort; definition }
 
@@ -533,11 +541,11 @@ and Module_type : sig
   type t
 
   val base :
-    Origin.t -> Ident.t -> Desc.Module_type.t option -> Desc.deprecated -> t
+    Origin.t -> Ident.t -> Desc.Module_type.t option -> Desc.visibility -> t
 
   val child :
     Module.normalized -> string ->
-    Desc.Module_type.t option -> Desc.deprecated -> t
+    Desc.Module_type.t option -> Desc.visibility -> t
 
   val declare : Origin.t -> Ident.t -> t
 
@@ -572,9 +580,9 @@ end = struct
           sort : Sort.t;
           definition : definition; }
 
-  let base origin id desc deprecated =
+  let base origin id desc visibility =
     let path = Path.Pident id in
-    let hidden = hidden_base_definition deprecated id in
+    let hidden = hidden_base_definition visibility id in
     let sort = Sort.Defined in
     let definition =
       match desc with
@@ -584,11 +592,11 @@ end = struct
     in
     Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc deprecated =
+  let child md name desc visibility =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot (Module.raw_path md, name) in
-    let hidden = hidden_definition deprecated name in
+    let hidden = hidden_definition visibility name in
     let definition =
       match desc with
       | None -> Unknown
@@ -662,10 +670,10 @@ and Module : sig
   type normalized
 
   val base :
-    Origin.t -> Ident.t -> Desc.Module.t option -> Desc.deprecated -> t
+    Origin.t -> Ident.t -> Desc.Module.t option -> Desc.visibility -> t
 
   val child :
-    normalized -> string -> Desc.Module.t option -> Desc.deprecated -> t
+    normalized -> string -> Desc.Module.t option -> Desc.visibility -> t
 
   val application : normalized -> t -> Desc.Module.t option -> t
 
@@ -742,9 +750,9 @@ end = struct
           sort : Sort.t;
           definition : definition; }
 
-  let base origin id desc deprecated =
+  let base origin id desc visibility =
     let path = Path.Pident id in
-    let hidden = hidden_base_definition deprecated id in
+    let hidden = hidden_base_definition visibility id in
     let sort = Sort.Defined in
     let definition =
       match desc with
@@ -760,11 +768,11 @@ end = struct
     in
     Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc deprecated =
+  let child md name desc visibility =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot(Module.raw_path md, name) in
-    let hidden = hidden_definition deprecated name in
+    let hidden = hidden_definition visibility name in
     let definition =
       match desc with
       | None -> Unknown
@@ -880,19 +888,23 @@ end = struct
         let rec loop types class_types module_types modules = function
           | [] -> Forced { types; class_types; module_types; modules }
           | Type(name, desc, dpr) :: rest ->
-              let typ = Type.child t name (Some desc) dpr in
+              let visibility = Desc.visibility_of_deprecated dpr in
+              let typ = Type.child t name (Some desc) visibility in
               let types = String_map.add name typ types in
               loop types class_types module_types modules rest
           | Class_type(name, desc, dpr) :: rest ->
-              let clty = Class_type.child t name (Some desc) dpr in
+              let visibility = Desc.visibility_of_deprecated dpr in
+              let clty = Class_type.child t name (Some desc) visibility in
               let class_types = String_map.add name clty class_types in
               loop types class_types module_types modules rest
           | Module_type(name, desc, dpr) :: rest ->
-              let mty = Module_type.child t name (Some desc) dpr in
+              let visibility = Desc.visibility_of_deprecated dpr in
+              let mty = Module_type.child t name (Some desc) visibility in
               let module_types = String_map.add name mty module_types in
               loop types class_types module_types modules rest
           | Module(name, desc, dpr) :: rest ->
-              let md = Module.child t name (Some desc) dpr in
+              let visibility = Desc.visibility_of_deprecated dpr in
+              let md = Module.child t name (Some desc) visibility in
               let modules = String_map.add name md modules in
               loop types class_types module_types modules rest
         in
@@ -949,7 +961,7 @@ end = struct
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Type.child t name None Not_deprecated
+        Type.child t name None Visible
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { types; _ }; _ } ->
@@ -962,7 +974,7 @@ end = struct
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Class_type.child t name None Not_deprecated
+        Class_type.child t name None Visible
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { class_types; _ }; _ } ->
@@ -975,7 +987,7 @@ end = struct
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Module_type.child t name None Not_deprecated
+        Module_type.child t name None Visible
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { module_types; _ }; _ } ->
@@ -988,7 +1000,7 @@ end = struct
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Module.child t name None Not_deprecated
+        Module.child t name None Visible
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { modules; _ }; _ } ->
@@ -1077,13 +1089,13 @@ and Component : sig
 
   type t =
     | Type of
-        Origin.t * Ident.t * Desc.Type.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Type.t * source * Desc.visibility
     | Class_type of
-        Origin.t * Ident.t * Desc.Class_type.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Class_type.t * source * Desc.visibility
     | Module_type of
-        Origin.t * Ident.t * Desc.Module_type.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Module_type.t * source * Desc.visibility
     | Module of
-        Origin.t * Ident.t * Desc.Module.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Module.t * source * Desc.visibility 
     | Declare_type of Origin.t * Ident.t
     | Declare_class_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
@@ -1239,9 +1251,9 @@ end = struct
           let diff = item :: diff in
           let acc = { acc with module_types; module_type_names } in
           loop acc diff declarations rest
-      | Component.Module(origin,id, desc, source, dpr) :: rest ->
+      | Component.Module(origin,id, desc, source, visibility) :: rest ->
           let prev = previous_module acc id in
-          let md = Module.base origin id (Some desc) dpr in
+          let md = Module.base origin id (Some desc) visibility in
           let modules = Ident_map.add id md acc.modules in
           let module_names = add_name source id acc.module_names in
           let item = Diff.Item.Module(id, md, prev) in

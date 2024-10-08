@@ -280,7 +280,7 @@ let register_pers_for_short_paths penv modname ps components =
   in
   let modname_as_string = Compilation_unit.Name.to_string modname  in
   Short_paths.Basis.load (short_paths_basis penv) modname_as_string
-    deps alias_deps desc deprecated
+    deps alias_deps desc ps.ps_import.imp_visibility deprecated
 (* Reading persistent structures from .cmi files *)
 
 let save_import penv crc modname impl flags filename =
