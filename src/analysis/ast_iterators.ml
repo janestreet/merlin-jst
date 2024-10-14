@@ -131,7 +131,7 @@ let iter_on_defs ~uid_to_locs_tbl =
       (fun sub ({ exp_extra; _ } as expr) ->
         List.iter exp_extra ~f:(fun (exp_extra, _loc, _attr) ->
             match exp_extra with
-            | Texp_newtype' (typ_id, typ_name, _, uid) ->
+            | Texp_newtype (typ_id, typ_name, _, uid) ->
               log "Found newtype %s wit id %a (%a)\n%!" typ_name.txt Logger.fmt
                 (Fun.flip Ident.print_with_scope typ_id) Logger.fmt (fun fmt ->
                   Location.print_loc fmt typ_name.loc);

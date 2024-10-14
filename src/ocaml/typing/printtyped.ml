@@ -176,17 +176,6 @@ let typevar_jkind ~print_quote ppf (v, l) =
         pptv v
         Pprintast.jkind jkind.txt
 
-(* merlin-jst: a copy of the above for [Texp_newtype'], which has an id rather than a
-   string. *)
-let typevar_layout' ppf (v, l) =
-  let pptv = fmt_ident in
-  match l with
-  | None -> fprintf ppf " %a" pptv v
-  | Some (_, jkind) ->
-      fprintf ppf " (%a : %a)"
-        pptv v
-        Pprintast.jkind jkind.txt
-
 let tuple_component_label i ppf = function
   | None -> line i ppf "Label: None\n"
   | Some s -> line i ppf "Label: Some \"%s\"\n" s

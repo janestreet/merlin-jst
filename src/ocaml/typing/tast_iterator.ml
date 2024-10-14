@@ -289,7 +289,6 @@ let extra sub = function
       Option.iter (sub.typ sub) cty1;
       sub.typ sub cty2
   | Texp_newtype _ -> ()
-  | Texp_newtype' _ -> ()
   | Texp_poly cto -> Option.iter (sub.typ sub) cto
   | Texp_stack -> ()
 

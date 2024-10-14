@@ -2308,11 +2308,11 @@ let constrain_type_jkind ~fixed env ty jkind =
                   product, we many need to expand many types shallowly, and
                   that's fine. *)
                let results =
-                 Misc.Stdlib.List.map3
+                 Misc_stdlib.List.map3
                    (fun (_, ty) -> loop ~fuel ~expanded:false ty)
                    ltys ty's_jkinds jkinds
                in
-               Misc.Stdlib.Monad.Result.all_unit results
+               Misc_stdlib.Monad.Result.all_unit results
              in
              begin match Jkind.decompose_product ty's_jkind,
                          Jkind.decompose_product jkind with

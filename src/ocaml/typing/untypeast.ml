@@ -460,12 +460,6 @@ let exp_extra sub (extra, loc, attrs) sexp =
           (Lexp_newtype(label_loc, jkind, sexp))
         |> add_jane_syntax_attributes
     | Texp_stack -> Pexp_stack sexp
-    | Texp_newtype' (_id, label_loc, None, _) ->
-        Pexp_newtype (label_loc, sexp)
-    | Texp_newtype' (_id, label_loc, Some (_, jkind), _) ->
-        Jane_syntax.Layouts.expr_of ~loc
-          (Lexp_newtype(label_loc, jkind, sexp))
-        |> add_jane_syntax_attributes
   in
   Exp.mk ~loc ~attrs:!attrs desc
 
@@ -569,7 +563,7 @@ let expression sub exp =
                     Pconstraint (sub.typ sub ty),
                     Typemode.untransl_mode_annots ~loc modes
                   )
-                | Some (Texp_poly _ | Texp_newtype _ | Texp_newtype' _)
+                | Some (Texp_poly _ | Texp_newtype _)
                 | Some (Texp_constraint (None, _))
                 | Some Texp_stack
                 | None -> None

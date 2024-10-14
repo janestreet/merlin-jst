@@ -1035,7 +1035,7 @@ and apply_modalities_module_type env modalities = function
   | Mty_signature sg ->
       let sg = apply_modalities_signature ~recursive:true env modalities sg in
       Mty_signature sg
-  | (Mty_functor _ | Mty_alias _) as mty -> mty
+  | (Mty_functor _ | Mty_alias _ | Mty_for_hole) as mty -> mty
 
 (* Auxiliary for translating recursively-defined module types.
    Return a module type that approximates the shape of the given module

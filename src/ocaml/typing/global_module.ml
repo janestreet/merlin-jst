@@ -44,7 +44,7 @@ let check_uniqueness_of_merged (type n v)
   let open Argument in
   let exception Found_duplicate of (n, v) duplicate in
   match
-    Misc.Stdlib.List.merge_iter l1 l2
+    Misc_stdlib.List.merge_iter l1 l2
       ~cmp:(fun arg1 arg2 -> cmp arg1.param arg2.param)
       ~left_only:ignore
       ~right_only:ignore
@@ -126,7 +126,7 @@ end = struct
 
   let unsafe_create_unchecked head args = { head; args }
 
-  let to_string = print |> Misc.to_string_of_print
+  let to_string = print |> Misc_stdlib.to_string_of_print
 end
 
 let compare_arg_name arg1 arg2 =
@@ -244,7 +244,7 @@ end
 
 include T0
 
-let to_string = print |> Misc.to_string_of_print
+let to_string = print |> Misc_stdlib.to_string_of_print
 
 let all_args t = t.visible_args @ t.hidden_args
 

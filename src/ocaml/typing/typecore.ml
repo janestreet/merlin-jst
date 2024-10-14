@@ -7075,7 +7075,7 @@ and type_function_
                     ret_sort;
                     alloc_mode =
                       { mode = alloc_mode;
-                        closure_context = expected_mode.closure_context
+                        locality_context = expected_mode.locality_context
                       };
                     zero_alloc=Zero_alloc.default
                   });
@@ -7258,7 +7258,7 @@ and type_function_
                   { params; body; ret_mode; ret_sort;
                     alloc_mode = {
                       mode = Alloc.disallow_left alloc_mode;
-                      closure_context = expected_mode.closure_context
+                      locality_context = expected_mode.locality_context
                     };
                     zero_alloc=Zero_alloc.default });
               exp_loc = loc;
@@ -7301,7 +7301,7 @@ and type_function_
               fp_param;
               fp_partial = partial;
               fp_newtypes =
-                List.map (fun (id, t, loc, uid) -> Newtype' (id, t, loc, uid)) newtypes;
+                List.map (fun (id, t, loc, uid) -> (id, t, loc, uid)) newtypes;
               fp_sort = arg_sort;
               fp_mode = Alloc.disallow_right arg_mode;
               fp_curry = curry;
@@ -8902,7 +8902,7 @@ and type_function_cases_expect
                   ret_sort;
                   alloc_mode = {
                     mode = Alloc.disallow_left alloc_mode;
-                    closure_context = expected_mode.closure_context
+                    locality_context = expected_mode.locality_context
                   };
                   zero_alloc = Zero_alloc.default;
                 };

@@ -1046,7 +1046,8 @@ let find_name_module ~mark name tbl =
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
 let short_paths_components name pm =
-  let name_as_string = Compilation_unit.Name.to_string name in
+  (* CR parameterized modules: this will probably break with parameterized modules *)
+  let name_as_string = Global_module.Name.to_string name in
   let path = Pident (Ident.create_persistent name_as_string) in
   lazy (!short_paths_module_components_desc' empty path pm.mda_components)
 

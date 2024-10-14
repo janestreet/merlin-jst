@@ -194,9 +194,10 @@ let array_type_kind ~elt_sort env loc ty =
       | Unboxed_float f -> Punboxedfloatarray f
       | Unboxed_int i -> Punboxedintarray i
       | Unboxed_vector v -> Punboxedvectorarray v
-      | Product cs ->
-        let kind = Jkind.Sort.Const.Product cs in
-        raise (Error (loc, Unsupported_product_in_array kind))
+      | Product _cs ->
+        (* let kind = Jkind.Sort.Const.Product cs in
+        raise (Error (loc, Unsupported_product_in_array kind)) *)
+        Misc.fatal_error "merlin-jst: product kind encountered in array_type_kind"
       end
   | Tconstr(p, [], _) when Path.same p Predef.path_floatarray ->
       Pfloatarray
@@ -204,10 +205,12 @@ let array_type_kind ~elt_sort env loc ty =
       (* This can happen with e.g. Obj.field *)
       Pgenarray
 
+(*
 let array_type_mut env ty =
   match scrape_poly env ty with
   | Tconstr(p, [_], _) when Path.same p Predef.path_iarray -> Immutable
   | _ -> Mutable
+*)
 
 let array_kind exp elt_sort =
   array_type_kind
@@ -827,9 +830,10 @@ let lazy_val_requires_forward env (* loc *) ty =
     Misc.fatal_error "Unboxed value encountered inside lazy expression"
   | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false
-  | Product cs ->
-    let kind = Jkind.Sort.Const.Product cs in
-    raise (Error (loc, Unsupported_product_in_lazy kind))
+  | Product _cs ->
+    (* let kind = Jkind.Sort.Const.Product cs in
+    raise (Error (loc, Unsupported_product_in_lazy kind)) *)
+    Misc.fatal_error "merlin-jst: product kind encountered in lazy_val_requires_forward"
 
 (** The compilation of the expression [lazy e] depends on the form of e:
     constants, floats and identifiers are optimized.  The optimization must be

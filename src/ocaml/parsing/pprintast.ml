@@ -437,19 +437,19 @@ and jkind ?(nested = false) ctxt f k = match (k : Jane_syntax.Jkind.t) with
     begin match modes with
     | [] -> Misc.fatal_error "malformed jkind annotation"
     | _ :: _ ->
-      Misc.pp_parens_if nested (fun f (t, modes) ->
+      Misc_stdlib.pp_parens_if nested (fun f (t, modes) ->
         pp f "%a mod %a"
           (jkind ~nested:true ctxt) t
           (pp_print_list ~pp_sep:pp_print_space mode) modes
       ) f (t, modes)
     end
   | With (t, ty) ->
-    Misc.pp_parens_if nested (fun f (t, ty) ->
+    Misc_stdlib.pp_parens_if nested (fun f (t, ty) ->
       pp f "%a with %a" (jkind ~nested:true ctxt) t (core_type ctxt) ty
     ) f (t, ty)
   | Kind_of ty -> pp f "kind_of_ %a" (core_type ctxt) ty
   | Product ts ->
-    Misc.pp_parens_if nested (fun f ts ->
+    Misc_stdlib.pp_parens_if nested (fun f ts ->
       pp f "%a" (list (jkind ~nested:true ctxt) ~sep:"@;&@;") ts
     ) f ts
 
