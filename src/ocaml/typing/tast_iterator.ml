@@ -296,7 +296,13 @@ let extra sub = function
 let function_param sub { fp_loc; fp_kind; fp_newtypes; _ } =
   sub.location sub fp_loc;
   List.iter
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
     (function Newtype (var, annot) | Newtype' (_, var, annot, _) ->
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+    (fun (var, annot) ->
+=======
+    (fun (_, var, annot, _) ->
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
        iter_loc sub var;
        Option.iter (sub.jkind_annotation sub) annot)
     fp_newtypes;

@@ -73,7 +73,7 @@ type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
 type alloc_mode = {
   mode : Mode.Alloc.r;
-  closure_context : Env.closure_context option;
+  locality_context : Env.locality_context option;
 }
 
 type texp_field_boxing =
@@ -228,8 +228,13 @@ and exp_extra =
          *)
   | Texp_poly of core_type option
         (** Used for method bodies. *)
-  | Texp_newtype of string * Jkind.annotation option
-        (** fun (type t : immediate) ->  *)
+  | Texp_newtype of Ident.t * string loc * Jkind.annotation option * Uid.t
+        (** fun (type t : immediate) ->
+
+        The [Ident.t] and [Uid.t] fields are unused by the compiler, but Merlin needs
+        them. Merlin cannot be cleanly patched to include these fields because Merlin
+        must be able to deserialize typedtrees produced by the compiler. Thus, we include
+        them here, as the cost of tracking this additional information is minimal. *)
   | Texp_stack
       (** stack_ E *)
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
@@ -461,11 +466,22 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.l;
     fp_curry: function_curry;
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
     fp_newtypes: fp_newtype list;
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+    fp_newtypes: (string loc * Jkind.annotation option) list;
+=======
+    fp_newtypes: (Ident.t * string loc * Jkind.annotation option * Uid.t) list;
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
     (** [fp_newtypes] are the new type declarations that come *after* that
         parameter. The newtypes that come before the first parameter are
         placed as exp_extras on the Texp_function node. This is just used in
-        {!Untypeast}. *)
+        {!Untypeast}.
+
+        The [Ident.t] and [Uid.t] fields are unused by the compiler, but Merlin needs
+        them. Merlin cannot be cleanly patched to include these fields because Merlin
+        must be able to deserialize typedtrees produced by the compiler. Thus, we include
+        them here, as the cost of tracking this additional information is minimal. *)
     fp_loc: Location.t;
     (** [fp_loc] is the location of the entire value parameter, not including
         the [fp_newtypes].

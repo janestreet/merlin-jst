@@ -443,10 +443,18 @@ and expression_extra i ppf x attrs =
       line i ppf "Texp_poly\n";
       attributes i ppf attrs;
       option i core_type ppf cto;
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
   | Texp_newtype (s, lay) ->
       line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
   | Texp_newtype' (id, _, lay, _) ->
       line i ppf "Texp_newtype' %a\n" typevar_layout' (id, lay);
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+  | Texp_newtype (s, lay) ->
+      line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
+=======
+  | Texp_newtype (_, s, lay, _) ->
+      line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s.txt, lay);
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
       attributes i ppf attrs;
   | Texp_stack ->
       line i ppf "Texp_stack\n";
@@ -1209,12 +1217,10 @@ and label_x_apply_arg i ppf (l, e) =
   (match e with Omitted _ -> () | Arg (e, _) -> expression (i+1) ppf e)
 
 and labeled_expression i ppf (l, e) =
-  line i ppf "<tuple component>\n";
   tuple_component_label i ppf l;
   expression (i+1) ppf e;
 
 and labeled_sorted_expression i ppf (l, e, s) =
-  line i ppf "<tuple component>\n";
   tuple_component_label i ppf l;
   expression (i+1) ppf e;
   line i ppf "%a\n" Jkind.Sort.format s;

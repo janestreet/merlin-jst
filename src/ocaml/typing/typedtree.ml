@@ -56,7 +56,7 @@ type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
 type alloc_mode = {
   mode : Mode.Alloc.r;
-  closure_context : Env.closure_context option;
+  locality_context : Env.locality_context option;
 }
 
 type texp_field_boxing =
@@ -133,7 +133,7 @@ and exp_extra =
   | Texp_constraint of core_type option * Mode.Alloc.Const.Option.t
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
-  | Texp_newtype of string * Jkind.annotation option
+  | Texp_newtype of Ident.t * string loc * Jkind.annotation option * Uid.t
   | Texp_stack
   | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
 
@@ -283,7 +283,13 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.l;
     fp_curry: function_curry;
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
     fp_newtypes: fp_newtype list;
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+    fp_newtypes: (string loc * Jkind.annotation option) list;
+=======
+    fp_newtypes: (Ident.t * string loc * Jkind.annotation option * Uid.t) list;
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
     fp_loc: Location.t;
   }
 

@@ -33,11 +33,11 @@ type error =
       filepath * CU.t * CU.t
   | Direct_reference_from_wrong_package of
       CU.t * filepath * CU.Prefix.t
-  | Illegal_import_of_parameter of CU.Name.t * filepath
-  | Not_compiled_as_parameter of CU.Name.t * filepath
+  | Illegal_import_of_parameter of Global_module.Name.t * filepath
+  | Not_compiled_as_parameter of Global_module.Name.t * filepath
   | Imported_module_has_unset_parameter of
-      { imported : CU.Name.t;
-        parameter : CU.Name.t;
+      { imported : Global_module.Name.t;
+        parameter : Global_module.Name.t;
       }
 
 exception Error of error
@@ -69,8 +69,8 @@ type can_load_cmis =
 (* Data relating directly to a .cmi *)
 type import = {
   imp_is_param : bool;
-  imp_params : Compilation_unit.Name.t list;
-  imp_arg_for : Compilation_unit.Name.t option;
+  imp_params : Global_module.Name.t list;
+  imp_arg_for : Global_module.Name.t option;
   imp_impl : CU.t option; (* None iff import is a parameter *)
   imp_sign : Subst.Lazy.signature;
   imp_filename : string;
@@ -98,13 +98,13 @@ type 'a pers_struct_info = {
   ps_val : 'a;
 }
 
-module Param_set = CU.Name.Set
+module Param_set = Global_module.Name.Set
 
 (* If you add something here, _do not forget_ to add it to [clear]! *)
 type 'a t = {
   imports : (CU.Name.t, import_info) Hashtbl.t;
   persistent_structures :
-    (CU.Name.t, 'a pers_struct_info) Hashtbl.t;
+    (Global_module.Name.t, 'a pers_struct_info) Hashtbl.t;
   imported_units: CU.Name.Set.t ref;
   imported_opaque_units: CU.Name.Set.t ref;
   param_imports : Param_set.t ref;
@@ -173,16 +173,21 @@ let find_info_in_cache {persistent_structures; _} name =
 let find_in_cache penv name =
   find_info_in_cache penv name |> Option.map (fun ps -> ps.ps_val)
 
-let register_parameter ({param_imports; _} as penv) import =
+let register_parameter ({param_imports; _} as penv) modname =
+  let import =
+    (* Note that parameters cannot themselves be parameterised. (This may be lifted in the
+       future, but dependent types are hard.) *)
+    CU.Name.of_global_name_no_args_exn modname
+  in
   begin match find_import_info_in_cache penv import with
   | None ->
       (* Not loaded yet; if it's wrong, we'll get an error at load time *)
       ()
   | Some imp ->
       if not imp.imp_is_param then
-        raise (Error (Not_compiled_as_parameter(import, imp.imp_filename)))
+        raise (Error (Not_compiled_as_parameter(modname, imp.imp_filename)))
   end;
-  param_imports := Param_set.add import !param_imports
+  param_imports := Param_set.add modname !param_imports
 
 let import_crcs penv ~source crcs =
   let {crc_units; _} = penv in
@@ -216,7 +221,8 @@ let check_consistency penv imp =
 let is_registered_parameter_import {param_imports; _} import =
   Param_set.mem import !param_imports
 
-let is_parameter_import t import =
+let is_parameter_import t modname =
+  let import = CU.Name.of_head_of_global_name modname in
   match find_import_info_in_cache t import with
   | Some { imp_is_param; _ } -> imp_is_param
   | None -> Misc.fatal_errorf "is_parameter_import %a" CU.Name.print import
@@ -401,7 +407,7 @@ let make_binding _penv modname (import : import) : binding =
   match import with
   | { imp_impl = Some unit; imp_params = [] } -> Constant unit
   | { imp_impl = None } | { imp_params = _ :: _ } ->
-      Runtime_parameter (Ident.create_local_binding_for_global (CU.Name.to_string modname))
+      Runtime_parameter (Ident.create_local_binding_for_global modname)
 
 type address =
   | Aunit of Compilation_unit.t
@@ -410,7 +416,7 @@ type address =
 
 type 'a sig_reader =
   Subst.Lazy.signature
-  -> Compilation_unit.Name.t
+  -> Global_module.Name.t
   -> Shape.Uid.t
   -> shape:Shape.t
   -> address:address
@@ -420,7 +426,16 @@ type 'a sig_reader =
 (* Add a persistent structure to the hash table and bind it in the [Env].
    Checks that OCaml source is allowed to refer to this module. *)
 
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
 let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig =
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+let acknowledge_pers_struct penv modname import val_of_pers_sig =
+=======
+let acknowledge_pers_struct penv modname import val_of_pers_sig =
+  if modname.Global_module.Name.args <> [] then
+    Misc.fatal_errorf "TODO: Unsupported instance name: %a"
+      Global_module.Name.print modname;
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   let {persistent_structures; _} = penv in
   let is_param = import.imp_is_param in
   let sign = import.imp_sign in
@@ -470,8 +485,17 @@ let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
   register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
   ps
 
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
 let read_pers_struct penv val_of_pers_sig short_path_comps check modname cmi ~add_binding =
   let import = read_import penv ~check modname cmi in
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+let read_pers_struct penv val_of_pers_sig check modname cmi ~add_binding =
+  let import = read_import penv ~check modname cmi in
+=======
+let read_pers_struct penv val_of_pers_sig check modname cmi ~add_binding =
+  let unit_name = CU.Name.of_head_of_global_name modname in
+  let import = read_import penv ~check unit_name cmi in
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   if add_binding then
     ignore
       (acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
@@ -483,8 +507,17 @@ let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check n
   match Hashtbl.find persistent_structures name with
   | ps -> check_visibility ~allow_hidden ps.ps_import; ps
   | exception Not_found ->
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
       let import = find_import ~allow_hidden penv ~check name in
       acknowledge_pers_struct penv short_path_comps name import val_of_pers_sig
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+      let import = find_import ~allow_hidden penv ~check name in
+      acknowledge_pers_struct penv name import val_of_pers_sig
+=======
+      let unit_name = CU.Name.of_head_of_global_name name in
+      let import = find_import ~allow_hidden penv ~check unit_name in
+      acknowledge_pers_struct penv name import val_of_pers_sig
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 
 let describe_prefix ppf prefix =
   if CU.Prefix.is_empty prefix then
@@ -494,8 +527,16 @@ let describe_prefix ppf prefix =
 
 module Style = Misc.Style
 (* Emits a warning if there is no valid cmi for name *)
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
 let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
   let name_as_string = CU.Name.to_string name in
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+let check_pers_struct ~allow_hidden penv f ~loc name =
+  let name_as_string = CU.Name.to_string name in
+=======
+let check_pers_struct ~allow_hidden penv f ~loc name =
+  let name_as_string = CU.Name.to_string (CU.Name.of_head_of_global_name name) in
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   try
     ignore (find_pers_struct ~allow_hidden penv f1 f2 false name)
   with
@@ -545,7 +586,7 @@ let check ~allow_hidden penv f1 f2 ~loc name =
     (* PR#6843: record the weak dependency ([add_import]) regardless of
        whether the check succeeds, to help make builds more
        deterministic. *)
-    add_import penv name;
+    add_import penv (name |> CU.Name.of_head_of_global_name);
     if (Warnings.is_active (Warnings.No_cmi_file("", None))) then
       !add_delayed_check_forward
         (fun () -> check_pers_struct ~allow_hidden penv f1 f2 ~loc name)
@@ -597,7 +638,9 @@ let is_imported_opaque {imported_opaque_units; _} s =
   CU.Name.Set.mem s !imported_opaque_units
 
 let implemented_parameter penv modname =
-  match find_import_info_in_cache penv modname with
+  match
+    find_import_info_in_cache penv (CU.Name.of_head_of_global_name modname)
+  with
   | Some { imp_arg_for; _ } -> imp_arg_for
   | None -> None
 
@@ -683,13 +726,13 @@ let report_error ppf =
         "@[<hov>The file %a@ contains the interface of a parameter.@ \
          %a is not declared as a parameter for the current unit (-parameter %a).@]"
         (Style.as_inline_code Location.print_filename) filename
-        (Style.as_inline_code CU.Name.print) modname
-        (Style.as_inline_code CU.Name.print) modname
+        (Style.as_inline_code Global_module.Name.print) modname
+        (Style.as_inline_code Global_module.Name.print) modname
   | Not_compiled_as_parameter(modname, filename) ->
       fprintf ppf
         "@[<hov>The module %a@ is specified as a parameter, but %a@ \
          was not compiled with -as-parameter.@]"
-        (Style.as_inline_code CU.Name.print) modname
+        (Style.as_inline_code Global_module.Name.print) modname
         (Style.as_inline_code Location.print_filename) filename
   | Direct_reference_from_wrong_package(unit, filename, prefix) ->
       fprintf ppf
@@ -706,10 +749,10 @@ let report_error ppf =
          @[<hov>@{<hint>Hint@}: \
            @[<hov>Pass `-parameter %a`@ to add %a@ as a parameter@ \
            of the current unit.@]@]"
-        (Style.as_inline_code CU.Name.print) modname
-        (Style.as_inline_code CU.Name.print) param
-        (Style.as_inline_code CU.Name.print) param
-        (Style.as_inline_code CU.Name.print) param
+        (Style.as_inline_code Global_module.Name.print) modname
+        (Style.as_inline_code Global_module.Name.print) param
+        (Style.as_inline_code Global_module.Name.print) param
+        (Style.as_inline_code Global_module.Name.print) param
 
 let () =
   Location.register_error_of_exn

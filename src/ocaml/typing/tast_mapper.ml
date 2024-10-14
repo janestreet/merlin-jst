@@ -349,6 +349,20 @@ let function_param sub
   in
   let fp_newtypes =
     List.map
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
+||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
+      (fun (var, annot) ->
+         map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
+      fp_newtypes
+  in
+  { fp_kind;
+=======
+      (fun (id, var, annot, uid) ->
+         id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot, uid)
+      fp_newtypes
+  in
+  { fp_kind;
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
       (function
         | Newtype (var, annot) ->
             Newtype
