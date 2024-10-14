@@ -397,7 +397,10 @@ module Gen = struct
             List.map args_combinations ~f:(function
               | [] -> None
               | [ e ] -> Some e
-              | l -> Some (Ast_helper.Exp.tuple (List.map l ~f:(fun exp -> (None, exp)))))
+              | l ->
+                Some
+                  (Ast_helper.Exp.tuple
+                     (List.map l ~f:(fun exp -> (None, exp)))))
           in
           Btype.backtrack snap;
           List.filter_map exps ~f:(fun exp ->
@@ -536,8 +539,7 @@ module Gen = struct
             |> Util.combinations
           in
           List.map choices ~f:(fun choice ->
-              Ast_helper.Exp.tuple choice
-                ~loc:!Ast_helper.default_loc)
+              Ast_helper.Exp.tuple choice ~loc:!Ast_helper.default_loc)
         | Tunboxed_tuple types ->
           let choices =
             List.map types ~f:(fun (lbl, ty) ->

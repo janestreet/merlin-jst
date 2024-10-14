@@ -828,7 +828,8 @@ let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
        need to be retrieved here. *)
     | Texp_function { params; _ } ->
       List.concat_map params ~f:(fun { fp_newtypes; _ } ->
-          List.concat_map fp_newtypes ~f:(fun (id, (label_loc : _ Location.loc), _, _) ->
+          List.concat_map fp_newtypes
+            ~f:(fun (id, (label_loc : _ Location.loc), _, _) ->
               let path = Path.Pident id in
               let lid = Longident.Lident label_loc.txt in
               [ (mkloc path label_loc.loc, Some lid) ]))
