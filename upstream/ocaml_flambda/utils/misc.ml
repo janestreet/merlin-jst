@@ -140,6 +140,23 @@ module Stdlib = struct
       in
       aux [] l1 l2
 
+    let map3 f =
+      let rec loop acc as_ bs cs = match as_, bs, cs with
+        | [], [], [] -> List.rev acc
+        | a :: as_, b :: bs, c :: cs -> loop (f a b c :: acc) as_ bs cs
+        | _ -> invalid_arg "map3"
+      in
+      loop []
+
+    let concat_map2 f l1 l2 =
+      let rec aux f acc = function
+        | [], [] -> rev acc
+        | (a1 :: l1, a2 :: l2) ->
+          let xs = f a1 a2 in
+          aux f (rev_append xs acc) (l1, l2)
+        | (_, _) -> invalid_arg "List.concat_map2"
+      in aux f [] (l1, l2)
+
     let rec iteri2 i f l1 l2 =
       match (l1, l2) with
         ([], []) -> ()
@@ -242,6 +259,27 @@ module Stdlib = struct
         match f x with
         | Ok () -> iter_until_error ~f xs
         | Error _ as e -> e
+
+    let [@inline] merge_fold ~cmp ~left_only ~right_only ~both ~init t1 t2 =
+      let rec loop acc t1 t2 =
+        match t1, t2 with
+        | [], [] -> acc
+        | a :: t1', [] -> loop (left_only acc a) t1' []
+        | [], b :: t2' -> loop (right_only acc b) [] t2'
+        | a :: t1', b :: t2' ->
+            match cmp a b with
+            | 0 -> loop (both acc a b) t1' t2'
+            | c when c < 0 -> loop (left_only acc a) t1' t2
+            | _ -> loop (right_only acc b) t1 t2'
+      in
+      loop init t1 t2
+
+    let [@inline] merge_iter ~cmp ~left_only ~right_only ~both t1 t2 =
+      merge_fold t1 t2 ~cmp
+        ~init:()
+        ~left_only:(fun () a -> left_only a)
+        ~right_only:(fun () b -> right_only b)
+        ~both:(fun () a b -> both a b)
   end
 
   module Option = struct
@@ -444,6 +482,59 @@ module Stdlib = struct
   end
 
   external compare : 'a -> 'a -> int = "%compare"
+
+  module Monad = struct
+    module type Basic2 = sig
+      (** Multi parameter monad. The second parameter gets unified across all the computation.
+          This is used to encode monads working on a multi parameter data structure like
+          ([('a,'b) result]). *)
+
+      type ('a, 'e) t
+
+      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+
+      val return : 'a -> ('a, _) t
+    end
+
+    module type S2 = sig
+      type ('a, 'e) t
+
+      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+      val return : 'a -> ('a, _) t
+      val map : ('a -> 'b) -> ('a, 'e) t -> ('b, 'e) t
+      val join : (('a, 'e) t, 'e) t -> ('a, 'e) t
+      val ignore_m : (_, 'e) t -> (unit, 'e) t
+      val all : ('a, 'e) t list -> ('a list, 'e) t
+      val all_unit : (unit, 'e) t list -> (unit, 'e) t
+    end
+
+    module Make2 (X : Basic2) = struct
+      include X
+
+      let map f m =
+        bind m (fun a -> return (f a))
+
+      let join m = bind m Fun.id
+
+      let ignore_m m = bind m (fun _ -> return ())
+
+      let all ms =
+        let rec loop acc = function
+          | [] -> return (List.rev acc)
+          | m :: ms -> bind m (fun a -> loop (a :: acc) ms)
+        in
+        loop [] ms
+
+      let rec all_unit = function
+        | [] -> return ()
+        | m :: ms -> bind m (fun _ -> all_unit ms)
+    end
+
+    module Result = Make2(struct
+        include Result
+        let return = ok
+      end)
+  end
 end
 
 module Int = Stdlib.Int
@@ -1176,6 +1267,9 @@ let print_see_manual ppf manual_section =
 let output_of_print print =
   let output out_channel t =
     let ppf = Format.formatter_of_out_channel out_channel in
+    (* Effectively disable automatic wrapping because [Printf]-based code
+       doesn't expect it *)
+    Format.pp_set_margin ppf Int.max_int;
     print ppf t;
     (* Must flush the formatter immediately because it has a buffer separate
        from the output channel's buffer *)
@@ -1205,6 +1299,19 @@ let is_print_longer_than size p =
   let ppf = Format.formatter_of_out_functions out_functions in
   try p ppf; false
   with Limit_exceeded -> true
+
+let to_string_of_print print =
+  let to_string t =
+    (* Implemented similarly to [Format.asprintf] *)
+    let buf = Buffer.create 32 in
+    let ppf = Format.formatter_of_buffer buf in
+    Format.pp_set_margin ppf Int.max_int;
+    print ppf t;
+    Format.pp_print_flush ppf ();
+    Buffer.contents buf
+  in
+  to_string
+
 
 type filepath = string
 

@@ -301,18 +301,22 @@ module TycompTbl =
 
 type empty = |
 
-type closure_context =
+type locality_context =
   | Tailcall_function
   | Tailcall_argument
   | Partial_application
   | Return
+  | Lazy
+
+type closure_context =
+  | Function of locality_context option
+  | Lazy
 
 type escaping_context =
   | Letop
   | Probe
   | Class
   | Module
-  | Lazy
 
 type shared_context =
   | For_loop
@@ -323,12 +327,11 @@ type shared_context =
   | Class
   | Module
   | Probe
-  | Lazy
 
 type lock =
   | Escape_lock of escaping_context
   | Share_lock of shared_context
-  | Closure_lock of closure_context option * Mode.Value.Comonadic.r
+  | Closure_lock of closure_context * Mode.Value.Comonadic.r
   | Region_lock
   | Exclave_lock
   | Unboxed_lock (* to prevent capture of terms with non-value types *)
@@ -756,7 +759,7 @@ type lookup_error =
   | Local_value_escaping of lock_item * Longident.t * escaping_context
   | Once_value_used_in of lock_item * Longident.t * shared_context
   | Value_used_in_closure of lock_item * Longident.t *
-      Mode.Value.Comonadic.error * closure_context option
+      Mode.Value.Comonadic.error * closure_context
   | Local_value_used_in_exclave of lock_item * Longident.t
   | Non_value_used_in_object of Longident.t * type_expr * Jkind.Violation.t
 
@@ -1025,7 +1028,7 @@ let components_of_module ~alerts ~uid env ps path addr mty shape =
   }
 
 let read_sign_of_cmi sign name uid ~shape ~address:addr ~flags =
-  let id = Ident.create_persistent (Compilation_unit.Name.to_string name) in
+  let id = Ident.create_global name in
   let path = Pident id in
   let alerts =
     List.fold_left (fun acc -> function Alerts s -> s | _ -> acc)
@@ -1162,15 +1165,16 @@ let check_functor_appl
       ~arg_path ~arg_mty ~arg_mode ~param_mty
       env
 
-let modname_of_ident id = Ident.name id |> Compilation_unit.Name.of_string
-
 (* Lookup by identifier *)
 
 let find_ident_module id env =
   match find_same_module id env.modules with
   | Mod_local data -> data
   | Mod_unbound _ -> raise Not_found
-  | Mod_persistent -> find_pers_mod ~allow_hidden:true (id |> modname_of_ident)
+  | Mod_persistent ->
+      match Ident.to_global id with
+      | Some global_name -> find_pers_mod ~allow_hidden:true global_name
+      | None -> Misc.fatal_errorf "Not global: %a" Ident.print id
 
 let rec find_module_components path env =
   match path with
@@ -1620,6 +1624,9 @@ let make_copy_of_types env0 =
 type iter_cont = unit -> unit
 let iter_env_cont = ref []
 
+let global_ident_is_looked_up id =
+  Persistent_env.looked_up !persistent_env (Ident.to_global_exn id)
+
 let rec scrape_alias_for_visit env mty =
   let open Subst.Lazy in
   match mty with
@@ -1627,7 +1634,7 @@ let rec scrape_alias_for_visit env mty =
       match path with
       | Pident id
         when Ident.is_global id
-          && not (Persistent_env.looked_up !persistent_env (id |> modname_of_ident)) ->
+          && not (global_ident_is_looked_up id) ->
           false
       | path -> (* PR#6600: find_module may raise Not_found *)
           try
@@ -1669,7 +1676,7 @@ let iter_env wrap proj1 proj2 f env () =
        | Mod_persistent -> ())
     env.modules;
   Persistent_env.fold !persistent_env (fun name data () ->
-    let id = Ident.create_persistent (Compilation_unit.Name.to_string name) in
+    let id = Ident.create_global name in
     let path = Pident id in
     iter_components path path data.mda_components) ()
 
@@ -1689,7 +1696,10 @@ let same_types env1 env2 =
 
 let used_persistent () =
   Persistent_env.fold !persistent_env
-    (fun s _m r -> Compilation_unit.Name.Set.add s r)
+    (fun s _m r ->
+       Compilation_unit.Name.Set.add
+         (s |> Compilation_unit.Name.of_head_of_global_name)
+         r)
     Compilation_unit.Name.Set.empty
 
 let find_all_comps wrap proj s (p, mda) =
@@ -2455,7 +2465,7 @@ let add_share_lock shared_context env =
   let lock = Share_lock shared_context in
   add_lock lock env
 
-let add_closure_lock ?closure_context comonadic env =
+let add_closure_lock closure_context comonadic env =
   let lock = Closure_lock
     (closure_context,
      Mode.Value.Comonadic.disallow_left comonadic)
@@ -2795,7 +2805,7 @@ let add_language_extension_types env =
   in
   lazy
     Language_extension.(env
-    |> add SIMD () Predef.add_simd_extension_types
+    |> add SIMD Stable Predef.add_simd_stable_extension_types
     |> add Small_numbers Stable Predef.add_small_number_extension_types
     |> add Layouts Alpha Predef.add_or_null)
 
@@ -3010,7 +3020,8 @@ let lookup_ident_module (type a) (load : a load) ~errors ~use ~loc s env =
   | Mod_unbound reason ->
       report_module_unbound ~errors ~loc env reason
   | Mod_persistent -> begin
-      let name = s |> Compilation_unit.Name.of_string in
+      (* Currently there are never instance arguments *)
+      let name = Global_module.Name.create_no_args s in
       match load with
       | Don't_load ->
           check_pers_mod ~allow_hidden:false ~loc name;
@@ -3055,14 +3066,14 @@ let share_mode ~errors ~env ~loc ~item ~lid vmode shared_context =
     {mode; context = Some shared_context}
 
 let closure_mode ~errors ~env ~loc ~item ~lid
-  ({mode = {Mode.monadic; comonadic}; _} as vmode) closure_context comonadic0 =
+  ({mode = {Mode.monadic; comonadic}; _} as vmode) locality_context comonadic0 =
   begin
     match
       Mode.Value.Comonadic.submode comonadic comonadic0
     with
     | Error e ->
         may_lookup_error errors loc env
-          (Value_used_in_closure (item, lid, e, closure_context))
+          (Value_used_in_closure (item, lid, e, locality_context))
     | Ok () -> ()
   end;
   let monadic =
@@ -3121,8 +3132,8 @@ let walk_locks ~errors ~loc ~env ~item ~lid mode ty locks =
           escape_mode ~errors ~env ~loc ~item ~lid vmode escaping_context
       | Share_lock shared_context ->
           share_mode ~errors ~env ~loc ~item ~lid vmode shared_context
-      | Closure_lock (closure_context, comonadic) ->
-          closure_mode ~errors ~env ~loc ~item ~lid vmode closure_context comonadic
+      | Closure_lock (locality_context, comonadic) ->
+          closure_mode ~errors ~env ~loc ~item ~lid vmode locality_context comonadic
       | Exclave_lock ->
           exclave_mode ~errors ~env ~loc ~item ~lid vmode
       | Unboxed_lock ->
@@ -3702,7 +3713,7 @@ let bound_module name env =
       else begin
         match
           find_pers_mod ~allow_hidden:false
-            (name |> Compilation_unit.Name.of_string)
+            (Global_module.Name.create_no_args name)
         with
         | _ -> true
         | exception Not_found -> false
@@ -3786,7 +3797,12 @@ let fold_modules f lid env acc =
                in
                f name p md acc
            | Mod_persistent ->
-               let modname = name |> Compilation_unit.Name.of_string in
+               (* CR lmaurer: Setting instance args to [] here isn't right. We
+                  really should have [IdTbl.fold_name] provide the whole ident
+                  rather than just the name. It looks like the only immediate
+                  consequence of this is that spellcheck won't suggest
+                  instance names (which is good!). *)
+               let modname = Global_module.Name.create_no_args name in
                match Persistent_env.find_in_cache !persistent_env modname with
                | None -> acc
                | Some mda ->
@@ -3853,7 +3869,9 @@ let filter_non_loaded_persistent f env =
          | Mod_local _ -> acc
          | Mod_unbound _ -> acc
          | Mod_persistent ->
-             let modname = name |> Compilation_unit.Name.of_string in
+             (* CR lmaurer: Again, setting args to [] here is weird but fine
+                for the moment *)
+             let modname = Global_module.Name.create_no_args name in
              match Persistent_env.find_in_cache !persistent_env modname with
              | Some _ -> acc
              | None ->
@@ -3989,7 +4007,6 @@ let string_of_escaping_context : escaping_context -> string =
   | Probe -> "a probe"
   | Class -> "a class"
   | Module -> "a module"
-  | Lazy -> "a lazy expression"
 
 let string_of_shared_context : shared_context -> string =
   function
@@ -4001,7 +4018,6 @@ let string_of_shared_context : shared_context -> string =
   | Class -> "a class"
   | Module -> "a module"
   | Probe -> "a probe"
-  | Lazy -> "a lazy expression"
 
 let sharedness_hint ppf : shared_context -> _ = function
   | For_loop ->
@@ -4037,10 +4053,6 @@ let sharedness_hint ppf : shared_context -> _ = function
     Format.fprintf ppf
         "@[Hint: This identifier cannot be used uniquely,@ \
           because it is defined outside of the probe.@]"
-  | Lazy ->
-    Format.fprintf ppf
-        "@[Hint: This identifier cannot be used uniquely,@ \
-          because it is defined outside of the lazy expression.@]"
 
 let print_lock_item ppf (item, lid) =
   match item with
@@ -4187,17 +4199,32 @@ let report_lookup_error _loc env ppf = function
         | Error (Linearity, _) -> "once", "is many"
         | Error (Portability, _) -> "nonportable", "is portable"
       in
+      let s, hint =
+        match context with
+        | Function context ->
+            let hint =
+              match error, context with
+              | Error (Areality, _), Some Tailcall_argument ->
+                  fun ppf ->
+                    fprintf ppf "@.@[Hint: The function might escape because it \
+                                is an argument to a tail call@]"
+              | _ -> fun _ppf -> ()
+            in
+            "function that " ^ e1, hint
+        | Lazy ->
+            let s =
+              match error with
+              | Error (Areality, _) -> "lazy expression"
+              | _ -> "lazy expression that " ^ e1
+            in
+            s, fun _ppf -> ()
+      in
       fprintf ppf
       "@[%a %s, so cannot be used \
-            inside a closure that %s.@]"
+            inside a %s.@]"
       print_lock_item (item, lid)
-      e0 e1;
-      begin match error, context with
-      | Error (Areality, _), Some Tailcall_argument ->
-         fprintf ppf "@.@[Hint: The closure might escape because it \
-                          is an argument to a tail call@]"
-      | _ -> ()
-      end
+      e0 s;
+      hint ppf
   | Local_value_used_in_exclave (item, lid) ->
       fprintf ppf "@[%a local, so it cannot be used \
                   inside an exclave_@]"
