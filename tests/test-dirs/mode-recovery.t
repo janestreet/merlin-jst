@@ -58,7 +58,7 @@ Error from a closure lock
 
 The error is reported
   $ $MERLIN single errors -filename closure1.ml < closure1.ml | jq .value[].message -r
-  The value count is local, so cannot be used inside a closure that might escape.
+  The value count is local, so cannot be used inside a function that might escape.
 
 We can locate the value that was used incorrectly
   $ $MERLIN single locate -position 8:37 -filename closure1.ml < closure1.ml | jq .value.pos -c
@@ -81,8 +81,8 @@ Error from closure lock
 
 The error is reported and foo still has mode nonportable
   $ $MERLIN single errors -filename closure2.ml < closure2.ml | jq .value[].message -r
-  The value foo is nonportable, so cannot be used inside a closure that is portable.
-  The value bar is nonportable, so cannot be used inside a closure that is portable.
+  The value foo is nonportable, so cannot be used inside a function that is portable.
+  The value bar is nonportable, so cannot be used inside a function that is portable.
 
 We can locate the values that were used incorrectly
   $ $MERLIN single locate -position 7:13 -filename closrue2.ml < closure2.ml | jq .value.pos -c
@@ -135,7 +135,7 @@ The error is reported
         "message": "x must have a type of layout value because it is captured by an object.
   The layout of 'a is bits32
     because of the definition of x at file \"unboxed.ml\", line 3, characters 10-14.
-  But the layout of 'a must be a sublayout of value
+  But the layout of 'a must overlap with value
     because it's the type of a variable captured in an object."
       }
     ],

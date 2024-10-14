@@ -72,7 +72,7 @@
             value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
-              Texp_newtype'  t/277
+              Texp_newtype  t
             Texp_function
             alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[aliased,contended .. unique,uncontended])
             [
