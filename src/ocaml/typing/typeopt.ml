@@ -12,24 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-      Jkind.Sort.t * Language_extension.maturity * type_expr option
-  | Non_value_sort_unknown_ty of Jkind.Sort.t
-  | Small_number_sort_without_extension of Jkind.Sort.t * type_expr option
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.Const.t
-  | Unsupported_product_in_structure of Jkind.Sort.Const.t
-=======
-      Jkind.Sort.t * Language_extension.maturity * type_expr option
-  | Non_value_sort_unknown_ty of Jkind.Sort.t
-  | Small_number_sort_without_extension of Jkind.Sort.t * type_expr option
-  | Simd_sort_without_extension of Jkind.Sort.t * type_expr option
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.Const.t
-  | Unsupported_product_in_lazy of Jkind.Sort.Const.t
-  | Unsupported_product_in_array of Jkind.Sort.Const.t
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 
 (* Auxiliaries for type-based optimizations, e.g. array kinds *)
 
@@ -189,29 +171,10 @@ let classify env ty sort : classification =
   | Base Bits64 -> Unboxed_int Pint64
   | Base Vec128 -> Unboxed_vector Pvec128
   | Base Word -> Unboxed_int Pnativeint
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product _ as c ->
-    raise (Error (loc, Unsupported_product_in_structure c))
-
-let array_type_kind ~elt_sort env loc ty =
-  match scrape_poly env ty with
-=======
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product c -> Product c
-
-let array_type_kind ~elt_sort env loc ty =
-  match scrape_poly env ty with
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   | Base Void (* as c *) ->
     (* raise (Error (loc, Unsupported_sort c)) *)
     Misc.fatal_error "merlin-jst: void encountered in classify"
-  | Product _ (* as c *) ->
-    (* raise (Error (loc, Unsupported_product_in_structure c)) *)
-    Misc.fatal_error "merlin-jst: product encountered in classify"
+  | Product c -> Product c
 
 let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
@@ -903,11 +866,16 @@ let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   | Unsupported_sort const ->
       fprintf ppf "Layout %a is not supported yet."
         Jkind.Sort.Const.format const
-  | Unsupported_product_in_structure const ->
+  | Unsupported_product_in_lazy const ->
       fprintf ppf
-        "Product layout %a detected in structure in [Typeopt.Layout] \
+        "Product layout %a detected in [lazy] in [Typeopt.Layout]@ \
          Please report this error to the Jane Street compilers team."
         Jkind.Sort.Const.format const
+  | Unsupported_product_in_array const ->
+    fprintf ppf
+      "Unboxed products are not yet supported with array primitives.@ \
+       Here, layout %a was used."
+      Jkind.Sort.Const.format const
 
 let rec layout_union l1 l2 =
   match l1, l2 with
@@ -928,73 +896,4 @@ let rec layout_union l1 l2 =
      Punboxed_vector _ | Punboxed_product _),
     _ ->
       Ptop
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
 *)
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-              Language_extension.(is_enabled Small_numbers) with
-        | false, true -> " layouts", "is", "this flag"
-        | true, false -> " small_numbers", "is", "this flag"
-        | false, false -> "s layouts and small numbers", "are", "these flags"
-        | true, true -> assert false
-      in
-      fprintf ppf
-=======
-              Language_extension.(is_enabled Small_numbers) with
-        | false, true -> " layouts", "is", "this flag"
-        | true, false -> " small_numbers", "is", "this flag"
-        | false, false -> "s layouts and small_numbers", "are", "these flags"
-        | true, true -> assert false
-      in
-      fprintf ppf
-        ",@ but this requires the extension%s, which %s not enabled.@ \
-         If you intended to use this layout, please add %s to your \
-         build file.@ \
-         Otherwise, please report this error to the Jane Street compilers team."
-        extension verb flags
-  | Simd_sort_without_extension (sort, ty) ->
-      fprintf ppf "Non-value layout %a detected" Jkind.Sort.format sort;
-      begin match ty with
-      | None -> ()
-      | Some ty -> fprintf ppf " as sort for type@ %a" Printtyp.type_expr ty
-      end;
-      let extension, verb, flags =
-        match Language_extension.(is_at_least Layouts Stable),
-              Language_extension.(is_at_least SIMD Stable) with
-        | false, true -> " layouts", "is", "this flag"
-        | true, false -> " simd", "is", "this flag"
-        | false, false -> "s layouts and simd", "are", "these flags"
-        | true, true -> assert false
-      in
-      fprintf ppf
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_structure const ->
-      fprintf ppf
-        "Product layout %a detected in structure in [Typeopt.Layout] \
-         Please report this error to the Jane Street compilers team."
-        Jkind.Sort.Const.format const
-
-let () =
-  Location.register_error_of_exn
-=======
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_lazy const ->
-      fprintf ppf
-        "Product layout %a detected in [lazy] in [Typeopt.Layout]@ \
-         Please report this error to the Jane Street compilers team."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_array const ->
-    fprintf ppf
-      "Unboxed products are not yet supported with array primitives.@ \
-       Here, layout %a was used."
-      Jkind.Sort.Const.format const
-
-let () =
-  Location.register_error_of_exn
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1

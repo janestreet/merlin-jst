@@ -2269,57 +2269,6 @@ let constrain_type_jkind ~fixed env ty jkind =
        the treatment above. *)
     | Tpoly (t, _) -> loop ~fuel ~expanded:false t ty's_jkind jkind
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-   Precondition: [jkind] is not [any]. This common case is short-circuited
-   before calling this function. (Though the current implementation is still
-   correct on [any].)
-*)
-let constrain_type_jkind ~fixed env ty jkind =
-  let ty_jkind, result = type_jkind_sub env ty jkind in
-  match result with
-  | Success -> Ok ()
-  | Type_vars tvs ->
-    let constrain_one_var { estimate; bound; ty } =
-      if fixed then Jkind.sub_or_error estimate bound else
-      let jkind_inter =
-        Jkind.intersection_or_error ~reason:Tyvar_refinement_intersection
-          estimate bound
-      in
-      Result.map (set_var_jkind ty) jkind_inter
-    in
-    Misc_stdlib.List.iter_until_error ~f:constrain_one_var tvs
-  | Missing_cmi missing_cmi ->
-    Error Jkind.(Violation.of_ ~missing_cmi
-      (Not_a_subjkind
-         (History.update_reason ty_jkind (Missing_cmi missing_cmi), jkind)))
-  | Failure _ ->
-    Error (Jkind.Violation.of_ (Not_a_subjkind (ty_jkind, jkind)))
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-   Precondition: [jkind] is not [any]. This common case is short-circuited
-   before calling this function. (Though the current implementation is still
-   correct on [any].)
-*)
-let constrain_type_jkind ~fixed env ty jkind =
-  let ty_jkind, result = type_jkind_sub env ty jkind in
-  match result with
-  | Success -> Ok ()
-  | Type_vars tvs ->
-    let constrain_one_var { estimate; bound; ty } =
-      if fixed then Jkind.sub_or_error estimate bound else
-      let jkind_inter =
-        Jkind.intersection_or_error ~reason:Tyvar_refinement_intersection
-          estimate bound
-      in
-      Result.map (set_var_jkind ty) jkind_inter
-    in
-    Misc.Stdlib.List.iter_until_error ~f:constrain_one_var tvs
-  | Missing_cmi missing_cmi ->
-    Error Jkind.(Violation.of_ ~missing_cmi
-      (Not_a_subjkind
-         (History.update_reason ty_jkind (Missing_cmi missing_cmi), jkind)))
-  | Failure _ ->
-    Error (Jkind.Violation.of_ (Not_a_subjkind (ty_jkind, jkind)))
-=======
     | _ ->
        match Jkind.sub_or_intersect ty's_jkind jkind with
        | Sub -> Ok ()
@@ -2382,7 +2331,6 @@ let constrain_type_jkind ~fixed env ty jkind =
           | _ -> Error (Jkind.Violation.of_ (Not_a_subjkind (ty's_jkind, jkind)))
   in
   loop ~fuel:100 ~expanded:false ty (estimate_type_jkind env ty) jkind
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 
 let type_sort ~why ~fixed env ty =
   let jkind, sort = Jkind.of_new_sort_var ~why in

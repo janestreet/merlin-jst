@@ -3094,18 +3094,8 @@ let error trace_format mode subst env tr txt1 ppf txt2 ty_expect_explanation =
          Errortrace.{ty_exp with expanded = hide_variant_name ty_exp.expanded})
       tr
   in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
   let jkind_error = match last tr with
-    | Some (Bad_jkind _ | Bad_jkind_sort _ | Unequal_var_jkinds _
-           | Unequal_var_jkinds_with_no_history) ->
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  let jkind_error = match Misc.last tr with
-    | Some (Bad_jkind _ | Bad_jkind_sort _ | Unequal_var_jkinds _
-           | Unequal_var_jkinds_with_no_history) ->
-=======
-  let jkind_error = match Misc.last tr with
     | Some (Bad_jkind _ | Bad_jkind_sort _ | Unequal_var_jkinds _) ->
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
         true
     | Some (Diff _ | Escape _ | Variant _ | Obj _ | Incompatible_fields _
            | Rec_occur _)

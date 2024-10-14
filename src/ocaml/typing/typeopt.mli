@@ -26,12 +26,7 @@ val maybe_pointer : Typedtree.expression -> Lambda.immediate_or_pointer
 val array_type_kind :
   elt_sort:(Jkind.Sort.t option)
   -> Env.t -> Location.t -> Types.type_expr -> Lambda.array_kind
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-=======
 val array_type_mut : Env.t -> Types.type_expr -> Lambda.mutable_flag
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 val array_kind :
   Typedtree.expression -> Jkind.Sort.t -> Lambda.array_kind
 (*
@@ -52,19 +47,7 @@ val classify_lazy_argument : Typedtree.expression ->
                              [ `Constant_or_function
                              | `Float_that_cannot_be_shortcut
                              | `Identifier of [`Forward_value | `Other]
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
                              | `Other]
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-   optimization.  [layout_of_sort] gracefully errors on void, while
-   [layout_of_base] loudly fails on void. *)
-val layout_of_sort : Location.t -> Jkind.sort -> Lambda.layout
-val layout_of_base_sort : Jkind.Sort.base -> Lambda.layout
-=======
-   optimization.  [layout_of_sort] gracefully errors on void, while
-   [layout_of_base] loudly fails on void. *)
-val layout_of_sort : Location.t -> Jkind.sort -> Lambda.layout
-val layout_of_const_sort : Jkind.Sort.Const.t -> Lambda.layout
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 
 (*
 val value_kind_union :

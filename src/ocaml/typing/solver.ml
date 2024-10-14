@@ -16,56 +16,8 @@
 open Allowance
 open Solver_intf
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
 module Misc = Misc_stdlib
 
-module Magic_allow_disallow (X : Allow_disallow) :
-  Allow_disallow with type ('a, 'b, 'd) sided = ('a, 'b, 'd) X.sided = struct
-  type ('a, 'b, 'd) sided = ('a, 'b, 'd) X.sided
-
-  let disallow_right :
-      type a b l r. (a, b, l * r) sided -> (a, b, l * disallowed) sided =
-    Obj.magic
-
-  let disallow_left :
-      type a b l r. (a, b, l * r) sided -> (a, b, disallowed * r) sided =
-    Obj.magic
-
-  let allow_right :
-      type a b l r. (a, b, l * allowed) sided -> (a, b, l * r) sided =
-    Obj.magic
-
-  let allow_left :
-      type a b l r. (a, b, allowed * r) sided -> (a, b, l * r) sided =
-    Obj.magic
-end
-[@@inline]
-
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-module Magic_allow_disallow (X : Allow_disallow) :
-  Allow_disallow with type ('a, 'b, 'd) sided = ('a, 'b, 'd) X.sided = struct
-  type ('a, 'b, 'd) sided = ('a, 'b, 'd) X.sided
-
-  let disallow_right :
-      type a b l r. (a, b, l * r) sided -> (a, b, l * disallowed) sided =
-    Obj.magic
-
-  let disallow_left :
-      type a b l r. (a, b, l * r) sided -> (a, b, disallowed * r) sided =
-    Obj.magic
-
-  let allow_right :
-      type a b l r. (a, b, l * allowed) sided -> (a, b, l * r) sided =
-    Obj.magic
-
-  let allow_left :
-      type a b l r. (a, b, allowed * r) sided -> (a, b, l * r) sided =
-    Obj.magic
-end
-[@@inline]
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 module Magic_equal (X : Equal) :
   Equal with type ('a, 'b, 'c) t = ('a, 'b, 'c) X.t = struct
   type ('a, 'b, 'd) t = ('a, 'b, 'd) X.t

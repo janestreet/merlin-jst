@@ -593,13 +593,7 @@ let expression sub exp =
                let default_arg = Option.map (sub.expr sub) default_arg in
                let newtypes =
                  List.map
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-                   (function Newtype (x, annot) | Newtype' (_, x, annot, _) ->
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-                   (fun (x, annot) ->
-=======
                    (fun (_, x, annot, _) ->
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
                       { pparam_desc = Pparam_newtype (x, Option.map snd annot);
                         pparam_loc = x.loc;
                       })

@@ -64,20 +64,10 @@ end = struct
     let equal = String.equal
 
     let hash = Hashtbl.hash
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
+
     let print = Format.pp_print_string
-    let output = output_of_print print
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-
-    let print = String.print
-
-    let output = output_of_print print
-=======
-
-    let print = String.print
 
     let output = Misc.output_of_print print
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   end)
 
   let isupper chr = Char.equal (Char.uppercase_ascii chr) chr

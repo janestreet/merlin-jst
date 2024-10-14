@@ -1912,52 +1912,6 @@ let is_max jkind = sub Builtin.any_dummy_jkind jkind
 let has_layout_any jkind =
   match jkind.jkind.layout with Any -> true | _ -> false
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-let is_nary_product n t =
-  let components =
-    List.init n (fun _ -> Jkind_types.Layout.Sort (Sort.new_var ()))
-  in
-  let bound =
-    { Jkind_desc.max with layout = Jkind_types.Layout.Product components }
-  in
-  if Le_result.is_le (Jkind_desc.sub t.jkind bound)
-  then
-    (* CR layouts v7.1: The histories here are wrong (we are giving each
-       component the history of the whole product).  They don't show up in
-       errors, so it's fine for now, but we'll probably need to fix this as
-       part of improving errors around products. A couple options: re-work the
-       relevant bits of [Ctype.type_jkind_sub] to just work on layouts, or
-       introduce product histories. *)
-    Some
-      (List.map
-         (fun l -> { t with jkind = { t.jkind with layout = l } })
-         components)
-  else None
-
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-let is_nary_product n t =
-  let components =
-    List.init n (fun _ -> Jkind_types.Layout.Sort (Sort.new_var ()))
-  in
-  let bound =
-    { Jkind_desc.max with layout = Jkind_types.Layout.Product components }
-  in
-  if Misc.Le_result.is_le (Jkind_desc.sub t.jkind bound)
-  then
-    (* CR layouts v7.1: The histories here are wrong (we are giving each
-       component the history of the whole product).  They don't show up in
-       errors, so it's fine for now, but we'll probably need to fix this as
-       part of improving errors around products. A couple options: re-work the
-       relevant bits of [Ctype.type_jkind_sub] to just work on layouts, or
-       introduce product histories. *)
-    Some
-      (List.map
-         (fun l -> { t with jkind = { t.jkind with layout = l } })
-         components)
-  else None
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 (*********************************)
 (* debugging *)
 

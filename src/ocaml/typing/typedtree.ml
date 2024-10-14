@@ -135,7 +135,6 @@ and exp_extra =
   | Texp_poly of core_type option
   | Texp_newtype of Ident.t * string loc * Jkind.annotation option * Uid.t
   | Texp_stack
-  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -283,19 +282,9 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.l;
     fp_curry: function_curry;
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-    fp_newtypes: fp_newtype list;
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-    fp_newtypes: (string loc * Jkind.annotation option) list;
-=======
     fp_newtypes: (Ident.t * string loc * Jkind.annotation option * Uid.t) list;
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
     fp_loc: Location.t;
   }
-
-and fp_newtype =
-  | Newtype of string loc * Jkind.annotation option
-  | Newtype' of Ident.t * string loc * Jkind.annotation option * Uid.t
 
 and function_param_kind =
   | Tparam_pat of pattern

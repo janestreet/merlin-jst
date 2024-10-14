@@ -706,16 +706,8 @@ let submode ~loc ~env ?(reason = Other) ?shared_context mode expected_mode =
   | Error failure_reason ->
       let locality_context = expected_mode.locality_context in
       let contention_context = expected_mode.contention_context in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
       let err =
-        Submode_failed(failure_reason, reason, closure_context,
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-      let error =
-        Submode_failed(failure_reason, reason, closure_context,
-=======
-      let error =
         Submode_failed(failure_reason, reason, locality_context,
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
           contention_context, shared_context)
       in
       raise (error(loc, env, err))
@@ -2848,19 +2840,9 @@ and type_pat_aux
       type_pat tps category p expected_ty
         (* TODO: record 'extra' to remember about interval *)
   | Ppat_interval _ ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
       raise (error (loc, !!penv, Invalid_interval))
-  | Ppat_tuple spl ->
-      type_tuple_pat (List.map (fun sp -> None, sp) spl) Closed
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-      raise (Error (loc, !!penv, Invalid_interval))
-  | Ppat_tuple spl ->
-      type_tuple_pat (List.map (fun sp -> None, sp) spl) Closed
-=======
-      raise (Error (loc, !!penv, Invalid_interval))
   | Ppat_tuple (spl, closed) ->
       type_tuple_pat spl closed
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   | Ppat_unboxed_tuple (spl, oc) ->
       type_unboxed_tuple_pat spl oc
   | Ppat_construct(lid, sarg) ->
@@ -2904,16 +2886,6 @@ and type_pat_aux
           None -> []
         | Some sarg' ->
         match Jane_syntax.Pattern.of_ast sarg' with
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-        | Some (Jpat_tuple (_, _), attrs) when
-            constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs
-          -> raise (error(loc, !!penv, Constructor_labeled_arg))
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-        | Some (Jpat_tuple (_, _), attrs) when
-            constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs
-          -> raise (Error(loc, !!penv, Constructor_labeled_arg))
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
         | Some ((Jpat_immutable_array _, _)
                | (Jpat_layout _, _)) -> [sarg']
         | None -> match sarg' with
@@ -2922,7 +2894,7 @@ and type_pat_aux
             Builtin_attributes.explicit_arity sp.ppat_attributes
           ->
           if components_have_label spl then
-            raise (Error(loc, !!penv, Constructor_labeled_arg))
+            raise (error(loc, !!penv, Constructor_labeled_arg))
           else
             List.map snd spl
         | {ppat_desc = Ppat_any} as sp when
@@ -7077,18 +7049,6 @@ and type_function_
           (params, body, newtypes, contains_gadt, fun_alloc_mode, ret_info),
           exp_type)
       in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-      let newtype = newtype_var, jkind_annot in
-      with_explanation ty_fun.explanation (fun () ->
-          unify_exp_types loc env exp_type (instance ty_expected));
-      { function_ = exp_type, params, body;
-=======
-      let newtype = id, newtype_var, jkind_annot, uid in
-      with_explanation ty_fun.explanation (fun () ->
-          unify_exp_types loc env exp_type (instance ty_expected));
-      { function_ = exp_type, params, body;
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
       let newtype = id, newtype_var, jkind_annot, uid in
       begin
         try with_explanation ty_fun.explanation (fun () ->
@@ -8363,21 +8323,7 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
     | None -> []
     | Some se -> begin
         match Jane_syntax.Expression.of_ast se with
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-        | Some (Jexp_tuple (_ : _ list), _) when
-            constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs ->
-          raise(error(loc, env, Constructor_labeled_arg))
-        | Some (( Jexp_tuple _
-                | Jexp_comprehension _
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-        | Some (Jexp_tuple (_ : _ list), _) when
-            constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs ->
-          raise(Error(loc, env, Constructor_labeled_arg))
-        | Some (( Jexp_tuple _
-                | Jexp_comprehension _
-=======
         | Some (( Jexp_comprehension _
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
                 | Jexp_immutable_array _
                 | Jexp_layout _), _) -> [se]
         | None -> match se.pexp_desc with
@@ -8385,7 +8331,7 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
             constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs
           ->
           if components_have_label sel then
-            raise(Error(loc, env, Constructor_labeled_arg))
+            raise(error(loc, env, Constructor_labeled_arg))
           else
             List.map (fun (_, e) -> e) sel
         | _ -> [se]
@@ -8801,13 +8747,7 @@ and map_half_typed_cases
 *)
 and type_newtype
   : type a. _ -> _ -> _ -> (Env.t -> a * type_expr)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-    -> a * type_expr * Jkind.annotation option * _ * Uid.t =
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-    -> a * type_expr * Jkind.annotation option =
-=======
     -> a * type_expr * Jkind.annotation option * Ident.t * Uid.t =
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   fun env name jkind_annot_opt type_body  ->
   let { txt = name; loc = name_loc } : _ Location.loc = name in
   let jkind, jkind_annot =
@@ -8847,13 +8787,7 @@ and type_newtype
   end
 
 (** [type_newtype] where the "body" is just an expression. *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
 and type_newtype_expr
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  let body, ety, jkind_annot =
-=======
-  let body, ety, jkind_annot, id, uid =
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
     ~loc ~env ~expected_mode ~rue ~attributes name jkind_annot_opt sbody =
   let body, ety, jkind_annot, id, uid =
     type_newtype env name jkind_annot_opt (fun env ->
@@ -8864,13 +8798,7 @@ and type_newtype_expr
      any new extra node in the typed AST. *)
   rue { body with exp_loc = loc; exp_type = ety;
         exp_extra =
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-        (Texp_newtype' (id, name, jkind_annot, uid),
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-        (Texp_newtype (name.txt, jkind_annot),
-=======
         (Texp_newtype (id, name, jkind_annot, uid),
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
          loc, attributes) :: body.exp_extra }
 
 (* Typing of match cases *)
@@ -9070,7 +8998,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
               match constrain_type_jkind env pv_type value with
               | Ok () -> ()
               | Error e ->
-                raise (Error(pv_loc, env, Non_value_let_rec (e, pv_type)))
+                raise (error(pv_loc, env, Non_value_let_rec (e, pv_type)))
             ) pvs
           end;
           (* Polymorphic variant processing *)
@@ -9595,14 +9523,8 @@ and type_n_ary_function
         exp_loc = loc;
         exp_extra =
           List.map
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-            (fun (id, ({ loc; _ } as txt_loc), layout, uid) -> Texp_newtype' (id, txt_loc, layout, uid), loc, [])
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-            (fun ({ txt; loc }, layout) -> Texp_newtype (txt, layout), loc, [])
-=======
             (fun (id, txt_loc, layout, uid) ->
               Texp_newtype (id, txt_loc, layout, uid), txt_loc.loc, [])
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
             newtypes;
         exp_type;
         exp_attributes = attributes;

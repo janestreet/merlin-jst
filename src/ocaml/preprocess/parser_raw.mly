@@ -2867,14 +2867,8 @@ let_pattern_no_modes:
         let let_ = {pbop_op; pbop_pat; pbop_exp; pbop_loc} in
         mkexp ~loc:$sloc (Pexp_letop{ let_; ands; body}) }
   | fun_expr COLONCOLON expr
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-      { mkexp_cons ~loc:$sloc $loc($2) (ghexp ~loc:$sloc (Pexp_tuple[$1;(merloc $endpos($2) $3)])) }
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-      { mkexp_cons ~loc:$sloc $loc($2) (ghexp ~loc:$sloc (Pexp_tuple[$1;$3])) }
-=======
       { mkexp_cons ~loc:$sloc $loc($2)
-          (ghexp ~loc:$sloc (Pexp_tuple[None, $1;None, $3])) }
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
+          (ghexp ~loc:$sloc (Pexp_tuple[None, $1; None, (merloc $endpos($2) $3)])) }
   | mkrhs(label) LESSMINUS expr
       { mkexp ~loc:$sloc (Pexp_setinstvar($1, $3)) }
   | simple_expr DOT mkrhs(label_longident) LESSMINUS expr

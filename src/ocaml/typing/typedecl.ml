@@ -3082,14 +3082,8 @@ let transl_value_decl env loc valdecl =
           ~native_repr_res
           ~is_layout_poly
       in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
-      error_if_containing_unexpected_jkind prim env cty ty;
-      (*
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-      error_if_containing_unexpected_jkind prim env cty ty;
-=======
       error_if_containing_unexpected_jkind prim cty ty;
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
+      (*
       if prim.prim_arity = 0 &&
          (prim.prim_name = "" || prim.prim_name.[0] <> '%') then
         raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));

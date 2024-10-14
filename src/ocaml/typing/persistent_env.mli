@@ -91,36 +91,18 @@ type 'a sig_reader =
 (* CR-someday lmaurer: [add_binding] is apparently always false, including in the
    [-instantiate] branch. We should remove this parameter. *)
 val read : 'a t -> 'a sig_reader
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> Compilation_unit.Name.t -> Unit_info.Artifact.t -> add_binding:bool
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  -> Compilation_unit.Name.t -> Unit_info.Artifact.t -> add_binding:bool
-=======
   -> Global_module.Name.t -> Unit_info.Artifact.t -> add_binding:bool
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
   -> Subst.Lazy.signature
 val find : allow_hidden:bool -> 'a t -> 'a sig_reader
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> Compilation_unit.Name.t -> 'a
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  -> Compilation_unit.Name.t -> 'a
-=======
   -> Global_module.Name.t -> 'a
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 
 val find_in_cache : 'a t -> Global_module.Name.t -> 'a option
 
 val check : allow_hidden:bool -> 'a t -> 'a sig_reader
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-1
   -> (Compilation_unit.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> loc:Location.t -> Compilation_unit.Name.t -> unit
-||||||| ocaml-flambda/flambda-backend:efe8f8dfb491f8e0fae4fbe8788f1c740b5b3b06
-  -> loc:Location.t -> Compilation_unit.Name.t -> unit
-=======
   -> loc:Location.t -> Global_module.Name.t -> unit
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-1
 
 (* Lets it be known that the given module is a parameter to this module and thus is
    expected to have been compiled as such. Raises an exception if the module has already
