@@ -262,9 +262,9 @@ val report_ambiguous_type_error:
     (formatter -> unit) -> (formatter -> unit) -> (formatter -> unit) -> unit
 
 val report_unification_error :
+  ?type_expected_explanation:(formatter -> unit) ->
   formatter ->
   Env.t -> Errortrace.unification_error ->
-  ?type_expected_explanation:(formatter -> unit) ->
   (formatter -> unit) -> (formatter -> unit) ->
   unit
 
