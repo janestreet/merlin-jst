@@ -176,17 +176,6 @@ let typevar_jkind ~print_quote ppf (v, l) =
         pptv v
         Pprintast.jkind jkind.txt
 
-(* merlin-jst: a copy of the above for [Texp_newtype'], which has an id rather than a
-   string. *)
-let typevar_layout' ppf (v, l) =
-  let pptv = fmt_ident in
-  match l with
-  | None -> fprintf ppf " %a" pptv v
-  | Some (_, jkind) ->
-      fprintf ppf " (%a : %a)"
-        pptv v
-        Pprintast.jkind jkind.txt
-
 let tuple_component_label i ppf = function
   | None -> line i ppf "Label: None\n"
   | Some s -> line i ppf "Label: Some \"%s\"\n" s
@@ -443,10 +432,8 @@ and expression_extra i ppf x attrs =
       line i ppf "Texp_poly\n";
       attributes i ppf attrs;
       option i core_type ppf cto;
-  | Texp_newtype (s, lay) ->
-      line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s, lay);
-  | Texp_newtype' (id, _, lay, _) ->
-      line i ppf "Texp_newtype' %a\n" typevar_layout' (id, lay);
+  | Texp_newtype (_, s, lay, _) ->
+      line i ppf "Texp_newtype %a\n" (typevar_jkind ~print_quote:false) (s.txt, lay);
       attributes i ppf attrs;
   | Texp_stack ->
       line i ppf "Texp_stack\n";
@@ -1209,12 +1196,10 @@ and label_x_apply_arg i ppf (l, e) =
   (match e with Omitted _ -> () | Arg (e, _) -> expression (i+1) ppf e)
 
 and labeled_expression i ppf (l, e) =
-  line i ppf "<tuple component>\n";
   tuple_component_label i ppf l;
   expression (i+1) ppf e;
 
 and labeled_sorted_expression i ppf (l, e, s) =
-  line i ppf "<tuple component>\n";
   tuple_component_label i ppf l;
   expression (i+1) ppf e;
   line i ppf "%a\n" Jkind.Sort.format s;

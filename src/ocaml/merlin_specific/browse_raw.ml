@@ -288,7 +288,7 @@ let of_exp_extra (exp, _, _) =
   | Texp_constraint (ct, _) -> option_fold of_core_type ct
   | Texp_coerce (cto, ct) -> of_core_type ct ** option_fold of_core_type cto
   | Texp_poly cto -> option_fold of_core_type cto
-  | Texp_stack | Texp_newtype' _ | Texp_newtype _ -> id_fold
+  | Texp_stack | Texp_newtype _ -> id_fold
 let of_expression e = app (Expression e) ** list_fold of_exp_extra e.exp_extra
 
 let of_pat_extra (pat, _, _) =
@@ -828,9 +828,8 @@ let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
        need to be retrieved here. *)
     | Texp_function { params; _ } ->
       List.concat_map params ~f:(fun { fp_newtypes; _ } ->
-          List.concat_map fp_newtypes ~f:(function
-            | Newtype _ -> [] (* shouldn't happen *)
-            | Newtype' (id, label_loc, _, _) ->
+          List.concat_map fp_newtypes
+            ~f:(fun (id, (label_loc : _ Location.loc), _, _) ->
               let path = Path.Pident id in
               let lid = Longident.Lident label_loc.txt in
               [ (mkloc path label_loc.loc, Some lid) ]))
@@ -838,7 +837,7 @@ let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
   in
   List.fold_left ~init exp_extra ~f:(fun acc (extra, _, _) ->
       match extra with
-      | Texp_newtype' (id, label_loc, _, _) ->
+      | Texp_newtype (id, label_loc, _, _) ->
         let path = Path.Pident id in
         let lid = Longident.Lident label_loc.txt in
         (mkloc path label_loc.loc, Some lid) :: acc

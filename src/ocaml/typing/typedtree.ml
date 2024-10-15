@@ -56,7 +56,7 @@ type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
 type alloc_mode = {
   mode : Mode.Alloc.r;
-  closure_context : Env.closure_context option;
+  locality_context : Env.locality_context option;
 }
 
 type texp_field_boxing =
@@ -133,9 +133,8 @@ and exp_extra =
   | Texp_constraint of core_type option * Mode.Alloc.Const.Option.t
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
-  | Texp_newtype of string * Jkind.annotation option
+  | Texp_newtype of Ident.t * string loc * Jkind.annotation option * Uid.t
   | Texp_stack
-  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -283,13 +282,9 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.l;
     fp_curry: function_curry;
-    fp_newtypes: fp_newtype list;
+    fp_newtypes: (Ident.t * string loc * Jkind.annotation option * Uid.t) list;
     fp_loc: Location.t;
   }
-
-and fp_newtype =
-  | Newtype of string loc * Jkind.annotation option
-  | Newtype' of Ident.t * string loc * Jkind.annotation option * Uid.t
 
 and function_param_kind =
   | Tparam_pat of pattern

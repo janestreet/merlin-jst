@@ -66,7 +66,7 @@ and core_type type_expr =
     let labeled_type_exprs =
       List.map ~f:(fun (lbl, ty) -> (lbl, core_type ty)) type_exprs
     in
-    Jane_syntax.Labeled_tuples.typ_of ~loc:!default_loc labeled_type_exprs
+    Typ.tuple ~loc:!default_loc labeled_type_exprs
   | Tunboxed_tuple type_exprs ->
     let labeled_type_exprs =
       List.map ~f:(fun (lbl, ty) -> (lbl, core_type ty)) type_exprs

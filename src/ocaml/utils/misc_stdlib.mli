@@ -13,6 +13,15 @@
 (*                                                                        *)
 (**************************************************************************)
 
+val pp_parens_if :
+     bool
+  -> (Format.formatter -> 'a -> unit)
+  -> Format.formatter
+  -> 'a
+  -> unit
+(** [pp_parens_if bool formatter ppf arg] prints [formatter ppf arg], wrapping it with
+    [()] if [bool] is true. *)
+
 val pp_nested_list :
      nested:bool
   -> pp_element:(nested:bool -> Format.formatter -> 'a -> unit)
@@ -26,13 +35,30 @@ val pp_nested_list :
     always called with [nested:true], indicating that any inner lists are nested
     and need parens. *)
 
+val to_string_of_print :
+  (Format.formatter -> 'a -> unit) -> 'a -> string
+(** [to_string_of_print print] produces a string conversion function from a
+    pretty printer. This is similar but preferable to [Format.asprintf "%a"]
+    when the output may be large, since [to_string] functions don't usually
+    return embedded newlines. *)
+
 module List : sig
   val map_option : ('a -> 'b option) -> 'a list -> 'b list option
+  val map3 : ('a -> 'b -> 'c -> 'd) -> 'a list -> 'b list -> 'c list -> 'd list
   val some_if_all_elements_are_some : 'a option list -> 'a list option
   val iter_until_error
        : f:('a -> (unit, 'b) Result.t)
       -> 'a list
       -> (unit, 'b) Result.t
+
+  val merge_iter
+      : cmp:('a -> 'b -> int)
+    -> left_only:('a -> unit)
+    -> right_only:('b -> unit)
+    -> both:('a -> 'b -> unit)
+    -> 'a list
+    -> 'b list
+    -> unit
 end
 
 module Option : sig
@@ -76,6 +102,36 @@ module Int : sig
 
   val min : t -> t -> t
   val max : t -> t -> t
+end
+
+module Monad : sig
+  module type Basic2 = sig
+    (** Multi parameter monad. The second parameter gets unified across all the computation.
+        This is used to encode monads working on a multi parameter data structure like
+        ([('a,'b) result]). *)
+
+    type ('a, 'e) t
+
+    val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+
+    val return : 'a -> ('a, _) t
+  end
+
+  module type S2 = sig
+    type ('a, 'e) t
+
+    val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+    val return : 'a -> ('a, _) t
+    val map : ('a -> 'b) -> ('a, 'e) t -> ('b, 'e) t
+    val join : (('a, 'e) t, 'e) t -> ('a, 'e) t
+    val ignore_m : (_, 'e) t -> (unit, 'e) t
+    val all : ('a, 'e) t list -> ('a list, 'e) t
+    val all_unit : (unit, 'e) t list -> (unit, 'e) t
+  end
+
+  module Make2 (X : Basic2) : S2 with type ('a, 'e) t = ('a, 'e) X.t
+
+  module Result : S2 with type ('a, 'e) t = ('a, 'e) result
 end
 
 val format_as_unboxed_literal : string -> string

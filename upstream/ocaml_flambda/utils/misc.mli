@@ -138,6 +138,12 @@ module Stdlib : sig
         If [l1] is of length n and [l2 = h2 @ t2] with h2 of length n,
         r1 is [List.map2 f l1 h1] and r2 is t2. *)
 
+    val map3 : ('a -> 'b -> 'c -> 'd) -> 'a list -> 'b list -> 'c list -> 'd list
+
+    val concat_map2 : ('a -> 'b -> 'c list) -> 'a list -> 'b list -> 'c list
+    (** [concat_map2 f l1 l2] gives the same result as [concat (map2 f l1 l2)].
+        Tail-recursive. *)
+
     val iteri2 : (int -> 'a -> 'b -> unit) -> 'a list -> 'b list -> unit
     (** Same as {!List.iter2}, but the function is applied to the index of
         the element as first argument (counting from 0) *)
@@ -190,6 +196,19 @@ module Stdlib : sig
       -> (unit, 'b) Result.t
      (** [iter_until_error f l] applies [f] to each element of [l], in order,
          short-circuiting in the case [f] returns [Error] on any element. *)
+
+    val merge_iter
+       : cmp:('a -> 'b -> int)
+      -> left_only:('a -> unit)
+      -> right_only:('b -> unit)
+      -> both:('a -> 'b -> unit)
+      -> 'a t
+      -> 'b t
+      -> unit
+    (** Iterates over two sorted lists, calling [left_only] on those elements
+        that appear only in the left list, [right_only] on those elements
+        that appear only in the right list, and [both] on those elements that
+        appear in both. *)
   end
 
 (** {2 Extensions to the Option module} *)
@@ -278,6 +297,36 @@ module Stdlib : sig
   end
 
   external compare : 'a -> 'a -> int = "%compare"
+
+  module Monad : sig
+    module type Basic2 = sig
+      (** Multi parameter monad. The second parameter gets unified across all the computation.
+          This is used to encode monads working on a multi parameter data structure like
+          ([('a,'b) result]). *)
+
+      type ('a, 'e) t
+
+      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+
+      val return : 'a -> ('a, _) t
+    end
+
+    module type S2 = sig
+      type ('a, 'e) t
+
+      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+      val return : 'a -> ('a, _) t
+      val map : ('a -> 'b) -> ('a, 'e) t -> ('b, 'e) t
+      val join : (('a, 'e) t, 'e) t -> ('a, 'e) t
+      val ignore_m : (_, 'e) t -> (unit, 'e) t
+      val all : ('a, 'e) t list -> ('a list, 'e) t
+      val all_unit : (unit, 'e) t list -> (unit, 'e) t
+    end
+
+    module Make2 (X : Basic2) : S2 with type ('a, 'e) t = ('a, 'e) X.t
+
+    module Result : S2 with type ('a, 'e) t = ('a, 'e) result
+  end
 end
 
 (** {1 Operations on files and file paths} *)
@@ -661,6 +710,15 @@ val pp_two_columns :
     v}
 *)
 
+val pp_parens_if :
+     bool
+  -> (Format.formatter -> 'a -> unit)
+  -> Format.formatter
+  -> 'a
+  -> unit
+(** [pp_parens_if bool formatter ppf arg] prints [formatter ppf arg], wrapping it with
+    [()] if [bool] is true. *)
+
 val pp_nested_list :
      nested:bool
   -> pp_element:(nested:bool -> Format.formatter -> 'a -> unit)
@@ -686,6 +744,13 @@ val output_of_print :
 val is_print_longer_than: int -> (Format.formatter -> unit) -> bool
 (** Returns [true] if the printed string is longer than the given integer. Stops
     early if so. Spaces and newlines are counted, but indentation is not. *)
+
+val to_string_of_print :
+  (Format.formatter -> 'a -> unit) -> 'a -> string
+(** [to_string_of_print print] produces a string conversion function from a
+    pretty printer. This is similar but preferable to [Format.asprintf "%a"]
+    when the output may be large, since [to_string] functions don't usually
+    return embedded newlines. *)
 
 (** {1 Displaying configuration variables} *)
 

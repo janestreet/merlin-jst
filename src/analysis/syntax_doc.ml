@@ -184,7 +184,7 @@ let get_syntax_doc cursor_loc node : syntax_info =
     :: ( _,
          Value_binding
            { vb_expr =
-               { exp_extra = [ (Texp_newtype' (_, loc, _, _), _, _) ];
+               { exp_extra = [ (Texp_newtype (_, loc, _, _), _, _) ];
                  exp_loc;
                  _
                };

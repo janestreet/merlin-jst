@@ -38,24 +38,24 @@ let ext_obj = ".o_The boot compiler cannot process C objects"
     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
 and cmi_magic_number =
   (* When bumping this number, be sure to also update ../typing/magic_numbers.ml *)
-  "Caml1999I550"
-and cmo_magic_number = "Caml1999O550"
-and cma_magic_number = "Caml1999A550"
+  "Caml1999I551"
+and cmo_magic_number = "Caml1999O551"
+and cma_magic_number = "Caml1999A551"
 and cmx_magic_number =
   if flambda then
-    "Caml1999y550"
+    "Caml1999y551"
   else
-    "Caml1999Y550"
+    "Caml1999Y551"
 and cmxa_magic_number =
   if flambda then
-    "Caml1999z550"
+    "Caml1999z551"
   else
-    "Caml1999Z550"
-and ast_impl_magic_number = "Caml1999M550"
-and ast_intf_magic_number = "Caml1999N550"
-and cmxs_magic_number = "Caml1999D550"
-and cmt_magic_number = "Caml1999T550"
-and cms_magic_number = "Caml1999S550"
+    "Caml1999Z551"
+and ast_impl_magic_number = "Caml1999M551"
+and ast_intf_magic_number = "Caml1999N551"
+and cmxs_magic_number = "Caml1999D551"
+and cmt_magic_number = "Caml1999T551"
+and cms_magic_number = "Caml1999S551"
 and index_magic_number = "Merl2023I501"
 
 let interface_suffix = ref ".mli"

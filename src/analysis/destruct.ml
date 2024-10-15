@@ -585,8 +585,7 @@ module Conv = struct
       | Tpat_alias (p, _, _, _, _) -> loop p
       | Tpat_tuple lst ->
         let lst = List.map ~f:(fun (lbl, p) -> (lbl, loop p)) lst in
-        Jane_syntax.Labeled_tuples.pat_of (lst, Closed)
-          ~loc:!Ast_helper.default_loc
+        mkpat (Ppat_tuple (lst, Closed))
       | Tpat_unboxed_tuple lst ->
         let lst = List.map ~f:(fun (lbl, p, _sort) -> (lbl, loop p)) lst in
         mkpat (Ppat_unboxed_tuple (lst, Closed))
@@ -598,7 +597,9 @@ module Conv = struct
           match List.map ~f:loop lst with
           | [] -> None
           | [ p ] -> Some ([], p)
-          | lst -> Some ([], mkpat (Ppat_tuple lst))
+          | lst ->
+            let lst = List.map lst ~f:(fun pat -> (None, pat)) in
+            Some ([], mkpat (Ppat_tuple (lst, Closed)))
         in
         mkpat (Ppat_construct (lid, arg))
       | Tpat_variant (label, p_opt, _row_desc) ->

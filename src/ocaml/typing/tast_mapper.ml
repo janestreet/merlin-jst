@@ -349,14 +349,8 @@ let function_param sub
   in
   let fp_newtypes =
     List.map
-      (function
-        | Newtype (var, annot) ->
-            Newtype
-              (map_loc sub var, Option.map (sub.jkind_annotation sub) annot)
-        | Newtype' (id, var, annot, uid) ->
-            Newtype'
-              (id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot, uid)
-      )
+      (fun (id, var, annot, uid) ->
+         id, map_loc sub var, Option.map (sub.jkind_annotation sub) annot, uid)
       fp_newtypes
   in
   { fp_kind;
@@ -376,7 +370,6 @@ let extra sub = function
   | Texp_coerce (cty1, cty2) ->
     Texp_coerce (Option.map (sub.typ sub) cty1, sub.typ sub cty2)
   | Texp_newtype _ as d -> d
-  | Texp_newtype' _ as d -> d
   | Texp_poly cto -> Texp_poly (Option.map (sub.typ sub) cto)
   | Texp_stack as d -> d
 
