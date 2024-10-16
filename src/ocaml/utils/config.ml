@@ -32,7 +32,7 @@ let version = Sys.ocaml_version
 
 let flambda = false
 
-let exec_magic_number = "Caml1999X550"
+let exec_magic_number = "Caml1999X551"
 let ext_obj = ".o_The boot compiler cannot process C objects"
 
     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
