@@ -248,8 +248,6 @@ Test that finding occurrences of a variable includes usages in a punned let. i.e
 finding occurrences of x on line 1 returns the definition on line 1 and the usage on
 line 2.
 
-TODO: fix these tests
-
 let*
   $ occurrences 12:8
   Occurrences of:
@@ -258,6 +256,9 @@ let*
   Occurrence at 12:8-9:
       let a = return 1 in
           ^
+  Occurrence at 13:9-10:
+      let* a in
+           ^
 
 parallel let*
   $ occurrences 18:8
@@ -267,6 +268,9 @@ parallel let*
   Occurrence at 18:8-9:
       let a = return 1 in
           ^
+  Occurrence at 20:9-10:
+      let* a and* b in
+           ^
   $ occurrences 19:8
   Occurrences of:
       let b = return 1 in
@@ -274,6 +278,9 @@ parallel let*
   Occurrence at 19:8-9:
       let b = return 1 in
           ^
+  Occurrence at 20:16-17:
+      let* a and* b in
+                  ^
 
 sequential let*
   $ occurrences 25:8
@@ -283,6 +290,9 @@ sequential let*
   Occurrence at 25:8-9:
       let a = return 1 in
           ^
+  Occurrence at 27:9-10:
+      let* a in
+           ^
   $ occurrences 26:8
   Occurrences of:
       let b = return 1 in
@@ -290,3 +300,6 @@ sequential let*
   Occurrence at 26:8-9:
       let b = return 1 in
           ^
+  Occurrence at 28:9-10:
+      let* b in
+           ^

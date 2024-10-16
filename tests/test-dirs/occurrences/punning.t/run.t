@@ -9,9 +9,9 @@ Convenience function for querying occurrences
 
 Get occurrences of an identifier that is used as the expression part of a punned let
 expression
-FIXME: this should also include the occurrence on line 5
   $ occurrences 4:6
   4:6-7
+  5:7-8
 
 Get occurrences, with the cursor pointing at the identifier in a punned let.
 Merlin returns the occurrences of the new variable bound in that let, rather than the

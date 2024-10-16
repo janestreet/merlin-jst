@@ -200,18 +200,25 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
             Option.map external_locs ~f:(fun (index, locs) ->
                 let stats = Stat_check.create ~cache_size:128 index in
                 ( Lid_set.filter
-                    (fun { loc; _ } ->
-                      (* We ignore external results that concern the current buffer *)
-                      let file = loc.Location.loc_start.Lexing.pos_fname in
-                      let file, buf =
-                        match config.merlin.source_root with
-                        | Some root ->
-                          (Filename.concat root file, current_buffer_path)
-                        | None -> (file, config.query.filename)
+                    (fun ({ loc; _ } as lid) ->
+                      let is_current_buffer =
+                        (* We filter external results that concern the current buffer *)
+                        let file = loc.Location.loc_start.Lexing.pos_fname in
+                        let file, buf =
+                          match config.merlin.source_root with
+                          | Some root ->
+                            (Filename.concat root file, current_buffer_path)
+                          | None -> (file, config.query.filename)
+                        in
+                        let file = Misc.canonicalize_filename file in
+                        let buf = Misc.canonicalize_filename buf in
+                        String.equal file buf
                       in
-                      let file = Misc.canonicalize_filename file in
-                      let buf = Misc.canonicalize_filename buf in
-                      if String.equal file buf then false
+                      let should_be_ignored =
+                        (* We ignore results that don't have a location *)
+                        Index_occurrences.should_ignore_lid lid
+                      in
+                      if is_current_buffer || should_be_ignored then false
                       else begin
                         (* We ignore external results if their source was modified *)
                         let check = Stat_check.check stats ~file in
