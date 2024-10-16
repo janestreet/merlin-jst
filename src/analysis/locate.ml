@@ -43,6 +43,13 @@ type result =
     approximated : bool
   }
 
+module Namespace_resolution = struct
+  type t =
+    | From_context of Query_protocol.Locate_context.t
+    | Explicit of Env_lookup.Namespace.inferred_basic list
+    | Inferred
+end
+
 module File : sig
   type t = private
     | ML of string
@@ -897,16 +904,26 @@ let infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ])
 
-let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior ?namespaces path
-    =
+let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior
+    ?(namespaces = Namespace_resolution.Inferred) path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lid = Type_utils.parse_longident path in
   let from_lid lid =
     let ident, is_label = Longident.keep_suffix lid in
-    match
-      infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label
-    with
+    let namespaces =
+      match namespaces with
+      | From_context ctxt ->
+        let ctxt = Context.of_locate_context ctxt in
+        log ~title:"from_string" "overrode context: %s" (Context.to_string ctxt);
+        `Ok (Env_lookup.Namespace.from_context ctxt)
+      | Explicit namespaces ->
+        infer_namespace ?let_pun_behavior ~namespaces ~pos lid browse is_label
+      | Inferred ->
+        infer_namespace ?let_pun_behavior ?namespaces:None ~pos lid browse
+          is_label
+    in
+    match namespaces with
     | `Error e -> e
     | `Ok nss ->
       log ~title:"from_string"

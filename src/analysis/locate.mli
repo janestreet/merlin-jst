@@ -47,6 +47,16 @@ type result =
     approximated : bool
   }
 
+module Namespace_resolution : sig
+  type t =
+    | From_context of Query_protocol.Locate_context.t
+        (** Choose the namespaces based on a [Query_protocol.Locate_context.t] *)
+    | Explicit of Env_lookup.Namespace.inferred_basic list
+        (** Explicitly choose which namespaces to search in. The namespaces are prioritized
+        based on the list order (with the first element being highest priority) *)
+    | Inferred  (** Infer which namespaces to search in *)
+end
+
 val uid_of_result :
   traverse_aliases:bool -> Shape_reduce.result -> Shape.Uid.t option * bool
 
@@ -74,7 +84,7 @@ val from_string :
   local_defs:Mtyper.typedtree ->
   pos:Lexing.position ->
   ?let_pun_behavior:Mbrowse.Let_pun_behavior.t ->
-  ?namespaces:Env_lookup.Namespace.inferred_basic list ->
+  ?namespaces:Namespace_resolution.t ->
   string ->
   [> `File_not_found of string
   | `Found of result

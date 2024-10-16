@@ -455,21 +455,34 @@ let all_commands =
     command "locate"
       ~spec:
         [ optional "-prefix" "<string> Prefix to complete"
-            (Marg.param "string" (fun txt (_, pos, kind) ->
-                 (Some txt, pos, kind)));
+            (Marg.param "string" (fun txt (_, pos, kind, ctx) ->
+                 (Some txt, pos, kind, ctx)));
           arg "-position" "<position> Position to complete"
-            (marg_position (fun pos (prefix, _pos, kind) -> (prefix, pos, kind)));
+            (marg_position (fun pos (prefix, _pos, kind, ctx) ->
+                 (prefix, pos, kind, ctx)));
           optional "-look-for"
             "<interface|implementation> Prefer opening interface or \
              implementation"
             (Marg.param "<interface|implementation>"
-               (fun kind (prefix, pos, _) ->
+               (fun kind (prefix, pos, _, ctx) ->
                  match kind with
-                 | "mli" | "interface" -> (prefix, pos, `MLI)
-                 | "ml" | "implementation" -> (prefix, pos, `ML)
+                 | "mli" | "interface" -> (prefix, pos, `MLI, ctx)
+                 | "ml" | "implementation" -> (prefix, pos, `ML, ctx)
                  | str ->
                    failwithf "expecting interface or implementation, got %S."
-                     str))
+                     str));
+          (let contexts =
+             let open Query_protocol.Locate_context in
+             all |> List.map ~f:to_string |> String.concat ~sep:"|"
+           in
+           optional "-context"
+             (Format.sprintf
+                "<%s> Which context to search for the identifier in" contexts)
+             (Marg.param (Format.sprintf "<%s>" contexts)
+                (fun ctx (prefix, pos, kind, _) ->
+                  match Query_protocol.Locate_context.of_string ctx with
+                  | Some ctx -> (prefix, pos, kind, Some ctx)
+                  | None -> failwithf "invalid context %s." ctx)))
         ]
       ~doc:
         "Finds the declaration of entity at the specified position, Or \
@@ -479,13 +492,13 @@ let all_commands =
          - `{'pos': position}` if the location is in the current buffer,\n\
          - `{'file': string, 'pos': position}` if definition is located in a \
          different file."
-      ~default:(None, `None, `MLI)
+      ~default:(None, `None, `MLI, None)
       begin
-        fun buffer (prefix, pos, lookfor) ->
+        fun buffer (prefix, pos, lookfor, context) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Locate (prefix, lookfor, pos))
+            run buffer (Query_protocol.Locate (prefix, lookfor, pos, context))
       end;
     command "locate-type"
       ~spec:

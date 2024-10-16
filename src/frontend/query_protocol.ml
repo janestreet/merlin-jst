@@ -129,6 +129,54 @@ type _ _bool = bool
 type occurrences_status =
   [ `Not_requested | `Out_of_sync of string list | `No_def | `Included ]
 
+module Locate_context = struct
+  type t =
+    | Expr
+    | Module_path
+    | Module_type
+    | Patt
+    | Type
+    | Constant
+    | Constructor
+    | Label
+    | Unknown
+
+  let to_string = function
+    | Expr -> "expr"
+    | Module_path -> "module_path"
+    | Module_type -> "module_type"
+    | Patt -> "pattern"
+    | Type -> "type"
+    | Constant -> "constant"
+    | Constructor -> "constructor"
+    | Label -> "label"
+    | Unknown -> "unknown"
+
+  let of_string = function
+    | "expr" -> Some Expr
+    | "module_path" -> Some Module_path
+    | "module_type" -> Some Module_type
+    | "pattern" -> Some Patt
+    | "type" -> Some Type
+    | "constant" -> Some Constant
+    | "constructor" -> Some Constructor
+    | "label" -> Some Label
+    | "unknown" -> Some Unknown
+    | _ -> None
+
+  let all =
+    [ Expr;
+      Module_path;
+      Module_type;
+      Patt;
+      Type;
+      Constant;
+      Constructor;
+      Label;
+      Unknown
+    ]
+end
+
 type _ t =
   | Type_expr (* *) : string * Msource.position -> string t
   | Stack_or_heap_enclosing (* *) :
@@ -182,7 +230,10 @@ type _ t =
          | `At_origin ]
          t
   | Locate (* *) :
-      string option * [ `ML | `MLI ] * Msource.position
+      string option
+      * [ `ML | `MLI ]
+      * Msource.position
+      * Locate_context.t option
       -> [ `Found of string option * Lexing.position
          | `Invalid_context
          | `Builtin of string

@@ -170,10 +170,12 @@ let request_of_json context =
   | `String "document" :: `String path :: pos ->
     request (Query (Document (Some path, mandatory_position pos)))
   | `String "locate" :: (`String "" | `Null) :: `String choice :: pos ->
-    request (Query (Locate (None, ml_or_mli choice, mandatory_position pos)))
+    request
+      (Query (Locate (None, ml_or_mli choice, mandatory_position pos, None)))
   | `String "locate" :: `String path :: `String choice :: pos ->
     request
-      (Query (Locate (Some path, ml_or_mli choice, mandatory_position pos)))
+      (Query
+         (Locate (Some path, ml_or_mli choice, mandatory_position pos, None)))
   | `String "jump" :: `String target :: pos ->
     request (Query (Jump (target, mandatory_position pos)))
   | [ `String "outline" ] -> request (Query Outline)

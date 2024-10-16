@@ -35,8 +35,10 @@ type t =
     (* We attach the constructor description here so in the case of
        disambiguated constructors we actually directly look for the type
        path (cf. #486, #794). *)
+  | Unknown_constructor
   | Expr
   | Label of Types.label_description (* Similar to constructors. *)
+  | Unknown_label
   | Module_path
   | Module_type
   | Patt
@@ -46,14 +48,27 @@ type t =
 
 let to_string = function
   | Constructor (cd, _) -> Printf.sprintf "constructor %s" cd.cstr_name
+  | Unknown_constructor -> Printf.sprintf "unknown constructor"
   | Expr -> "expression"
   | Label lbl -> Printf.sprintf "record field %s" lbl.lbl_name
+  | Unknown_label -> Printf.sprintf "record field"
   | Module_path -> "module path"
   | Module_type -> "module type"
   | Patt -> "pattern"
   | Constant -> "constant"
   | Type -> "type"
   | Unknown -> "unknown"
+
+let of_locate_context : Query_protocol.Locate_context.t -> t = function
+  | Expr -> Expr
+  | Module_path -> Module_path
+  | Module_type -> Module_type
+  | Patt -> Patt
+  | Type -> Type
+  | Constant -> Constant
+  | Constructor -> Unknown_constructor
+  | Label -> Unknown_label
+  | Unknown -> Unknown
 
 (* Distinguish between "Mo[d]ule.something" and "Module.some[t]hing" *)
 let cursor_on_longident_end ~cursor:cursor_pos

@@ -105,7 +105,7 @@ let dump (type a) : a t -> json =
   | Syntax_document pos ->
     mk "syntax-document" [ ("position", mk_position pos) ]
   | Expand_ppx pos -> mk "ppx-expand" [ ("position", mk_position pos) ]
-  | Locate (prefix, look_for, pos) ->
+  | Locate (prefix, look_for, pos, context) ->
     mk "locate"
       [ ( "prefix",
           match prefix with
@@ -115,7 +115,12 @@ let dump (type a) : a t -> json =
           match look_for with
           | `ML -> `String "implementation"
           | `MLI -> `String "interface" );
-        ("position", mk_position pos)
+        ("position", mk_position pos);
+        ( "context",
+          match context with
+          | Some context ->
+            `String (Query_protocol.Locate_context.to_string context)
+          | None -> `Null )
       ]
   | Jump (target, pos) ->
     mk "jump" [ ("target", `String target); ("position", mk_position pos) ]
