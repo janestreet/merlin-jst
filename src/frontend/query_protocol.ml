@@ -126,12 +126,8 @@ type is_tail_position = [ `No | `Tail_position | `Tail_call ]
 
 type _ _bool = bool
 
-type occurrences_status = [
-  | `Not_requested
-  | `Out_of_sync of string list
-  | `No_def
-  | `Included
-]
+type occurrences_status =
+  [ `Not_requested | `Out_of_sync of string list | `No_def | `Included ]
 
 module Locate_context = struct
   type t =
@@ -168,17 +164,17 @@ module Locate_context = struct
     | "unknown" -> Some Unknown
     | _ -> None
 
-  let all = [
-    Expr;
-    Module_path;
-    Module_type;
-    Patt;
-    Type;
-    Constant;
-    Constructor;
-    Label;
-    Unknown
-  ]
+  let all =
+    [ Expr;
+      Module_path;
+      Module_type;
+      Patt;
+      Type;
+      Constant;
+      Constructor;
+      Label;
+      Unknown
+    ]
 end
 
 type _ t =
@@ -234,7 +230,10 @@ type _ t =
          | `At_origin ]
          t
   | Locate (* *) :
-      string option * [ `ML | `MLI ] * Msource.position * Locate_context.t option
+      string option
+      * [ `ML | `MLI ]
+      * Msource.position
+      * Locate_context.t option
       -> [ `Found of string option * Lexing.position
          | `Invalid_context
          | `Builtin of string

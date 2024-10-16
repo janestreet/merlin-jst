@@ -39,25 +39,22 @@ val log : 'a Logger.printf
 type config =
   { mconfig : Mconfig.t; ml_or_mli : [ `ML | `MLI ]; traverse_aliases : bool }
 
-type result = {
-  uid: Shape.Uid.t;
-  decl_uid: Shape.Uid.t;
-  file: string;
-  location: Location.t;
-  approximated: bool;
-}
+type result =
+  { uid : Shape.Uid.t;
+    decl_uid : Shape.Uid.t;
+    file : string;
+    location : Location.t;
+    approximated : bool
+  }
 
 module Namespace_resolution : sig
-  type t = 
+  type t =
     | From_context of Query_protocol.Locate_context.t
-    (** Choose the namespaces based on a [Query_protocol.Locate_context.t] *)
-
+        (** Choose the namespaces based on a [Query_protocol.Locate_context.t] *)
     | Explicit of Env_lookup.Namespace.inferred_basic list
-    (** Explicitly choose which namespaces to search in. The namespaces are prioritized
+        (** Explicitly choose which namespaces to search in. The namespaces are prioritized
         based on the list order (with the first element being highest priority) *)
-
-    | Inferred
-    (** Infer which namespaces to search in *)
+    | Inferred  (** Infer which namespaces to search in *)
 end
 
 val uid_of_result :

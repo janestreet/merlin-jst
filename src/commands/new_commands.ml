@@ -458,7 +458,8 @@ let all_commands =
             (Marg.param "string" (fun txt (_, pos, kind, ctx) ->
                  (Some txt, pos, kind, ctx)));
           arg "-position" "<position> Position to complete"
-            (marg_position (fun pos (prefix, _pos, kind, ctx) -> (prefix, pos, kind, ctx)));
+            (marg_position (fun pos (prefix, _pos, kind, ctx) ->
+                 (prefix, pos, kind, ctx)));
           optional "-look-for"
             "<interface|implementation> Prefer opening interface or \
              implementation"
@@ -470,16 +471,18 @@ let all_commands =
                  | str ->
                    failwithf "expecting interface or implementation, got %S."
                      str));
-          let contexts =
-        let open Query_protocol.Locate_context in
-        all |> List.map ~f:to_string |> String.concat ~sep:"|"
-      in
-      optional "-context" (Format.sprintf "<%s> Which context to search for the identifier in" contexts)
-        (Marg.param (Format.sprintf "<%s>" contexts)
-          (fun ctx (prefix,pos,kind,_) -> match Query_protocol.Locate_context.of_string ctx with
-            | Some ctx -> (prefix,pos,kind,Some ctx)
-            | None ->
-              failwithf "invalid context %s." ctx));
+          (let contexts =
+             let open Query_protocol.Locate_context in
+             all |> List.map ~f:to_string |> String.concat ~sep:"|"
+           in
+           optional "-context"
+             (Format.sprintf
+                "<%s> Which context to search for the identifier in" contexts)
+             (Marg.param (Format.sprintf "<%s>" contexts)
+                (fun ctx (prefix, pos, kind, _) ->
+                  match Query_protocol.Locate_context.of_string ctx with
+                  | Some ctx -> (prefix, pos, kind, Some ctx)
+                  | None -> failwithf "invalid context %s." ctx)))
         ]
       ~doc:
         "Finds the declaration of entity at the specified position, Or \

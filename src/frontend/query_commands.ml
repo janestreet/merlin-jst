@@ -614,7 +614,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         (Ppx_expand.get_ppxed_source ~ppxed_parsetree ~pos
            (Option.get ppx_kind_with_attr))
     | None -> `No_ppx)
-
   | Locate (patho, ml_or_mli, pos, context) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
@@ -642,10 +641,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           }
       in
       begin
-        let namespaces = Option.map context ~f:(fun ctx -> Locate.Namespace_resolution.From_context ctx) in
+        let namespaces =
+          Option.map context ~f:(fun ctx ->
+              Locate.Namespace_resolution.From_context ctx)
+        in
         match
-          Locate.from_string ~config ~env ~local_defs ~pos ?namespaces ~let_pun_behavior
-            path
+          Locate.from_string ~config ~env ~local_defs ~pos ?namespaces
+            ~let_pun_behavior path
         with
         | `Found { file; location; _ } ->
           Locate.log ~title:"result" "found: %s" file;

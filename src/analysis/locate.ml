@@ -35,16 +35,16 @@ let { Logger.log } = Logger.for_section "locate"
 type config =
   { mconfig : Mconfig.t; ml_or_mli : [ `ML | `MLI ]; traverse_aliases : bool }
 
-type result = {
-  uid: Shape.Uid.t;
-  decl_uid: Shape.Uid.t;
-  file: string;
-  location: Location.t;
-  approximated: bool;
-}
+type result =
+  { uid : Shape.Uid.t;
+    decl_uid : Shape.Uid.t;
+    file : string;
+    location : Location.t;
+    approximated : bool
+  }
 
 module Namespace_resolution = struct
-  type t = 
+  type t =
     | From_context of Query_protocol.Locate_context.t
     | Explicit of Env_lookup.Namespace.inferred_basic list
     | Inferred
@@ -904,7 +904,8 @@ let infer_namespace ?let_pun_behavior ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ])
 
-let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior ?(namespaces = Namespace_resolution.Inferred) path =
+let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior
+    ?(namespaces = Namespace_resolution.Inferred) path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lid = Type_utils.parse_longident path in
@@ -916,8 +917,11 @@ let from_string ~config ~env ~local_defs ~pos ?let_pun_behavior ?(namespaces = N
         let ctxt = Context.of_locate_context ctxt in
         log ~title:"from_string" "overrode context: %s" (Context.to_string ctxt);
         `Ok (Env_lookup.Namespace.from_context ctxt)
-      | Explicit namespaces -> infer_namespace ?let_pun_behavior ~namespaces ~pos lid browse is_label
-      | Inferred -> infer_namespace ?let_pun_behavior ?namespaces:None ~pos lid browse is_label
+      | Explicit namespaces ->
+        infer_namespace ?let_pun_behavior ~namespaces ~pos lid browse is_label
+      | Inferred ->
+        infer_namespace ?let_pun_behavior ?namespaces:None ~pos lid browse
+          is_label
     in
     match namespaces with
     | `Error e -> e
