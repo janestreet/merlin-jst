@@ -22,7 +22,7 @@
 (**                                                                   **)
 (***********************************************************************)
 
-(* merlin-jst: All magic numbers ending in "500" should not change when we
+(* merlin-jst: All magic numbers ending in "500" (or higher) should not change when we
    upgrade the upstream Merlin version.  Otherwise, this should track
    "utils/config.mlp" from the compiler.  Also, the above warning comment about
    "config.mlbuild" is outdated and can be ignored. *)
@@ -30,30 +30,13 @@
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
-let flambda = false
-
-let exec_magic_number = "Caml1999X551"
 let ext_obj = ".o_The boot compiler cannot process C objects"
 
-    (* exec_magic_number is duplicated in runtime/caml/exec.h *)
-and cmi_magic_number =
+let cmi_magic_number =
   (* When bumping this number, be sure to also update ../typing/magic_numbers.ml *)
   "Caml1999I551"
-and cmo_magic_number = "Caml1999O551"
-and cma_magic_number = "Caml1999A551"
-and cmx_magic_number =
-  if flambda then
-    "Caml1999y551"
-  else
-    "Caml1999Y551"
-and cmxa_magic_number =
-  if flambda then
-    "Caml1999z551"
-  else
-    "Caml1999Z551"
 and ast_impl_magic_number = "Caml1999M551"
 and ast_intf_magic_number = "Caml1999N551"
-and cmxs_magic_number = "Caml1999D551"
 and cmt_magic_number = "Caml1999T551"
 and cms_magic_number = "Caml1999S551"
 and index_magic_number = "Merl2023I501"
