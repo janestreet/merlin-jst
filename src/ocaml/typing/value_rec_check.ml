@@ -606,7 +606,8 @@ let array_mode exp elt_sort = match Typeopt.array_kind exp elt_sort with
   | Paddrarray | Pintarray ->
     (* non-generic, non-float arrays act as constructors *)
     Guard
-  | Punboxedfloatarray _ | Punboxedintarray _ ->
+  | Punboxedfloatarray _ | Punboxedintarray _
+  | Punboxedvectorarray _ ->
     Dereference
 
 (* Expression judgment:

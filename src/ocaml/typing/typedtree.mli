@@ -73,7 +73,7 @@ type unique_use = Mode.Uniqueness.r * Mode.Linearity.l
 
 type alloc_mode = {
   mode : Mode.Alloc.r;
-  closure_context : Env.closure_context option;
+  locality_context : Env.locality_context option;
 }
 
 type texp_field_boxing =
@@ -228,16 +228,15 @@ and exp_extra =
          *)
   | Texp_poly of core_type option
         (** Used for method bodies. *)
-  | Texp_newtype of string * Jkind.annotation option
-        (** fun (type t : immediate) ->  *)
+  | Texp_newtype of Ident.t * string loc * Jkind.annotation option * Uid.t
+        (** fun (type t : immediate) ->
+
+        The [Ident.t] and [Uid.t] fields are unused by the compiler, but Merlin needs
+        them. Merlin cannot be cleanly patched to include these fields because Merlin
+        must be able to deserialize typedtrees produced by the compiler. Thus, we include
+        them here, as the cost of tracking this additional information is minimal. *)
   | Texp_stack
       (** stack_ E *)
-  | Texp_newtype' of Ident.t * label loc * Jkind.annotation option * Uid.t
-  (** merlin-specific: keep enough information to correctly implement
-      occurrences for local-types.
-      Merlin typechecker uses [Texp_newtype'] constructor, while upstream
-      OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
-      files. By adding a new constructor, we can still safely uses these. *)
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -461,30 +460,21 @@ and function_param =
     fp_sort: Jkind.sort;
     fp_mode: Mode.Alloc.l;
     fp_curry: function_curry;
-    fp_newtypes: fp_newtype list;
+    fp_newtypes: (Ident.t * string loc * Jkind.annotation option * Uid.t) list;
     (** [fp_newtypes] are the new type declarations that come *after* that
         parameter. The newtypes that come before the first parameter are
         placed as exp_extras on the Texp_function node. This is just used in
-        {!Untypeast}. *)
+        {!Untypeast}.
+
+        The [Ident.t] and [Uid.t] fields are unused by the compiler, but Merlin needs
+        them. Merlin cannot be cleanly patched to include these fields because Merlin
+        must be able to deserialize typedtrees produced by the compiler. Thus, we include
+        them here, as the cost of tracking this additional information is minimal. *)
     fp_loc: Location.t;
     (** [fp_loc] is the location of the entire value parameter, not including
         the [fp_newtypes].
     *)
   }
-
-(** This is a tremendous hack so we can keep track of the [Ident.t] of the
-    newtype in merlin while keeping binary compatibility with the OCaml
-    compiler. The first constructor, [Newtype], must stay in-sync with the type
-    of the [fp_newtypes] field in the compiler -- this takes advantage of the
-    fact that a tuple has the same runtime representation of the first
-    constructor of a variant with an inline tuple.
-
-    The naming (newtype/newtype') matches the naming of the similarly-hacky
-    [Texp_newtype'] in [exp_extra].
-*)
-and fp_newtype =
-  | Newtype of string loc * Jkind.annotation option
-  | Newtype' of Ident.t * string loc * Jkind.annotation option * Uid.t
 
 and function_param_kind =
   | Tparam_pat of pattern

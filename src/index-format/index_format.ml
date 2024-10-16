@@ -19,20 +19,22 @@ module Lid_set = Set.Make (Lid)
 module Uid_map = Shape.Uid.Map
 module Stats = Map.Make (String)
 
-let add map uid locs = Uid_map.update uid (function
-    | None -> Some locs
-    | Some locs' -> Some (Lid_set.union locs' locs))
-  map
+let add map uid locs =
+  Uid_map.update uid
+    (function
+      | None -> Some locs
+      | Some locs' -> Some (Lid_set.union locs' locs))
+    map
 
 type stat = { mtime : float; size : int; source_digest : string option }
 
-type index = {
-  defs : Lid_set.t Uid_map.t;
-  approximated : Lid_set.t Uid_map.t;
-  cu_shape : (Compilation_unit.t, Shape.t) Hashtbl.t;
-  stats : stat Stats.t;
-  root_directory: string option;
-}
+type index =
+  { defs : Lid_set.t Uid_map.t;
+    approximated : Lid_set.t Uid_map.t;
+    cu_shape : (Compilation_unit.t, Shape.t) Hashtbl.t;
+    stats : stat Stats.t;
+    root_directory : string option
+  }
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "{@[";
@@ -69,8 +71,10 @@ let pp (fmt : Format.formatter) pl =
     (Uid_map.cardinal pl.approximated)
     pp_partials pl.approximated;
   Format.fprintf fmt "and shapes for CUS %s.@ "
-    (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq
-                         |> List.map Compilation_unit.full_path_as_string))
+    (String.concat ";@,"
+       (Hashtbl.to_seq_keys pl.cu_shape
+       |> List.of_seq
+       |> List.map Compilation_unit.full_path_as_string))
 
 let ext = "ocaml-index"
 
@@ -82,7 +86,11 @@ let write ~file index =
       output_string oc magic_number;
       output_value oc (index : index))
 
-type file_content = Cmt of Cmt_format.cmt_infos | Cms of Cms_format.cms_infos | Index of index | Unknown
+type file_content =
+  | Cmt of Cmt_format.cmt_infos
+  | Cms of Cms_format.cms_infos
+  | Index of index
+  | Unknown
 
 let read ~file =
   let ic = open_in_bin file in
@@ -105,4 +113,6 @@ let read ~file =
       else Unknown)
 
 let read_exn ~file =
-  match read ~file with Index index -> index | _ -> raise (Not_an_index file)
+  match read ~file with
+  | Index index -> index
+  | _ -> raise (Not_an_index file)

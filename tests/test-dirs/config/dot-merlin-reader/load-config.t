@@ -8,12 +8,13 @@
   > UNIT_NAME_FOR a Prefix__a
   > UNIT_NAME_FOR b b
   > UNIT_NAME_FOR c    Prefix_c
+  > SOURCE_ROOT /root
   > EOF
 
   $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
   > (4:File${#FILE}:$FILE)
   > EOF
-  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:WRAPPING_PREFIX?:Prefix__)(?:UNIT_NAME_FOR(?:a?:Prefix__a))(?:UNIT_NAME_FOR(?:b?:b))(?:UNIT_NAME_FOR(?:c?:Prefix_c))(?:STDLIB?:/stdlib))
+  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:BH?:$TESTCASE_ROOT/build-hidden/dir)(?:SH?:$TESTCASE_ROOT/source-hidden/dir)(?:WRAPPING_PREFIX?:Prefix__)(?:UNIT_NAME_FOR(?:a?:Prefix__a))(?:UNIT_NAME_FOR(?:b?:b))(?:UNIT_NAME_FOR(?:c?:Prefix_c))(?:STDLIB?:/stdlib)(?:SOURCE_ROOT?:/root))
 
 Use ocamlmerlin instead of $MERLIN for this test because $MERLIN configures the stdlib,
 but we want to observe the stdlib being configured via the STDLIB directive.
@@ -47,7 +48,7 @@ but we want to observe the stdlib being configured via the STDLIB directive.
       }
     ],
     "stdlib": "/stdlib",
-    "source_root": null,
+    "source_root": "/root",
     "unit_name": null,
     "unit_name_for": {
       "c": "Prefix_c",

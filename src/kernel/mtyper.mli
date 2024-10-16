@@ -9,10 +9,8 @@
 
 type result
 
-type typedtree = [
-  | `Interface of Typedtree.signature
-  | `Implementation of Typedtree.structure
-]
+type typedtree =
+  [ `Interface of Typedtree.signature | `Implementation of Typedtree.structure ]
 
 type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
 
@@ -20,13 +18,13 @@ type index_tbl =
   (Shape.Uid.t * Longident.t Location.loc, unit) Stamped_hashtable.t
 
 val set_index_items :
-  (index:index_tbl
-    -> stamp:int
-    -> Mconfig.t
-    -> [ `Impl of Typedtree.structure_item list
-      | `Intf of Typedtree.signature_item list ]
-    -> unit)
-  -> unit
+  (index:index_tbl ->
+  stamp:int ->
+  Mconfig.t ->
+  [ `Impl of Typedtree.structure_item list
+  | `Intf of Typedtree.signature_item list ] ->
+  unit) ->
+  unit
 
 val run : Mconfig.t -> Mreader.parsetree -> result
 
@@ -59,4 +57,8 @@ val get_cache_stat : result -> typer_cache_stats
  *      inside x definition.
  *)
 val node_at :
-  ?skip_recovered:bool -> ?let_pun_behavior:Mbrowse.Let_pun_behavior.t -> result -> Lexing.position -> Mbrowse.t
+  ?skip_recovered:bool ->
+  ?let_pun_behavior:Mbrowse.Let_pun_behavior.t ->
+  result ->
+  Lexing.position ->
+  Mbrowse.t

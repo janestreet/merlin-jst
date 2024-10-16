@@ -10,7 +10,7 @@ module Basis : sig
   val add : t -> string -> unit
 
   val load : t -> string -> string list -> string list ->
-    Desc.Module.t -> Desc.deprecated -> unit
+    Desc.Module.t -> Load_path.visibility -> Desc.deprecated -> unit
 
 end
 

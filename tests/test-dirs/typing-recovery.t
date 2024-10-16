@@ -615,11 +615,9 @@ make sure we also handle that correctly in structures:
             Texp_tuple
             alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]));unique,uncontended
             [
-              <tuple component>
               Label: None
                 expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+25])
                   Texp_constant Const_int 3
-              <tuple component>
               Label: None
                 expression (test_ct.ml[3,20+27]..test_ct.ml[3,20+28])
                   Texp_constant Const_int 4
@@ -666,11 +664,9 @@ make sure we also handle that correctly in structures:
             Texp_tuple
             alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]));unique,uncontended
             [
-              <tuple component>
               Label: None
                 expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+24])
                   Texp_constant Const_int 3
-              <tuple component>
               Label: None
                 expression (test_ct.ml[5,50+26]..test_ct.ml[5,50+27])
                   Texp_constant Const_int 4

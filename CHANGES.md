@@ -1,5 +1,6 @@
-unreleased
+merlin 5.2
 ==========
+Thu Sep 26 18:48:42 CEST 2024
 
   + merlin binary
     - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
@@ -7,9 +8,19 @@ unreleased
     - Add `-unboxed-types` and `-no-unboxed-types` as ocaml ignored flags (#1795, fixes #1794)
     - destruct: Refinement in the presence of optional arguments (#1800 #1807, fixes #1770)
     - Implement new expand-node command for expanding PPX annotations (#1745)
+    - Implement new inlay-hints command for adding hints on a sourcetree (#1812)
+    - Implement new search-by-type command for searching values by types (#1828)
+    - Canonicalize paths in occurrences. This helps deduplicate the results and
+      show more user-friendly paths. (#1840)
+    - Fix dot-merlin-reader ignoring `SOURCE_ROOT` and `STDLIB` directives
+      (#1839, #1803)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
+    - emacs: Improve the way that result of polarity search is displayed (#1814)
+    - emacs: Add `merlin-search-by-type`, `merlin-search-by-polarity` and change the
+	  behaviour of `merlin-search` to switch between `by-type` or `by-polarity`
+	  depending on the query (#1828)
 
 merlin 5.1
 ==========
@@ -75,6 +86,7 @@ Thu Feb 22 14:00:42 CET 2024
     - Jump to `module-type` (#1728, partially fixes #1656)
     - Exposes stable functions for configuration handling and pattern variable
       destruction. (#1730)
+    - Add `signature-help` command (#1720)
   + editor modes
     - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
     - Fix merlinpp not using binary file open (#1725, fixes #1724)

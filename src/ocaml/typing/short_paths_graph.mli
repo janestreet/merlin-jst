@@ -54,6 +54,12 @@ module Desc : sig
     | Deprecated
     | Not_deprecated
 
+  type visibility =
+    | Visible
+    | Hidden
+
+  val visibility_of_deprecated : deprecated -> visibility
+
   module Type : sig
 
     type t =
@@ -258,13 +264,13 @@ module Component : sig
 
   type t =
     | Type of
-        Origin.t * Ident.t * Desc.Type.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Type.t * source * Desc.visibility
     | Class_type of
-        Origin.t * Ident.t * Desc.Class_type.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Class_type.t * source * Desc.visibility
     | Module_type of
-        Origin.t * Ident.t * Desc.Module_type.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Module_type.t * source * Desc.visibility
     | Module of
-        Origin.t * Ident.t * Desc.Module.t * source * Desc.deprecated
+        Origin.t * Ident.t * Desc.Module.t * source * Desc.visibility
     | Declare_type of Origin.t * Ident.t
     | Declare_class_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
