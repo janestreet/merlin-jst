@@ -26,6 +26,16 @@ let decl_of_path_or_lid env namespace path lid =
   | _ -> Env_lookup.by_path path namespace env
 
 let should_ignore_lid (lid : Longident.t Location.loc) =
+  (* Ignore occurrence if the location of the identifier is "none" because there is not a
+     useful location to report to the user. This can occur when the occurrence is in ppx
+     generated code and the ppx does not give location information.
+
+     An alternative implementation could instead ignore the occurrence if the location is
+     marked as "ghost". However, this seems too aggressive for two reasons:
+      - The expression being bound in a punned let expression is marked as ghost
+      - Ppx-generated code is often "ghost", but occurrences within ppx-generated code may
+        be useful
+  *)
   Location.is_none lid.loc
 
 let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
