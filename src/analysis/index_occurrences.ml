@@ -81,7 +81,7 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
             index_decl ()
         end
   in
-  Ast_iterators.iterator_on_usages ~f
+  Ast_iterators.iterator_on_usages ~include_hidden:true ~f
 
 let items ~index ~stamp (config : Mconfig.t) items =
   let module Shape_reduce = Shape_reduce.Make (struct

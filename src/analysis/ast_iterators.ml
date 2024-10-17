@@ -162,6 +162,8 @@ let iter_on_usages ~f (local_defs : Mtyper.typedtree) =
     | `Implementation structure -> iter.structure iter structure
   end
 
-let iterator_on_usages ~f =
+let iterator_on_usages ~include_hidden ~f =
   let occ_iter = Cmt_format.iter_on_occurrences ~f in
-  iter_only_visible occ_iter
+  match include_hidden with
+  | false -> iter_only_visible occ_iter
+  | true -> occ_iter
