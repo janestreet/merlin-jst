@@ -15,6 +15,17 @@ let set_fname ~file (loc : Location.t) =
     loc_end = { loc.loc_end with pos_fname }
   }
 
+(* Merlin-jst: Upstream Merlin only includes the location of the last segment of an
+   identifier. (ex: If the user wrote "Foo.bar", only the location of "bar") is included.
+   We instead choose to include the entire "Foo.bar", for two reasons:
+   1. We think that this is a slightly better user experience
+   2. Upstream Merlin does not include occurrences within ppx generated code, but we do.
+      Because of this, it is not always true for us that the reported location in the
+      buffer is text corresponding to the identifier. (For example, the location may
+      correspond to a ppx extension node.) In such a case, attempting to modify the
+      location to only include the last segment of the identifier is nonsensical. Since we
+      don't have a way to detect such a case, it forces us to not try. *)
+(*
 (* A longident can have the form: A.B.x Right now we are only interested in
    values, but we will eventually want to index all occurrences of modules in
    such longidents. However there is an issue with that: we only have the
@@ -39,6 +50,7 @@ let last_loc (loc : Location.t) lid =
           { loc.loc_end with pos_cnum = loc.loc_end.pos_cnum - last_size }
       }
     else loc
+*)
 
 let uid_and_loc_of_node env node =
   let open Browse_raw in
@@ -256,7 +268,9 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
              let lid = try Longident.head txt with _ -> "not flat lid" in
              log ~title:"occurrences" "Found occ: %s %a" lid Logger.fmt
                (Fun.flip Location.print_loc loc);
-             let loc = last_loc loc txt in
+             (* Merlin-jst: See comment at the commented-out definition of last_loc for
+                explanation of why this is commented out. *)
+             (* let loc = last_loc loc txt in *)
              let fname = loc.Location.loc_start.Lexing.pos_fname in
              if not (Filename.is_relative fname) then Some loc
              else
