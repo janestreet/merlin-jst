@@ -40,7 +40,7 @@
       "file": "$TESTCASE_ROOT/main.ml",
       "start": {
         "line": 1,
-        "col": 13
+        "col": 9
       },
       "end": {
         "line": 1,
@@ -87,7 +87,7 @@ We are not missing the occurrence in main.ml
       "file": "$TESTCASE_ROOT/main.ml",
       "start": {
         "line": 1,
-        "col": 13
+        "col": 9
       },
       "end": {
         "line": 1,
@@ -132,7 +132,7 @@ We are not missing the occurrence in main.ml
       "file": "$TESTCASE_ROOT/main.ml",
       "start": {
         "line": 1,
-        "col": 13
+        "col": 9
       },
       "end": {
         "line": 1,

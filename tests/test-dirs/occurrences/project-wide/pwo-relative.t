@@ -74,7 +74,7 @@ Perform the occurrences query
       "file": "$TESTCASE_ROOT/main/main.ml",
       "start": {
         "line": 1,
-        "col": 12
+        "col": 8
       },
       "end": {
         "line": 1,
@@ -85,7 +85,7 @@ Perform the occurrences query
       "file": "$TESTCASE_ROOT/main/main.ml",
       "start": {
         "line": 2,
-        "col": 26
+        "col": 22
       },
       "end": {
         "line": 2,

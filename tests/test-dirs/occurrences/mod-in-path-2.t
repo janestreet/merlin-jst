@@ -39,7 +39,7 @@ FIXME: we could expect module appearing in paths to be highlighted
     {
       "start": {
         "line": 5,
-        "col": 12
+        "col": 8
       },
       "end": {
         "line": 5,
@@ -49,7 +49,7 @@ FIXME: we could expect module appearing in paths to be highlighted
     {
       "start": {
         "line": 6,
-        "col": 8
+        "col": 4
       },
       "end": {
         "line": 6,
