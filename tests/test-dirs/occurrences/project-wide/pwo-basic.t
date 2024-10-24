@@ -53,7 +53,7 @@
         "file": "$TESTCASE_ROOT/main.ml",
         "start": {
           "line": 1,
-          "col": 26
+          "col": 22
         },
         "end": {
           "line": 1,
