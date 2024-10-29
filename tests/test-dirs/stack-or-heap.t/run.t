@@ -43,12 +43,13 @@ escape characters in string literals, so we use the revert-newlines script.
   >   file=$1
   >   position=$2
   >   index=$3
+  >   trailing=$4
   >   line=$(echo "$position" | cut -d ':' -f 1)
   >   col=$(echo "$position" | cut -d ':' -f 2)
   >   highlight_range "$file" $line $(expr $col - 1) $line $col
   >   merlin=$(
   >     $MERLIN single stack-or-heap-enclosing -position "$position" -verbosity "$verbosity" \
-  >       -filename "$file" < "$file" | revert-newlines
+  >       -filename "$file" $trailing < "$file" | revert-newlines
   >   )
   >   echo
   >   if [ "$(echo "$merlin" | jq ".value[$index]")" != null ]
@@ -71,7 +72,7 @@ escape characters in string literals, so we use the revert-newlines script.
   >   do
   >     for i in $(seq 0 $until)
   >     do
-  >       run "$orig_file.tmp.ml" $lc $i
+  >       run "$orig_file.tmp.ml" $lc $i "$3"
   >     done
   >   done
   >   rm "$orig_file.tmp.ml"
@@ -184,6 +185,113 @@ escape characters in string literals, so we use the revert-newlines script.
   
   "not an allocation (unboxed constructor)"
   
+
+  $ run_annotated_file constructors.ml 1 "-lsp-compat true"
+  |  Some (g z)
+  |        ^
+  
+  |  Some (g z)
+  |  ^^^^^^^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |                 ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^^^^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |                ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^^^^^^^
+  
+  "stack"
+  
+  |  Some (g z)
+  |    ^
+  
+  |  Some (g z)
+  |  ^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |             ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |            ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^
+  
+  "stack"
+  
+  |  None
+  |    ^
+  
+  |  None
+  |  ^^^^
+  
+  "not an allocation (constructor without arguments)"
+  
+  |  exclave_ None
+  |             ^
+  
+  |  exclave_ None
+  |           ^^^^
+  
+  "not an allocation (constructor without arguments)"
+  
+  |  f (Some x);
+  |          ^
+  
+  |  f (Some x);
+  |    ^^^^^^^^
+  
+  "stack"
+  
+  |  f (local_ Some x);
+  |                 ^
+  
+  |  f (local_ Some x);
+  |    ^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |  f (Some x)
+  |          ^
+  
+  |  f (Some x)
+  |    ^^^^^^^^
+  
+  "heap"
+  
+  |let g x = f (Some x) [@nontail]
+  |                  ^
+  
+  |let g x = f (Some x) [@nontail]
+  |            ^^^^^^^^
+  
+  "stack"
+  
+  |  Box (g z)
+  |       ^
+  
+  |  Box (g z)
+  |  ^^^^^^^^^
+  
+  "not an allocation (unboxed constructor)"
+  
+
 (II) Variants
 
   $ run_annotated_file variants.ml

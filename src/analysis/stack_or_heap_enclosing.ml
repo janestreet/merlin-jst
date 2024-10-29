@@ -10,19 +10,24 @@ type stack_or_heap =
 
 type stack_or_heap_enclosings = (Location.t * stack_or_heap) list
 
-let from_nodes ~pos ~path =
+let from_nodes ~lsp_compat ~pos ~path =
   let[@tail_mod_cons] rec tails = function
     | hd :: tl -> (hd, tl) :: tails tl
     | [] -> []
   in
+  let cursor_is_inside ({ loc_start; loc_end; _ } : Location.t) =
+    Lexing.compare_pos pos loc_start >= 0 && Lexing.compare_pos pos loc_end <= 0
+  in
   let aux node parent =
     let open Browse_raw in
-    let ret mode_result = Some (Mbrowse.node_loc node, mode_result) in
-    let ret_alloc alloc_mode = ret (Alloc_mode alloc_mode) in
-    let ret_no_alloc reason = ret (No_alloc { reason }) in
-    let ret_maybe_alloc reason = function
-      | Some alloc_mode -> ret_alloc alloc_mode
-      | None -> ret_no_alloc reason
+    let ret ?(loc = Mbrowse.node_loc node) mode_result =
+      Some (loc, mode_result)
+    in
+    let ret_alloc ?loc alloc_mode = ret ?loc (Alloc_mode alloc_mode) in
+    let ret_no_alloc ?loc reason = ret ?loc (No_alloc { reason }) in
+    let ret_maybe_alloc ?loc reason = function
+      | Some alloc_mode -> ret_alloc ?loc alloc_mode
+      | None -> ret_no_alloc ?loc reason
     in
     match (node, parent) with
     | ( Pattern { pat_desc = Tpat_var _; _ },
@@ -32,7 +37,7 @@ let from_nodes ~pos ~path =
       ) -> ret (Alloc_mode alloc_mode.mode)
     | Expression { exp_desc; _ }, _ -> (
       match exp_desc with
-      | Texp_function { alloc_mode; body; _ } ->
+      | Texp_function { alloc_mode; body; _ } -> (
         let body_loc =
           (* A function expression is often in a non-obvious way the nearest enclosing
              allocating expression. To avoid confusion, we only consider a function
@@ -60,26 +65,26 @@ let from_nodes ~pos ~path =
                 }
             | [] -> None)
         in
-        let cursor_is_inside_function_body =
-          match body_loc with
-          | None -> false
-          | Some { loc_start; loc_end; loc_ghost = _ } ->
-            Lexing.compare_pos pos loc_start >= 0
-            && Lexing.compare_pos pos loc_end <= 0
-        in
-        if cursor_is_inside_function_body then None
-        else ret (Alloc_mode alloc_mode.mode)
+        match body_loc with
+        | Some loc when cursor_is_inside loc -> None
+        | _ -> ret (Alloc_mode alloc_mode.mode))
       | Texp_array (_, _, _, alloc_mode) -> ret (Alloc_mode alloc_mode.mode)
-      | Texp_construct (_, { cstr_repr; _ }, args, maybe_alloc_mode) -> (
+      | Texp_construct
+          ({ loc; txt = _lident }, { cstr_repr; _ }, args, maybe_alloc_mode)
+        -> (
+        let loc =
+          if lsp_compat && cursor_is_inside loc then Some loc else None
+        in
         match maybe_alloc_mode with
-        | Some alloc_mode -> ret (Alloc_mode alloc_mode.mode)
+        | Some alloc_mode -> ret ?loc (Alloc_mode alloc_mode.mode)
         | None -> (
           match args with
-          | [] -> ret_no_alloc "constructor without arguments"
+          | [] -> ret_no_alloc ?loc "constructor without arguments"
           | _ :: _ -> (
             match cstr_repr with
-            | Variant_unboxed -> ret_no_alloc "unboxed constructor"
-            | Variant_extensible | Variant_boxed _ -> ret Unexpected_no_alloc)))
+            | Variant_unboxed -> ret_no_alloc ?loc "unboxed constructor"
+            | Variant_extensible | Variant_boxed _ ->
+              ret ?loc Unexpected_no_alloc)))
       | Texp_record { representation; alloc_mode = maybe_alloc_mode; _ } -> (
         match (maybe_alloc_mode, representation) with
         | _, Record_inlined _ -> None

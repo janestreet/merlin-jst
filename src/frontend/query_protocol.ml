@@ -180,7 +180,7 @@ end
 type _ t =
   | Type_expr (* *) : string * Msource.position -> string t
   | Stack_or_heap_enclosing (* *) :
-      Msource.position * int option
+      Msource.position * bool * int option
       -> (Location.t * [ `String of string | `Index of int ]) list t
   | Type_enclosing (* *) :
       (string * int) option * Msource.position * int option

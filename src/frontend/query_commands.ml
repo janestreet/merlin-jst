@@ -264,7 +264,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let context = Context.Expr in
     ignore (Type_utils.type_in_env ~verbosity ~context env ppf source : bool);
     to_string ()
-  | Stack_or_heap_enclosing (pos, index) ->
+  | Stack_or_heap_enclosing (pos, lsp_compat, index) ->
     let typer = Mpipeline.typer_result pipeline in
 
     (* Optimise allocations only on programs that have type-checked. *)
@@ -292,7 +292,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | browse -> Browse_misc.annotate_tail_calls browse
     in
 
-    let result = Stack_or_heap_enclosing.from_nodes ~pos ~path in
+    let result = Stack_or_heap_enclosing.from_nodes ~lsp_compat ~pos ~path in
 
     let all_results =
       List.mapi result ~f:(fun i (loc, text) ->
