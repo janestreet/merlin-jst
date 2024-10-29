@@ -161,8 +161,6 @@ escape characters in string literals, so we use the revert-newlines script.
   
   "not an allocation (unboxed constructor)"
   
-
-
 (II) Variants
 
   $ run_annotated_file variants.ml

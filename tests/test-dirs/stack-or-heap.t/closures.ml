@@ -56,4 +56,3 @@ let f = function
   | None -> 0
   | Some _ -> 1
          (* ^ *)
-
