@@ -33,8 +33,15 @@ let from_nodes ~lsp_compat ~pos ~path =
     | ( Pattern { pat_desc = Tpat_var _; _ },
         Some
           (Value_binding
-            { vb_expr = { exp_desc = Texp_function { alloc_mode; _ }; _ }; _ })
-      ) -> ret (Alloc_mode alloc_mode.mode)
+            { vb_expr = { exp_desc = Texp_function { alloc_mode; _ }; _ };
+              vb_loc;
+              _
+            }) ) ->
+      (* The location that most sensibly corresponds to the "allocation" is the entire
+         value binding. However, the LSP hover at this point will describe just the
+         pattern, so we don't override the location in the [lsp_compat] regime. *)
+      let loc = if lsp_compat then None else Some vb_loc in
+      ret ?loc (Alloc_mode alloc_mode.mode)
     | Expression { exp_desc; _ }, _ -> (
       match exp_desc with
       | Texp_function { alloc_mode; body; _ } -> (
@@ -73,6 +80,10 @@ let from_nodes ~lsp_compat ~pos ~path =
           ({ loc; txt = _lident }, { cstr_repr; _ }, args, maybe_alloc_mode)
         -> (
         let loc =
+          (* The location of the "allocation" here is the entire expression, but the LSP
+             hover for a constructor reports information just for the constructor (not the
+             entire [Texp_construct] expression), so we override the location in the
+             [lsp_compat] regime. *)
           if lsp_compat && cursor_is_inside loc then Some loc else None
         in
         match maybe_alloc_mode with

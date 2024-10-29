@@ -18,27 +18,6 @@ let f g x y =
   y
 ;;
 
-(* Cursor on the constructor itself (we treat this case specially to improve LSP
-   compatibility) *)
-
-let f g x y =
-  let z = x + y in
-  Some (g z)
- (* ^ *)
-;;
-
-let f g x y =
-  let z = x + y in
-  exclave_ Some (g z)
-          (* ^ *)
-;;
-
-let f g x y =
-  let z = Some (g x) in
-         (* ^ *)
-  y
-;;
-
 (* Constructors with no arguments *)
 
 let f g x y =

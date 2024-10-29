@@ -105,30 +105,6 @@ escape characters in string literals, so we use the revert-newlines script.
   
   "stack"
   
-  |  Some (g z)
-  |    ^
-  
-  |  Some (g z)
-  |  ^^^^^^^^^^
-  
-  "heap"
-  
-  |  exclave_ Some (g z)
-  |             ^
-  
-  |  exclave_ Some (g z)
-  |           ^^^^^^^^^^
-  
-  "stack"
-  
-  |  let z = Some (g x) in
-  |            ^
-  
-  |  let z = Some (g x) in
-  |          ^^^^^^^^^^
-  
-  "stack"
-  
   |  None
   |    ^
   
@@ -186,111 +162,6 @@ escape characters in string literals, so we use the revert-newlines script.
   "not an allocation (unboxed constructor)"
   
 
-  $ run_annotated_file constructors.ml 1 "-lsp-compat true"
-  |  Some (g z)
-  |        ^
-  
-  |  Some (g z)
-  |  ^^^^^^^^^^
-  
-  "heap"
-  
-  |  exclave_ Some (g z)
-  |                 ^
-  
-  |  exclave_ Some (g z)
-  |           ^^^^^^^^^^
-  
-  "stack"
-  
-  |  let z = Some (g x) in
-  |                ^
-  
-  |  let z = Some (g x) in
-  |          ^^^^^^^^^^
-  
-  "stack"
-  
-  |  Some (g z)
-  |    ^
-  
-  |  Some (g z)
-  |  ^^^^
-  
-  "heap"
-  
-  |  exclave_ Some (g z)
-  |             ^
-  
-  |  exclave_ Some (g z)
-  |           ^^^^
-  
-  "stack"
-  
-  |  let z = Some (g x) in
-  |            ^
-  
-  |  let z = Some (g x) in
-  |          ^^^^
-  
-  "stack"
-  
-  |  None
-  |    ^
-  
-  |  None
-  |  ^^^^
-  
-  "not an allocation (constructor without arguments)"
-  
-  |  exclave_ None
-  |             ^
-  
-  |  exclave_ None
-  |           ^^^^
-  
-  "not an allocation (constructor without arguments)"
-  
-  |  f (Some x);
-  |          ^
-  
-  |  f (Some x);
-  |    ^^^^^^^^
-  
-  "stack"
-  
-  |  f (local_ Some x);
-  |                 ^
-  
-  |  f (local_ Some x);
-  |    ^^^^^^^^^^^^^^^
-  
-  "stack"
-  
-  |  f (Some x)
-  |          ^
-  
-  |  f (Some x)
-  |    ^^^^^^^^
-  
-  "heap"
-  
-  |let g x = f (Some x) [@nontail]
-  |                  ^
-  
-  |let g x = f (Some x) [@nontail]
-  |            ^^^^^^^^
-  
-  "stack"
-  
-  |  Box (g z)
-  |       ^
-  
-  |  Box (g z)
-  |  ^^^^^^^^^
-  
-  "not an allocation (unboxed constructor)"
-  
 
 (II) Variants
 
@@ -506,46 +377,6 @@ escape characters in string literals, so we use the revert-newlines script.
   
   |  | Some _ -> 1
   |            ^
-  
-  "no relevant allocation to show"
-  
-  |let f g x y =
-  |    ^
-  
-  |let f g x y =
-  |    ^
-  
-  "heap"
-  
-  |and h g x y =
-  |    ^
-  
-  |and h g x y =
-  |    ^
-  
-  "heap"
-  
-  |  let f g x y =
-  |      ^
-  
-  |  let f g x y =
-  |      ^
-  
-  "stack"
-  
-  |  and h g x y =
-  |      ^
-  
-  |  and h g x y =
-  |      ^
-  
-  "stack"
-  
-  |let x = Some 5
-  |    ^
-  
-  |let x = Some 5
-  |    ^
   
   "no relevant allocation to show"
   
@@ -893,4 +724,153 @@ escape characters in string literals, so we use the revert-newlines script.
   |      ^^^^^^^^^^^^^^^^^
   
   "stack"
+  
+(X) Special cases for LSP hover
+
+  $ run_annotated_file lsp_compat.ml
+  |  Some (g z)
+  |    ^
+  
+  |  Some (g z)
+  |  ^^^^^^^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |             ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^^^^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |            ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^^^^^^^
+  
+  "stack"
+  
+  |let f g x y =
+  |    ^
+  
+  |let f g x y =
+  |^^^^^^^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |and h g x y =
+  |    ^
+  
+  |and h g x y =
+  |^^^^^^^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |  let f g x y =
+  |      ^
+  
+  |  let f g x y =
+  |  ^^^^^^^^^^^^^
+  |    let z = x + y in
+  |^^^^^^^^^^^^^^^^^^^^
+  |    exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |  and h g x y =
+  |      ^
+  
+  |  and h g x y =
+  |  ^^^^^^^^^^^^^
+  |    let z = x + y in
+  |^^^^^^^^^^^^^^^^^^^^
+  |    exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |let x = Some 5
+  |    ^
+  
+  |let x = Some 5
+  |    ^
+  
+  "no relevant allocation to show"
+  
+
+  $ run_annotated_file lsp_compat.ml 1 "-lsp-compat true"
+  |  Some (g z)
+  |    ^
+  
+  |  Some (g z)
+  |  ^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |             ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |            ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^
+  
+  "stack"
+  
+  |let f g x y =
+  |    ^
+  
+  |let f g x y =
+  |    ^
+  
+  "heap"
+  
+  |and h g x y =
+  |    ^
+  
+  |and h g x y =
+  |    ^
+  
+  "heap"
+  
+  |  let f g x y =
+  |      ^
+  
+  |  let f g x y =
+  |      ^
+  
+  "stack"
+  
+  |  and h g x y =
+  |      ^
+  
+  |  and h g x y =
+  |      ^
+  
+  "stack"
+  
+  |let x = Some 5
+  |    ^
+  
+  |let x = Some 5
+  |    ^
+  
+  "no relevant allocation to show"
   
