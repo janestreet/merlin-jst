@@ -407,7 +407,7 @@ escape characters in string literals, so we use the revert-newlines script.
   |let f g x y =
   |    ^
   
-  "no relevant allocation to show"
+  "heap"
   
   |and h g x y =
   |    ^
@@ -415,7 +415,7 @@ escape characters in string literals, so we use the revert-newlines script.
   |and h g x y =
   |    ^
   
-  "no relevant allocation to show"
+  "heap"
   
   |  let f g x y =
   |      ^
@@ -423,7 +423,7 @@ escape characters in string literals, so we use the revert-newlines script.
   |  let f g x y =
   |      ^
   
-  "no relevant allocation to show"
+  "stack"
   
   |  and h g x y =
   |      ^
@@ -431,7 +431,7 @@ escape characters in string literals, so we use the revert-newlines script.
   |  and h g x y =
   |      ^
   
-  "no relevant allocation to show"
+  "stack"
   
   |let x = Some 5
   |    ^

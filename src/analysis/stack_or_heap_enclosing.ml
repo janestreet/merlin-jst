@@ -11,7 +11,11 @@ type stack_or_heap =
 type stack_or_heap_enclosings = (Location.t * stack_or_heap) list
 
 let from_nodes ~pos ~path =
-  let aux (_env, node, _tail) =
+  let[@tail_mod_cons] rec tails = function
+    | hd :: tl -> (hd, tl) :: tails tl
+    | [] -> []
+  in
+  let aux node parent =
     let open Browse_raw in
     let ret mode_result = Some (Mbrowse.node_loc node, mode_result) in
     let ret_alloc alloc_mode = ret (Alloc_mode alloc_mode) in
@@ -20,8 +24,13 @@ let from_nodes ~pos ~path =
       | Some alloc_mode -> ret_alloc alloc_mode
       | None -> ret_no_alloc reason
     in
-    match node with
-    | Expression { exp_desc; _ } -> (
+    match (node, parent) with
+    | ( Pattern { pat_desc = Tpat_var _; _ },
+        Some
+          (Value_binding
+            { vb_expr = { exp_desc = Texp_function { alloc_mode; _ }; _ }; _ })
+      ) -> ret (Alloc_mode alloc_mode.mode)
+    | Expression { exp_desc; _ }, _ -> (
       match exp_desc with
       | Texp_function { alloc_mode; body; _ } ->
         let body_loc =
@@ -90,4 +99,8 @@ let from_nodes ~pos ~path =
       | _ -> None)
     | _ -> None
   in
-  List.filter_map ~f:aux path
+  path
+  |> List.map ~f:(fun (_, node, _) -> node)
+  |> tails
+  |> List.filter_map ~f:(fun (node, ancestors) ->
+         aux node (List.nth_opt ancestors 0))
