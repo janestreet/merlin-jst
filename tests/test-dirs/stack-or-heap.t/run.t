@@ -104,6 +104,30 @@ escape characters in string literals, so we use the revert-newlines script.
   
   "stack"
   
+  |  Some (g z)
+  |    ^
+  
+  |  Some (g z)
+  |  ^^^^^^^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |             ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^^^^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |            ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^^^^^^^
+  
+  "stack"
+  
   |  None
   |    ^
   
@@ -374,6 +398,46 @@ escape characters in string literals, so we use the revert-newlines script.
   
   |  | Some _ -> 1
   |            ^
+  
+  "no relevant allocation to show"
+  
+  |let f g x y =
+  |    ^
+  
+  |let f g x y =
+  |    ^
+  
+  "no relevant allocation to show"
+  
+  |and h g x y =
+  |    ^
+  
+  |and h g x y =
+  |    ^
+  
+  "no relevant allocation to show"
+  
+  |  let f g x y =
+  |      ^
+  
+  |  let f g x y =
+  |      ^
+  
+  "no relevant allocation to show"
+  
+  |  and h g x y =
+  |      ^
+  
+  |  and h g x y =
+  |      ^
+  
+  "no relevant allocation to show"
+  
+  |let x = Some 5
+  |    ^
+  
+  |let x = Some 5
+  |    ^
   
   "no relevant allocation to show"
   

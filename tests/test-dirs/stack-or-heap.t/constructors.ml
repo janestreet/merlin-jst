@@ -18,6 +18,29 @@ let f g x y =
   y
 ;;
 
+(* Cursor on the constructor itself (we treat this case specially to improve LSP
+   compatibility) *)
+
+let f g x y =
+  let z = x + y in
+  Some (g z)
+ (* ^ *)
+;;
+
+let f g x y =
+  let z = x + y in
+  exclave_ Some (g z)
+          (* ^ *)
+;;
+
+let f g x y =
+  let z = Some (g x) in
+         (* ^ *)
+  y
+;;
+
+(* Constructors with no arguments *)
+
 let f g x y =
   let z = x + y in
   None
@@ -29,6 +52,8 @@ let f g x y =
   exclave_ None
           (* ^ *)
 ;;
+
+(* Tail-call *)
 
 let f (local_ _) = ()
 
@@ -42,6 +67,8 @@ let g x =
 
 let g x = f (Some x) [@nontail]
                (* ^ *)
+
+(* [[@@unboxed]] variant *)
 
 type t = Box of string [@@unboxed]
 
