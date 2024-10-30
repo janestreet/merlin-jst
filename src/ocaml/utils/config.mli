@@ -46,4 +46,19 @@ val runtime5 : bool
 
 val merlin : bool
 
+module Magic_numbers : sig
+  type t =
+    { cmi_magic_number : string;
+      ast_intf_magic_number : string;
+      ast_impl_magic_number : string;
+      cmt_magic_number : string;
+      cms_magic_number : string;
+      index_magic_number : string
+    }
+
+  val current : t
+
+  val to_json : t -> Std.json
+end
+
 (**/**)
