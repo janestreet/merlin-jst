@@ -15,11 +15,12 @@ let rewrite_root = ref false
 let store_shapes = ref false
 let do_not_use_cmt_loadpath = ref false
 
-type command = Aggregate | Dump | Stats | Gather_shapes
+type command = Aggregate | Dump | Dump_file_stats | Stats | Gather_shapes
 
 let parse_command = function
   | "aggregate" -> Some Aggregate
   | "dump" -> Some Dump
+  | "dump-file-stats" -> Some Dump_file_stats
   | "stats" -> Some Stats
   | "gather-shapes" -> Some Gather_shapes
   | _ -> None
@@ -89,6 +90,19 @@ let () =
   | Some Dump ->
     List.iter
       (fun file -> Index_format.(read_exn ~file |> pp Format.std_formatter))
+      (List.rev !input_files_rev)
+  | Some Dump_file_stats ->
+    List.iter
+      (fun file ->
+        let open Merlin_index_format.Index_format in
+        let index = read_exn ~file in
+        Printf.printf "File stats for index %S:\n" file;
+        Stats.iter
+          (fun file { mtime; size; source_digest } ->
+            Printf.printf "  %S: { mtime=%f; size=%d; source_digest=%S }\n" file
+              mtime size
+              (Option.value source_digest ~default:"none"))
+          index.stats)
       (List.rev !input_files_rev)
   | Some Gather_shapes ->
     Index.gather_shapes ~output_file:!output_file (List.rev !input_files_rev)
