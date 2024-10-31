@@ -1,6 +1,6 @@
-(cram
- (applies_to :whole_subtree)
- (enabled_if %{bin-available:ocaml-index}))
+; (cram
+;  (applies_to :whole_subtree)
+;  (enabled_if %{bin-available:ocaml-index}))
 
 ; Jane Street disabled tests -- they use dune.
 ; Revisit when dune can run the flambda-backend compiler.
