@@ -13,8 +13,7 @@
   %{bin:ocamlmerlin-server}
   %{bin:ocamlmerlin}
   %{bin:dot-merlin-reader}
-  %{bin:revert-newlines}
-  %{bin:ocaml-index}))
+  %{bin:revert-newlines}))
 
 (cram
  (applies_to with-ppx)
