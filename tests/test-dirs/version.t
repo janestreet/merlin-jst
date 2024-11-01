@@ -1,6 +1,6 @@
   $ $MERLIN single version | revert-newlines | jq .value
   {
-    "version": "The Merlin toolkit version %VERSION%, for Ocaml 5.1.1\n",
+    "version": "The Merlin toolkit version %VERSION%, for Ocaml 5.2.0\n",
     "magicNumbers": {
       "cmi_magic_number": "Caml1999I552",
       "ast_intf_magic_number": "Caml1999N552",
