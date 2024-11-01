@@ -867,6 +867,11 @@ let all_commands =
             run buffer (Query_protocol.Signature_help sh)
       end;
     (* Used only for testing *)
+    command "version" ~spec:[] ~default:() ~doc:"Print version information"
+      begin
+        fun buffer () -> run buffer Query_protocol.Version
+      end;
+    (* Used only for testing *)
     command "dump"
       ~spec:
         [ arg "-what"

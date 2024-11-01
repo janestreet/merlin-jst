@@ -272,4 +272,4 @@ type _ t =
       (** In current version, Merlin only uses the parameter [position] to answer
         signature_help queries. The additionnal parameters are described in the
         LSP protocol and might enable finer behaviour in the future. *)
-  | Version : string t
+  | Version : (string * Config.Magic_numbers.t) t

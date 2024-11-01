@@ -48,3 +48,38 @@ let reserved_header_bits = 8
 let runtime5 = true
 
 let merlin = true
+
+module Magic_numbers = struct
+  type t =
+    { cmi_magic_number : string;
+      ast_intf_magic_number : string;
+      ast_impl_magic_number : string;
+      cmt_magic_number : string;
+      cms_magic_number : string;
+      index_magic_number : string
+    }
+
+  let current =
+    { cmi_magic_number;
+      ast_intf_magic_number;
+      ast_impl_magic_number;
+      cmt_magic_number;
+      cms_magic_number;
+      index_magic_number
+    }
+
+  let to_json t =
+    let nums =
+      [ ("cmi_magic_number", t.cmi_magic_number);
+        ("ast_intf_magic_number", t.ast_intf_magic_number);
+        ("ast_impl_magic_number", t.ast_impl_magic_number);
+        ("cmt_magic_number", t.cmt_magic_number);
+        ("cms_magic_number", t.cms_magic_number);
+        ("index_magic_number", t.index_magic_number)
+      ]
+    in
+    `Assoc
+      (List.map
+         (fun (key, value) -> (key, Merlin_utils.Std.Json.string value))
+         nums)
+end

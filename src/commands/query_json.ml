@@ -514,4 +514,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     let with_file = scope = `Project in
     `List (List.map locations ~f:(fun loc -> with_location ~with_file loc []))
   | Signature_help _, s -> json_of_signature_help s
-  | Version, version -> `String version
+  | Version, (version, magic_numbers) ->
+    `Assoc
+      [ ("version", `String version);
+        ("magicNumbers", Config.Magic_numbers.to_json magic_numbers)
+      ]

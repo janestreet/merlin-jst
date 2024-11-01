@@ -15,7 +15,13 @@ let rewrite_root = ref false
 let store_shapes = ref false
 let do_not_use_cmt_loadpath = ref false
 
-type command = Aggregate | Dump | Dump_file_stats | Stats | Gather_shapes
+type command =
+  | Aggregate
+  | Dump
+  | Dump_file_stats
+  | Stats
+  | Gather_shapes
+  | Magic_numbers
 
 let parse_command = function
   | "aggregate" -> Some Aggregate
@@ -23,6 +29,7 @@ let parse_command = function
   | "dump-file-stats" -> Some Dump_file_stats
   | "stats" -> Some Stats
   | "gather-shapes" -> Some Gather_shapes
+  | "magic-numbers" -> Some Magic_numbers
   | _ -> None
 
 let command = ref None
@@ -128,5 +135,9 @@ let () =
           (Hashtbl.length cu_shape)
           (Option.value ~default:"none" root_directory))
       (List.rev !input_files_rev)
-  | _ -> Printf.printf "Nothing to do.\n%!");
+  | Some Magic_numbers ->
+    let json = Config.Magic_numbers.(to_json current) in
+    Yojson.Basic.to_channel stdout json;
+    print_newline ()
+  | None -> Printf.printf "Nothing to do.\n%!");
   exit 0

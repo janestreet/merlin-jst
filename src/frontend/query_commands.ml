@@ -978,5 +978,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         }
     | None -> None)
   | Version ->
-    Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
-      Merlin_config.version Sys.ocaml_version
+    let version =
+      Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
+        Merlin_config.version Sys.ocaml_version
+    in
+    let magic_numbers = Config.Magic_numbers.current in
+    (version, magic_numbers)
