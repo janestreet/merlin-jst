@@ -43,12 +43,13 @@ escape characters in string literals, so we use the revert-newlines script.
   >   file=$1
   >   position=$2
   >   index=$3
+  >   trailing=$4
   >   line=$(echo "$position" | cut -d ':' -f 1)
   >   col=$(echo "$position" | cut -d ':' -f 2)
   >   highlight_range "$file" $line $(expr $col - 1) $line $col
   >   merlin=$(
   >     $MERLIN single stack-or-heap-enclosing -position "$position" -verbosity "$verbosity" \
-  >       -filename "$file" < "$file" | revert-newlines
+  >       -filename "$file" $trailing < "$file" | revert-newlines
   >   )
   >   echo
   >   if [ "$(echo "$merlin" | jq ".value[$index]")" != null ]
@@ -71,7 +72,7 @@ escape characters in string literals, so we use the revert-newlines script.
   >   do
   >     for i in $(seq 0 $until)
   >     do
-  >       run "$orig_file.tmp.ml" $lc $i
+  >       run "$orig_file.tmp.ml" $lc $i "$3"
   >     done
   >   done
   >   rm "$orig_file.tmp.ml"
@@ -721,4 +722,153 @@ escape characters in string literals, so we use the revert-newlines script.
   |      ^^^^^^^^^^^^^^^^^
   
   "stack"
+  
+(X) Special cases for LSP hover
+
+  $ run_annotated_file lsp_compat.ml
+  |  Some (g z)
+  |    ^
+  
+  |  Some (g z)
+  |  ^^^^^^^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |             ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^^^^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |            ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^^^^^^^
+  
+  "stack"
+  
+  |let f g x y =
+  |    ^
+  
+  |let f g x y =
+  |^^^^^^^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |and h g x y =
+  |    ^
+  
+  |and h g x y =
+  |^^^^^^^^^^^^^
+  |  let z = x + y in
+  |^^^^^^^^^^^^^^^^^^
+  |  exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^
+  
+  "heap"
+  
+  |  let f g x y =
+  |      ^
+  
+  |  let f g x y =
+  |  ^^^^^^^^^^^^^
+  |    let z = x + y in
+  |^^^^^^^^^^^^^^^^^^^^
+  |    exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |  and h g x y =
+  |      ^
+  
+  |  and h g x y =
+  |  ^^^^^^^^^^^^^
+  |    let z = x + y in
+  |^^^^^^^^^^^^^^^^^^^^
+  |    exclave_ Some (g z)
+  |^^^^^^^^^^^^^^^^^^^^^^^
+  
+  "stack"
+  
+  |let x = Some 5
+  |    ^
+  
+  |let x = Some 5
+  |    ^
+  
+  "no relevant allocation to show"
+  
+
+  $ run_annotated_file lsp_compat.ml 1 "-lsp-compat true"
+  |  Some (g z)
+  |    ^
+  
+  |  Some (g z)
+  |  ^^^^
+  
+  "heap"
+  
+  |  exclave_ Some (g z)
+  |             ^
+  
+  |  exclave_ Some (g z)
+  |           ^^^^
+  
+  "stack"
+  
+  |  let z = Some (g x) in
+  |            ^
+  
+  |  let z = Some (g x) in
+  |          ^^^^
+  
+  "stack"
+  
+  |let f g x y =
+  |    ^
+  
+  |let f g x y =
+  |    ^
+  
+  "heap"
+  
+  |and h g x y =
+  |    ^
+  
+  |and h g x y =
+  |    ^
+  
+  "heap"
+  
+  |  let f g x y =
+  |      ^
+  
+  |  let f g x y =
+  |      ^
+  
+  "stack"
+  
+  |  and h g x y =
+  |      ^
+  
+  |  and h g x y =
+  |      ^
+  
+  "stack"
+  
+  |let x = Some 5
+  |    ^
+  
+  |let x = Some 5
+  |    ^
+  
+  "no relevant allocation to show"
   

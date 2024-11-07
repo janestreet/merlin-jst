@@ -708,6 +708,8 @@ let all_commands =
          of expressions known not to allocate, give \"unknown (does your code \
          contain a type error?)\". As suggested by the message, this should \
          only occur if the input does not typecheck.\n\n\
+         `-lsp-compat` can be used to change the locations reported for better \
+         LSP hover interaction.\n\n\
          `-index` can be used to print only one \"stack-or-heap\".\n\n\
          The result is returned as a list of:\n\
          ```javascript\n\
@@ -719,21 +721,31 @@ let all_commands =
          ```"
       ~spec:
         [ arg "-position" "<position> Position to complete"
-            (marg_position (fun pos (expr, cursor, _pos, index) ->
-                 (expr, cursor, pos, index)));
+            (marg_position (fun pos (expr, cursor, _pos, lsp_compat, index) ->
+                 (expr, cursor, pos, lsp_compat, index)));
+          optional "-lsp-compat"
+            "<bool> Report ranges that are less accurate but work better with \
+             LSP hover"
+            (Marg.param "bool"
+               (fun lsp_compat (expr, cursor, pos, _lsp_compat, index) ->
+                 match bool_of_string lsp_compat with
+                 | lsp_compat -> (expr, cursor, pos, lsp_compat, index)
+                 | exception _ -> failwith "lsp_compat should be a bool"));
           optional "-index" "<int> Only print type of <index>'th result"
-            (Marg.param "int" (fun index (expr, cursor, pos, _index) ->
+            (Marg.param "int"
+               (fun index (expr, cursor, pos, lsp_compat, _index) ->
                  match int_of_string index with
-                 | index -> (expr, cursor, pos, Some index)
+                 | index -> (expr, cursor, pos, lsp_compat, Some index)
                  | exception _ -> failwith "index should be an integer"))
         ]
-      ~default:("", -1, `None, None)
+      ~default:("", -1, `None, false, None)
       begin
-        fun buffer (_, _, pos, index) ->
+        fun buffer (_, _, pos, lsp_compat, index) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Stack_or_heap_enclosing (pos, index))
+            run buffer
+              (Query_protocol.Stack_or_heap_enclosing (pos, lsp_compat, index))
       end;
     command "type-enclosing"
       ~doc:

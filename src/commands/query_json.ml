@@ -56,12 +56,13 @@ let dump (type a) : a t -> json =
   | Type_expr (expr, pos) ->
     mk "type-expression"
       [ ("expression", `String expr); ("position", mk_position pos) ]
-  | Stack_or_heap_enclosing (pos, index) ->
+  | Stack_or_heap_enclosing (pos, lsp_compat, index) ->
     mk "stack-or-heap-enclosing"
       [ ( "index",
           match index with
           | None -> `String "all"
           | Some n -> `Int n );
+        ("lsp-compat", `Bool lsp_compat);
         ("position", mk_position pos)
       ]
   | Type_enclosing (opt_cursor, pos, index) ->
