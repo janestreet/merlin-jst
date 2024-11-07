@@ -11,14 +11,15 @@ type stack_or_heap =
 type stack_or_heap_enclosings = (Location.t * stack_or_heap) list
 
 let from_nodes ~lsp_compat ~pos ~path =
-  let[@tail_mod_cons] rec tails = function
-    | hd :: tl -> (hd, tl) :: tails tl
+  let[@tail_mod_cons] rec with_parents = function
+    | node :: parent :: rest -> (node, Some parent) :: with_parents (parent :: rest)
+    | [ node ] -> [ node, None ]
     | [] -> []
   in
   let cursor_is_inside ({ loc_start; loc_end; _ } : Location.t) =
     Lexing.compare_pos pos loc_start >= 0 && Lexing.compare_pos pos loc_end <= 0
   in
-  let aux node parent =
+  let aux (node, parent) =
     let open Browse_raw in
     let ret ?(loc = Mbrowse.node_loc node) mode_result =
       Some (loc, mode_result)
@@ -117,6 +118,5 @@ let from_nodes ~lsp_compat ~pos ~path =
   in
   path
   |> List.map ~f:(fun (_, node, _) -> node)
-  |> tails
-  |> List.filter_map ~f:(fun (node, ancestors) ->
-         aux node (List.nth_opt ancestors 0))
+  |> with_parents
+  |> List.filter_map ~f:aux
