@@ -12,8 +12,9 @@ type stack_or_heap_enclosings = (Location.t * stack_or_heap) list
 
 let from_nodes ~lsp_compat ~pos ~path =
   let[@tail_mod_cons] rec with_parents = function
-    | node :: parent :: rest -> (node, Some parent) :: with_parents (parent :: rest)
-    | [ node ] -> [ node, None ]
+    | node :: parent :: rest ->
+      (node, Some parent) :: with_parents (parent :: rest)
+    | [ node ] -> [ (node, None) ]
     | [] -> []
   in
   let cursor_is_inside ({ loc_start; loc_end; _ } : Location.t) =
@@ -118,5 +119,4 @@ let from_nodes ~lsp_compat ~pos ~path =
   in
   path
   |> List.map ~f:(fun (_, node, _) -> node)
-  |> with_parents
-  |> List.filter_map ~f:aux
+  |> with_parents |> List.filter_map ~f:aux
