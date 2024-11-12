@@ -4,11 +4,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # Script arguments with their default values
 repository=https://github.com/ocaml-flambda/flambda-backend
-subdirectory=ocaml
+subdirectory=.
+old_subdirectory=.
 
 function usage () {
   cat <<USAGE
-Usage: $0 COMMITISH [REPO [SUBDIRECTORY]]
+Usage: $0 COMMITISH [REPO [SUBDIRECTORY [OLD_SUBDIRECTORY]]]
 
 Fetch the new compiler sources and patch Merlin to keep Merlin's local copies of
 things in sync.  By default, this will pull the COMMITISH branch from
@@ -47,9 +48,10 @@ else
   exit 1
 fi
 
-if [[ $# -le 3 ]]; then
+if [[ $# -le 4 ]]; then
   repository="${2-$repository}"
   subdirectory="${3-$subdirectory}"
+  old_subdirectory="${4-$old_subdirectory}"
 else
   usage >&2
   exit 1
@@ -68,7 +70,7 @@ old_base_rev="$(cat upstream/ocaml_flambda/base-rev.txt)"
 current_head="$(git symbolic-ref --short HEAD)"
 
 # First, add any files that have been added since the last import.
-./import-added-ocaml-source-files.sh "$commitish" "$repository" "$subdirectory"
+./import-added-ocaml-source-files.sh "$commitish" "$repository" "$subdirectory" "$old_subdirectory"
 
 # Then, fetch the new flambda-backend sources (which include ocaml-jst) and
 # copy into upstream/ocaml_flambda
@@ -77,7 +79,12 @@ rev=$(git rev-parse FETCH_HEAD)
 cd upstream/ocaml_flambda
 echo $rev > base-rev.txt
 for file in $(git ls-tree --name-only -r HEAD | grep -v base-rev.txt); do
-  git show "FETCH_HEAD:$subdirectory/$file" > "$file";
+  if [[ "$subdirectory" = "." ]]; then
+    git_file="$file"
+  else
+    git_file="$subdirectory/$file"
+  fi
+  git show "FETCH_HEAD:$git_file" > "$file"
 done
 git add -u .
 cd ../..

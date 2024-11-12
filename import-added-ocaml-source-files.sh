@@ -7,11 +7,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # Script arguments with their default values
 commitish=main
 repository=https://github.com/ocaml-flambda/flambda-backend
-subdirectory=ocaml
+subdirectory=.
+old_subdirectory=.
 
 function usage () {
   cat <<USAGE
-Usage: $0 [COMMITISH [REPO [SUBDIRECTORY]]]
+Usage: $0 [COMMITISH [REPO [SUBDIRECTORY [OLD_SUBDIRECTORY]]]]
 
 Fetches any new files that previously hadn't been imported. This ignores
 files outside of *directories* that were previously imported,
@@ -20,10 +21,11 @@ add the new file.
 USAGE
 }
 
-if [[ $# -le 3 ]]; then
+if [[ $# -le 4 ]]; then
   commitish="${1-$commitish}"
   repository="${2-$repository}"
   subdirectory="${3-$subdirectory}"
+  old_subdirectory="${4-$old_subdirectory}"
 else
   usage >&2
   exit 1
@@ -39,7 +41,7 @@ esac
 # First, fetch the new flambda-backend sources (which include ocaml-jst).
 
 function sorted_files_at_committish() {
-  git ls-tree -r --name-only "$1" | sort
+  git ls-tree -r --name-only "$1" "$2" | sed "s#^$2/##" | sort
 }
 
 git fetch "$repository" "$(cat upstream/ocaml_flambda/base-rev.txt)"
@@ -48,15 +50,15 @@ rev=$(git rev-parse FETCH_HEAD)
 
 function files_new_at_fetch_head() {
   comm -13 \
-    <(sorted_files_at_committish "$(cat upstream/ocaml_flambda/base-rev.txt)") \
-    <(sorted_files_at_committish FETCH_HEAD)
+    <(sorted_files_at_committish "$(cat upstream/ocaml_flambda/base-rev.txt)" "$old_subdirectory") \
+    <(sorted_files_at_committish FETCH_HEAD "$subdirectory")
 }
 
 function directories_from_previous_import() {
   comm -12 \
     <(cd src/ocaml; ls -d */) \
     <(cd upstream/ocaml_flambda; ls -d */) \
-  | xargs -n 1 printf "^$subdirectory/%s\n"
+  | xargs -n 1 printf "^%s\n"
 }
 
 files=$(files_new_at_fetch_head | grep -f <(directories_from_previous_import))
@@ -69,9 +71,9 @@ for file in $files; do
   case ${answer} in
     y|Y|"" )
       echo "Importing $file"
-      ocaml_flambda_file=upstream/ocaml_flambda/"${file#$subdirectory/}"
+      ocaml_flambda_file=upstream/ocaml_flambda/"${file}"
       git show "FETCH_HEAD:$file" > "$ocaml_flambda_file"
-      cp "$ocaml_flambda_file" src/$file
+      cp "$ocaml_flambda_file" src/ocaml/$file
       ;;
     * )
       echo "Skipping $file; run '$0' again in order to make a different decision"
