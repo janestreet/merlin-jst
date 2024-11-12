@@ -259,11 +259,11 @@ let constant f = function
       paren (first_is '-' i) (fun f (i,m) -> pp f "%s%c" i m) f (i,m)
   | Pconst_unboxed_float (x, None) ->
       paren (first_is '-' x) (fun f -> pp f "%s") f
-        (Misc.format_as_unboxed_literal x)
+        (Misc_stdlib.format_as_unboxed_literal x)
   | Pconst_unboxed_float (x, Some suffix)
   | Pconst_unboxed_integer (x, suffix) ->
       paren (first_is '-' x) (fun f (x, suffix) -> pp f "%s%c" x suffix) f
-        (Misc.format_as_unboxed_literal x, suffix)
+        (Misc_stdlib.format_as_unboxed_literal x, suffix)
 
 (* trailing space*)
 let mutable_flag f = function
@@ -2301,10 +2301,11 @@ let class_type = print_reset_with_maximal_extensions class_type
 let class_signature = print_reset_with_maximal_extensions class_signature
 let structure_item = print_reset_with_maximal_extensions structure_item
 let signature_item = print_reset_with_maximal_extensions signature_item
+let signature_items = print_reset_with_maximal_extensions signature_items
 let binding = print_reset_with_maximal_extensions binding
 let payload = print_reset_with_maximal_extensions payload
 let type_declaration = print_reset_with_maximal_extensions type_declaration
-let jkind = print_reset_with_maximal_extensions jkind
+let jkind_annotation = print_reset_with_maximal_extensions jkind_annotation
 
 (* Added in merlin *)
 let case_list = print_reset_with_maximal_extensions case_list
@@ -2374,6 +2375,9 @@ let prepare_error err =
   | Missing_unboxed_literal_suffix loc ->
     Location.errorf ~loc
       "Syntax error: Unboxed integer literals require width suffixes."
+  | Malformed_instance_identifier loc ->
+      Location.errorf ~loc
+        "Syntax error: Unexpected in module instance"
 
 let () =
   Location.register_error_of_exn

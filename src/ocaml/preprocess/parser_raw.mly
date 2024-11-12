@@ -926,10 +926,10 @@ let unboxed_int sloc int_loc sign (n, m) =
   | None ->
       if Language_extension.is_enabled unboxed_literals_extension then
         (raise_error Syntaxerr.(Error(Missing_unboxed_literal_suffix (make_loc int_loc)));
-         Constant.unboxed (Integer (with_sign sign n, 'l')))
+         Pconst_unboxed_integer (with_sign sign n, 'l'))
       else
         (not_expecting sloc "line number directive";
-         Constant.unboxed (Integer (with_sign sign n, 'l')))
+         Pconst_unboxed_integer (with_sign sign n, 'l'))
 
 let unboxed_float sign (f, m) = Pconst_unboxed_float (with_sign sign f, m)
 
@@ -984,7 +984,14 @@ let merloc startpos ?endpos x =
     Pat.any ~loc:!default_loc (), None, []
 
   let default_module_expr () = Mod.structure ~loc:!default_loc []
-  let default_module_type () = Mty.signature ~loc:!default_loc []
+  let default_module_type () =
+    let desc = {
+        psg_modalities = [];
+        psg_items = [];
+        psg_loc = !default_loc;
+      } 
+    in
+    Mty.signature ~loc:!default_loc desc
 ]
 
 /* Tokens */

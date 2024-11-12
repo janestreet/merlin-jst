@@ -2063,7 +2063,8 @@ and transl_signature ?(keep_warnings = false) env sig_acc {psg_items; psg_modali
          transl_sig (Env.in_signature true env) [] [] sig_acc psg_items
        in
        let rem = Signature_names.simplify final_env names rem in
-       { sig_items = trem; sig_type = rem; sig_final_env = final_env })
+       { sig_items = trem; sig_type = rem; sig_final_env = final_env;
+         sig_modalities; sig_sloc = psg_loc })
 
 and transl_modtype_decl env pmtd =
   Builtin_attributes.warning_scope pmtd.pmtd_attributes
@@ -2433,7 +2434,7 @@ and package_constraints env loc mty constrs =
     match Mtype.scrape env mty with
     | Mty_signature sg ->
         Mty_signature (package_constraints_sig env loc sg constrs)
-    | Mty_for_hole -> Mty_for_hole
+    | Mty_for_hole as mty_for_hole -> mty_for_hole
     | mty ->
       let rec ident = function
           Mty_ident p -> p

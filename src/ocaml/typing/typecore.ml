@@ -2615,6 +2615,7 @@ let rec type_pat
              pat_type = expected_ty;
              pat_env = !!penv;
              pat_attributes = Msupport.recovery_attributes sp.ppat_attributes;
+             pat_unique_barrier = Unique_barrier.not_computed ();
            }
          in
          (match category with
@@ -6009,6 +6010,13 @@ and type_expect_
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_array(mut, sargl) ->
+    let mutability =
+      match mut with
+      | Mutable -> Mutable Alloc.Comonadic.Const.legacy
+      | Immutable ->
+          Language_extension.assert_enabled ~loc Immutable_arrays ();
+          Immutable
+    in
     type_generic_array
       ~loc
       ~env
@@ -6695,7 +6703,6 @@ and type_expect_
            exp_attributes = sexp.pexp_attributes;
            exp_env = env }
   | Pexp_stack e ->
-      let exp = type_expect env expected_mode e ty_expected_explained in
       let expected_mode' =
         mode_morph (Value.join_with (Comonadic Areality) Regionality.Const.Local)
           expected_mode
@@ -6714,7 +6721,7 @@ and type_expect_
         begin match Locality.submode Locality.local
           (Alloc.proj (Comonadic Areality) alloc_mode.mode) with
         | Ok () -> ()
-        | Error _ -> raise (error (e.exp_loc, env,
+        | Error _ -> raise (error (e.pexp_loc, env,
             Cannot_stack_allocate alloc_mode.locality_context))
         end
       | Texp_list_comprehension _ -> unsupported List_comprehension

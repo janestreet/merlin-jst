@@ -555,7 +555,7 @@ and compute_global penv modname ~params check =
     let compare_by_param (param1, _) (param2, _) =
       Global_module.Name.compare param1 param2
     in
-    Misc.Stdlib.List.merge_iter
+    Misc_stdlib.List.merge_iter
       ~cmp:compare_by_param
       expected_type_by_param_name
       arg_global_by_param_name

@@ -2166,7 +2166,9 @@ let rec components_of_module_maker
           fcomp_subst_cache = stamped_create 17 })
   | Mty_ident p | Mty_strengthen (_, p, _) -> Error (No_components_abstract p)
   | Mty_alias p -> Error (No_components_alias p)
-  | Mty_for_hole -> Error No_components_abstract
+  (* TODO: I'm not sure what to do for this. Is create_local the right way to create
+     this? *)
+  | Mty_for_hole -> Error (No_components_abstract (Pident (Ident.create_local "hole")))
 
 (* Insertion of bindings by identifier + path *)
 
@@ -2749,177 +2751,6 @@ let enter_unbound_module name reason env =
   { env with
     modules = IdTbl.add id (Mod_unbound reason) env.modules;
     summary = Env_module_unbound(env.summary, name, reason) }
-
-(* Open a signature path *)
-
-let add_components slot root env0 comps =
-  let add_l w comps env0 =
-    TycompTbl.add_open slot w root comps env0
-  in
-  let add w comps env0 = IdTbl.add_open slot w root comps env0 in
-  let add_types w comps env0 additions =
-    let types = add w comps env0 in
-    let additions = short_paths_type_open root comps additions in
-    types, additions
-  in
-  let add_cltypes w comps env0 additions =
-    let cltypes = add w comps env0 in
-    let additions = short_paths_class_type_open root comps additions in
-    cltypes, additions
-  in
-  let add_modtypes w comps env0 additions =
-    let modtypes = add w comps env0 in
-    let additions = short_paths_module_type_open root comps additions in
-    modtypes, additions
-  in
-  let add_modules w comps env0 additions =
-    let modules = add w comps env0 in
-    let additions = short_paths_module_open root comps additions in
-    modules, additions
-  in
-  let constrs =
-    add_l (fun x -> `Constructor x) comps.comp_constrs env0.constrs
-  in
-  let labels =
-    add_l (fun x -> `Label x) comps.comp_labels env0.labels
-  in
-  let values =
-    add (fun x -> `Value x) comps.comp_values env0.values
-  in
-  let types, additions =
-    add_types (fun x -> `Type x)
-      comps.comp_types env0.types env0.short_paths_additions
-  in
-  let modtypes, additions =
-    add_modtypes (fun x -> `Module_type x)
-      comps.comp_modtypes env0.modtypes additions
-  in
-  let classes =
-    add (fun x -> `Class x) comps.comp_classes env0.classes
-  in
-  let cltypes, additions =
-    add_cltypes (fun x -> `Class_type x)
-      comps.comp_cltypes env0.cltypes additions
-  in
-  let modules, additions =
-    add_modules (fun x -> `Module x)
-      comps.comp_modules env0.modules additions
-  in
-  { env0 with
-    summary = Env_open(env0.summary, root);
-    constrs;
-    labels;
-    values;
-    types;
-    modtypes;
-    classes;
-    cltypes;
-    modules;
-    short_paths_additions = additions
-  }
-
-let open_signature slot root env0 : (_,_) result =
-  match get_components_res (find_module_components root env0) with
-  | Error _ -> Error `Not_found
-  | exception Not_found -> Error `Not_found
-  | Ok (Functor_comps _) -> Error `Functor
-  | Ok (Structure_comps comps) ->
-    Ok (add_components slot root env0 comps)
-
-let remove_last_open root env0 =
-  let rec filter_summary summary =
-    match summary with
-      Env_empty -> raise Exit
-    | Env_open (s, p) ->
-        if Path.same p root then s else raise Exit
-    | Env_value _
-    | Env_type _
-    | Env_extension _
-    | Env_module _
-    | Env_modtype _
-    | Env_class _
-    | Env_cltype _
-    | Env_functor_arg _
-    | Env_constraints _
-    | Env_persistent _
-    | Env_copy_types _
-    | Env_value_unbound _
-    | Env_module_unbound _ ->
-        map_summary filter_summary summary
-  in
-  match filter_summary env0.summary with
-  | summary ->
-      let rem_l tbl = TycompTbl.remove_last_open root tbl
-      and rem tbl = IdTbl.remove_last_open root tbl in
-      Some { env0 with
-             summary;
-             constrs = rem_l env0.constrs;
-             labels = rem_l env0.labels;
-             values = rem env0.values;
-             types = rem env0.types;
-             modtypes = rem env0.modtypes;
-             classes = rem env0.classes;
-             cltypes = rem env0.cltypes;
-             modules = rem env0.modules; }
-  | exception Exit ->
-      None
-
-(* Open a signature from a file *)
-
-let open_pers_signature name env =
-  match open_signature None (Pident(Ident.create_persistent name)) env with
-  | (Ok _ | Error `Not_found as res) -> res
-  | Error `Functor -> assert false
-        (* a compilation unit cannot refer to a functor *)
-
-let open_signature
-    ?(used_slot = ref false)
-    ?(loc = Location.none) ?(toplevel = false)
-    ovf root env =
-  let unused root =
-    match ovf with
-    | Asttypes.Fresh -> Warnings.Unused_open (Path.name root)
-    | Asttypes.Override -> Warnings.Unused_open_bang (Path.name root)
-  in
-  let warn_unused =
-    Warnings.is_active (unused root)
-  and warn_shadow_id =
-    Warnings.is_active (Warnings.Open_shadow_identifier ("", ""))
-  and warn_shadow_lc =
-    Warnings.is_active (Warnings.Open_shadow_label_constructor ("",""))
-  in
-  if not toplevel && not loc.Location.loc_ghost
-     && (warn_unused || warn_shadow_id || warn_shadow_lc)
-  then begin
-    let used = used_slot in
-    if warn_unused then
-      !add_delayed_check_forward
-        (fun () ->
-           if not !used then begin
-             used := true;
-             Location.prerr_warning loc (unused (!shorten_module_path env root))
-           end
-        );
-    let shadowed = ref [] in
-    let slot s b =
-      begin match check_shadowing env b with
-      | Some kind when
-          ovf = Asttypes.Fresh && not (List.mem (kind, s) !shadowed) ->
-          shadowed := (kind, s) :: !shadowed;
-          let w =
-            match kind with
-            | "label" | "constructor" ->
-                Warnings.Open_shadow_label_constructor (kind, s)
-            | _ -> Warnings.Open_shadow_identifier (kind, s)
-          in
-          Location.prerr_warning loc w
-      | _ -> ()
-      end;
-      used := true
-    in
-    open_signature (Some slot) root env
-  end
-  else open_signature None root env
 
 (* Read a signature from a file *)
 let read_signature modname cmi ~add_binding =
@@ -3631,6 +3462,26 @@ let add_components slot root env0 comps locks =
   let add w comps env0 =
     IdTbl.add_open slot w root comps ([] : empty list) env0
   in
+  let add_types w comps env0 additions =
+    let types = add w comps env0 in
+    let additions = short_paths_type_open root comps additions in
+    types, additions
+  in
+  let add_cltypes w comps env0 additions =
+    let cltypes = add w comps env0 in
+    let additions = short_paths_class_type_open root comps additions in
+    cltypes, additions
+  in
+  let add_modtypes w comps env0 additions =
+    let modtypes = add w comps env0 in
+    let additions = short_paths_module_type_open root comps additions in
+    modtypes, additions
+  in
+  let add_modules w comps env0 additions =
+    let modules = add_v w comps env0 in
+    let additions = short_paths_module_open root comps additions in
+    modules, additions
+  in
   let constrs =
     add_l (fun x -> `Constructor x) comps.comp_constrs env0.constrs
   in
@@ -3640,20 +3491,24 @@ let add_components slot root env0 comps locks =
   let values =
     add_v (fun x -> `Value x) comps.comp_values env0.values
   in
-  let types =
-    add (fun x -> `Type x) comps.comp_types env0.types
+  let types, additions =
+    add_types (fun x -> `Type x)
+      comps.comp_types env0.types env0.short_paths_additions
   in
-  let modtypes =
-    add (fun x -> `Module_type x) comps.comp_modtypes env0.modtypes
+  let modtypes, additions =
+    add_modtypes (fun x -> `Module_type x)
+      comps.comp_modtypes env0.modtypes additions
   in
   let classes =
     add_v (fun x -> `Class x) comps.comp_classes env0.classes
   in
-  let cltypes =
-    add (fun x -> `Class_type x) comps.comp_cltypes env0.cltypes
+  let cltypes, additions =
+    add_cltypes (fun x -> `Class_type x)
+      comps.comp_cltypes env0.cltypes additions
   in
-  let modules =
-    add_v (fun x -> `Module x) comps.comp_modules env0.modules
+  let modules, additions =
+    add_modules (fun x -> `Module x)
+      comps.comp_modules env0.modules additions
   in
   { env0 with
     summary = Env_open(env0.summary, root);
@@ -3665,6 +3520,7 @@ let add_components slot root env0 comps locks =
     classes;
     cltypes;
     modules;
+    short_paths_additions = additions
   }
 
 let open_signature_by_path path env0 =
