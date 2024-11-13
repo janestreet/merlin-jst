@@ -575,13 +575,7 @@ module Conv = struct
         (* PR#7330 *)
         mkpat (Ppat_var nm)
       | Tpat_any | Tpat_var _ -> mkpat Ppat_any
-      | Tpat_constant c -> begin
-        match Untypeast.constant c with
-        | `Jane_syntax c ->
-          Jane_syntax.Layouts.pat_of (Lpat_constant c)
-            ~loc:!Ast_helper.default_loc
-        | `Parsetree c -> mkpat (Ppat_constant c)
-      end
+      | Tpat_constant c -> mkpat (Ppat_constant (Untypeast.constant c))
       | Tpat_alias (p, _, _, _, _) -> loop p
       | Tpat_tuple lst ->
         let lst = List.map ~f:(fun (lbl, p) -> (lbl, loop p)) lst in
@@ -617,17 +611,16 @@ module Conv = struct
         mkpat (Ppat_record (fields, Open))
       | Tpat_array (mut, _, lst) ->
         let lst = List.map ~f:loop lst in
-        begin
+        let mut : Asttypes.mutable_flag =
           match mut with
           | Mutable mode ->
             assert (
               Mode.Alloc.Comonadic.Const.eq mode
                 Mode.Alloc.Comonadic.Const.legacy);
-            mkpat (Ppat_array lst)
-          | Immutable ->
-            Jane_syntax.Immutable_arrays.pat_of ~loc:pat.pat_loc
-              (Iapat_immutable_array lst)
-        end
+            Mutable
+          | Immutable -> Immutable
+        in
+        mkpat (Ppat_array (mut, lst))
       | Tpat_lazy p -> mkpat (Ppat_lazy (loop p))
     in
     let ps = loop typed in
