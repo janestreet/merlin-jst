@@ -47,6 +47,7 @@ val class_type: Format.formatter -> Parsetree.class_type -> unit
 val module_type: Format.formatter -> Parsetree.module_type -> unit
 val structure_item: Format.formatter -> Parsetree.structure_item -> unit
 val signature_item: Format.formatter -> Parsetree.signature_item -> unit
+val signature_items: Format.formatter -> Parsetree.signature_item list -> unit
 val binding: Format.formatter -> Parsetree.value_binding -> unit
 val payload: Format.formatter -> Parsetree.payload -> unit
 
@@ -63,8 +64,14 @@ val tyvar: Format.formatter -> string -> unit
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
 val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
 
+||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
+val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
+=======
+val jkind_annotation : Format.formatter -> Parsetree.jkind_annotation -> unit
+>>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
 val mode : Format.formatter -> Parsetree.mode Location.loc -> unit
 
 (* merlin *)
