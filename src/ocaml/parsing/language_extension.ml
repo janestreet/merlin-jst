@@ -542,3 +542,19 @@ module For_pprintast = struct
       Misc.fatal_error
         "Only Pprintast may use [Language_extension.For_pprintast]"
 end
+
+(* merlin-jst: Enable all the ocaml-jst language extensions.  We do it this way
+   rather than updating [default_extensions] to avoid merge conflicts. *)
+let _ =
+  assert Universe.(is maximal);
+  (* It's safe to call this here because we've confirmed that we can. *)
+  unconditionally_enable_maximal_without_checks ();
+  (* For now, we override the mode and layouts extensions to be in Beta instead of Alpha.
+     This is to prevent printing unnecessary annotations. *)
+  let lower_mode_extension = function
+  | Pair (Mode, Alpha) -> Pair (Mode, Beta)
+  | Pair (Layouts, Alpha) -> Pair (Layouts, Beta)
+  | _ as pair -> pair
+in
+  extensions := List.map lower_mode_extension !extensions
+;;
