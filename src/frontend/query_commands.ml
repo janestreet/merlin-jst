@@ -609,10 +609,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let ppxed_parsetree = Mpipeline.ppx_parsetree pipeline in
     let ppx_kind_with_attr = Ppx_expand.check_extension ~parsetree ~pos in
     match ppx_kind_with_attr with
-    | Some _ ->
+    | Some ppx_kind_with_attr ->
       `Found
-        (Ppx_expand.get_ppxed_source ~ppxed_parsetree ~pos
-           (Option.get ppx_kind_with_attr))
+        (Ppx_expand.get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr)
     | None -> `No_ppx)
   | Locate (patho, ml_or_mli, pos, context) ->
     let typer = Mpipeline.typer_result pipeline in

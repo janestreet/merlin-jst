@@ -34,8 +34,12 @@ let rec module_type =
 and core_type type_expr =
   let open Ast_helper in
   match Types.get_desc type_expr with
-  | Tvar { name = None; _ } | Tunivar { name = None; _ } -> Typ.any ()
-  | Tvar { name = Some s; _ } | Tunivar { name = Some s; _ } -> Typ.var s
+  | Tvar { name = None; jkind = _ } | Tunivar { name = None; jkind = _ } ->
+    (* CR modes: do something better here with the jkind *)
+    Typ.any None
+  | Tvar { name = Some s; jkind = _ } | Tunivar { name = Some s; jkind = _ } ->
+    (* CR modes: do something better here with the jkind *)
+    Typ.var s None
   | Tarrow
       ( (label, arg_alloc_mode, ret_alloc_mode),
         type_expr,
@@ -119,8 +123,10 @@ and core_type type_expr =
       List.map
         ~f:(fun v ->
           match get_desc v with
-          | Tunivar { name = Some name; _ } | Tvar { name = Some name; _ } ->
-            mknoloc name
+          | Tunivar { name = Some name; jkind = _ }
+          | Tvar { name = Some name; jkind = _ } ->
+            (* CR modes: do something  *)
+            (mknoloc name, None)
           | _ -> failwith "poly: not a var")
         type_exprs
     in
@@ -270,10 +276,15 @@ and signature_item (str_item : Types.signature_item) =
     in
     Sig.text [ Docstrings.docstring str Location.none ] |> List.hd
 
-and signature (items : Types.signature_item list) =
-  List.map (group_items items) ~f:(function
-    | Item item -> signature_item item
-    | Type (rec_flag, type_decls) -> Ast_helper.Sig.type_ rec_flag type_decls)
+and signature (items : Types.signature) =
+  { psg_modalities = [];
+    psg_items =
+      List.map (group_items items) ~f:(function
+        | Item item -> signature_item item
+        | Type (rec_flag, type_decls) ->
+          Ast_helper.Sig.type_ rec_flag type_decls);
+    psg_loc = Location.none
+  }
 
 and group_items (items : Types.signature_item list) =
   let rec read_type type_acc items =

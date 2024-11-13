@@ -142,6 +142,32 @@ let add_hidden_signature env sign =
   List.fold_left ~f:add_item ~init:env sign
 *)
 
+(* Combine a list of signatures together into one by turning [s1; s2; ...] into:
+     sig
+       include s1
+       include s2
+       ...
+     end *)
+let combine_sigs sigs : Parsetree.signature =
+  let items =
+    List.map sigs ~f:(fun sig_ : Parsetree.signature_item ->
+        { psig_desc =
+            Psig_include
+              ( { pincl_kind = Structure;
+                  pincl_mod =
+                    { pmty_desc = Pmty_signature sig_;
+                      pmty_loc = Location.none;
+                      pmty_attributes = []
+                    };
+                  pincl_loc = Location.none;
+                  pincl_attributes = []
+                },
+                [] );
+          psig_loc = Location.none
+        })
+  in
+  { psg_modalities = []; psg_items = items; psg_loc = Location.none }
+
 let register exts env =
   (* Log errors ? *)
   let try_type sg' = try type_sig env sg' with _exn -> [] in
@@ -155,8 +181,8 @@ let register exts env =
       exts
   in
   let process_ext e =
-    let prv = List.concat_map ~f:parse_sig e.private_def in
-    let pub = List.concat_map ~f:parse_sig e.public_def in
+    let prv = List.map ~f:parse_sig e.private_def |> combine_sigs in
+    let pub = List.map ~f:parse_sig e.public_def |> combine_sigs in
     (try_type prv, try_type pub)
   in
   let fakes, tops = List.split (List.map ~f:process_ext exts) in

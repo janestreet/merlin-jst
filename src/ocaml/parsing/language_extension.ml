@@ -186,7 +186,7 @@ let of_string extn_name : exist option =
 (************************************)
 (* equality *)
 
-let equal_t (type a b) (a : a t) (b : b t) : (a, b) Misc.eq option =
+let equal_t (type a b) (a : a t) (b : b t) : (a, b) Misc_stdlib.eq option =
   match a, b with
   | Comprehensions, Comprehensions -> Some Refl
   | Mode, Mode -> Some Refl
