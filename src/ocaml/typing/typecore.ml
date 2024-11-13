@@ -857,51 +857,15 @@ let constant : Parsetree.constant -> (Typedtree.constant, error) result =
     if Language_extension.is_enabled Small_numbers then Ok (Const_float32 f)
     else Error (Float32_literal f)
   | Pconst_float (f,Some c) -> Error (Unknown_literal (f, c))
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-
-let constant_or_raise env loc cst =
-  match constant cst with
-  | Ok c -> c
-  | Error err -> raise (error (loc, env, err))
-
-let unboxed_constant : Jane_syntax.Layouts.constant -> (Typedtree.constant, error) result
-  = function
-  | Float (f, None) -> Ok (Const_unboxed_float f)
-  | Float (f, Some 's') ->
-    if Language_extension.is_enabled Small_numbers then Ok (Const_unboxed_float32 f)
-    else Error (Float32_literal (Misc_stdlib.format_as_unboxed_literal f))
-  | Float (x, Some c) ->
-    Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal x, c))
-  | Integer (i, suffix) ->
-    begin match constant_integer i ~suffix with
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-
-let constant_or_raise env loc cst =
-  match constant cst with
-  | Ok c -> c
-  | Error err -> raise (Error (loc, env, err))
-
-let unboxed_constant : Jane_syntax.Layouts.constant -> (Typedtree.constant, error) result
-  = function
-  | Float (f, None) -> Ok (Const_unboxed_float f)
-  | Float (f, Some 's') ->
-    if Language_extension.is_enabled Small_numbers then Ok (Const_unboxed_float32 f)
-    else Error (Float32_literal (Misc.format_as_unboxed_literal f))
-  | Float (x, Some c) ->
-    Error (Unknown_literal (Misc.format_as_unboxed_literal x, c))
-  | Integer (i, suffix) ->
-    begin match constant_integer i ~suffix with
-=======
   | Pconst_unboxed_float (f, None) ->
       Ok (Const_unboxed_float f)
   | Pconst_unboxed_float (f, Some 's') ->
       if Language_extension.is_enabled Small_numbers then Ok (Const_unboxed_float32 f)
-      else Error (Float32_literal (Misc.format_as_unboxed_literal f))
+      else Error (Float32_literal (Misc_stdlib.format_as_unboxed_literal f))
   | Pconst_unboxed_float (x, Some c) ->
-      Error (Unknown_literal (Misc.format_as_unboxed_literal x, c))
+      Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal x, c))
   | Pconst_unboxed_integer (i, suffix) ->
       begin match constant_integer i ~suffix with
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
       | Ok (Int32 v) -> Ok (Const_unboxed_int32 v)
       | Ok (Int64 v) -> Ok (Const_unboxed_int64 v)
       | Ok (Nativeint v) -> Ok (Const_unboxed_nativeint v)
@@ -909,28 +873,9 @@ let unboxed_constant : Jane_syntax.Layouts.constant -> (Typedtree.constant, erro
       | Error Int64_literal_overflow -> Error (Literal_overflow "int64#")
       | Error Nativeint_literal_overflow -> Error (Literal_overflow "nativeint#")
       | Error Unknown_constant_literal ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-        Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal i, suffix))
-    end
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-        Error (Unknown_literal (Misc.format_as_unboxed_literal i, suffix))
-    end
-=======
-          Error (Unknown_literal (Misc.format_as_unboxed_literal i, suffix))
+          Error (Unknown_literal (Misc_stdlib.format_as_unboxed_literal i, suffix))
       end
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-let unboxed_constant_or_raise env loc cst =
-  match unboxed_constant cst with
-  | Ok c -> c
-  | Error err -> raise (error (loc, env, err))
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-let unboxed_constant_or_raise env loc cst =
-  match unboxed_constant cst with
-  | Ok c -> c
-  | Error err -> raise (Error (loc, env, err))
-=======
 let constant_or_raise env loc cst =
   match constant cst with
   | Ok c ->
@@ -946,8 +891,7 @@ let constant_or_raise env loc cst =
        | Const_float32 _ | Const_int32 _ | Const_int64 _ | Const_nativeint _ ->
            ());
       c
-  | Error err -> raise (Error (loc, env, err))
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+  | Error err -> raise (error (loc, env, err))
 
 (* Specific version of type_option, using newty rather than newgenty *)
 
@@ -2776,7 +2720,7 @@ and type_pat_aux
       (* If not, it's not allowed to be open (partial) *)
       | _ ->
         match closed with
-        | Open -> raise (Error (loc, !!penv, Partial_tuple_pattern_bad_type))
+        | Open -> raise (error (loc, !!penv, Partial_tuple_pattern_bad_type))
         | Closed -> spl
     in
     let spl_ann =
@@ -6064,14 +6008,14 @@ and type_expect_
         exp_type = instance Predef.type_unit;
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
-  | Pexp_array(sargl) ->
+  | Pexp_array(mut, sargl) ->
     type_generic_array
       ~loc
       ~env
       ~expected_mode
       ~ty_expected
       ~explanation
-      ~mutability:(Mutable Alloc.Comonadic.Const.legacy)
+      ~mutability
       ~attributes:sexp.pexp_attributes
       sargl
   | Pexp_ifthenelse(scond, sifso, sifnot) ->
@@ -6524,9 +6468,9 @@ and type_expect_
       in
       re { exp with exp_extra =
              (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
-  | Pexp_newtype(name, sbody) ->
+  | Pexp_newtype(name, jkind, sbody) ->
     type_newtype_expr ~loc ~env ~expected_mode ~rue ~attributes:sexp.pexp_attributes
-      name None sbody
+      name jkind sbody
   | Pexp_pack m ->
       (* CR zqian: pass [expected_mode] to [type_package] *)
       submode ~loc ~env Value.legacy expected_mode;
@@ -6752,8 +6696,13 @@ and type_expect_
            exp_env = env }
   | Pexp_stack e ->
       let exp = type_expect env expected_mode e ty_expected_explained in
+      let expected_mode' =
+        mode_morph (Value.join_with (Comonadic Areality) Regionality.Const.Local)
+          expected_mode
+      in
+      let exp = type_expect env expected_mode' e ty_expected_explained in
       let unsupported category =
-        raise (Error (exp.exp_loc, env, Unsupported_stack_allocation category))
+        raise (error (exp.exp_loc, env, Unsupported_stack_allocation category))
       in
       begin match exp.exp_desc with
       | Texp_function { alloc_mode; _} | Texp_tuple (_, alloc_mode)
@@ -6761,11 +6710,11 @@ and type_expect_
       | Texp_variant (_, Some (_, alloc_mode))
       | Texp_record {alloc_mode = Some alloc_mode; _}
       | Texp_array (_, _, _, alloc_mode)
-      | Texp_field (_, _, _, Boxing (alloc_mode, _)) ->
+      | Texp_field (_, _, _, Boxing (alloc_mode, _), _) ->
         begin match Locality.submode Locality.local
           (Alloc.proj (Comonadic Areality) alloc_mode.mode) with
         | Ok () -> ()
-        | Error _ -> raise (Error (exp.exp_loc, env,
+        | Error _ -> raise (error (e.exp_loc, env,
             Cannot_stack_allocate alloc_mode.locality_context))
         end
       | Texp_list_comprehension _ -> unsupported List_comprehension
@@ -6776,10 +6725,20 @@ and type_expect_
       | Texp_object _ -> unsupported Object
       | Texp_pack _ -> unsupported Module
       | _ ->
-        raise (Error (exp.exp_loc, env, Not_allocation))
+        raise (error (exp.exp_loc, env, Not_allocation))
       end;
+      submode ~loc ~env (Value.min_with (Comonadic Areality) Regionality.local)
+        expected_mode;
       let exp_extra = (Texp_stack, loc, []) :: exp.exp_extra in
       {exp with exp_extra}
+  | Pexp_comprehension comp ->
+      Language_extension.assert_enabled ~loc Comprehensions ();
+      type_comprehension_expr
+        ~loc
+        ~env
+        ~ty_expected
+        ~attributes:sexp.pexp_attributes
+        comp
 
 and expression_constraint pexp =
   { type_without_constraint = (fun env expected_mode ->
@@ -7915,7 +7874,8 @@ and type_argument ?explanation ?recarg env (mode : expected_mode) sarg
          pat_type = ty;
          pat_extra=[];
          pat_attributes = [];
-         pat_loc = Location.none; pat_env = env},
+         pat_loc = Location.none; pat_env = env;
+         pat_unique_barrier = Unique_barrier.not_computed () },
         {exp_type = ty; exp_loc = Location.none; exp_env = exp_env;
          exp_extra = []; exp_attributes = [];
          exp_desc =
@@ -8230,8 +8190,9 @@ and type_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
   let expl =
     List.map2
       (fun (label, body) ((_, ty), argument_mode) ->
-        Option.iter (fun _ -> Jane_syntax_parsing.assert_extension_enabled ~loc
-                                Language_extension.Labeled_tuples ()) label;
+        Option.iter (fun _ ->
+             Language_extension.assert_enabled ~loc Labeled_tuples ())
+          label;
         let argument_mode = mode_default argument_mode in
         let argument_mode = expect_mode_cross env ty argument_mode in
           (label, type_expect env argument_mode body (mk_expected ty)))
@@ -8247,8 +8208,7 @@ and type_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
 
 and type_unboxed_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
       ~explanation ~attributes sexpl =
-  Jane_syntax_parsing.assert_extension_enabled ~loc Layouts
-    Language_extension.Beta;
+  Language_extension.assert_enabled ~loc Layouts Language_extension.Stable;
   let arity = List.length sexpl in
   assert (arity >= 2);
   let argument_mode = expected_mode.mode in
@@ -8286,8 +8246,9 @@ and type_unboxed_tuple ~loc ~env ~(expected_mode : expected_mode) ~ty_expected
   let expl =
     List.map2
       (fun (label, body) ((_, ty, sort), argument_mode) ->
-        Option.iter (fun _ -> Jane_syntax_parsing.assert_extension_enabled ~loc
-                                Language_extension.Labeled_tuples ()) label;
+        Option.iter (fun _ ->
+             Language_extension.assert_enabled ~loc Labeled_tuples ())
+          label;
         let argument_mode = mode_default argument_mode in
         let argument_mode = expect_mode_cross env ty argument_mode in
           (label, type_expect env argument_mode body (mk_expected ty), sort))
@@ -8329,11 +8290,7 @@ and type_construct env (expected_mode : expected_mode) loc lid sarg
     match sarg with
     | None -> []
     | Some se -> begin
-        match Jane_syntax.Expression.of_ast se with
-        | Some (( Jexp_comprehension _
-                | Jexp_immutable_array _
-                | Jexp_layout _), _) -> [se]
-        | None -> match se.pexp_desc with
+        match se.pexp_desc with
         | Pexp_tuple sel when
             constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs
           ->
@@ -8929,18 +8886,11 @@ and type_function_cases_expect
 and type_let ?check ?check_strict ?(force_toplevel = false)
     existential_context env rec_flag spat_sexp_list allow_modules =
   let rec sexp_is_fun sexp =
-    match Jane_syntax.Expression.of_ast sexp with
-    | Some (jexp, _attrs) -> jexp_is_fun jexp
-    | None      -> match sexp.pexp_desc with
+    match sexp.pexp_desc with
     | Pexp_function _ -> true
     | Pexp_constraint (e, _, _)
-    | Pexp_newtype (_, e) -> sexp_is_fun e
+    | Pexp_newtype (_, _, e) -> sexp_is_fun e
     | _ -> false
-  and jexp_is_fun : Jane_syntax.Expression.t -> _ = function
-    | Jexp_comprehension _
-    | Jexp_immutable_array _
-    | Jexp_layout (Lexp_constant _) -> false
-    | Jexp_layout (Lexp_newtype (_, _, e)) -> sexp_is_fun e
   in
   let vb_is_fun { pvb_expr = sexp; _ } = sexp_is_fun sexp in
   let entirely_functions = List.for_all vb_is_fun spat_sexp_list in
@@ -9386,19 +9336,6 @@ and type_generic_array
     exp_attributes = attributes;
     exp_env = env }
 
-and type_expect_jane_syntax
-      ~loc ~env ~expected_mode ~ty_expected ~explanation ~rue ~attributes
-  : Jane_syntax.Expression.t -> _ = function
-  | Jexp_comprehension x ->
-      type_comprehension_expr
-        ~loc ~env ~expected_mode ~ty_expected ~explanation ~rue ~attributes x
-  | Jexp_immutable_array x ->
-      type_immutable_array
-        ~loc ~env ~expected_mode ~ty_expected ~explanation ~rue ~attributes x
-  | Jexp_layout x ->
-      type_jkind_expr
-        ~loc ~env ~expected_mode ~ty_expected ~explanation ~rue ~attributes x
-
 and type_expect_mode ~loc ~env ~(modes : Alloc.Const.Option.t) expected_mode =
     let min = Alloc.Const.Option.value ~default:Alloc.Const.min modes |> Const.alloc_as_value in
     let max = Alloc.Const.Option.value ~default:Alloc.Const.max modes |> Const.alloc_as_value in
@@ -9613,10 +9550,7 @@ and type_n_ary_function
    we need to provide modes while typechecking comprehensions, we will reference
    this comment by its incipit (the initial question, right at the start). *)
 
-and type_comprehension_expr
-      ~loc ~env ~expected_mode:_ ~ty_expected ~explanation:_ ~rue:_~attributes
-      cexpr =
-  let open Jane_syntax.Comprehensions in
+and type_comprehension_expr ~loc ~env ~ty_expected ~attributes cexpr =
   (* - [comprehension_type]:
          For printing nicer error messages.
      - [container_type]:
@@ -9628,18 +9562,20 @@ and type_comprehension_expr
      - [{body = sbody; clauses}]:
          The actual comprehension to be translated. *)
   let comprehension_type, container_type, make_texp,
-      {body = sbody; clauses}, jkind =
+      {pcomp_body = sbody; pcomp_clauses}, jkind =
     match cexpr with
-    | Cexp_list_comprehension comp ->
+    | Pcomp_list_comprehension comp ->
         (List_comprehension : comprehension_type),
         Predef.type_list,
         (fun tcomp -> Texp_list_comprehension tcomp),
         comp,
         Predef.list_argument_jkind
-    | Cexp_array_comprehension (amut, comp) ->
+    | Pcomp_array_comprehension (amut, comp) ->
         let container_type, mut = match amut with
           | Mutable   -> Predef.type_array, Mutable Alloc.Comonadic.Const.legacy
-          | Immutable -> Predef.type_iarray, Immutable
+          | Immutable ->
+              Language_extension.assert_enabled ~loc Immutable_arrays ();
+              Predef.type_iarray, Immutable
         in
         (Array_comprehension mut : comprehension_type),
         container_type,
@@ -9667,7 +9603,7 @@ and type_comprehension_expr
     (* To understand why we don't provide modes here, see "What modes should
        comprehensions use?", above *)
     type_comprehension_clauses
-      ~loc ~env ~comprehension_type ~container_type clauses
+      ~loc ~env ~comprehension_type ~container_type pcomp_clauses
   in
   let comp_body =
     (* To understand why comprehension bodies are checked at [mode_global], see
@@ -9690,8 +9626,8 @@ and type_comprehension_clauses
 
 (* Calls [reset_pattern] *)
 and type_comprehension_clause ~loc ~comprehension_type ~container_type env
-  : Jane_syntax.Comprehensions.clause -> _ = function
-  | For bindings ->
+  = function
+  | Pcomp_for bindings ->
       (* TODO: fix handling of first-class module patterns *)
       let tps = create_type_pat_state Modules_rejected in
       let tbindings =
@@ -9706,7 +9642,7 @@ and type_comprehension_clause ~loc ~comprehension_type ~container_type env
         add_pattern_variables ~check ~check_as:check env pvs
       in
       env, Texp_comp_for tbindings
-  | When cond ->
+  | Pcomp_when cond ->
       let tcond =
         (* To understand why [when] conditions can be checked at an arbitrary
            mode, see "What modes should comprehensions use?" in
@@ -9725,7 +9661,10 @@ and type_comprehension_binding
       ~container_type
       ~env
       tps
-      Jane_syntax.Comprehensions.{ pattern; iterator; attributes } =
+      { pcomp_cb_pattern = pattern;
+        pcomp_cb_iterator = iterator;
+        pcomp_cb_attributes = attributes }
+  =
   { comp_cb_iterator =
       type_comprehension_iterator
         ~loc ~env ~comprehension_type ~container_type tps pattern iterator
@@ -9734,9 +9673,8 @@ and type_comprehension_binding
   }
 
 and type_comprehension_iterator
-      ~loc ~env ~comprehension_type ~container_type tps pattern
-  : Jane_syntax.Comprehensions.iterator -> _ = function
-  | Range { start; stop; direction } ->
+      ~loc ~env ~comprehension_type ~container_type tps pattern = function
+  | Pcomp_range { start; stop; direction } ->
       let tbound ~explanation bound =
         (* To understand why [for ... = ...] iterator range endpoints can be
            checked at an arbitrary mode, see "What modes should comprehensions
@@ -9759,7 +9697,7 @@ and type_comprehension_iterator
           ~param:pattern
       in
       Texp_comp_range { ident; pattern; start; stop; direction }
-  | In seq ->
+  | Pcomp_in seq ->
       let item_ty = newvar (Jkind.Builtin.any ~why:Dummy_jkind) in
       let seq_ty = container_type item_ty in
       let sequence =
@@ -9794,72 +9732,9 @@ and type_comprehension_iterator
       in
       Texp_comp_in { pattern; sequence }
 
-and type_immutable_array
-      ~loc ~env ~expected_mode ~ty_expected ~explanation ~rue:_ ~attributes
-    : Jane_syntax.Immutable_arrays.expression -> _ = function
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-  | Iaexp_immutable_array elts ->
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-        exp_type = instance Predef.type_unit;
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env }
-  | Pexp_array(sargl) ->
-=======
-        exp_type = instance Predef.type_unit;
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env }
-  | Pexp_array(mut, sargl) ->
-      let mutability =
-        match mut with
-        | Mutable -> Mutable Alloc.Comonadic.Const.legacy
-        | Immutable ->
-            Language_extension.assert_enabled ~loc Immutable_arrays ();
-            Immutable
-      in
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-      type_generic_array
-        ~loc
-        ~env
-        ~expected_mode
-        ~ty_expected
-        ~explanation
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-        ~mutability:(Mutable Alloc.Comonadic.Const.legacy)
-        ~attributes:sexp.pexp_attributes
-        sargl
-  | Pexp_ifthenelse(scond, sifso, sifnot) ->
-=======
-        ~mutability
-        ~attributes:sexp.pexp_attributes
-        sargl
-  | Pexp_ifthenelse(scond, sifso, sifnot) ->
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-        ~mutability:Immutable
-        ~attributes
-        elts
-
-and type_jkind_expr
-      ~loc ~env ~expected_mode ~ty_expected:_ ~explanation:_ ~rue ~attributes
-  : Jane_syntax.Layouts.expression -> _ = function
-  | Lexp_constant x -> type_unboxed_constant ~loc ~env ~rue ~attributes x
-  | Lexp_newtype (name, jkind_annot, sbody) ->
-    type_newtype_expr ~loc ~env ~expected_mode ~rue ~attributes
-      name (Some jkind_annot) sbody
-
-and type_unboxed_constant ~loc ~env ~rue ~attributes cst =
-  let cst = unboxed_constant_or_raise env loc cst in
-  rue {
-    exp_desc = Texp_constant cst;
-    exp_loc = loc;
-    exp_extra = [];
-    exp_type = type_constant cst;
-    exp_attributes = attributes;
-    exp_env = env }
-
 (* Typing of method call *)
 and type_send env loc explanation e met =
-  let obj = type_exp env mode_legacy e in
+  let obj = type_exp env mode_object e in
   let (meth, typ) =
     match obj.exp_desc with
     | Texp_ident(_, _, {val_kind = Val_self(sign, meths, _, _)}, _, _) ->

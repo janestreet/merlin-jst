@@ -314,12 +314,8 @@ module Mod:
       module_expr
     val unpack: ?loc:loc -> ?attrs:attrs -> expression -> module_expr
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> module_expr
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-    val hole: ?loc:loc -> ?attrs:attrs -> unit -> module_expr
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-=======
     val instance: ?loc:loc -> ?attrs:attrs -> module_instance -> module_expr
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+    val hole: ?loc:loc -> ?attrs:attrs -> unit -> module_expr
   end
 
 (** Signature items *)

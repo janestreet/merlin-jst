@@ -865,35 +865,9 @@ let classify_lazy_argument : Typedtree.expression ->
 (*
 let value_kind_union (k1 : Lambda.value_kind) (k2 : Lambda.value_kind) =
   if Lambda.equal_value_kind k1 k2 then k1
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-  else Pgenval
-
-let rec layout_union l1 l2 =
-  match l1, l2 with
-=======
     (* CR vlaviron: we could be more precise by comparing nullability and
        raw kinds separately *)
   else Lambda.generic_value
-
-let rec layout_union l1 l2 =
-  match l1, l2 with
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-        (Jkind.Violation.report_with_offender
-           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err
-  | Unsupported_sort const ->
-      fprintf ppf "Layout %a is not supported yet."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_lazy const ->
-      fprintf ppf
-        "Product layout %a detected in [lazy] in [Typeopt.Layout]@ \
-         Please report this error to the Jane Street compilers team."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_array const ->
-    fprintf ppf
-      "Unboxed products are not yet supported with array primitives.@ \
-       Here, layout %a was used."
-      Jkind.Sort.Const.format const
 
 let rec layout_union l1 l2 =
   match l1, l2 with

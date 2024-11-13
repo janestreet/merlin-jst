@@ -61,14 +61,8 @@ let fmt_char_option f = function
 
 let fmt_constant f x =
   match x with
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m;
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m
-=======
   | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m
   | Pconst_unboxed_integer (i,m) -> fprintf f "PConst_unboxed_int (%s,%c)" i m
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
   | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c)
   | Pconst_string (s, strloc, None) ->
       fprintf f "PConst_string(%S,%a,None)" s fmt_location strloc

@@ -458,30 +458,14 @@ and jkind_annotation ?(nested = false) ctxt f k = match k.pjkind_desc with
       ) f (t, modes)
     end
   | With (t, ty) ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
     Misc_stdlib.pp_parens_if nested (fun f (t, ty) ->
-      pp f "%a with %a" (jkind ~nested:true ctxt) t (core_type ctxt) ty
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-    Misc.pp_parens_if nested (fun f (t, ty) ->
-      pp f "%a with %a" (jkind ~nested:true ctxt) t (core_type ctxt) ty
-=======
-    Misc.pp_parens_if nested (fun f (t, ty) ->
       pp f "%a with %a" (jkind_annotation ~nested:true ctxt) t (core_type ctxt)
         ty
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
     ) f (t, ty)
   | Kind_of ty -> pp f "kind_of_ %a" (core_type ctxt) ty
   | Product ts ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
     Misc_stdlib.pp_parens_if nested (fun f ts ->
-      pp f "%a" (list (jkind ~nested:true ctxt) ~sep:"@;&@;") ts
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-    Misc.pp_parens_if nested (fun f ts ->
-      pp f "%a" (list (jkind ~nested:true ctxt) ~sep:"@;&@;") ts
-=======
-    Misc.pp_parens_if nested (fun f ts ->
       pp f "%a" (list (jkind_annotation ~nested:true ctxt) ~sep:"@;&@;") ts
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
     ) f ts
 
 and tyvar_jkind f (str, jkind) =
@@ -2198,68 +2182,6 @@ and comprehension_iterator ctxt f x =
   | Pcomp_in seq ->
       pp f "in %a" (expression ctxt) seq
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-and immutable_array_expr ctxt f (x : Jane_syntax.Immutable_arrays.expression) =
-  match x with
-  | Iaexp_immutable_array elts ->
-      pp f "@[<0>@[<2>[:%a:]@]@]"
-         (list (simple_expr (under_semi ctxt)) ~sep:";") elts
-
-(* [parens] is the same as the argument to [jane_syntax_expr]. *)
-and layout_expr ctxt f (x : Jane_syntax.Layouts.expression) ~parens =
-  match x with
-  (* see similar case in [expression] *)
-  | Lexp_newtype _ when parens || ctxt.pipe || ctxt.semi ->
-    paren true (layout_expr reset_ctxt ~parens:false) f x
-  | Lexp_constant x -> unboxed_constant ctxt f x
-  | Lexp_newtype (lid, jkind, inner_expr) ->
-    pp f "@[<2>fun@;(type@;%a :@;%a)@;%a@]"
-      ident_of_name lid.txt
-      (jkind_annotation ctxt) jkind
-      (pp_print_pexp_newtype ctxt "->") inner_expr
-
-and unboxed_constant _ctxt f (x : Jane_syntax.Layouts.constant)
-  =
-  match x with
-  | Float (x, None) ->
-    paren (first_is '-' x) (fun f -> pp f "%s") f (Misc_stdlib.format_as_unboxed_literal x)
-  | Float (x, Some suffix)
-  | Integer (x, suffix) ->
-    paren (first_is '-' x) (fun f (x, suffix) -> pp f "%s%c" x suffix) f
-      (Misc_stdlib.format_as_unboxed_literal x, suffix)
-
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-and immutable_array_expr ctxt f (x : Jane_syntax.Immutable_arrays.expression) =
-  match x with
-  | Iaexp_immutable_array elts ->
-      pp f "@[<0>@[<2>[:%a:]@]@]"
-         (list (simple_expr (under_semi ctxt)) ~sep:";") elts
-
-(* [parens] is the same as the argument to [jane_syntax_expr]. *)
-and layout_expr ctxt f (x : Jane_syntax.Layouts.expression) ~parens =
-  match x with
-  (* see similar case in [expression] *)
-  | Lexp_newtype _ when parens || ctxt.pipe || ctxt.semi ->
-    paren true (layout_expr reset_ctxt ~parens:false) f x
-  | Lexp_constant x -> unboxed_constant ctxt f x
-  | Lexp_newtype (lid, jkind, inner_expr) ->
-    pp f "@[<2>fun@;(type@;%a :@;%a)@;%a@]"
-      ident_of_name lid.txt
-      (jkind_annotation ctxt) jkind
-      (pp_print_pexp_newtype ctxt "->") inner_expr
-
-and unboxed_constant _ctxt f (x : Jane_syntax.Layouts.constant)
-  =
-  match x with
-  | Float (x, None) ->
-    paren (first_is '-' x) (fun f -> pp f "%s") f (Misc.format_as_unboxed_literal x)
-  | Float (x, Some suffix)
-  | Integer (x, suffix) ->
-    paren (first_is '-' x) (fun f (x, suffix) -> pp f "%s%c" x suffix) f
-      (Misc.format_as_unboxed_literal x, suffix)
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
 and function_param ctxt f { pparam_desc; pparam_loc = _ } =
   match pparam_desc with
   | Pparam_val (a, b, c) -> label_exp ctxt f (a, b, c)
@@ -2454,27 +2376,8 @@ let prepare_error err =
       "Syntax error: Unboxed integer literals require width suffixes."
 
 let () =
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
   Location.register_error_of_exn
     (function
       | Syntaxerr.Error err -> Some (prepare_error err)
       | _ -> None
     )
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-let class_signature = print_reset_with_maximal_extensions class_signature
-let structure_item = print_reset_with_maximal_extensions structure_item
-let signature_item = print_reset_with_maximal_extensions signature_item
-let binding = print_reset_with_maximal_extensions binding
-let payload = print_reset_with_maximal_extensions payload
-let type_declaration = print_reset_with_maximal_extensions type_declaration
-let jkind = print_reset_with_maximal_extensions jkind
-=======
-let class_signature = print_reset_with_maximal_extensions class_signature
-let structure_item = print_reset_with_maximal_extensions structure_item
-let signature_item = print_reset_with_maximal_extensions signature_item
-let signature_items = print_reset_with_maximal_extensions signature_items
-let binding = print_reset_with_maximal_extensions binding
-let payload = print_reset_with_maximal_extensions payload
-let type_declaration = print_reset_with_maximal_extensions type_declaration
-let jkind_annotation = print_reset_with_maximal_extensions jkind_annotation
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a

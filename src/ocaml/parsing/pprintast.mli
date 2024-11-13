@@ -64,14 +64,7 @@ val tyvar: Format.formatter -> string -> unit
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
-
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-val jkind : Format.formatter -> Jane_syntax.Jkind.t -> unit
-=======
 val jkind_annotation : Format.formatter -> Parsetree.jkind_annotation -> unit
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
 val mode : Format.formatter -> Parsetree.mode Location.loc -> unit
 
 (* merlin *)

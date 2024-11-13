@@ -88,16 +88,10 @@ module Typ = struct
   let varify_constructors var_names t =
     let check_variable vl loc v =
       if List.mem v vl then
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
         raise_error Syntaxerr.(Error(Variable_in_scope(loc,v))) in
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-        raise Syntaxerr.(Error(Variable_in_scope(loc,v))) in
-=======
-        raise Syntaxerr.(Error(Variable_in_scope(loc,v))) in
     let check_variable_opt vl v =
       Option.iter (fun v -> check_variable vl v.loc v.txt) v
     in
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
     let var_names = List.map Location.get_txt var_names in
     let rec loop t =
       let desc =
@@ -261,14 +255,10 @@ module Exp = struct
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
   let stack ?loc ?attrs e = mk ?loc ?attrs (Pexp_stack e)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
+  let comprehension ?loc ?attrs e = mk ?loc ?attrs (Pexp_comprehension e)
   let hole ?(loc = !default_loc) ?attrs () =
     let id = Location.mkloc hole_txt loc in
     mk ~loc ?attrs  @@ Pexp_extension (id, PStr [])
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-=======
-  let comprehension ?loc ?attrs e = mk ?loc ?attrs (Pexp_comprehension e)
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
 
   let case lhs ?guard rhs =
     {
@@ -315,14 +305,10 @@ module Mod = struct
   let constraint_ ?loc ?attrs m mty = mk ?loc ?attrs (Pmod_constraint (m, mty))
   let unpack ?loc ?attrs e = mk ?loc ?attrs (Pmod_unpack e)
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pmod_extension a)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
+  let instance ?loc ?attrs a = mk ?loc ?attrs (Pmod_instance a)
   let hole ?(loc = !default_loc) ?attrs () =
     let id = Location.mkloc hole_txt loc in
     mk ~loc ?attrs  @@ Pmod_extension (id, PStr [])
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-=======
-  let instance ?loc ?attrs a = mk ?loc ?attrs (Pmod_instance a)
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
 end
 
 module Sig = struct

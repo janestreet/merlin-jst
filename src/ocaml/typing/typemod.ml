@@ -1708,23 +1708,9 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
    take a ~toplevel argument like its cousin type_structure.  But in merlin,
    a signature can be incrementally checked because of the caching mechanism,
    so we need this to take the signature of the previously checked portion
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
    to support include functor. *)
 
-and transl_signature ?(keep_warnings = false) env sig_acc (sg : Parsetree.signature) =
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-  let tcstr = Option.get tcstr in
-  ((path, lid, tcstr) :: rev_tcstrs, sg)
-
-
-
-and transl_signature env sg =
-=======
-  let tcstr = Option.get tcstr in
-  ((path, lid, tcstr) :: rev_tcstrs, sg)
-
-and transl_signature env {psg_items; psg_modalities; psg_loc} =
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+and transl_signature ?(keep_warnings = false) env sig_acc {psg_items; psg_modalities; psg_loc} =
   let names = Signature_names.create () in
 
   let has_sig_modalities =
@@ -2074,30 +2060,9 @@ and transl_signature env {psg_items; psg_modalities; psg_loc} =
     ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
     (fun () ->
        let (trem, rem, final_env) =
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-         transl_sig (Env.in_signature true env) [] [] sig_acc sg
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-         transl_sig (Env.in_signature true env) [] [] sg
-=======
-         transl_sig (Env.in_signature true env) [] [] psg_items
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+         transl_sig (Env.in_signature true env) [] [] sig_acc psg_items
        in
        let rem = Signature_names.simplify final_env names rem in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-       let sg =
-         { sig_items = trem; sig_type = rem; sig_final_env = final_env }
-       in
-       Cmt_format.set_saved_types
-         ((Cmt_format.Partial_signature sg) :: previous_saved_types);
-=======
-       let sg =
-         { sig_items = trem; sig_type = rem; sig_final_env = final_env;
-           sig_modalities; sig_sloc = psg_loc }
-       in
-       Cmt_format.set_saved_types
-         ((Cmt_format.Partial_signature sg) :: previous_saved_types);
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
        { sig_items = trem; sig_type = rem; sig_final_env = final_env })
 
 and transl_modtype_decl env pmtd =

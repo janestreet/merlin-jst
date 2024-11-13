@@ -758,19 +758,10 @@ type 'a sig_reader =
 (* Add a persistent structure to the hash table and bind it in the [Env].
    Checks that OCaml source is allowed to refer to this module. *)
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-let acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig =
+let acknowledge_pers_struct penv short_path_comps modname pers_name val_of_pers_sig =
   if modname.Global_module.Name.args <> [] then
     Misc.fatal_errorf "TODO: Unsupported instance name: %a"
       Global_module.Name.print modname;
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-let acknowledge_pers_struct penv modname import val_of_pers_sig =
-  if modname.Global_module.Name.args <> [] then
-    Misc.fatal_errorf "TODO: Unsupported instance name: %a"
-      Global_module.Name.print modname;
-=======
-let acknowledge_pers_struct penv modname pers_name val_of_pers_sig =
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
   let {persistent_structures; _} = penv in
   let import = pers_name.pn_import in
   let global = pers_name.pn_global in
@@ -822,27 +813,11 @@ let acknowledge_pers_struct penv modname pers_name val_of_pers_sig =
   register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
   ps
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
 let read_pers_struct penv val_of_pers_sig short_path_comps check modname cmi ~add_binding =
-  let unit_name = CU.Name.of_head_of_global_name modname in
-  let import = read_import penv ~check unit_name cmi in
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-let read_pers_struct penv val_of_pers_sig check modname cmi ~add_binding =
-  let unit_name = CU.Name.of_head_of_global_name modname in
-  let import = read_import penv ~check unit_name cmi in
-=======
-let read_pers_struct penv val_of_pers_sig check modname cmi ~add_binding =
   let pers_name = read_pers_name penv check modname cmi in
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
   if add_binding then
     ignore
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-      (acknowledge_pers_struct penv short_path_comps modname import val_of_pers_sig
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-      (acknowledge_pers_struct penv modname import val_of_pers_sig
-=======
-      (acknowledge_pers_struct penv modname pers_name val_of_pers_sig
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+      (acknowledge_pers_struct penv short_path_comps modname pers_name val_of_pers_sig
        : _ pers_struct_info);
   pers_name.pn_sign
 
@@ -851,18 +826,8 @@ let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check n
   match Hashtbl.find persistent_structures name with
   | ps -> check_visibility ~allow_hidden ps.ps_import; ps
   | exception Not_found ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-3
-      let unit_name = CU.Name.of_head_of_global_name name in
-      let import = find_import ~allow_hidden penv ~check unit_name in
-      acknowledge_pers_struct penv short_path_comps name import val_of_pers_sig
-||||||| ocaml-flambda/flambda-backend:8a585cf2429644141a48bd23db7b237b20360938
-      let unit_name = CU.Name.of_head_of_global_name name in
-      let import = find_import ~allow_hidden penv ~check unit_name in
-      acknowledge_pers_struct penv name import val_of_pers_sig
-=======
       let pers_name = find_pers_name ~allow_hidden penv check name in
-      acknowledge_pers_struct penv name pers_name val_of_pers_sig
->>>>>>> ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+      acknowledge_pers_struct penv short_path_comps name pers_name val_of_pers_sig
 
 let describe_prefix ppf prefix =
   if CU.Prefix.is_empty prefix then
