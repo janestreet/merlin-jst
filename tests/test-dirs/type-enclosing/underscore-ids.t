@@ -382,16 +382,16 @@ We try several places in the identifier to check the result stability
         <def>
           pattern (under.ml[2,13+4]..under.ml[2,13+5])
             Tpat_var \"f/276\"
-            value_mode meet(local,once,nonportable)(modevar#2[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#3[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#3[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#4[aliased,uncontended .. unique,uncontended])
           expression (under.ml[2,13+6]..under.ml[5,70+17]) ghost
             Texp_function
-            alloc_mode map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]);id(modevar#5[aliased,contended .. unique,uncontended])
+            alloc_mode map_comonadic(regional_to_global)(modevar#5[global,many,portable .. global,many,nonportable]);id(modevar#6[aliased,contended .. unique,uncontended])
             [
               Nolabel
               Param_pat
                 pattern (under.ml[2,13+6]..under.ml[2,13+9])
                   Tpat_var \"x/278\"
-                  value_mode map_comonadic(local_to_regional)(modevar#6[global,many,portable .. local,once,nonportable]);join(aliased,contended)(modevar#7[aliased,contended .. unique,uncontended])
+                  value_mode map_comonadic(local_to_regional)(modevar#7[global,many,portable .. local,once,nonportable]);join(aliased,contended)(modevar#8[aliased,contended .. unique,uncontended])
             ]
             Tfunction_body
               expression (under.ml[2,13+18]..under.ml[5,70+17])

@@ -594,7 +594,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/276\"
-            value_mode meet(local,once,nonportable)(modevar#2[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#3[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#3[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#4[aliased,uncontended .. unique,uncontended])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -613,7 +613,7 @@ make sure we also handle that correctly in structures:
                   ]
               alloc_const_option_mode None,None,None,None,None
             Texp_tuple
-            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]));unique,uncontended
+            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#3[global,many,portable .. global,many,nonportable]));unique,uncontended
             [
               Label: None
                 expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+25])
@@ -643,7 +643,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/277\"
-            value_mode meet(local,once,nonportable)(modevar#4[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#5[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable)(modevar#6[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#7[aliased,uncontended .. unique,uncontended])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
@@ -662,7 +662,7 @@ make sure we also handle that correctly in structures:
                   ]
               alloc_const_option_mode None,None,None,None,None
             Texp_tuple
-            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#4[global,many,portable .. global,many,nonportable]));unique,uncontended
+            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#6[global,many,portable .. global,many,nonportable]));unique,uncontended
             [
               Label: None
                 expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+24])

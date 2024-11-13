@@ -17,9 +17,9 @@ Convenience function for querying occurrences
 
 Get occurrences of an identifier that is used as the expression part of a punned let
 expression
-FIXME: this should also include the occurrence on line 6 of usages.ml
   $ occurrences definitions.ml 1:4
   $TESTCASE_ROOT/definitions.ml 1:4-5
+  $TESTCASE_ROOT/usages.ml 6:7-8
 
 Get occurrences, with the cursor pointing at the identifier in a punned let.
 Merlin returns the occurrences of the new variable bound in that let, rather than the

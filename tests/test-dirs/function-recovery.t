@@ -35,7 +35,7 @@
                     None
                   expression (test.ml[3,104+11]..test.ml[3,104+28])
                     Texp_function
-                    alloc_mode id(modevar#c[global,many,portable .. local,once,nonportable]);id(modevar#d[aliased,contended .. unique,uncontended])
+                    alloc_mode id(modevar#d[global,many,portable .. local,once,nonportable]);id(modevar#e[aliased,contended .. unique,uncontended])
                     []
                     Tfunction_body
                       expression (test.ml[3,104+11]..test.ml[3,104+28])
