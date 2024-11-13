@@ -54,6 +54,7 @@ end
 
 type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap | `Counters ]
 type profile_granularity_level = File_level | Function_level | Block_level
+type flambda_invariant_checks = No_checks | Light_checks | Heavy_checks
 
 let compile_only = ref false            (* -c *)
 and output_name = ref (None : string option) (* -o *)
@@ -183,7 +184,8 @@ let cmm_invariants =
   ref Config.with_cmm_invariants        (* -dcmm-invariants *)
 
 let flambda_invariant_checks =
-  ref Config.with_flambda_invariants    (* -flambda-(no-)invariants *)
+  let v = if Config.with_flambda_invariants then Light_checks else No_checks in
+  ref v (* -flambda-(no-)invariants *)
 
 let dont_write_files = ref false        (* set to true under ocamldoc *)
 
@@ -443,7 +445,18 @@ let error_style = ref None (* -error-style *)
 let error_style_reader = {
   parse = (function
     | "contextual" -> Some Misc.Error_style.Contextual
-    | "short" -> Some Misc.Error_style.Short
+    | "short" ->
+      (* Jane Street specific: This little bit of code suppresses the quote
+         marks in error messages. Remove this after we can get formatted
+         output in our editors. *)
+      let styles = Misc.Style.get_styles () in
+      let styles =
+        { styles with inline_code =
+          { styles.inline_code with text_open = ""; text_close = "" } }
+      in
+      Misc.Style.set_styles styles;
+      (* End Jane Street specific code *)
+      Some Misc.Error_style.Short
     | _ -> None);
   print = (function
     | Misc.Error_style.Contextual -> "contextual"
@@ -683,3 +696,8 @@ let zero_alloc_check = ref Zero_alloc_annotations.Check_default    (* -zero-allo
 let zero_alloc_check_assert_all = ref false (* -zero-alloc-check-assert-all *)
 
 let no_auto_include_otherlibs = ref false      (* -no-auto-include-otherlibs *)
+
+let prepend_directory file_name =
+  match !directory with
+  | Some directory -> Filename.concat directory file_name
+  | None -> file_name

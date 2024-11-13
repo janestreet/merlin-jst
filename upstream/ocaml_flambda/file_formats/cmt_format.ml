@@ -185,7 +185,7 @@ let iter_on_occurrences
           f ~namespace:Value exp_env path lid
       | Texp_construct (lid, constr_desc, _, _) ->
           add_constructor_description exp_env lid constr_desc
-      | Texp_field (_, lid, label_desc, _)
+      | Texp_field (_, lid, label_desc, _, _)
       | Texp_setfield (_, _, lid, label_desc, _) ->
           add_label exp_env lid label_desc
       | Texp_new (path, lid, _, _) ->
@@ -373,9 +373,8 @@ let index_occurrences binary_annots =
   let index : (Longident.t Location.loc * Shape_reduce.result) list ref =
     ref []
   in
-  let f ~namespace env path lid =
-    let not_ghost { Location.loc = { loc_ghost; _ }; _ } = not loc_ghost in
-    if not_ghost lid then
+  let f ~namespace env path (lid : _ Location.loc) =
+    if not (Location.is_none lid.loc) then
       match Env.shape_of_path ~namespace env path with
       | exception Not_found -> ()
       | { uid = Some (Predef _); _ } -> ()

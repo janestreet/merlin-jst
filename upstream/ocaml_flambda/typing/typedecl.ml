@@ -261,7 +261,7 @@ let enter_type ?abstract_abbrevs rec_flag env sdecl (id, uid) =
      jkind of the variable put in manifests here is updated when constraints
      are checked and then unified with the real manifest and checked against the
      kind. *)
-  let type_jkind, type_jkind_annotation, sdecl_attributes =
+  let type_jkind, type_jkind_annotation =
     Jkind.of_type_decl_default
       ~context:(Type_declaration path)
       ~default:any
@@ -297,7 +297,7 @@ in
       type_is_newtype = false;
       type_expansion_scope = Btype.lowest_level;
       type_loc = sdecl.ptype_loc;
-      type_attributes = sdecl_attributes;
+      type_attributes = sdecl.ptype_attributes;
       type_unboxed_default = false;
       type_uid = uid;
       type_has_illegal_crossings = false;
@@ -362,7 +362,7 @@ let is_fixed_type sd =
       (* CR layouts upstreaming: The Ptyp_alias case also covers the case for a
          jkind annotation, conveniently. When upstreaming jkinds, this
          function will need a case for jkind-annotation aliases. *)
-      Ptyp_alias (sty, _) -> has_row_var sty
+      Ptyp_alias (sty, _jkind, _) -> has_row_var sty
     | Ptyp_class _
     | Ptyp_object (_, Open)
     | Ptyp_variant (_, Open, _)
@@ -541,24 +541,22 @@ let transl_constructor_arguments ~new_var_jkind ~unboxed
    defined types. It is updated later by [update_constructor_arguments_jkinds]
 *)
 let make_constructor
-      env loc ~cstr_path ~type_path ~unboxed type_params (svars : _ Either.t)
+      env loc ~cstr_path ~type_path ~unboxed type_params svars
       sargs sret_type =
-  let tvars = match svars with
-    | Left vars_only -> List.map (fun v -> v.txt, None) vars_only
-    | Right vars_jkinds ->
-        List.map
-          (fun (v, l) ->
-            v.txt,
-            Option.map
-              (fun annot ->
-                 let const =
-                    Jkind.Const.of_user_written_annotation
-                      ~context:(Constructor_type_parameter (cstr_path, v.txt))
-                      annot
-                 in
-                 const, annot)
-              l)
-          vars_jkinds
+  let tvars =
+    List.map
+      (fun (v, l) ->
+        v.txt,
+        Option.map
+          (fun annot ->
+              let const =
+                Jkind.Const.of_user_written_annotation
+                  ~context:(Constructor_type_parameter (cstr_path, v.txt))
+                  annot
+              in
+              const, annot)
+          l)
+      svars
   in
   match sret_type with
   | None ->
@@ -574,19 +572,16 @@ let make_constructor
       TyVarEnv.with_local_scope begin fun () ->
       let closed =
         match svars with
-        | Left [] | Right [] -> false
+        | [] -> false
         | _ -> true
       in
       let targs, tret_type, args, ret_type, _univars =
         Ctype.with_local_level_if closed begin fun () ->
           TyVarEnv.reset ();
           let univar_list =
-            match svars with
-            | Left vars_only -> TyVarEnv.make_poly_univars vars_only
-            | Right vars_jkinds ->
-              TyVarEnv.make_poly_univars_jkinds
-                ~context:(fun v -> Constructor_type_parameter (cstr_path, v))
-                vars_jkinds
+            TyVarEnv.make_poly_univars_jkinds
+              ~context:(fun v -> Constructor_type_parameter (cstr_path, v))
+              svars
           in
           let univars = if closed then Some univar_list else None in
           let args, targs =
@@ -787,11 +782,11 @@ let transl_declaration env sdecl (id, uid) =
     | _ -> false, false (* Not unboxable, mark as boxed *)
   in
   verify_unboxed_attr unboxed_attr sdecl;
-  let jkind_from_annotation, jkind_annotation, sdecl_attributes =
+  let jkind_from_annotation, jkind_annotation =
     match Jkind.of_type_decl ~context:(Type_declaration path) sdecl with
-    | Some (jkind, jkind_annotation, sdecl_attributes) ->
-        Some jkind, Some jkind_annotation, sdecl_attributes
-    | None -> None, None, sdecl.ptype_attributes
+    | Some (jkind, jkind_annotation) ->
+        Some jkind, Some jkind_annotation
+    | None -> None, None
   in
   let (tman, man) = match sdecl.ptype_manifest with
       None -> None, None
@@ -814,7 +809,7 @@ let transl_declaration env sdecl (id, uid) =
          Remove when we allow users to define their own null constructors.
       *)
       | Ptype_abstract when
-        Builtin_attributes.has_or_null_reexport sdecl_attributes ->
+        Builtin_attributes.has_or_null_reexport sdecl.ptype_attributes ->
           let param =
             (* We require users to define ['a t = 'a or_null]. Manifest
                must be set to [or_null] so typechecking stays correct. *)
@@ -832,7 +827,7 @@ let transl_declaration env sdecl (id, uid) =
           in
           Ttype_abstract, type_kind, jkind
       | (Ptype_variant _ | Ptype_record _ | Ptype_open) when
-        Builtin_attributes.has_or_null_reexport sdecl_attributes ->
+        Builtin_attributes.has_or_null_reexport sdecl.ptype_attributes ->
         raise (Error (sdecl.ptype_loc, Non_abstract_reexport path))
       | Ptype_abstract ->
         Ttype_abstract, Type_abstract Definition,
@@ -857,19 +852,11 @@ let transl_declaration env sdecl (id, uid) =
           raise(Error(sdecl.ptype_loc, Too_many_constructors));
         let make_cstr scstr =
           let name = Ident.create_local scstr.pcd_name.txt in
-          let svars, attributes =
-            match Jane_syntax.Layouts.of_constructor_declaration scstr with
-            | None ->
-              Either.Left scstr.pcd_vars,
-              scstr.pcd_attributes
-            | Some (vars_jkinds, attributes) ->
-              Either.Right vars_jkinds,
-              attributes
-          in
+          let attributes = scstr.pcd_attributes in
           let tvars, targs, tret_type, args, ret_type =
             make_constructor ~unboxed:unbox env scstr.pcd_loc
               ~cstr_path:(Path.Pident name) ~type_path:path params
-              svars scstr.pcd_args scstr.pcd_res
+              scstr.pcd_vars scstr.pcd_args scstr.pcd_res
           in
           let tcstr =
             { cd_id = name;
@@ -972,7 +959,7 @@ let transl_declaration env sdecl (id, uid) =
         type_is_newtype = false;
         type_expansion_scope = Btype.lowest_level;
         type_loc = sdecl.ptype_loc;
-        type_attributes = sdecl_attributes;
+        type_attributes = sdecl.ptype_attributes;
         type_unboxed_default = unboxed_default;
         type_uid = uid;
         type_has_illegal_crossings = false;
@@ -2347,27 +2334,15 @@ let transl_extension_constructor_decl
   args, jkinds, constructor_shape, constant, ret_type,
   Text_decl(tvars, targs, tret_type)
 
-let transl_extension_constructor_jst env type_path _type_params
-      typext_params _priv loc id _attrs :
-  Jane_syntax.Extension_constructor.t -> _ = function
-  | Jext_layout (Lext_decl(vars_jkinds, args, res)) ->
-    transl_extension_constructor_decl
-      env type_path typext_params loc id (Right vars_jkinds) args res
-
 let transl_extension_constructor ~scope env type_path type_params
                                  typext_params priv sext =
   let id = Ident.create_scoped ~scope sext.pext_name.txt in
   let loc = sext.pext_loc in
   let args, arg_jkinds, shape, constant, ret_type, kind =
-    match Jane_syntax.Extension_constructor.of_ast sext with
-    | Some (jext, attrs) ->
-      transl_extension_constructor_jst
-        env type_path type_params typext_params priv loc id attrs jext
-    | None ->
     match sext.pext_kind with
       Pext_decl(svars, sargs, sret_type) ->
       transl_extension_constructor_decl
-        env type_path typext_params loc id (Left svars) sargs sret_type
+        env type_path typext_params loc id svars sargs sret_type
     | Pext_rebind lid ->
         let usage : Env.constructor_usage =
           if priv = Public then Env.Exported else Env.Exported_private
@@ -2889,7 +2864,7 @@ let rec parse_native_repr_attributes env core_type ty rmode
         ~global_repr ~is_layout_poly
     in
     ((mode, repr_arg) :: repr_args, repr_res)
-  | (Ptyp_poly (_, t) | Ptyp_alias (t, _)), _, _ ->
+  | (Ptyp_poly (_, t) | Ptyp_alias (t, _, _)), _, _ ->
      parse_native_repr_attributes env t ty rmode ~global_repr ~is_layout_poly
   | _ ->
      let rmode =
@@ -3002,14 +2977,15 @@ let error_if_containing_unexpected_jkind prim cty ty =
   unexpected_layout_any_check prim cty ty
 
 (* Translate a value declaration *)
-let transl_value_decl env loc valdecl =
+let transl_value_decl env loc ~sig_modalities valdecl =
   let cty = Typetexp.transl_type_scheme env valdecl.pval_type in
   let modalities =
-    valdecl.pval_modalities
-    |> Typemode.transl_modalities ~maturity:Alpha Immutable
-        valdecl.pval_attributes
-    |> Mode.Modality.Value.of_const
+    match valdecl.pval_modalities with
+    | [] -> sig_modalities
+    | l -> Typemode.transl_modalities ~maturity:Alpha Immutable
+        valdecl.pval_attributes l
   in
+  let modalities = Mode.Modality.Value.of_const modalities in
   (* CR layouts v5: relax this to check for representability. *)
   begin match Ctype.constrain_type_jkind env cty.ctyp_type
                 (Jkind.Builtin.value_or_null ~why:Structure_element) with
@@ -3108,9 +3084,9 @@ let transl_value_decl env loc valdecl =
   in
   desc, newenv
 
-let transl_value_decl env loc valdecl =
+let transl_value_decl env ~sig_modalities loc valdecl =
   Builtin_attributes.warning_scope valdecl.pval_attributes
-    (fun () -> transl_value_decl env loc valdecl)
+    (fun () -> transl_value_decl env ~sig_modalities loc valdecl)
 
 (* Translate a "with" constraint -- much simplified version of
    transl_type_decl. For a constraint [Sig with t = sdecl],
@@ -3332,7 +3308,7 @@ let approx_type_decl sdecl_list =
        let id = Ident.create_scoped ~scope sdecl.ptype_name.txt in
        let path = Path.Pident id in
        let injective = sdecl.ptype_kind <> Ptype_abstract in
-       let jkind, jkind_annotation, _sdecl_attributes =
+       let jkind, jkind_annotation =
          Jkind.of_type_decl_default
            ~context:(Type_declaration path)
            ~default:(Jkind.Builtin.value ~why:Default_type_jkind)

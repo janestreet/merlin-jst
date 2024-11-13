@@ -485,11 +485,12 @@ let expr sub x =
         in
         Texp_record {
           fields; representation;
-          extended_expression = Option.map (sub.expr sub) extended_expression;
+          extended_expression =
+            Option.map (fun (exp, ubr) -> (sub.expr sub exp, ubr)) extended_expression;
           alloc_mode
         }
-    | Texp_field (exp, lid, ld, float) ->
-        Texp_field (sub.expr sub exp, map_loc sub lid, ld, float)
+    | Texp_field (exp, lid, ld, float, ubr) ->
+        Texp_field (sub.expr sub exp, map_loc sub lid, ld, float, ubr)
     | Texp_setfield (exp1, am, lid, ld, exp2) ->
         Texp_setfield (
           sub.expr sub exp1,
@@ -987,7 +988,14 @@ let value_binding sub x =
 
 let env _sub x = x
 
-let jkind_annotation sub (c, l) = (c, map_loc sub l)
+let jkind_annotation sub (c, annot) =
+  (* map over locations contained within parsetree jkind annotation *)
+  let ast_mapper =
+    { Ast_mapper.default_mapper
+      with location = (fun _this loc -> sub.location sub loc)
+    }
+  in
+  (c, ast_mapper.jkind_annotation ast_mapper annot)
 
 let default =
   {
