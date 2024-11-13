@@ -92,8 +92,7 @@ type mapper = {
       thus the thing being included might be a functor and not a plain module
       type *)
 
-  jkind_annotation:
-    mapper -> Jane_syntax.Jkind.t -> Jane_syntax.Jkind.t;
+  jkind_annotation: mapper -> jkind_annotation -> jkind_annotation;
   label_declaration: mapper -> label_declaration -> label_declaration;
   location: mapper -> Location.t -> Location.t;
   module_binding: mapper -> module_binding -> module_binding;
@@ -121,22 +120,6 @@ type mapper = {
   value_binding: mapper -> value_binding -> value_binding;
   value_description: mapper -> value_description -> value_description;
   with_constraint: mapper -> with_constraint -> with_constraint;
-
-  expr_jane_syntax:
-    mapper -> Jane_syntax.Expression.t -> Jane_syntax.Expression.t;
-  extension_constructor_jane_syntax:
-    mapper ->
-    Jane_syntax.Extension_constructor.t -> Jane_syntax.Extension_constructor.t;
-  module_type_jane_syntax: mapper ->
-    Jane_syntax.Module_type.t -> Jane_syntax.Module_type.t;
-  module_expr_jane_syntax: mapper ->
-    Jane_syntax.Module_expr.t -> Jane_syntax.Module_expr.t;
-  pat_jane_syntax: mapper -> Jane_syntax.Pattern.t -> Jane_syntax.Pattern.t;
-  signature_item_jane_syntax: mapper ->
-    Jane_syntax.Signature_item.t -> Jane_syntax.Signature_item.t;
-  structure_item_jane_syntax: mapper ->
-    Jane_syntax.Structure_item.t -> Jane_syntax.Structure_item.t;
-  typ_jane_syntax: mapper -> Jane_syntax.Core_type.t -> Jane_syntax.Core_type.t;
 }
 (** A mapper record implements one "method" per syntactic category,
     using an open recursion style: each method takes as its first
@@ -220,6 +203,9 @@ val add_ppx_context_sig:
     tool_name:string -> Parsetree.signature -> Parsetree.signature
 (** Same as [add_ppx_context_str], but for signatures. *)
 
+val add_ppx_context_sig_items:
+    tool_name:string -> Parsetree.signature_item list -> Parsetree.signature_item list
+
 val drop_ppx_context_str:
     restore:bool -> Parsetree.structure -> Parsetree.structure
 (** Drop the ocaml.ppx.context attribute from a structure.  If
@@ -229,6 +215,9 @@ val drop_ppx_context_str:
 val drop_ppx_context_sig:
     restore:bool -> Parsetree.signature -> Parsetree.signature
 (** Same as [drop_ppx_context_str], but for signatures. *)
+
+val drop_ppx_context_sig_items:
+    restore:bool -> Parsetree.signature_item list -> Parsetree.signature_item list
 
 (** {1 Cookies} *)
 

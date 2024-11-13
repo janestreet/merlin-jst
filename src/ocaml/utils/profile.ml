@@ -154,11 +154,7 @@ let file_prefix = "file="
    [Clflags.directory].
 
 let annotate_file_name name =
-  let file_path =
-    match !Clflags.directory with
-    | Some directory -> Filename.concat directory name
-    | None -> name
-  in
+  let file_path = Clflags.prepend_directory name in
   file_prefix ^ file_path
 *)
 
