@@ -23,6 +23,12 @@ This attempts to import new files from the compiler by running the
 try making matched pairs of files in this repository with the right names: one
 in "upstream/ocaml_flambda/", and one in "src/ocaml".  Then running the script
 will pull in the named file(s).
+
+The SUBDIRECTORY argument is useful when importing from a repository that buries
+the relevant compiler files inside a subdirectory. This used to be the case for
+flambda (files were under an "ocaml/" direcotry), although it is no longer the
+case. The OLD_SUBDIRECTORY argument is useful for when the directory structure
+has changed since the last import.
 USAGE
 }
 
@@ -50,6 +56,8 @@ fi
 
 if [[ $# -le 4 ]]; then
   repository="${2-$repository}"
+  # Although the subdirectory arguments are probably no longer useful, it doesn't hurt
+  # to keep them around in case they ever are of use.
   subdirectory="${3-$subdirectory}"
   old_subdirectory="${4-$old_subdirectory}"
 else

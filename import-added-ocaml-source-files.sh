@@ -18,6 +18,9 @@ Fetches any new files that previously hadn't been imported. This ignores
 files outside of *directories* that were previously imported,
 so if a whole new directory is added, you may need to manually
 add the new file.
+
+See usage information for ./import-ocaml-source.sh for more info about
+the subdirectory arguments.
 USAGE
 }
 
