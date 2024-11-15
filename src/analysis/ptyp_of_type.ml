@@ -277,14 +277,10 @@ and signature_item (str_item : Types.signature_item) =
     Sig.text [ Docstrings.docstring str Location.none ] |> List.hd
 
 and signature (items : Types.signature) =
-  { psg_modalities = [];
-    psg_items =
-      List.map (group_items items) ~f:(function
-        | Item item -> signature_item item
-        | Type (rec_flag, type_decls) ->
-          Ast_helper.Sig.type_ rec_flag type_decls);
-    psg_loc = Location.none
-  }
+  Ast_helper.Sg.mk
+    (List.map (group_items items) ~f:(function
+      | Item item -> signature_item item
+      | Type (rec_flag, type_decls) -> Ast_helper.Sig.type_ rec_flag type_decls))
 
 and group_items (items : Types.signature_item list) =
   let rec read_type type_acc items =

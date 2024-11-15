@@ -146,7 +146,8 @@ let[@tail_mod_cons] rec type_signature caught env sg psg_modalities psg_loc =
           sig_sloc = _
         } =
       Typemod.merlin_transl_signature env sg
-        { psg_modalities; psg_items = [ parsetree_item ]; psg_loc }
+        (Ast_helper.Sg.mk ~loc:psg_loc ~modalities:psg_modalities
+           [ parsetree_item ])
     in
     let part_rev_sg = List.rev_append sig_type sg in
     let item =
@@ -269,10 +270,8 @@ let type_interface config caught (parsetree : Parsetree.signature) =
        }
         : Typedtree.signature) =
     Typemod.merlin_transl_signature Env.empty []
-      { psg_modalities = parsetree.psg_modalities;
-        psg_items = [];
-        psg_loc = parsetree.psg_loc
-      }
+      (Ast_helper.Sg.mk ~modalities:parsetree.psg_modalities
+         ~loc:parsetree.psg_loc [])
   in
   let value =
     Interface_items

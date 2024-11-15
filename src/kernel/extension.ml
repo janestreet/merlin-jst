@@ -166,7 +166,7 @@ let combine_sigs sigs : Parsetree.signature =
           psig_loc = Location.none
         })
   in
-  { psg_modalities = []; psg_items = items; psg_loc = Location.none }
+  Ast_helper.Sg.mk items
 
 let register exts env =
   (* Log errors ? *)

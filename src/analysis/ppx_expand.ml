@@ -143,10 +143,7 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
   | Sig_item _, attr_loc ->
     let exp =
       Pprintast.signature Format.str_formatter
-        { psg_modalities = [];
-          psg_items = List.rev !signature;
-          psg_loc = Location.none
-        };
+        (Ast_helper.Sg.mk (List.rev !signature));
       Format.flush_str_formatter ()
     in
     { code = exp; attr_start = attr_loc.loc_start; attr_end = attr_loc.loc_end }
