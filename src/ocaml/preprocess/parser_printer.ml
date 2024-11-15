@@ -350,9 +350,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_declaration_semi) -> "label_declaration_semi"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_declaration) -> "label_declaration"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_kind_abbreviation_decl) -> "kind_abbreviation_decl"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_desc) -> "jkind_desc"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_constraint) -> "jkind_constraint"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind_annotation) -> "jkind_annotation"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_jkind) -> "jkind"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_index_mod) -> "index_mod"
@@ -750,9 +750,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_label_declaration_semi -> (fun _ -> "label_declaration_semi")
   | MenhirInterpreter.N MenhirInterpreter.N_label_declaration -> (fun _ -> "label_declaration")
   | MenhirInterpreter.N MenhirInterpreter.N_kind_abbreviation_decl -> (fun _ -> "kind_abbreviation_decl")
+  | MenhirInterpreter.N MenhirInterpreter.N_jkind_desc -> (fun _ -> "jkind_desc")
   | MenhirInterpreter.N MenhirInterpreter.N_jkind_constraint -> (fun _ -> "jkind_constraint")
   | MenhirInterpreter.N MenhirInterpreter.N_jkind_annotation -> (fun _ -> "jkind_annotation")
-  | MenhirInterpreter.N MenhirInterpreter.N_jkind -> (fun _ -> "jkind")
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")
   | MenhirInterpreter.N MenhirInterpreter.N_index_mod -> (fun _ -> "index_mod")

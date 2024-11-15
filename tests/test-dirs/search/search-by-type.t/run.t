@@ -198,7 +198,7 @@
         "constructible": "Hashtbl.replace_seq _ _"
       },
       {
-        "file": "ocaml/stdlib/either.mli",
+        "file": "stdlib/either.mli",
         "start": {
           "line": 86,
           "col": 0

@@ -1243,10 +1243,11 @@ let add_type_to_preparation = prepare_type
 (* Disabled in classic mode when printing an unification error *)
 let print_labels = ref true
 
-let out_jkind_of_user_jkind (jkind : Jane_syntax.Jkind.annotation) =
-  let rec out_jkind_const_of_user_jkind : Jane_syntax.Jkind.t -> out_jkind_const = function
+let out_jkind_of_user_jkind jkind =
+  let rec out_jkind_const_of_user_jkind (jkind : Parsetree.jkind_annotation) : out_jkind_const =
+    match jkind.pjkind_desc with
     | Default -> Ojkind_const_default
-    | Abbreviation abbrev -> Ojkind_const_abbreviation (abbrev :> string Location.loc).txt
+    | Abbreviation abbrev -> Ojkind_const_abbreviation abbrev
     | Mod (base, modes) ->
       let base = out_jkind_const_of_user_jkind base in
       let modes =
@@ -1257,7 +1258,7 @@ let out_jkind_of_user_jkind (jkind : Jane_syntax.Jkind.annotation) =
       Ojkind_const_product (List.map out_jkind_const_of_user_jkind ts)
     | With _ | Kind_of _ -> failwith "XXX unimplemented jkind syntax"
   in
-  Ojkind_const (out_jkind_const_of_user_jkind jkind.txt)
+  Ojkind_const (out_jkind_const_of_user_jkind jkind)
 
 let out_jkind_of_const_jkind jkind =
   Ojkind_const (Jkind.Const.to_out_jkind_const jkind)
@@ -1324,9 +1325,9 @@ let tree_of_modes modes =
   (* The mapping passed to [tree_of_mode] must cover all non-legacy modes *)
   let l = [
     tree_of_mode diff.areality [Mode.Locality.Const.Local, Omd_legacy Omd_local];
-    tree_of_mode diff.linearity [Mode.Linearity.Const.Once, Omd_legacy Omd_once];
+    tree_of_mode diff.linearity [Mode.Linearity.Const.Once, Omd_new "once"];
+    tree_of_mode diff.uniqueness [Mode.Uniqueness.Const.Unique, Omd_new "unique"];
     tree_of_mode diff.portability [Mode.Portability.Const.Portable, Omd_new "portable"];
-    tree_of_mode diff.uniqueness [Mode.Uniqueness.Const.Unique, Omd_legacy Omd_unique];
     tree_of_mode diff.contention [Mode.Contention.Const.Contended, Omd_new "contended";
                                   Mode.Contention.Const.Shared, Omd_new "shared"]]
   in
@@ -1365,7 +1366,9 @@ let rec tree_of_typexp mode alloc_mode ty =
         let arg_mode = Alloc.zap_to_legacy marg in
         let t1 =
           if is_optional l then
-            match get_desc (tpoly_get_mono ty1) with
+            match
+              get_desc (Ctype.expand_head !printing_env (tpoly_get_mono ty1))
+            with
             | Tconstr(path, [ty], _)
               when Path.same path Predef.path_option ->
                 tree_of_typexp mode arg_mode ty
@@ -2224,7 +2227,7 @@ let rec tree_of_class_type mode params =
       in
       let tr =
        if is_optional l then
-         match get_desc ty with
+         match get_desc (Ctype.expand_head !printing_env ty) with
          | Tconstr(path, [ty], _) when Path.same path Predef.path_option ->
              tree_of_typexp mode ty
          | _ -> Otyp_stuff "<hidden>"

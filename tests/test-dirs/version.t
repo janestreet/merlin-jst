@@ -2,23 +2,23 @@
   {
     "version": "The Merlin toolkit version %VERSION%, for Ocaml 5.2.0\n",
     "magicNumbers": {
-      "cmi_magic_number": "Caml1999I552",
-      "ast_intf_magic_number": "Caml1999N552",
-      "ast_impl_magic_number": "Caml1999M552",
-      "cmt_magic_number": "Caml1999T552",
-      "cms_magic_number": "Caml1999S552",
-      "index_magic_number": "Merl2023I552"
+      "cmi_magic_number": "Caml1999I553",
+      "ast_intf_magic_number": "Caml1999N553",
+      "ast_impl_magic_number": "Caml1999M553",
+      "cmt_magic_number": "Caml1999T553",
+      "cms_magic_number": "Caml1999S553",
+      "index_magic_number": "Merl2023I553"
     }
   }
 
   $ ocaml-index magic-numbers | jq
   {
-    "cmi_magic_number": "Caml1999I552",
-    "ast_intf_magic_number": "Caml1999N552",
-    "ast_impl_magic_number": "Caml1999M552",
-    "cmt_magic_number": "Caml1999T552",
-    "cms_magic_number": "Caml1999S552",
-    "index_magic_number": "Merl2023I552"
+    "cmi_magic_number": "Caml1999I553",
+    "ast_intf_magic_number": "Caml1999N553",
+    "ast_impl_magic_number": "Caml1999M553",
+    "cmt_magic_number": "Caml1999T553",
+    "cms_magic_number": "Caml1999S553",
+    "index_magic_number": "Merl2023I553"
   }
 
 Verify there is no difference between Merlin and Ocaml-index

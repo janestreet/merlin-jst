@@ -51,7 +51,7 @@ module Util = struct
             (Predef.path_bool, construct "false");
             (Predef.path_unit, construct "()");
             (Predef.path_exn, ident "exn");
-            (Predef.path_array, Ast_helper.Exp.array []);
+            (Predef.path_array, Ast_helper.Exp.array Mutable []);
             (Predef.path_nativeint, constant (Pconst_integer ("0", Some 'n')));
             (Predef.path_int32, constant (Pconst_integer ("0", Some 'l')));
             (Predef.path_int64, constant (Pconst_integer ("0", Some 'L')));

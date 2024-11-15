@@ -68,8 +68,9 @@ module Typ :
     val mk: ?loc:loc -> ?attrs:attrs -> core_type_desc -> core_type
     val attr: core_type -> attribute -> core_type
 
-    val any: ?loc:loc -> ?attrs:attrs -> unit -> core_type
-    val var: ?loc:loc -> ?attrs:attrs -> string -> core_type
+    val any: ?loc:loc -> ?attrs:attrs -> jkind_annotation option -> core_type
+    val var: ?loc:loc -> ?attrs:attrs -> string -> jkind_annotation option
+      -> core_type
     val arrow: ?loc:loc -> ?attrs:attrs -> arg_label -> core_type -> core_type ->
       mode with_loc list -> mode with_loc list -> core_type
     val tuple: ?loc:loc -> ?attrs:attrs -> (string option * core_type) list -> core_type
@@ -79,11 +80,13 @@ module Typ :
     val object_: ?loc:loc -> ?attrs:attrs -> object_field list
                    -> closed_flag -> core_type
     val class_: ?loc:loc -> ?attrs:attrs -> lid -> core_type list -> core_type
-    val alias: ?loc:loc -> ?attrs:attrs -> core_type -> string with_loc
-               -> core_type
+    val alias: ?loc:loc -> ?attrs:attrs -> core_type -> string with_loc option
+               -> jkind_annotation option -> core_type
+    (* Invariant: One of the options must be [Some]. *)
     val variant: ?loc:loc -> ?attrs:attrs -> row_field list -> closed_flag
                  -> label list option -> core_type
-    val poly: ?loc:loc -> ?attrs:attrs -> str list -> core_type -> core_type
+    val poly: ?loc:loc -> ?attrs:attrs ->
+      (str * jkind_annotation option) list -> core_type -> core_type
     val package: ?loc:loc -> ?attrs:attrs -> lid -> (lid * core_type) list
                  -> core_type
     val open_ : ?loc:loc -> ?attrs:attrs -> lid -> core_type -> core_type
@@ -123,7 +126,8 @@ module Pat:
     val variant: ?loc:loc -> ?attrs:attrs -> label -> pattern option -> pattern
     val record: ?loc:loc -> ?attrs:attrs -> (lid * pattern) list -> closed_flag
                 -> pattern
-    val array: ?loc:loc -> ?attrs:attrs -> pattern list -> pattern
+    val array: ?loc:loc -> ?attrs:attrs -> mutable_flag -> pattern list ->
+      pattern
     val or_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern -> pattern
     val constraint_: ?loc:loc -> ?attrs:attrs -> pattern -> core_type option
                      -> mode with_loc list -> pattern
@@ -165,7 +169,8 @@ module Exp:
     val field: ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression
     val setfield: ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression
                   -> expression
-    val array: ?loc:loc -> ?attrs:attrs -> expression list -> expression
+    val array: ?loc:loc -> ?attrs:attrs -> mutable_flag -> expression list ->
+      expression
     val ifthenelse: ?loc:loc -> ?attrs:attrs -> expression -> expression
                     -> expression option -> expression
     val sequence: ?loc:loc -> ?attrs:attrs -> expression -> expression
@@ -193,7 +198,8 @@ module Exp:
     val poly: ?loc:loc -> ?attrs:attrs -> expression -> core_type option
               -> expression
     val object_: ?loc:loc -> ?attrs:attrs -> class_structure -> expression
-    val newtype: ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
+    val newtype: ?loc:loc -> ?attrs:attrs -> str -> jkind_annotation option ->
+      expression  -> expression
     val pack: ?loc:loc -> ?attrs:attrs -> module_expr -> expression
     val open_: ?loc:loc -> ?attrs:attrs -> open_declaration -> expression
                -> expression
@@ -202,6 +208,8 @@ module Exp:
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> expression
     val unreachable: ?loc:loc -> ?attrs:attrs -> unit -> expression
     val stack : ?loc:loc -> ?attrs:attrs -> expression -> expression
+    val comprehension :
+      ?loc:loc -> ?attrs:attrs -> comprehension_expression -> expression
 
     val case: pattern -> ?guard:expression -> expression -> case
     val binding_op: str -> pattern -> expression -> loc -> binding_op
@@ -220,11 +228,14 @@ module Type:
     val mk: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?text:text ->
       ?params:(core_type * (variance * injectivity)) list ->
       ?cstrs:(core_type * core_type * loc) list ->
-      ?kind:type_kind -> ?priv:private_flag -> ?manifest:core_type -> str ->
+      ?kind:type_kind -> ?priv:private_flag -> ?manifest:core_type ->
+      ?jkind_annotation:jkind_annotation ->
+      str ->
       type_declaration
 
     val constructor: ?loc:loc -> ?attrs:attrs -> ?info:info ->
-      ?vars:str list -> ?args:constructor_arguments -> ?res:core_type ->
+      ?vars:(str * jkind_annotation option) list ->
+      ?args:constructor_arguments -> ?res:core_type ->
       str ->
       constructor_declaration
 
@@ -250,7 +261,8 @@ module Te:
       str -> extension_constructor_kind -> extension_constructor
 
     val decl: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?info:info ->
-      ?vars:str list -> ?args:constructor_arguments -> ?res:core_type ->
+      ?vars:(str * jkind_annotation option) list ->
+      ?args:constructor_arguments -> ?res:core_type ->
       str ->
       extension_constructor
     val rebind: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?info:info ->
@@ -274,6 +286,8 @@ module Mty:
       with_constraint list -> module_type
     val typeof_: ?loc:loc -> ?attrs:attrs -> module_expr -> module_type
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> module_type
+    val strengthen: ?loc:loc -> ?attrs:attrs -> module_type -> lid ->
+      module_type
   end
 
 (** Module expressions *)
@@ -293,6 +307,7 @@ module Mod:
       module_expr
     val unpack: ?loc:loc -> ?attrs:attrs -> expression -> module_expr
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> module_expr
+    val instance: ?loc:loc -> ?attrs:attrs -> module_instance -> module_expr
   end
 
 (** Signature items *)
@@ -317,7 +332,15 @@ module Sig:
     val class_type: ?loc:loc -> class_type_declaration list -> signature_item
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> signature_item
     val attribute: ?loc:loc -> attribute -> signature_item
+    val kind_abbrev: ?loc:loc -> label with_loc -> jkind_annotation ->
+      signature_item
     val text: text -> signature_item list
+  end
+
+module Sg:
+  sig
+    val mk : ?loc:loc -> ?modalities:modality with_loc list ->
+      signature_item list -> signature
   end
 
 (** Structure items *)
@@ -339,6 +362,8 @@ module Str:
     val class_type: ?loc:loc -> class_type_declaration list -> structure_item
     val include_: ?loc:loc -> include_declaration -> structure_item
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> structure_item
+    val kind_abbrev: ?loc:loc -> label with_loc -> jkind_annotation ->
+      structure_item
     val attribute: ?loc:loc -> attribute -> structure_item
     val text: text -> structure_item list
   end

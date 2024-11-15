@@ -455,7 +455,7 @@ let rec nondep_mty_with_presence env va ids pres mty =
                     nondep_mty res_env va ids res)
       in
       pres, mty
-  | Mty_for_hole -> pres, Mty_for_hole
+  | Mty_for_hole as mty_for_hole -> pres, mty_for_hole
   | Mty_strengthen (mty,p,a) ->
       (* If we end up strengthening an abstract type with a dependent module,
         just drop the strengthening. *)

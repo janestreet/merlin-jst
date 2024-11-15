@@ -7,31 +7,24 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # src/ocaml/typing/magic_numbers.ml based on the magic numbers in
 # upstream/ocaml_flambda/configure
 
-source_file=upstream/ocaml_flambda/configure
-target_magic_file=src/ocaml/typing/magic_numbers.ml
-target_config_file=src/ocaml/utils/config.ml
+magic_file=src/ocaml/typing/magic_numbers.ml
+config_file=src/ocaml/utils/config.ml
+version_test_file=tests/test-dirs/version.t
 
 function usage () {
   cat <<USAGE
-Usage: $0 VERSION
+Usage: $0 MAGIC_NUMBER VERSION
 
-Update the magic numbers in $target_config_file and $target_magic_file
-based on the magic numbers in $source_file.
+Update the magic numbers in $config_file and $magic_file.
 
+MAGIC_NUMBER defines the magic numbers. It corresponds to MAGIC_NUMBER__VERSION in build-aux/ocaml_version.m4 in the compiler.
 VERSION is the OCaml version that this version of Merlin corresponds to.
 USAGE
 }
 
-if [[ $# = 1 ]]; then
-  case "$1" in
-  -h|-help|--help|-\?)
-    usage
-    exit 0
-    ;;
-  *)
-    version="$1"
-    ;;
-  esac
+if [[ $# = 2 ]]; then
+  magic_number_version="$1"
+  version="$2"
 else
   usage >&2
   exit 1
@@ -43,24 +36,20 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-# Collect magic numbers by greping for them in upstream/ocaml_flambda/configure
-cmi_magic_number=$(grep -oP 'CMI_MAGIC_NUMBER=\K[a-zA-Z0-9]*' "$source_file")
-ast_impl_magic_number=$(grep -oP 'AST_IMPL_MAGIC_NUMBER=\K[a-zA-Z0-9]*' "$source_file")
-ast_intf_magic_number=$(grep -oP 'AST_INTF_MAGIC_NUMBER=\K[a-zA-Z0-9]*' "$source_file")
-cmt_magic_number=$(grep -oP 'CMT_MAGIC_NUMBER=\K[a-zA-Z0-9]*' "$source_file")
-cms_magic_number=$(grep -oP 'CMS_MAGIC_NUMBER=\K[a-zA-Z0-9]*' "$source_file")
-
-# Create an index magic number based on the cmi magic number.
-# The cmi magic number is expected to be start with Caml1999I and end in some number.
-# The index magic number is made to be Merl2023I, suffixed with that number.
-# ex: Caml1999I551 -> Merl2023I551
-index_magic_number=$(echo "$cmi_magic_number" | sed -E 's/Caml1999I([0-9]+)/Merl2023I\1/')
+# Construct a magic number based on a character used to characterize a file type and a
+# number to denote version. See DEFINE_MAGIC_NUMBER in build-aux/ocaml_version.v4 in the
+# compiler
+function make_magic_number() {
+  prefix="${2:-Caml1999}"
+  echo "${prefix}${1}${magic_number_version}"
+}
 
 # Update src/ocaml/typing/magic_numbers.ml
-if grep -q "$version" "$target_magic_file"; then
-  echo "$target_magic_file already contains magic number for $version; skipping"
+if grep -q "$version" "$magic_file"; then
+  echo "$magic_file already contains magic number for $version; skipping"
 else
-  echo "Updating magic numbers in $target_magic_file"
+  echo "Updating magic numbers in $magic_file"
+  cmi_magic_number=$(make_magic_number I)
   line_to_insert="| \"$cmi_magic_number\" -> Some \"$version\""
   # The below sed looks for a line like:
   #    | "Caml1999I551" -> Some "5.2.0minus-1"
@@ -69,29 +58,31 @@ else
   # and inserts $line_to_insert between them.
   # The :a;N;$!ba; is some sed magic that makes it read in the entire file before
   # substituting, which is necessary to match mutli-line patterns.
-  sed -i -E ':a;N;$!ba;s/(\| "[a-zA-Z0-9]+" -> Some "\S*")\n(\s*)(\| _ -> None)/\1\n\2'"$line_to_insert"'\n\2\3/' "$target_magic_file"
+  sed -i -E ':a;N;$!ba;s/(\| "[a-zA-Z0-9]+" -> Some "\S*")\n(\s*)(\| _ -> None)/\1\n\2'"$line_to_insert"'\n\2\3/' "$magic_file"
 fi
 
 # Update the magic numbers in src/ocaml/utils/config.ml
-echo "Updating magic numbers in $target_config_file"
+echo "Updating magic numbers in $config_file and $version_test_file"
 function replace_magic_number () {
   name="$1"
-  value="$2"
-  sed -i 's/let '"$name"' = "[^"]*"/let '"$name"' = "'"$value"'"/' "$target_config_file"
+  value=$(make_magic_number "${@:2}")
+  sed -i 's/let '"$name"' = "[^"]*"/let '"$name"' = "'"$value"'"/' "$config_file"
+  sed -i 's/"'"$name"'": "[^"]*"/"'"$name"'": "'"$value"'"/' "$version_test_file"
 }
-replace_magic_number cmi_magic_number "$cmi_magic_number"
-replace_magic_number ast_impl_magic_number "$ast_impl_magic_number"
-replace_magic_number ast_intf_magic_number "$ast_intf_magic_number"
-replace_magic_number cmt_magic_number "$cmt_magic_number"
-replace_magic_number cms_magic_number "$cms_magic_number"
-replace_magic_number index_magic_number "$index_magic_number"
+replace_magic_number cmi_magic_number I
+replace_magic_number ast_impl_magic_number M
+replace_magic_number ast_intf_magic_number N
+replace_magic_number cmt_magic_number T
+replace_magic_number cms_magic_number S
+replace_magic_number index_magic_number I Merl2023
 
-# After updating magic numbers, check that all strings in $target_config_file are one of
+# After updating magic numbers, check that all strings in $config_file are one of
 # the above magic numbers (or some other known string). This helps ensure that there were
 # not any new magic numbers added that this script does not know about.
-okay_strings=".mli|$cmi_magic_number|$ast_impl_magic_number|$ast_intf_magic_number|$cmt_magic_number|$cms_magic_number|$index_magic_number"
+# This isn't important to do in $version_test_file since tests would catch the mistake.
+okay_strings="[A-Z][a-z]{3}[0-9]{4}[A-Z]$magic_number_version|.mli|[a-z_]+_magic_number"
 regex='"(?!'"$okay_strings"')[^"]*"'
-if grep -q -P "$regex" "$target_config_file"; then
-  echo "Warning: There may be new magic numbers in $target_config_file that were not updated:" >&2
-  grep -P "$regex" "$target_config_file" >&2
+if grep -q -P "$regex" "$config_file"; then
+  echo "Warning: There may be new magic numbers in $config_file that were not updated:" >&2
+  grep -P "$regex" "$config_file" >&2
 fi
