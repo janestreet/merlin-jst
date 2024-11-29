@@ -1397,7 +1397,9 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                       let mode_arg = Mode.Alloc.disallow_right Mode.Alloc.legacy in
                       let mode_ret = Mode.Alloc.disallow_right Mode.Alloc.legacy in
                       let sort_arg = Jkind.Sort.value in
-                      Omitted { mode_closure; mode_arg; mode_ret; sort_arg }
+                      let sort_ret = Jkind.Sort.value in
+                      Omitted { mode_closure; mode_arg; mode_ret; sort_arg;
+                                sort_ret }
                     end
             in
             let omitted =
@@ -1610,7 +1612,6 @@ let temp_abbrev loc id arity uid =
        type_arity = arity;
        type_kind = Type_abstract Definition;
        type_jkind = Jkind.Builtin.value ~why:Object;
-       type_jkind_annotation = None;
        type_private = Public;
        type_manifest = Some ty;
        type_variance = Variance.unknown_signature ~injective:false ~arity;
@@ -1842,7 +1843,6 @@ let class_infos define_class kind
      type_arity = arity;
      type_kind = Type_abstract Definition;
      type_jkind = Jkind.Builtin.value ~why:Object;
-     type_jkind_annotation = None;
      type_private = Public;
      type_manifest = Some obj_ty;
      type_variance = Variance.unknown_signature ~injective:false ~arity;
