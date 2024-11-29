@@ -16,6 +16,10 @@ open Mode
 open Jkind_types
 
 module Le_result = Misc_stdlib.Le_result
+module Misc = struct
+  include Misc
+  module Stdlib = Misc_stdlib
+end
 
 [@@@warning "+9"]
 
@@ -64,30 +68,6 @@ module Layout = struct
       | Product cs1, Product cs2 -> List.equal equal cs1 cs2
       | (Base _ | Any | Product _), _ -> false
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-    let rec sub (c1 : t) (c2 : t) : Le_result.t =
-      match c1, c2 with
-      | _ when equal c1 c2 -> Equal
-      | _, Any -> Less
-      | Product consts1, Product consts2 ->
-        if List.compare_lengths consts1 consts2 = 0
-        then Misc_stdlib.Le_result.combine_list (List.map2 sub consts1 consts2)
-        else Not_le
-      | (Any | Base _ | Product _), _ -> Not_le
-
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-    let rec sub (c1 : t) (c2 : t) : Misc.Le_result.t =
-      match c1, c2 with
-      | _ when equal c1 c2 -> Equal
-      | _, Any -> Less
-      | Product consts1, Product consts2 ->
-        if List.compare_lengths consts1 consts2 = 0
-        then Misc.Le_result.combine_list (List.map2 sub consts1 consts2)
-        else Not_le
-      | (Any | Base _ | Product _), _ -> Not_le
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
     module Static = struct
       let value = Base Sort.Value
 
@@ -141,22 +121,10 @@ module Layout = struct
     let of_flat_sort : Sort.Flat.t -> _ = function
       | Var _ -> None
       | Base b -> Some (Static.of_base b)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-      | Product sorts ->
-        Option.map
-          (fun x -> Product x)
-          (Misc_stdlib.List.map_option of_sort sorts)
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-      | Product sorts ->
-        Option.map
-          (fun x -> Product x)
-          (Misc.Stdlib.List.map_option of_sort sorts)
-=======
 
     let rec of_sort_const : Sort.Const.t -> t = function
       | Base b -> Base b
       | Product consts -> Product (List.map of_sort_const consts)
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
     let to_string t =
       let rec to_string nested (t : t) =
@@ -318,35 +286,7 @@ end
 
 module Externality = Jkind_axis.Externality
 module Nullability = Jkind_axis.Nullability
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-
-module Modes = struct
-  include Alloc.Const
-
-  let less_or_equal a b : Le_result.t =
-    match le a b, le b a with
-    | true, true -> Equal
-    | true, false -> Less
-    | false, _ -> Not_le
-
-  let equal a b = Le_result.is_equal (less_or_equal a b)
-end
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-
-module Modes = struct
-  include Alloc.Const
-
-  let less_or_equal a b : Misc.Le_result.t =
-    match le a b, le b a with
-    | true, true -> Equal
-    | true, false -> Less
-    | false, _ -> Not_le
-
-  let equal a b = Misc.Le_result.is_equal (less_or_equal a b)
-end
-=======
 module Modes = Jkind_axis.Of_lattice (Alloc.Const)
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 module History = struct
   include Jkind_intf.History
@@ -439,112 +379,8 @@ module Const = struct
       nullability_upper_bound = Nullability.max
     }
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  let get_layout const = const.layout
-
-  let get_modal_upper_bounds const = const.modes_upper_bounds
-
-  let get_externality_upper_bound const = const.externality_upper_bound
-
-  let equal
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Layout.Const.equal lay1 lay2
-    && Modes.equal modes1 modes2
-    && Externality.equal ext1 ext2
-    && Nullability.equal null1 null2
-
-  let sub
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Le_result.combine_list
-      [ Layout.Const.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-
-  let of_layout ~mode_crossing ~nullability layout =
-    let modes_upper_bounds, externality_upper_bound =
-      match mode_crossing with
-      | true -> Modes.min, Externality.min
-      | false -> Modes.max, Externality.max
-    in
-    { layout;
-      modes_upper_bounds;
-      externality_upper_bound;
-      nullability_upper_bound = nullability
-    }
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  let get_layout const = const.layout
-
-  let get_modal_upper_bounds const = const.modes_upper_bounds
-
-  let get_externality_upper_bound const = const.externality_upper_bound
-
-  let equal
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Layout.Const.equal lay1 lay2
-    && Modes.equal modes1 modes2
-    && Externality.equal ext1 ext2
-    && Nullability.equal null1 null2
-
-  let sub
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Misc.Le_result.combine_list
-      [ Layout.Const.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-
-  let of_layout ~mode_crossing ~nullability layout =
-    let modes_upper_bounds, externality_upper_bound =
-      match mode_crossing with
-      | true -> Modes.min, Externality.min
-      | false -> Modes.max, Externality.max
-    in
-    { layout;
-      modes_upper_bounds;
-      externality_upper_bound;
-      nullability_upper_bound = nullability
-    }
-=======
   let equal_after_all_inference_is_done t1 t2 =
     Layout_and_axes.equal_after_all_inference_is_done Layout.Const.equal t1 t2
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
   module Builtin = struct
     type nonrec +'d t =
@@ -1009,37 +845,6 @@ module Const = struct
 end
 
 module Desc = struct
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  type t =
-    | Const of Const.t
-    | Var of Sort.var
-    | Product of t list
-
-  let format ppf =
-    let rec pp_element ~nested ppf =
-      let open Format in
-      function
-      | Const c -> fprintf ppf "%a" Const.format c
-      | Var v -> fprintf ppf "%s" (Sort.Var.name v)
-      | Product ts ->
-        let pp_sep ppf () = Format.fprintf ppf "@ & " in
-        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  type t =
-    | Const of Const.t
-    | Var of Sort.var
-    | Product of t list
-
-  let format ppf =
-    let rec pp_element ~nested ppf =
-      let open Format in
-      function
-      | Const c -> fprintf ppf "%a" Const.format c
-      | Var v -> fprintf ppf "%s" (Sort.Var.name v)
-      | Product ts ->
-        let pp_sep ppf () = Format.fprintf ppf "@ & " in
-        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
-=======
   type 'd t = (Sort.Flat.t Layout.t, 'd) Layout_and_axes.t
 
   let get_const t = Layout_and_axes.map_option Layout.get_flat_const t
@@ -1057,57 +862,14 @@ module Desc = struct
          [Const.format] works better for atomic layouts, not products. *)
       | Product lays ->
         let pp_sep ppf () = fprintf ppf "@ & " in
-        Misc.pp_nested_list ~nested ~pp_element:format_desc ~pp_sep ppf
+        Misc_stdlib.pp_nested_list ~nested ~pp_element:format_desc ~pp_sep ppf
           (List.map (fun layout -> { desc with layout }) lays)
       | _ -> (
         match get_const desc with
         | Some c -> Const.format ppf c
         | None -> assert false (* handled above *))
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
     in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-    pp_element ~nested:false ppf
-
-  (* considers sort variables < Any. Two sort variables are in a [sub]
-     relationship only when they are equal.
-     Never does mutation.
-     Pre-condition: no filled-in sort variables. product must contain a var. *)
-  let rec sub d1 d2 : Le_result.t =
-    match d1, d2 with
-    | Const c1, Const c2 -> Const.sub c1 c2
-    | Var _, Const c when Const.equal Const.max c -> Less
-    | Var v1, Var v2 -> if v1 == v2 then Equal else Not_le
-    | Product ds1, Product ds2 ->
-      if List.compare_lengths ds1 ds2 = 0
-      then Le_result.combine_list (List.map2 sub ds1 ds2)
-      else Not_le
-    | Const _, Product _ | Product _, Const _ | Const _, Var _ | Var _, Const _
-      ->
-      Not_le
-    | Var _, Product _ | Product _, Var _ -> Not_le
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-    pp_element ~nested:false ppf
-
-  (* considers sort variables < Any. Two sort variables are in a [sub]
-     relationship only when they are equal.
-     Never does mutation.
-     Pre-condition: no filled-in sort variables. product must contain a var. *)
-  let rec sub d1 d2 : Misc.Le_result.t =
-    match d1, d2 with
-    | Const c1, Const c2 -> Const.sub c1 c2
-    | Var _, Const c when Const.equal Const.max c -> Less
-    | Var v1, Var v2 -> if v1 == v2 then Equal else Not_le
-    | Product ds1, Product ds2 ->
-      if List.compare_lengths ds1 ds2 = 0
-      then Misc.Le_result.combine_list (List.map2 sub ds1 ds2)
-      else Not_le
-    | Const _, Product _ | Product _, Const _ | Const _, Var _ | Var _, Const _
-      ->
-      Not_le
-    | Var _, Product _ | Product _, Var _ -> Not_le
-=======
     format_desc ~nested:false ppf t
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 end
 
 module Jkind_desc = struct
@@ -1160,43 +922,7 @@ module Jkind_desc = struct
     && Externality.equal ext1 ext2
     && Nullability.equal null1 null2
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  let sub
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Le_result.combine_list
-      [ Layout.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  let sub
-      { layout = lay1;
-        modes_upper_bounds = modes1;
-        externality_upper_bound = ext1;
-        nullability_upper_bound = null1
-      }
-      { layout = lay2;
-        modes_upper_bounds = modes2;
-        externality_upper_bound = ext2;
-        nullability_upper_bound = null2
-      } =
-    Misc.Le_result.combine_list
-      [ Layout.sub lay1 lay2;
-        Modes.less_or_equal modes1 modes2;
-        Externality.less_or_equal ext1 ext2;
-        Nullability.less_or_equal null1 null2 ]
-=======
   let sub t1 t2 = Layout_and_axes.sub Layout.sub t1 t2
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
   let intersection
       { layout = lay1;
@@ -1498,31 +1224,7 @@ let sort_of_jkind (t : jkind_l) : sort =
   in
   sort_of_layout t.jkind.layout
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-let get_layout jk : Layout.Const.t option =
-  let rec aux : Layout.t -> Layout.Const.t option = function
-    | Any -> Some Any
-    | Sort s -> Layout.Const.of_sort s
-    | Product layouts ->
-      Option.map
-        (fun x -> Layout.Const.Product x)
-        (Misc_stdlib.List.map_option aux layouts)
-  in
-  aux jk.jkind.layout
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-let get_layout jk : Layout.Const.t option =
-  let rec aux : Layout.t -> Layout.Const.t option = function
-    | Any -> Some Any
-    | Sort s -> Layout.Const.of_sort s
-    | Product layouts ->
-      Option.map
-        (fun x -> Layout.Const.Product x)
-        (Misc.Stdlib.List.map_option aux layouts)
-  in
-  aux jk.jkind.layout
-=======
 let get_layout jk : Layout.Const.t option = Layout.get_const jk.jkind.layout
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 let get_modal_upper_bounds jk = jk.jkind.modes_upper_bounds
 
@@ -1555,36 +1257,12 @@ let decompose_product ({ jkind; _ } as jk) =
 (*********************************)
 (* pretty printing *)
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-let format ppf jkind =
-  let rec pp_element ~nested ppf (d : Desc.t) =
-    match d with
-    | Const c -> Format.fprintf ppf "%a" Const.format c
-    | Var v -> Format.fprintf ppf "%s" (Sort.Var.name v)
-    | Product p ->
-      let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf p
-  in
-  pp_element ~nested:false ppf (get jkind)
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-let format ppf jkind =
-  let rec pp_element ~nested ppf (d : Desc.t) =
-    match d with
-    | Const c -> Format.fprintf ppf "%a" Const.format c
-    | Var v -> Format.fprintf ppf "%s" (Sort.Var.name v)
-    | Product p ->
-      let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf p
-  in
-  pp_element ~nested:false ppf (get jkind)
-=======
 (* CR layouts v2.8: This is the spot where we could print the annotation in
    the jkind, if there is one. But actually the output seems better without
    doing so, because it teaches the user that e.g. [value mod local] is better
    off spelled [value]. Possibly remove [jkind.annotation], but only after
    we have a proper printing story. *)
 let format ppf jkind = Desc.format ppf (Jkind_desc.get jkind.jkind)
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 let printtyp_path = ref (fun _ _ -> assert false)
 

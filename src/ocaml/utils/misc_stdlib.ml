@@ -112,6 +112,86 @@ module Option = struct
       Format.fprintf ppf "@[(Some@ %a)@]" print_contents contents
 end
 
+module Array = struct
+  let exists2 p a1 a2 =
+    let n = Array.length a1 in
+    if Array.length a2 <> n then invalid_arg "Misc.Stdlib.Array.exists2";
+    let rec loop i =
+      if i = n then false
+      else if p (Array.unsafe_get a1 i) (Array.unsafe_get a2 i) then true
+      else loop (succ i) in
+    loop 0
+
+  let fold_left2 f x a1 a2 =
+    if Array.length a1 <> Array.length a2
+    then invalid_arg "Misc.Stdlib.Array.fold_left2";
+    let r = ref x in
+    for i = 0 to Array.length a1 - 1 do
+      r := f !r (Array.unsafe_get a1 i) (Array.unsafe_get a2 i)
+    done;
+    !r
+
+  let for_alli p a =
+    let n = Array.length a in
+    let rec loop i =
+      if i = n then true
+      else if p i (Array.unsafe_get a i) then loop (succ i)
+      else false in
+    loop 0
+
+  let all_somes a =
+    try
+      Some (Array.map (function None -> raise_notrace Exit | Some x -> x) a)
+    with
+    | Exit -> None
+
+  let equal eq_elt l1 l2 =
+    (* Basically inlines [Array.for_all2] to avoid the [raise] *)
+    let n = Array.length l1 in
+    Int.equal n (Array.length l2) &&
+    let rec loop i =
+      if Int.equal i n then
+        true
+      else if eq_elt (Array.unsafe_get l1 i) (Array.unsafe_get l2 i) then
+        loop (succ i)
+      else
+        false
+    in
+    loop 0
+
+  let compare compare arr1 arr2 =
+    let len1 = Array.length arr1 in
+    let len2 = Array.length arr2 in
+    if len1 <> len2 then
+      Int.compare len1 len2
+    else
+      let rec loop i =
+        if i >= len1 then 0
+        else
+          let cmp = compare arr1.(i) arr2.(i) in
+          if cmp <> 0 then cmp else loop (i + 1)
+      in
+      loop 0
+
+  let map_sharing f a =
+    let same = ref true in
+    let f' x =
+      let x' = f x in
+      if x != x' then
+        same := false;
+      x'
+    in
+    let a' = (Array.map [@inlined hint]) f' a in
+    if !same then a else a'
+
+  let of_list_map f = function
+    | [] -> [| |]
+    | hd :: tl ->
+      let a = Array.make (1 + List.length tl) (f hd) in
+      List.iteri (fun i x -> Array.unsafe_set a (i+1) (f x)) tl;
+      a
+end
+
 module String = struct
   include String
   module Set = Set.Make(String)
@@ -197,16 +277,32 @@ module Int = struct
 end
 
 module Monad = struct
-  module type Basic2 = sig
-    (** Multi parameter monad. The second parameter gets unified across all the computation.
-        This is used to encode monads working on a multi parameter data structure like
-        ([('a,'b) result]). *)
+  module type Basic = sig
+    type 'a t
 
+    val bind : 'a t -> ('a -> 'b t) -> 'b t
+    val return : 'a -> 'a t
+  end
+
+  module type Basic2 = sig
     type ('a, 'e) t
 
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 
     val return : 'a -> ('a, _) t
+  end
+
+  module type S = sig
+    type 'a t
+
+    val bind : 'a t -> ('a -> 'b t) -> 'b t
+    val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+    val return : 'a -> 'a t
+    val map : ('a -> 'b) -> 'a t -> 'b t
+    val join : 'a t t -> 'a t
+    val ignore_m : 'a t -> unit t
+    val all : 'a t list -> 'a list t
+    val all_unit : unit t list -> unit t
   end
 
   module type S2 = sig
@@ -219,6 +315,28 @@ module Monad = struct
     val ignore_m : (_, 'e) t -> (unit, 'e) t
     val all : ('a, 'e) t list -> ('a list, 'e) t
     val all_unit : (unit, 'e) t list -> (unit, 'e) t
+  end
+
+  module Make (X : Basic) = struct
+    include X
+
+    let ( >>= ) t f = bind t f
+
+    let map f ma = ma >>= fun a -> return (f a)
+
+    let join t = t >>= fun t' -> t'
+    let ignore_m t = map (fun _ -> ()) t
+
+    let all =
+      let rec loop vs = function
+        | [] -> return (List.rev vs)
+        | t :: ts -> t >>= fun v -> loop (v :: vs) ts
+      in
+      fun ts -> loop [] ts
+
+    let rec all_unit = function
+      | [] -> return ()
+      | t :: ts -> t >>= fun () -> all_unit ts
   end
 
   module Make2 (X : Basic2) = struct
@@ -243,8 +361,13 @@ module Monad = struct
       | m :: ms -> bind m (fun _ -> all_unit ms)
   end
 
+  module Option = Make(struct
+      include Stdlib.Option
+      let return = some
+    end)
+
   module Result = Make2(struct
-      include Result
+      include Stdlib.Result
       let return = ok
     end)
 end

@@ -568,14 +568,7 @@ and ('lbl, 'cstr) type_kind =
    case of normal projections from boxes. *)
 and tag = Ordinary of {src_index: int;  (* Unique name (per type) *)
                        runtime_tag: int}    (* The runtime tag *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-        | Extension of Path.t * jkind_l array
-                      (* The argument is the path of the extension *)
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-        | Extension of Path.t * jkind_l array
-=======
         | Extension of Path.t
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 (* A mixed product contains a possibly-empty prefix of values followed by a
    non-empty suffix of "flat" elements. Intuitively, a flat element is one that

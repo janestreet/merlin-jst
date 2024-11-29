@@ -13,6 +13,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
+module Misc = struct
+  include Misc
+  module Stdlib = Misc_stdlib
+end
+
 (* Predefined type constructors (with special typing rules in typecore) *)
 
 open Path

@@ -12,20 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.Const.t
-  | Unsupported_product_in_lazy of Jkind.Sort.Const.t
-  | Unsupported_product_in_array of Jkind.Sort.Const.t
-=======
-  | Not_a_sort of type_expr * Jkind.Violation.t
-  | Unsupported_sort of Jkind.Sort.Const.t
-  | Unsupported_product_in_lazy of Jkind.Sort.Const.t
-  | Unsupported_vector_in_product_array
-  | Mixed_product_array of Jkind.Sort.Const.t
-  | Product_iarrays_unsupported
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 (* Auxiliaries for type-based optimizations, e.g. array kinds *)
 
@@ -133,32 +119,12 @@ type 'a classification =
   | Lazy
   | Addr  (* any value except a float or a lazy *)
   | Any
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  | Product of Jkind.Sort.Const.t list
-  (* CR layouts v7.1: This [Product] case is always an error for now, but soon
-     we will support unboxed products in arrays and it will only sometimes be an
-     error. *)
-
-(* Classify a ty into a [classification]. Looks through synonyms, using [scrape_ty].
-   Returning [Any] is safe, though may skip some optimizations. *)
-let classify env ty sort : classification =
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  | Product of Jkind.Sort.Const.t list
-  (* CR layouts v7.1: This [Product] case is always an error for now, but soon
-     we will support unboxed products in arrays and it will only sometimes be an
-     error. *)
-
-(* Classify a ty into a [classification]. Looks through synonyms, using [scrape_ty].
-   Returning [Any] is safe, though may skip some optimizations. *)
-let classify env loc ty sort : classification =
-=======
   | Product of 'a
 
 (* Classify a ty into a [classification]. Looks through synonyms, using
    [scrape_ty].  Returning [Any] is safe, though may skip some optimizations.
    See comment on [classification] above to understand [classify_product]. *)
-let classify ~classify_product env loc ty sort : _ classification =
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+let classify ~classify_product env ty sort : _ classification =
   let ty = scrape_ty env ty in
   match Jkind.(Sort.default_to_value_and_get sort) with
   | Base Value -> begin
@@ -210,121 +176,10 @@ let classify ~classify_product env loc ty sort : _ classification =
   | Base Void (* as c *) ->
     (* raise (Error (loc, Unsupported_sort c)) *)
     Misc.fatal_error "merlin-jst: void encountered in classify"
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  | Product c -> Product c
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  | Base Word -> Unboxed_int Pnativeint
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product c -> Product c
-=======
-  | Base Word -> Unboxed_int Pnativeint
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
   | Product c -> Product (classify_product ty c)
-
-let rec scannable_product_array_kind loc sorts =
-  List.map (sort_to_scannable_product_element_kind loc) sorts
-
-and sort_to_scannable_product_element_kind loc (s : Jkind.Sort.Const.t) =
-  (* Unfortunate: this never returns `Pint_scannable`.  Doing so would require
-     this to traverse the type, rather than just the kind, or to add product
-     kinds. *)
-  match s with
-  | Base Value -> Paddr_scannable
-  | Base (Float64 | Float32 | Bits32 | Bits64 | Word | Vec128) as c ->
-    raise (Error (loc, Mixed_product_array c))
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product sorts -> Pproduct_scannable (scannable_product_array_kind loc sorts)
-
-let rec ignorable_product_array_kind loc sorts =
-  List.map (sort_to_ignorable_product_element_kind loc) sorts
-
-and sort_to_ignorable_product_element_kind loc (s : Jkind.Sort.Const.t) =
-  match s with
-  | Base Value -> Pint_ignorable
-  | Base Float64 -> Punboxedfloat_ignorable Pfloat64
-  | Base Float32 -> Punboxedfloat_ignorable Pfloat32
-  | Base Bits32 -> Punboxedint_ignorable Pint32
-  | Base Bits64 -> Punboxedint_ignorable Pint64
-  | Base Word -> Punboxedint_ignorable Pnativeint
-  | Base Vec128 -> raise (Error (loc, Unsupported_vector_in_product_array))
-  | Base Void as c -> raise (Error (loc, Unsupported_sort c))
-  | Product sorts -> Pproduct_ignorable (ignorable_product_array_kind loc sorts)
-
-let array_kind_of_elt ~elt_sort env loc ty =
-  let elt_sort =
-    match elt_sort with
-    | Some s -> s
-    | None ->
-      type_legacy_sort ~why:Array_element env loc ty
-  in
-  let classify_product ty sorts =
-    if Language_extension.(is_at_least Layouts Alpha) then
-      if is_always_gc_ignorable env ty then
-        Pgcignorableproductarray (ignorable_product_array_kind loc sorts)
-      else
-        Pgcscannableproductarray (scannable_product_array_kind loc sorts)
-    else
-      let sort = Jkind.Sort.of_const (Jkind.Sort.Const.Product sorts) in
-      raise (Error (loc, Sort_without_extension (sort, Alpha, Some ty)))
-  in
-  match classify ~classify_product env loc ty elt_sort with
-  | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
-  | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
-  | Addr | Lazy -> Paddrarray
-  | Int -> Pintarray
-  | Unboxed_float f -> Punboxedfloatarray f
-  | Unboxed_int i -> Punboxedintarray i
-  | Unboxed_vector v -> Punboxedvectorarray v
-  | Product c -> c
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  | Tconstr(p, [elt_ty], _)
-    when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
-      let elt_sort =
-        match elt_sort with
-        | Some s -> s
-        | None ->
-          type_legacy_sort ~why:Array_element env loc elt_ty
-      in
-      begin match classify env elt_ty elt_sort with
-      | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
-      | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
-      | Addr | Lazy -> Paddrarray
-      | Int -> Pintarray
-      | Unboxed_float f -> Punboxedfloatarray f
-      | Unboxed_int i -> Punboxedintarray i
-      | Unboxed_vector v -> Punboxedvectorarray v
-      | Product _cs ->
-        (* let kind = Jkind.Sort.Const.Product cs in
-        raise (Error (loc, Unsupported_product_in_array kind)) *)
-        Misc.fatal_error "merlin-jst: product kind encountered in array_type_kind"
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  | Tconstr(p, [elt_ty], _)
-    when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
-      let elt_sort =
-        match elt_sort with
-        | Some s -> s
-        | None ->
-          type_legacy_sort ~why:Array_element env loc elt_ty
-      in
-      begin match classify env loc elt_ty elt_sort with
-      | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
-      | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
-      | Addr | Lazy -> Paddrarray
-      | Int -> Pintarray
-      | Unboxed_float f -> Punboxedfloatarray f
-      | Unboxed_int i -> Punboxedintarray i
-      | Unboxed_vector v -> Punboxedvectorarray v
-      | Product cs ->
-        let kind = Jkind.Sort.Const.Product cs in
-        raise (Error (loc, Unsupported_product_in_array kind))
-=======
   | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_array ->
       array_kind_of_elt ~elt_sort env loc elt_ty
   | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_iarray ->
@@ -332,11 +187,11 @@ let array_type_kind ~elt_sort env loc ty =
       (* CR layouts v7.1: allow iarrays of products. *)
       begin match kind with
       | Pgcscannableproductarray _ | Pgcignorableproductarray _ ->
-        raise (Error (loc, Product_iarrays_unsupported))
+        (* raise (Error (loc, Product_iarrays_unsupported)) *)
+        Misc.fatal_error "merlin-jst: product kind encountered in array_type_kind"
       | Pgenarray | Paddrarray | Pintarray | Pfloatarray | Punboxedfloatarray _
       | Punboxedintarray _ | Punboxedvectorarray _  ->
         kind
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
       end
   | Tconstr(p, [], _) when Path.same p Predef.path_floatarray ->
       Pfloatarray
@@ -956,17 +811,7 @@ let function_arg_layout env loc sort ty =
     if the value can be represented as a float/forward/lazy *)
 let lazy_val_requires_forward env (* loc *) ty =
   let sort = Jkind.Sort.for_lazy_body in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
   match classify env ty sort with
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  match classify env loc ty sort with
-=======
-  let classify_product _ sorts =
-    let kind = Jkind.Sort.Const.Product sorts in
-    raise (Error (loc, Unsupported_product_in_lazy kind))
-  in
-  match classify ~classify_product env loc ty sort with
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
   | Any | Lazy -> true
   (* CR layouts: Fix this when supporting lazy unboxed values.
      Blocks with forward_tag can get scanned by the gc thus can't
@@ -976,24 +821,7 @@ let lazy_val_requires_forward env (* loc *) ty =
     Misc.fatal_error "Unboxed value encountered inside lazy expression"
   | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false
-  | Product _cs ->
-    (* let kind = Jkind.Sort.Const.Product cs in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-    raise (Error (loc, Unsupported_product_in_lazy kind)) *)
-    Misc.fatal_error "merlin-jst: product kind encountered in lazy_val_requires_forward"
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-    Misc.fatal_error "Unboxed value encountered inside lazy expression"
-  | Float -> Config.flat_float_array
-  | Addr | Int -> false
-  | Product cs ->
-    let kind = Jkind.Sort.Const.Product cs in
-    raise (Error (loc, Unsupported_product_in_lazy kind))
-=======
-    Misc.fatal_error "Unboxed value encountered inside lazy expression"
-  | Float -> Config.flat_float_array
-  | Addr | Int -> false
   | Product _ -> assert false (* because [classify_product] raises *)
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 (** The compilation of the expression [lazy e] depends on the form of e:
     constants, floats and identifiers are optimized.  The optimization must be
@@ -1049,37 +877,3 @@ let rec layout_union l1 l2 =
     _ ->
       Ptop
 *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-        "Product layout %a detected in [lazy] in [Typeopt.Layout]@ \
-         Please report this error to the Jane Street compilers team."
-        Jkind.Sort.Const.format const
-  | Unsupported_product_in_array const ->
-    fprintf ppf
-      "Unboxed products are not yet supported with array primitives.@ \
-       Here, layout %a was used."
-      Jkind.Sort.Const.format const
-
-let () =
-  Location.register_error_of_exn
-=======
-        "Product layout %a detected in [lazy] in [Typeopt.Layout]@ \
-         Please report this error to the Jane Street compilers team."
-        Jkind.Sort.Const.format const
-  | Unsupported_vector_in_product_array ->
-      fprintf ppf
-        "Unboxed vector types are not yet supported in arrays of unboxed@ \
-         products."
-  | Mixed_product_array const ->
-      fprintf ppf
-        "Unboxed product array elements must be external or contain all gc@ \
-         scannable types. The product type this function is applied at is@ \
-         not external but contains an element of sort %a."
-        Jkind.Sort.Const.format const
-  | Product_iarrays_unsupported ->
-      fprintf ppf
-        "Immutable arrays of unboxed products are not yet supported."
-
-let () =
-  Location.register_error_of_exn
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a

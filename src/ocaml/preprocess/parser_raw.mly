@@ -288,48 +288,8 @@ let rec mktailpat nilloc = let open Location in function
 let mkstrexp e attrs =
   { pstr_desc = Pstr_eval (e, attrs); pstr_loc = e.pexp_loc }
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
-  match t with
-  | Pconstraint t ->
-     let mk = if ghost then ghexp_with_modes else mkexp_with_modes in
-     mk ~loc ~exp:e ~cty:(Some t) ~modes
-  | Pcoerce(t1, t2)  ->
-     (* CR: This implementation is pretty sad.  The Pcoerce case just drops
-        ~modes.  It should always be empty here, but the code structure doesn't
-        make that clear.  Probably we should move the modes to the payload of
-        Pconstraint, which may also simplify some other things. *)
-     let mk = if ghost then ghexp else mkexp in
-     mk ~loc (Pexp_coerce(e, t1, t2))
-
-let mkexp_opt_type_constraint ~loc ~modes e = function
-  | None -> e
-  | Some c -> mkexp_type_constraint ~loc ~modes e c
-
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
-  match t with
-  | Pconstraint t ->
-     let mk = if ghost then ghexp_with_modes else mkexp_with_modes in
-     mk ~loc ~exp:e ~cty:(Some t) ~modes
-  | Pcoerce(t1, t2)  ->
-     (* CR: This implementation is pretty sad.  The Pcoerce case just drops
-        ~modes.  It should always be empty here, but the code structure doesn't
-        make that clear.  Probably we should move the modes to the payload of
-        Pconstraint, which may also simplify some other things. *)
-     let mk = if ghost then ghexp else mkexp ?attrs:None in
-     mk ~loc (Pexp_coerce(e, t1, t2))
-
-let mkexp_opt_type_constraint ~loc ~modes e = function
-  | None -> e
-  | Some c -> mkexp_type_constraint ~loc ~modes e c
-
 let syntax_error () =
   raise Syntaxerr.Escape_error
-=======
-let syntax_error () =
-  raise Syntaxerr.Escape_error
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 (*let syntax_error () =
   raise Syntaxerr.Escape_error*)
@@ -435,7 +395,7 @@ let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
   | Pcoerce(t1, t2)  ->
      match modes with
      | [] ->
-      let mk = if ghost then ghexp else mkexp ?attrs:None in
+      let mk = if ghost then ghexp else mkexp in
       mk ~loc (Pexp_coerce(e, t1, t2))
      | _ :: _ -> not_expecting loc "mode annotations"
 
@@ -978,17 +938,11 @@ let unboxed_float sign (f, m) = Pconst_unboxed_float (with_sign sign f, m)
 let unboxed_type sloc lident tys =
   let loc = make_loc sloc in
   Ptyp_constr (mkloc lident loc, tys)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-%}
-=======
 
 let maybe_pmod_constraint mode expr =
   match mode with
   | [] -> expr
   | _ :: _ -> Mod.constraint_ None mode expr
-%}
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 let merloc startpos ?endpos x =
   let endpos = match endpos with
@@ -1822,19 +1776,11 @@ module_expr [@recovery default_module_expr ()]:
 
 paren_module_expr:
     (* A module expression annotated with a module type. *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-    LPAREN me = module_expr COLON mty = module_type RPAREN
-      { mkmod ~loc:$sloc (Pmod_constraint(me, mty)) }
-  (*
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-    LPAREN me = module_expr COLON mty = module_type RPAREN
-      { mkmod ~loc:$sloc (Pmod_constraint(me, mty)) }
-=======
     LPAREN me = module_expr COLON mty = module_type mm = optional_atat_mode_expr RPAREN
       { mkmod ~loc:$sloc (Pmod_constraint(me, Some mty, mm)) }
   | LPAREN me = module_expr mm = at_mode_expr RPAREN
       { mkmod ~loc:$sloc (Pmod_constraint(me, None, mm)) }
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+  (*
   | LPAREN module_expr COLON module_type error
       { unclosed "(" $loc($1) ")" $loc($5) }
   *)
@@ -2264,20 +2210,10 @@ signature_item:
 ;
 
 (* The body (right-hand side) of a module declaration. *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-module_declaration_body:
-    COLON mty = module_type
-      { mty }
-  (*
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-module_declaration_body:
-    COLON mty = module_type
-      { mty }
-=======
 module_declaration_body(optional_atat_modal_expr):
     COLON mty = module_type mm = optional_atat_modal_expr
       { mty, mm }
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+  (*
   | EQUAL error
       { expecting $loc($1) ":" }
   *)
@@ -3033,19 +2969,11 @@ let_pattern_no_modes:
   | or_function(fun_expr) { $1 }
 ;
 %inline fun_expr_attrs:
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  | LET MODULE ext_attributes mkrhs(module_name) module_binding_body IN seq_expr
-      { Pexp_letmodule($4, $5, (merloc $endpos($6) $7)), $3 }
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  | LET MODULE ext_attributes mkrhs(module_name) module_binding_body IN seq_expr
-      { Pexp_letmodule($4, $5, $7), $3 }
-=======
   | LET MODULE ext_attributes module_name_modal(at_mode_expr) module_binding_body IN seq_expr
       {
         let name, modes = $4 in
         let body = maybe_pmod_constraint modes $5 in
-        Pexp_letmodule(name, body, $7), $3 }
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+        Pexp_letmodule(name, body, (merloc $endpos($6) $7)), $3 }
   | LET EXCEPTION ext_attributes let_exception_declaration IN seq_expr
       { Pexp_letexception($4, $6), $3 }
   | LET OPEN override_flag ext_attributes module_expr IN seq_expr

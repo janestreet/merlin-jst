@@ -470,16 +470,8 @@ and jkind_annotation ?(nested = false) ctxt f k = match k.pjkind_desc with
     ) f (t, ty)
   | Kind_of ty -> pp f "kind_of_ %a" (core_type ctxt) ty
   | Product ts ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
     Misc_stdlib.pp_parens_if nested (fun f ts ->
-      pp f "%a" (list (jkind_annotation ~nested:true ctxt) ~sep:"@;&@;") ts
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-    Misc.pp_parens_if nested (fun f ts ->
-      pp f "%a" (list (jkind_annotation ~nested:true ctxt) ~sep:"@;&@;") ts
-=======
-    Misc.pp_parens_if nested (fun f ts ->
       pp f "@[%a@]" (list (jkind_annotation ~nested:true ctxt) ~sep:"@ & ") ts
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
     ) f ts
 
 and tyvar_jkind f (str, jkind) =

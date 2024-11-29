@@ -28,14 +28,10 @@ val array_type_kind :
   -> Env.t -> Location.t -> Types.type_expr -> Lambda.array_kind
 (*
 val array_type_mut : Env.t -> Types.type_expr -> Lambda.mutable_flag
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-*)
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-=======
 val array_kind_of_elt :
   elt_sort:(Jkind.Sort.t option)
   -> Env.t -> Location.t -> Types.type_expr -> Lambda.array_kind
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+*)
 val array_kind :
   Typedtree.expression -> Jkind.Sort.t -> Lambda.array_kind
 (*

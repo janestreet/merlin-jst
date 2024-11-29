@@ -6642,16 +6642,8 @@ and type_expect_
               Env.lookup_constructor Env.Positive ~loc:lid.loc lid.txt env
             in
             match cd.cstr_tag with
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-            | Extension (path,_) -> path
-            | _ -> raise (error (lid.loc, env, Not_an_extension_constructor))
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-            | Extension (path,_) -> path
-            | _ -> raise (Error (lid.loc, env, Not_an_extension_constructor))
-=======
             | Extension path -> path
-            | _ -> raise (Error (lid.loc, env, Not_an_extension_constructor))
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+            | _ -> raise (error (lid.loc, env, Not_an_extension_constructor))
           in
           rue {
             exp_desc = Texp_extension_constructor (lid, path);

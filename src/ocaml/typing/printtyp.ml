@@ -1295,32 +1295,10 @@ let rec out_jkind_of_desc (desc : 'd Jkind.Desc.t) =
 let out_jkind_option_of_jkind jkind =
   let desc = Jkind.get jkind in
   let elide =
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-    match desc with
-    | Const jkind -> (* C2.1 *)
-      Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
-      (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
-      || (not Language_extension.(is_at_least Layouts Alpha)
-          && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
-    | Var _ -> (* X1 *)
-      true (* not !Clflags.verbose_types *)
-    | Product _ -> false
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-    match desc with
-    | Const jkind -> (* C2.1 *)
-      Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
-      (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
-      || (not Language_extension.(is_at_least Layouts Alpha)
-          && Jkind.Const.equal jkind Jkind.Const.Builtin.value_or_null.jkind)
-    | Var _ -> (* X1 *)
-      not !Clflags.verbose_types
-    | Product _ -> false
-=======
     Jkind.is_value_for_printing jkind (* C2.1 *)
     || (match desc.layout with
-        | Sort (Var _) -> not !Clflags.verbose_types (* X1 *)
+        | Sort (Var _) -> true (* not !Clflags.verbose_types *) (* X1 *)
         | _ -> false)
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
   in
   if elide then None else Some (out_jkind_of_desc desc)
 
@@ -1904,82 +1882,35 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
         decl.type_private,
         false
   in
-  (* Merlin only: we print the inferred jkind (not the jkind annotation) if
-     the user asked for it hard enough. *)
-  let inferred_jkind_to_print =
-    if print_non_value_inferred_jkind
-    then
-      let jkind = Jkind.default_to_value_and_get decl.type_jkind in
-      match Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind with
-      | true -> None
-      | false -> Some jkind
-    else None
-  in
   (* The algorithm for setting [lay] here is described as Case (C1) in
      Note [When to print jkind annotations] *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-  let is_value =
-    match decl.type_jkind_annotation with
-    | Some (jkind, _) -> Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
-    | None -> false
-  in
-  let jkind_annotation =
-    match inferred_jkind_to_print with
-    | Some jkind -> Some (`Const jkind)
-    | None ->
-    match ty, unboxed, is_value, decl.type_has_illegal_crossings with
-    | (Otyp_abstract, _, false, _) | (_, true, _, _) | (_, _, _, true) ->
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-  let is_value =
-    match decl.type_jkind_annotation with
-    | Some (jkind, _) -> Jkind.Const.equal jkind Jkind.Const.Builtin.value.jkind
-    | None -> false
-  in
-  let jkind_annotation = match ty, unboxed, is_value, decl.type_has_illegal_crossings with
-    | (Otyp_abstract, _, false, _) | (_, true, _, _) | (_, _, _, true) ->
-=======
   let is_value = Jkind.is_value_for_printing decl.type_jkind in
   let otype_jkind =
     match ty, is_value, decl.type_has_illegal_crossings with
     | (Otyp_abstract, false, _) | (_, _, true) ->
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
         (* The two cases of (C1) from the Note correspond to Otyp_abstract.
            Anything but the default must be user-written, so we print the
            user-written annotation. *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-        (* type_has_illegal_crossings corresponds to C1.3 *)
-        decl.type_jkind_annotation |> Option.map (fun k -> `Annotation k)
-    | _ ->
-        None (* other cases have no jkind annotation *)
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-        (* type_has_illegal_crossings corresponds to C1.3 *)
-        decl.type_jkind_annotation
-    | _ -> None (* other cases have no jkind annotation *)
-=======
         (* type_has_illegal_crossings corresponds to C1.2 *)
         Some (out_jkind_of_desc (Jkind.get decl.type_jkind))
     | _ -> None (* other cases have no jkind annotation *)
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+  in
+  (* Merlin only: we print the inferred jkind (not the jkind annotation) if
+     the user asked for it hard enough. *)
+  let otype_jkind =
+    if print_non_value_inferred_jkind
+    then
+      let jkind = Jkind.default_to_value_and_get decl.type_jkind in
+      match Jkind.is_value_for_printing jkind with
+      | true -> otype_jkind
+      | false -> Some jkind
+    else otype_jkind
   in
     { otype_name = name;
       otype_params = args;
       otype_type = ty;
       otype_private = priv;
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-      otype_jkind =
-        Option.map
-          (function
-           | `Annotation (_, user_annot) -> out_jkind_of_user_jkind user_annot
-           | `Const jkind -> out_jkind_of_const_jkind jkind)
-          jkind_annotation;
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-      otype_jkind =
-        Option.map
-          (fun (_, user_annot) -> out_jkind_of_user_jkind user_annot)
-          jkind_annotation;
-=======
       otype_jkind;
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
       otype_unboxed = unboxed;
       otype_cstrs = constraints }
 
@@ -2737,24 +2668,7 @@ let trees_of_type_expansion'
     if var_jkinds then
       match get_desc ty with
       | Tvar { jkind; _ } | Tunivar { jkind; _ } ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
-          let rec okind_of_desc : Jkind.Desc.t -> _ = function
-            | Const clay -> out_jkind_of_const_jkind clay
-            | Var v      -> Ojkind_var (Jkind.Sort.Var.name v)
-            | Product ds -> Ojkind_product (List.map okind_of_desc ds)
-          in
-          let okind = okind_of_desc (Jkind.get jkind) in
-||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
-          let rec okind_of_desc : Jkind.Desc.t -> _ = function
-            | Const clay -> out_jkind_of_const_jkind clay
-            | Var v      -> Ojkind_var (Jkind.Sort.Var.name v)
-            | Product ds ->
-              Ojkind_product (List.map okind_of_desc ds)
-          in
-          let okind = okind_of_desc (Jkind.get jkind) in
-=======
           let okind = out_jkind_of_desc (Jkind.get jkind) in
->>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
           Otyp_jkind_annot (out, okind)
       | _ ->
           out
