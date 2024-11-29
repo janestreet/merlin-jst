@@ -1886,25 +1886,17 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
      Note [When to print jkind annotations] *)
   let is_value = Jkind.is_value_for_printing decl.type_jkind in
   let otype_jkind =
-    match ty, is_value, decl.type_has_illegal_crossings with
-    | (Otyp_abstract, false, _) | (_, _, true) ->
+    match ty, is_value, decl.type_has_illegal_crossings, print_non_value_inferred_jkind with
+    | (Otyp_abstract, false, _, _) | (_, _, true, _)
+    (* Merlin only: we print the inferred jkind (not the jkind annotation) if
+       the user asked for it hard enough. *)
+    | (_, false, _, true) ->
         (* The two cases of (C1) from the Note correspond to Otyp_abstract.
            Anything but the default must be user-written, so we print the
            user-written annotation. *)
         (* type_has_illegal_crossings corresponds to C1.2 *)
         Some (out_jkind_of_desc (Jkind.get decl.type_jkind))
     | _ -> None (* other cases have no jkind annotation *)
-  in
-  (* Merlin only: we print the inferred jkind (not the jkind annotation) if
-     the user asked for it hard enough. *)
-  let otype_jkind =
-    if print_non_value_inferred_jkind
-    then (
-      Jkind.default_to_value decl.type_jkind;
-      match Jkind.is_value_for_printing decl.type_jkind with
-      | true -> otype_jkind
-      | false -> Some (out_jkind_of_desc (Jkind.get decl.type_jkind)))
-    else otype_jkind
   in
     { otype_name = name;
       otype_params = args;
