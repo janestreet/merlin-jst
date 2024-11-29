@@ -68,7 +68,7 @@ escape characters in string literals, so we use the revert-newlines script.
   
   type t6 : value = { v : int } [@@unboxed]
       ^
-  With verbosity 0: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 0: "type t6 = { v : int; } [@@unboxed]"
   With verbosity 1: "type t6 : immediate = { v : int; } [@@unboxed]"
   
 
@@ -171,7 +171,7 @@ escape characters in string literals, so we use the revert-newlines script.
   let f6 (x : t6) = x
           ^
   With verbosity 0: "t6"
-  With verbosity 1: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 1: "type t6 = { v : int; } [@@unboxed]"
   
 
 - type annotation
@@ -220,7 +220,7 @@ escape characters in string literals, so we use the revert-newlines script.
   
   let f6 (x : t6) = x
               ^
-  With verbosity 0: "type t6 : value = { v : int; } [@@unboxed]"
+  With verbosity 0: "type t6 = { v : int; } [@@unboxed]"
   With verbosity 1: "type t6 : immediate = { v : int; } [@@unboxed]"
   
 

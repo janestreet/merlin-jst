@@ -288,8 +288,8 @@ let rec mktailpat nilloc = let open Location in function
 let mkstrexp e attrs =
   { pstr_desc = Pstr_eval (e, attrs); pstr_loc = e.pexp_loc }
 
-(*let syntax_error () =
-  raise Syntaxerr.Escape_error*)
+let _syntax_error () =
+  raise Syntaxerr.Escape_error
 
 let removed_string_set loc =
   raise_error Syntaxerr.(Error(Syntaxerr.Removed_string_set(make_loc loc)))
