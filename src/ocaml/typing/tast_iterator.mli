@@ -38,9 +38,15 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
     jkind_annotation: iterator -> Jkind.annotation -> unit;
     include_declaration: iterator -> include_declaration -> unit;
     include_description: iterator -> include_description -> unit;
+||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+    jkind_annotation: iterator -> Jkind.annotation -> unit;
+=======
+    jkind_annotation: iterator -> Parsetree.jkind_annotation -> unit;
+>>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
     location: iterator -> Location.t -> unit;
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;

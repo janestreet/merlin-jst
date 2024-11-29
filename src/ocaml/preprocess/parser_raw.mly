@@ -288,6 +288,7 @@ let rec mktailpat nilloc = let open Location in function
 let mkstrexp e attrs =
   { pstr_desc = Pstr_eval (e, attrs); pstr_loc = e.pexp_loc }
 
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
 let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
   match t with
   | Pconstraint t ->
@@ -305,6 +306,30 @@ let mkexp_opt_type_constraint ~loc ~modes e = function
   | None -> e
   | Some c -> mkexp_type_constraint ~loc ~modes e c
 
+||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
+  match t with
+  | Pconstraint t ->
+     let mk = if ghost then ghexp_with_modes else mkexp_with_modes in
+     mk ~loc ~exp:e ~cty:(Some t) ~modes
+  | Pcoerce(t1, t2)  ->
+     (* CR: This implementation is pretty sad.  The Pcoerce case just drops
+        ~modes.  It should always be empty here, but the code structure doesn't
+        make that clear.  Probably we should move the modes to the payload of
+        Pconstraint, which may also simplify some other things. *)
+     let mk = if ghost then ghexp else mkexp ?attrs:None in
+     mk ~loc (Pexp_coerce(e, t1, t2))
+
+let mkexp_opt_type_constraint ~loc ~modes e = function
+  | None -> e
+  | Some c -> mkexp_type_constraint ~loc ~modes e c
+
+let syntax_error () =
+  raise Syntaxerr.Escape_error
+=======
+let syntax_error () =
+  raise Syntaxerr.Escape_error
+>>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 (*let syntax_error () =
   raise Syntaxerr.Escape_error*)
@@ -401,6 +426,22 @@ let expecting_loc (loc : Location.t) (nonterm : string) =
     raise_error Syntaxerr.(Error(Expecting(loc, nonterm)))
 let expecting (loc : Lexing.position * Lexing.position) nonterm =
      expecting_loc (make_loc loc) nonterm
+
+let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
+  match t with
+  | Pconstraint t ->
+     let mk = if ghost then ghexp_with_modes else mkexp_with_modes in
+     mk ~loc ~exp:e ~cty:(Some t) ~modes
+  | Pcoerce(t1, t2)  ->
+     match modes with
+     | [] ->
+      let mk = if ghost then ghexp else mkexp ?attrs:None in
+      mk ~loc (Pexp_coerce(e, t1, t2))
+     | _ :: _ -> not_expecting loc "mode annotations"
+
+let mkexp_opt_type_constraint ~loc ~modes e = function
+  | None -> e
+  | Some c -> mkexp_type_constraint ~loc ~modes e c
 
 (* Helper functions for desugaring array indexing operators *)
 type paren_kind = Paren | Brace | Bracket
@@ -937,6 +978,17 @@ let unboxed_float sign (f, m) = Pconst_unboxed_float (with_sign sign f, m)
 let unboxed_type sloc lident tys =
   let loc = make_loc sloc in
   Ptyp_constr (mkloc lident loc, tys)
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
+||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+%}
+=======
+
+let maybe_pmod_constraint mode expr =
+  match mode with
+  | [] -> expr
+  | _ :: _ -> Mod.constraint_ None mode expr
+%}
+>>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
 
 let merloc startpos ?endpos x =
   let endpos = match endpos with
@@ -1692,8 +1744,8 @@ functor_arg:
     LPAREN RPAREN
       { $startpos, Unit }
   | (* An argument accompanied with an explicit type. *)
-    LPAREN x = mkrhs(module_name) COLON mty = module_type RPAREN
-      { $startpos, Named (x, mty) }
+    LPAREN x = mkrhs(module_name) COLON mty = module_type mm = optional_atat_mode_expr RPAREN
+      { $startpos, Named (x, mty, mm) }
 ;
 
 module_name:
@@ -1704,6 +1756,10 @@ module_name:
     UNDERSCORE
       { None }
 ;
+
+module_name_modal(at_modal_expr):
+  | mkrhs(module_name) { $1, [] }
+  | LPAREN mkrhs(module_name) at_modal_expr RPAREN { $2, $3 }
 
 (* -------------------------------------------------------------------------- *)
 
@@ -1766,9 +1822,19 @@ module_expr [@recovery default_module_expr ()]:
 
 paren_module_expr:
     (* A module expression annotated with a module type. *)
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
     LPAREN me = module_expr COLON mty = module_type RPAREN
       { mkmod ~loc:$sloc (Pmod_constraint(me, mty)) }
   (*
+||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+    LPAREN me = module_expr COLON mty = module_type RPAREN
+      { mkmod ~loc:$sloc (Pmod_constraint(me, mty)) }
+=======
+    LPAREN me = module_expr COLON mty = module_type mm = optional_atat_mode_expr RPAREN
+      { mkmod ~loc:$sloc (Pmod_constraint(me, Some mty, mm)) }
+  | LPAREN me = module_expr mm = at_mode_expr RPAREN
+      { mkmod ~loc:$sloc (Pmod_constraint(me, None, mm)) }
+>>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
   | LPAREN module_expr COLON module_type error
       { unclosed "(" $loc($1) ")" $loc($5) }
   *)
@@ -1890,12 +1956,14 @@ structure [@recovery []]:
 %inline module_binding:
   MODULE
   ext = ext attrs1 = attributes
-  name = mkrhs(module_name)
+  name_ = module_name_modal(at_mode_expr)
   body = module_binding_body
   attrs2 = post_item_attributes
     { let docs = symbol_docs $sloc in
       let loc = make_loc $sloc in
       let attrs = attrs1 @ attrs2 in
+      let name, modes = name_ in
+      let body = maybe_pmod_constraint modes body in
       let body = Mb.mk name body ~attrs ~loc ~docs in
       Pstr_module body, ext }
 ;
@@ -1909,8 +1977,10 @@ module_binding_body:
       { expecting $loc($1) "=" }
   *)
   | mkmod(
-      COLON mty = module_type EQUAL me = module_expr
-        { Pmod_constraint(me, mty) }
+      COLON mty = module_type mm = optional_atat_mode_expr EQUAL me = module_expr
+        { Pmod_constraint(me, Some mty, mm) }
+    | mm = at_mode_expr EQUAL me = module_expr
+        { Pmod_constraint(me, None, mm) }
     | arg_and_pos = functor_arg body = module_binding_body
         { let (_, arg) = arg_and_pos in
           Pmod_functor(arg, body) }
@@ -1929,13 +1999,15 @@ module_binding_body:
   ext = ext
   attrs1 = attributes
   REC
-  name = mkrhs(module_name)
+  name_ = module_name_modal(at_mode_expr)
   body = module_binding_body
   attrs2 = post_item_attributes
   {
     let loc = make_loc $sloc in
     let attrs = attrs1 @ attrs2 in
     let docs = symbol_docs $sloc in
+    let name, modes = name_ in
+    let body = maybe_pmod_constraint modes body in
     ext,
     Mb.mk name body ~attrs ~loc ~docs
   }
@@ -1945,7 +2017,7 @@ module_binding_body:
 %inline and_module_binding:
   AND
   attrs1 = attributes
-  name = mkrhs(module_name)
+  name_ = module_name_modal(at_mode_expr)
   body = module_binding_body
   attrs2 = post_item_attributes
   {
@@ -1953,6 +2025,8 @@ module_binding_body:
     let attrs = attrs1 @ attrs2 in
     let docs = symbol_docs $sloc in
     let text = symbol_text $symbolstartpos in
+    let name, modes = name_ in
+    let body = maybe_pmod_constraint modes body in
     Mb.mk name body ~attrs ~loc ~text ~docs
   }
 ;
@@ -2057,12 +2131,19 @@ module_type [@recovery default_module_type ()]:
       { expecting $loc($1) "sig" }
   *)
   | FUNCTOR attrs = attributes args = functor_args
-    MINUSGREATER mty = module_type
+    MINUSGREATER mty = module_type mm = optional_at_mode_expr
       %prec below_WITH
       { wrap_mty_attrs ~loc:$sloc attrs (
-          List.fold_left (fun acc (startpos, arg) ->
-            mkmty ~loc:(startpos, $endpos) (Pmty_functor (arg, acc))
-          ) mty args
+          (* return modes go to the innermost functor arrow;
+            all other return modes are empty *)
+          let mty, mm =
+            List.fold_left (fun (acc, mm) (startpos, arg) ->
+              mkmty ~loc:(startpos, $endpos) (Pmty_functor (arg, acc, mm)), []
+            ) (mty, mm) args
+          in
+          match mm with
+          | [] -> mty
+          | _ :: _ -> assert false
         ) }
   | MODULE TYPE OF attributes module_expr %prec below_LBRACKETAT
       { mkmty ~loc:$sloc ~attrs:$4 (Pmty_typeof $5) }
@@ -2077,11 +2158,11 @@ module_type [@recovery default_module_type ()]:
   | mkmty(
       mkrhs(mty_longident)
         { Pmty_ident $1 }
-    | LPAREN RPAREN MINUSGREATER module_type
-        { Pmty_functor(Unit, $4) }
-    | module_type MINUSGREATER module_type
+    | LPAREN RPAREN MINUSGREATER module_type optional_at_mode_expr
+        { Pmty_functor(Unit, $4, $5) }
+    | module_type m1=optional_at_mode_expr MINUSGREATER module_type m2=optional_at_mode_expr
         %prec below_WITH
-        { Pmty_functor(Named (mknoloc None, $1), $3) }
+        { Pmty_functor(Named (mknoloc None, $1, m1), $4, m2) }
     | module_type WITH separated_nonempty_llist(AND, with_constraint)
         { Pmty_with($1, $3) }
 /*  | LPAREN MODULE mkrhs(mod_longident) RPAREN
@@ -2168,46 +2249,63 @@ signature_item:
 %inline module_declaration:
   MODULE
   ext = ext attrs1 = attributes
-  name = mkrhs(module_name)
-  body = module_declaration_body
+  name_ = module_name_modal(at_modalities_expr)
+  body = module_declaration_body(optional_atat_modalities_expr)
   attrs2 = post_item_attributes
   {
     let attrs = attrs1 @ attrs2 in
     let loc = make_loc $sloc in
     let docs = symbol_docs $sloc in
-    Md.mk name body ~attrs ~loc ~docs, ext
+    let name, modalities' = name_ in
+    let mty, modalities = body in
+    let modalities = modalities' @ modalities in
+    Md.mk name mty ~attrs ~loc ~docs ~modalities, ext
   }
 ;
 
 (* The body (right-hand side) of a module declaration. *)
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
 module_declaration_body:
     COLON mty = module_type
       { mty }
   (*
+||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+module_declaration_body:
+    COLON mty = module_type
+      { mty }
+=======
+module_declaration_body(optional_atat_modal_expr):
+    COLON mty = module_type mm = optional_atat_modal_expr
+      { mty, mm }
+>>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
   | EQUAL error
       { expecting $loc($1) ":" }
   *)
   | mkmty(
-      arg_and_pos = functor_arg body = module_declaration_body
+      arg_and_pos = functor_arg body = module_declaration_body(optional_atat_mode_expr)
         { let (_, arg) = arg_and_pos in
-          Pmty_functor(arg, body) }
+          let (ret, mret) = body in
+          Pmty_functor(arg, ret, mret) }
     )
-    { $1 }
+    { $1, [] }
 ;
 
 (* A module alias declaration (in a signature). *)
 %inline module_alias:
   MODULE
   ext = ext attrs1 = attributes
-  name = mkrhs(module_name)
+  name_ = module_name_modal(at_modalities_expr)
   EQUAL
   body = module_expr_alias
+  modalities = optional_at_modalities_expr
   attrs2 = post_item_attributes
   {
     let attrs = attrs1 @ attrs2 in
     let loc = make_loc $sloc in
     let docs = symbol_docs $sloc in
-    Md.mk name body ~attrs ~loc ~docs, ext
+    let name, modalities' = name_ in
+    let modalities = modalities' @ modalities in
+    Md.mk name body ~attrs ~modalities ~loc ~docs, ext
   }
 ;
 %inline module_expr_alias:
@@ -2247,12 +2345,13 @@ module_subst:
   name = mkrhs(module_name)
   COLON
   mty = module_type
+  modalities = optional_atat_modalities_expr
   attrs2 = post_item_attributes
   {
     let attrs = attrs1 @ attrs2 in
     let loc = make_loc $sloc in
     let docs = symbol_docs $sloc in
-    ext, Md.mk name mty ~attrs ~loc ~docs
+    ext, Md.mk name mty ~attrs ~loc ~docs ~modalities
   }
 ;
 %inline and_module_declaration:
@@ -2261,13 +2360,14 @@ module_subst:
   name = mkrhs(module_name)
   COLON
   mty = module_type
+  modalities = optional_atat_modalities_expr
   attrs2 = post_item_attributes
   {
     let attrs = attrs1 @ attrs2 in
     let docs = symbol_docs $sloc in
     let loc = make_loc $sloc in
     let text = symbol_text $symbolstartpos in
-    Md.mk name mty ~attrs ~loc ~text ~docs
+    Md.mk name mty ~attrs ~loc ~text ~docs ~modalities
   }
 ;
 
@@ -2933,8 +3033,19 @@ let_pattern_no_modes:
   | or_function(fun_expr) { $1 }
 ;
 %inline fun_expr_attrs:
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-4
   | LET MODULE ext_attributes mkrhs(module_name) module_binding_body IN seq_expr
       { Pexp_letmodule($4, $5, (merloc $endpos($6) $7)), $3 }
+||||||| ocaml-flambda/flambda-backend:e1efceb89a5fb273cdb506c612f75479bee6042a
+  | LET MODULE ext_attributes mkrhs(module_name) module_binding_body IN seq_expr
+      { Pexp_letmodule($4, $5, $7), $3 }
+=======
+  | LET MODULE ext_attributes module_name_modal(at_mode_expr) module_binding_body IN seq_expr
+      {
+        let name, modes = $4 in
+        let body = maybe_pmod_constraint modes $5 in
+        Pexp_letmodule(name, body, $7), $3 }
+>>>>>>> ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
   | LET EXCEPTION ext_attributes let_exception_declaration IN seq_expr
       { Pexp_letexception($4, $6), $3 }
   | LET OPEN override_flag ext_attributes module_expr IN seq_expr
@@ -4631,11 +4742,22 @@ atat_mode_expr:
 %inline modalities:
   | modality+ { $1 }
 
+at_modalities_expr:
+  | AT modalities {$2}
+  | AT error { expecting $loc($2) "modality expression" }
+;
+
 optional_atat_modalities_expr:
   | %prec below_HASH
     { [] }
   | ATAT modalities { $2 }
   // | ATAT error { expecting $loc($2) "modality expression" }
+;
+
+optional_at_modalities_expr:
+  | { [] }
+  | AT modalities { $2 }
+  | AT error { expecting $loc($2) "modality expression" }
 ;
 
 %inline param_type:
