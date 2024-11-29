@@ -443,6 +443,7 @@ module MenhirInterpreter : sig
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
     | N_optional_atat_modalities_expr : (Parsetree.modalities) nonterminal
+    | N_optional_at_modalities_expr : (Parsetree.modalities) nonterminal
     | N_option_type_constraint_ : (Parsetree.type_constraint option) nonterminal
     | N_option_preceded_EQUAL_seq_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_pattern__ : (Parsetree.pattern option) nonterminal
@@ -477,9 +478,12 @@ module MenhirInterpreter : sig
     | N_module_type_declaration : (Parsetree.module_type_declaration * string Location.loc option) nonterminal
     | N_module_type : (Parsetree.module_type) nonterminal
     | N_module_subst : (Parsetree.module_substitution * string Location.loc option) nonterminal
+    | N_module_name_modal_at_mode_expr_ : (Ocaml_parsing.Ast_helper.str_opt * Parsetree.modes) nonterminal
+    | N_module_name_modal_at_modalities_expr_ : (string option Location.loc * Parsetree.modalities) nonterminal
     | N_module_name : (string option) nonterminal
     | N_module_expr : (Parsetree.module_expr) nonterminal
-    | N_module_declaration_body : (Parsetree.module_type) nonterminal
+    | N_module_declaration_body_optional_atat_mode_expr_ : (Parsetree.module_type * Parsetree.modes) nonterminal
+    | N_module_declaration_body_optional_atat_modalities_expr_ : (Parsetree.module_type * Parsetree.modalities) nonterminal
     | N_module_binding_body : (Parsetree.module_expr) nonterminal
     | N_mod_longident : (Longident.t) nonterminal
     | N_mod_ext_longident : (Longident.t) nonterminal
@@ -604,6 +608,7 @@ module MenhirInterpreter : sig
     | N_atomic_type : (Parsetree.core_type) nonterminal
     | N_atat_mode_expr : (Parsetree.modes) nonterminal
     | N_at_mode_expr : (Parsetree.modes) nonterminal
+    | N_at_modalities_expr : (Parsetree.modalities) nonterminal
     | N_any_longident : (Longident.t) nonterminal
     | N_and_let_binding : (Parser_types.let_binding) nonterminal
     | N_alias_type : (Parsetree.core_type) nonterminal

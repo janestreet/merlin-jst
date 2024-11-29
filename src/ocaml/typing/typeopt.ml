@@ -178,6 +178,34 @@ let classify ~classify_product env ty sort : _ classification =
     Misc.fatal_error "merlin-jst: void encountered in classify"
   | Product c -> Product (classify_product ty c)
 
+let array_kind_of_elt ~elt_sort env loc ty =
+  let elt_sort =
+    match elt_sort with
+    | Some s -> s
+    | None ->
+      type_legacy_sort ~why:Array_element env loc ty
+  in
+  let classify_product ty _sorts =
+    if Language_extension.(is_at_least Layouts Alpha) then
+      if is_always_gc_ignorable env ty then
+        Pgcignorableproductarray ()
+      else
+        Pgcscannableproductarray ()
+    else
+      (* let sort = Jkind.Sort.of_const (Jkind.Sort.Const.Product sorts) in
+      raise (Error (loc, Sort_without_extension (sort, Alpha, Some ty))) *)
+      Misc.fatal_error "merlin-jst: language extension not enabled for non-value sort"
+  in
+  match classify ~classify_product env ty elt_sort with
+  | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
+  | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
+  | Addr | Lazy -> Paddrarray
+  | Int -> Pintarray
+  | Unboxed_float f -> Punboxedfloatarray f
+  | Unboxed_int i -> Punboxedintarray i
+  | Unboxed_vector v -> Punboxedvectorarray v
+  | Product c -> c
+
 let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
   | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_array ->
@@ -811,7 +839,12 @@ let function_arg_layout env loc sort ty =
     if the value can be represented as a float/forward/lazy *)
 let lazy_val_requires_forward env (* loc *) ty =
   let sort = Jkind.Sort.for_lazy_body in
-  match classify env ty sort with
+  let classify_product _ _sorts =
+    (* let kind = Jkind.Sort.Const.Product sorts in
+    raise (Error (loc, Unsupported_product_in_lazy kind)) *)
+    Misc.fatal_error "merlin-jst: product kind encountered in lazy_val_requires_forward"
+  in
+  match classify ~classify_product env ty sort with
   | Any | Lazy -> true
   (* CR layouts: Fix this when supporting lazy unboxed values.
      Blocks with forward_tag can get scanned by the gc thus can't

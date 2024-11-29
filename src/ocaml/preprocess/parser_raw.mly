@@ -288,9 +288,6 @@ let rec mktailpat nilloc = let open Location in function
 let mkstrexp e attrs =
   { pstr_desc = Pstr_eval (e, attrs); pstr_loc = e.pexp_loc }
 
-let syntax_error () =
-  raise Syntaxerr.Escape_error
-
 (*let syntax_error () =
   raise Syntaxerr.Escape_error*)
 
@@ -397,7 +394,10 @@ let mkexp_type_constraint ?(ghost=false) ~loc ~modes e t =
      | [] ->
       let mk = if ghost then ghexp else mkexp in
       mk ~loc (Pexp_coerce(e, t1, t2))
-     | _ :: _ -> not_expecting loc "mode annotations"
+     | _ :: _ ->
+      not_expecting loc "mode annotations";
+      let mk = if ghost then ghexp else mkexp in
+      mk ~loc (Pexp_coerce(e, t1, t2))
 
 let mkexp_opt_type_constraint ~loc ~modes e = function
   | None -> e
@@ -4672,7 +4672,7 @@ atat_mode_expr:
 
 at_modalities_expr:
   | AT modalities {$2}
-  | AT error { expecting $loc($2) "modality expression" }
+  // | AT error { expecting $loc($2) "modality expression" }
 ;
 
 optional_atat_modalities_expr:
@@ -4685,7 +4685,7 @@ optional_atat_modalities_expr:
 optional_at_modalities_expr:
   | { [] }
   | AT modalities { $2 }
-  | AT error { expecting $loc($2) "modality expression" }
+  // | AT error { expecting $loc($2) "modality expression" }
 ;
 
 %inline param_type:

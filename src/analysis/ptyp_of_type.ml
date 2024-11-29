@@ -23,7 +23,9 @@ let rec module_type =
       | Unit -> Parsetree.Unit
       | Named (id, type_in) ->
         Parsetree.Named
-          (Location.mknoloc (Option.map ~f:Ident.name id), module_type type_in)
+          ( Location.mknoloc (Option.map ~f:Ident.name id),
+            module_type type_in,
+            [] )
     in
     let out = module_type type_out in
     Mty.functor_ param out
@@ -170,7 +172,7 @@ and value_description id
     pval_loc = val_loc
   }
 
-and constructor_argument { ca_type; ca_loc; ca_modalities } =
+and constructor_argument { ca_type; ca_loc; ca_modalities; ca_jkind = _ } =
   { Parsetree.pca_type = core_type ca_type;
     pca_loc = ca_loc;
     pca_modalities = const_modalities ~attrs:[] ca_modalities

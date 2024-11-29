@@ -1899,11 +1899,11 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
      the user asked for it hard enough. *)
   let otype_jkind =
     if print_non_value_inferred_jkind
-    then
-      let jkind = Jkind.default_to_value_and_get decl.type_jkind in
-      match Jkind.is_value_for_printing jkind with
+    then (
+      Jkind.default_to_value decl.type_jkind;
+      match Jkind.is_value_for_printing decl.type_jkind with
       | true -> otype_jkind
-      | false -> Some jkind
+      | false -> Some (out_jkind_of_desc (Jkind.get decl.type_jkind)))
     else otype_jkind
   in
     { otype_name = name;

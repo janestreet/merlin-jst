@@ -310,7 +310,7 @@ let fold {persistent_structures; _} f x =
 
 let register_pers_for_short_paths penv modname ps components =
   let old_style_crcs =
-    ps.ps_import.imp_crcs
+    ps.ps_name_info.pn_import.imp_crcs
     |> Array.to_list
     |> List.map
          (fun import ->
@@ -338,7 +338,7 @@ let register_pers_for_short_paths penv modname ps components =
           String.Map.mem "deprecated" alerts ||
           String.Map.mem "ocaml.deprecated" alerts
         | _ -> false)
-      ps.ps_import.imp_flags
+      ps.ps_name_info.pn_import.imp_flags
   in
   let deprecated =
     if is_deprecated then Short_paths.Desc.Deprecated
@@ -347,7 +347,7 @@ let register_pers_for_short_paths penv modname ps components =
   (* CR parameterized modules: this will probably break with parameterized modules *)
   let modname_as_string = Global_module.Name.to_string modname  in
   Short_paths.Basis.load (short_paths_basis penv) modname_as_string
-    deps alias_deps desc ps.ps_import.imp_visibility deprecated
+    deps alias_deps desc ps.ps_name_info.pn_import.imp_visibility deprecated
 (* Reading persistent structures from .cmi files *)
 
 let save_import penv crc modname impl flags filename =

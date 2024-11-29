@@ -230,7 +230,8 @@ module Gen = struct
         | Named (id, in_) ->
           Parsetree.Named
             ( Location.mknoloc (Option.map ~f:Ident.name id),
-              Ptyp_of_type.module_type in_ )
+              Ptyp_of_type.module_type in_,
+              [] )
       in
       Mod.functor_ param @@ module_ env out
     | Mty_alias path ->
