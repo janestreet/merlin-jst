@@ -68,7 +68,7 @@ exception
 let path_and_loc_of_cstr desc _ =
   let open Types in
   match desc.cstr_tag with
-  | Extension (path, _) -> (path, desc.cstr_loc)
+  | Extension path -> (path, desc.cstr_loc)
   | _ -> (
     match get_desc desc.cstr_res with
     | Tconstr (path, _, _) -> (path, desc.cstr_loc)

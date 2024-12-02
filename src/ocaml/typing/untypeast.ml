@@ -147,7 +147,7 @@ let attributes sub l = List.map (sub.attribute sub) l
 
 let var_jkind ~loc (var, jkind) =
   let add_loc x = mkloc x loc in
-  add_loc var, Option.map (fun (_, annot) -> annot) jkind
+  add_loc var, jkind
 
 let structure sub str =
   List.map (sub.structure_item sub) str.str_items
@@ -418,7 +418,7 @@ let exp_extra sub (extra, loc, attrs) sexp =
          Typemode.untransl_mode_annots ~loc modes)
     | Texp_poly cto -> Pexp_poly (sexp, Option.map (sub.typ sub) cto)
     | Texp_newtype (_, label_loc, jkind, _) ->
-        Pexp_newtype (label_loc, Option.map snd jkind, sexp)
+        Pexp_newtype (label_loc, jkind, sexp)
     | Texp_stack -> Pexp_stack sexp
   in
   Exp.mk ~loc ~attrs desc
@@ -533,7 +533,7 @@ let expression sub exp =
                let newtypes =
                  List.map
                    (fun (_, x, annot, _) ->
-                      { pparam_desc = Pparam_newtype (x, Option.map snd annot);
+                      { pparam_desc = Pparam_newtype (x, annot);
                         pparam_loc = x.loc;
                       })
                    fp.fp_newtypes
@@ -810,7 +810,7 @@ let class_type_declaration sub = class_infos sub.class_type sub
 let functor_parameter sub : functor_parameter -> Parsetree.functor_parameter =
   function
   | Unit -> Unit
-  | Named (_, name, mtype) -> Named (name, sub.module_type sub mtype)
+  | Named (_, name, mtype) -> Named (name, sub.module_type sub mtype, [])
 
 let module_type (sub : mapper) mty =
   let loc = sub.location sub mty.mty_loc in
@@ -825,7 +825,7 @@ let module_type (sub : mapper) mty =
   | Tmty_functor (arg, mtype2) ->
       Mty.mk ~loc ~attrs
         (Pmty_functor
-          (functor_parameter sub arg, sub.module_type sub mtype2))
+          (functor_parameter sub arg, sub.module_type sub mtype2, []))
   | Tmty_with (mtype, list) ->
       Mty.mk ~loc ~attrs
         (Pmty_with (sub.module_type sub mtype,
@@ -873,7 +873,7 @@ let module_expr (sub : mapper) mexpr =
               Pmod_apply_unit (sub.module_expr sub mexp1)
           | Tmod_constraint (mexpr, _, Tmodtype_explicit mtype, _) ->
               Pmod_constraint (sub.module_expr sub mexpr,
-                sub.module_type sub mtype)
+                Some (sub.module_type sub mtype), [])
           | Tmod_constraint (_mexpr, _, Tmodtype_implicit, _) ->
               assert false
           | Tmod_unpack (exp, _pack) ->
@@ -962,8 +962,8 @@ let core_type sub ct =
   let loc = sub.location sub ct.ctyp_loc in
   let attrs = sub.attributes sub ct.ctyp_attributes in
   let desc = match ct.ctyp_desc with
-    | Ttyp_var (None, jkind) -> Ptyp_any (Option.map snd jkind)
-    | Ttyp_var (Some s, jkind) -> Ptyp_var (s, Option.map snd jkind)
+    | Ttyp_var (None, jkind) -> Ptyp_any jkind
+    | Ttyp_var (Some s, jkind) -> Ptyp_var (s, jkind)
     | Ttyp_arrow (arg_label, ct1, ct2) ->
         (* CR cgunn: recover mode annotation here *)
         Ptyp_arrow (label arg_label, sub.typ sub ct1, sub.typ sub ct2, [], [])
@@ -983,7 +983,7 @@ let core_type sub ct =
     | Ttyp_alias (_, None, None) ->
         Misc.fatal_error "anonymous alias without layout annotation in Untypeast"
     | Ttyp_alias (ct, s, jkind) ->
-        Ptyp_alias (sub.typ sub ct, s, Option.map snd jkind)
+        Ptyp_alias (sub.typ sub ct, s, jkind)
     | Ttyp_variant (list, bool, labels) ->
         Ptyp_variant (List.map (sub.row_field sub) list, bool, labels)
     | Ttyp_poly (list, ct) ->

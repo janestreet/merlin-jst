@@ -106,23 +106,25 @@ let type_legacy_sort ~why env _loc ty =
   | Ok sort -> sort
   | Error _ -> Misc.fatal_error "merlin-jst: a representable layout is required here"
 
-type classification =
+(* [classification]s are used for two things: things in arrays, and things in
+   lazys. In the former case, we need detailed information about unboxed
+   products and in the latter it would be wasteful to compute that information,
+   so this type is polymorphic in what it remembers about products. *)
+type 'a classification =
   | Int   (* any immediate type *)
   | Float
   | Unboxed_float of unboxed_float
   | Unboxed_int of unboxed_integer
   | Unboxed_vector of unboxed_vector
   | Lazy
-  | Addr  (* anything except a float or a lazy *)
+  | Addr  (* any value except a float or a lazy *)
   | Any
-  | Product of Jkind.Sort.Const.t list
-  (* CR layouts v7.1: This [Product] case is always an error for now, but soon
-     we will support unboxed products in arrays and it will only sometimes be an
-     error. *)
+  | Product of 'a
 
-(* Classify a ty into a [classification]. Looks through synonyms, using [scrape_ty].
-   Returning [Any] is safe, though may skip some optimizations. *)
-let classify env ty sort : classification =
+(* Classify a ty into a [classification]. Looks through synonyms, using
+   [scrape_ty].  Returning [Any] is safe, though may skip some optimizations.
+   See comment on [classification] above to understand [classify_product]. *)
+let classify ~classify_product env ty sort : _ classification =
   let ty = scrape_ty env ty in
   match Jkind.(Sort.default_to_value_and_get sort) with
   | Base Value -> begin
@@ -174,30 +176,50 @@ let classify env ty sort : classification =
   | Base Void (* as c *) ->
     (* raise (Error (loc, Unsupported_sort c)) *)
     Misc.fatal_error "merlin-jst: void encountered in classify"
-  | Product c -> Product c
+  | Product c -> Product (classify_product ty c)
+
+let array_kind_of_elt ~elt_sort env loc ty =
+  let elt_sort =
+    match elt_sort with
+    | Some s -> s
+    | None ->
+      type_legacy_sort ~why:Array_element env loc ty
+  in
+  let classify_product ty _sorts =
+    if Language_extension.(is_at_least Layouts Alpha) then
+      if is_always_gc_ignorable env ty then
+        Pgcignorableproductarray ()
+      else
+        Pgcscannableproductarray ()
+    else
+      (* let sort = Jkind.Sort.of_const (Jkind.Sort.Const.Product sorts) in
+      raise (Error (loc, Sort_without_extension (sort, Alpha, Some ty))) *)
+      Misc.fatal_error "merlin-jst: language extension not enabled for non-value sort"
+  in
+  match classify ~classify_product env ty elt_sort with
+  | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
+  | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
+  | Addr | Lazy -> Paddrarray
+  | Int -> Pintarray
+  | Unboxed_float f -> Punboxedfloatarray f
+  | Unboxed_int i -> Punboxedintarray i
+  | Unboxed_vector v -> Punboxedvectorarray v
+  | Product c -> c
 
 let array_type_kind ~elt_sort env loc ty =
   match scrape_poly env ty with
-  | Tconstr(p, [elt_ty], _)
-    when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
-      let elt_sort =
-        match elt_sort with
-        | Some s -> s
-        | None ->
-          type_legacy_sort ~why:Array_element env loc elt_ty
-      in
-      begin match classify env elt_ty elt_sort with
-      | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
-      | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
-      | Addr | Lazy -> Paddrarray
-      | Int -> Pintarray
-      | Unboxed_float f -> Punboxedfloatarray f
-      | Unboxed_int i -> Punboxedintarray i
-      | Unboxed_vector v -> Punboxedvectorarray v
-      | Product _cs ->
-        (* let kind = Jkind.Sort.Const.Product cs in
-        raise (Error (loc, Unsupported_product_in_array kind)) *)
+  | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_array ->
+      array_kind_of_elt ~elt_sort env loc elt_ty
+  | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_iarray ->
+      let kind = array_kind_of_elt ~elt_sort env loc elt_ty in
+      (* CR layouts v7.1: allow iarrays of products. *)
+      begin match kind with
+      | Pgcscannableproductarray _ | Pgcignorableproductarray _ ->
+        (* raise (Error (loc, Product_iarrays_unsupported)) *)
         Misc.fatal_error "merlin-jst: product kind encountered in array_type_kind"
+      | Pgenarray | Paddrarray | Pintarray | Pfloatarray | Punboxedfloatarray _
+      | Punboxedintarray _ | Punboxedvectorarray _  ->
+        kind
       end
   | Tconstr(p, [], _) when Path.same p Predef.path_floatarray ->
       Pfloatarray
@@ -270,11 +292,8 @@ let bigarray_specialize_kind_and_layout env ~kind ~layout typ =
       (kind, layout)
 
 let value_kind_of_value_jkind jkind =
-  let const_jkind = Jkind.default_to_value_and_get jkind in
-  let layout = Jkind.Const.get_layout const_jkind in
-  let externality_upper_bound =
-    Jkind.Const.get_externality_upper_bound const_jkind
-  in
+  let layout = Jkind.get_layout_defaulting_to_value jkind in
+  let externality_upper_bound = Jkind.get_externality_upper_bound jkind in
   match layout, externality_upper_bound with
   | Base Value, External -> Pintval
   | Base Value, External64 ->
@@ -820,7 +839,12 @@ let function_arg_layout env loc sort ty =
     if the value can be represented as a float/forward/lazy *)
 let lazy_val_requires_forward env (* loc *) ty =
   let sort = Jkind.Sort.for_lazy_body in
-  match classify env ty sort with
+  let classify_product _ _sorts =
+    (* let kind = Jkind.Sort.Const.Product sorts in
+    raise (Error (loc, Unsupported_product_in_lazy kind)) *)
+    Misc.fatal_error "merlin-jst: product kind encountered in lazy_val_requires_forward"
+  in
+  match classify ~classify_product env ty sort with
   | Any | Lazy -> true
   (* CR layouts: Fix this when supporting lazy unboxed values.
      Blocks with forward_tag can get scanned by the gc thus can't
@@ -830,10 +854,7 @@ let lazy_val_requires_forward env (* loc *) ty =
     Misc.fatal_error "Unboxed value encountered inside lazy expression"
   | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false
-  | Product _cs ->
-    (* let kind = Jkind.Sort.Const.Product cs in
-    raise (Error (loc, Unsupported_product_in_lazy kind)) *)
-    Misc.fatal_error "merlin-jst: product kind encountered in lazy_val_requires_forward"
+  | Product _ -> assert false (* because [classify_product] raises *)
 
 (** The compilation of the expression [lazy e] depends on the form of e:
     constants, floats and identifiers are optimized.  The optimization must be

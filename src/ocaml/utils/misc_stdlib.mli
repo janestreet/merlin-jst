@@ -74,6 +74,40 @@ module Option : sig
     -> unit
 end
 
+(** {2 Extensions to the Array module} *)
+module Array : sig
+  val exists2 : ('a -> 'b -> bool) -> 'a array -> 'b array -> bool
+  (** Same as [Array.exists2] from the standard library. *)
+
+  val fold_left2 :
+    ('acc -> 'a -> 'b -> 'acc) -> 'acc -> 'a array -> 'b array -> 'acc
+  (** [fold_left2 f init [|a1; ...; an|] [|b1; ...; bn|]] is
+      [f (... (f (f init a1 b1) a2 b2) ...) an bn].
+      @raise Invalid_argument if the two arrays are determined
+      to have different lengths.
+  *)
+
+  val for_alli : (int -> 'a -> bool) -> 'a array -> bool
+  (** Same as [Array.for_all] from the standard library, but the
+      function is applied with the index of the element as first argument,
+      and the element itself as second argument. *)
+
+  val all_somes : 'a option array -> 'a array option
+
+  val equal : ('a -> 'a -> bool) -> 'a array -> 'a array -> bool
+  (** Compare two arrays for equality, using the supplied predicate for
+      element equality *)
+
+  val compare : ('a -> 'a -> int) -> 'a array -> 'a array -> int
+  (** Compare two arrays, using the supplied predicate for element equality *)
+
+  val map_sharing : ('a -> 'a) -> 'a array -> 'a array
+  (** [map_sharing f a] is [map f a]. If for all elements of the array
+      [f e == e] then [map_sharing f a == a] *)
+
+  val of_list_map : ('a -> 'b) -> 'a list -> 'b array
+end
+
 module String : sig
   include module type of String
   module Set : Set.S with type elt = string
@@ -105,16 +139,58 @@ module Int : sig
 end
 
 module Monad : sig
+  module type Basic = sig
+    type 'a t
+
+    val bind : 'a t -> ('a -> 'b t) -> 'b t
+    val return : 'a -> 'a t
+
+    (** The following identities ought to hold (for some value of =):
+
+        - [return x >>= f = f x]
+        - [t >>= fun x -> return x = t]
+        - [(t >>= f) >>= g = t >>= fun x -> (f x >>= g)]
+
+        Note: [>>=] is the infix notation for [bind]) *)
+  end
+
   module type Basic2 = sig
-    (** Multi parameter monad. The second parameter gets unified across all the computation.
-        This is used to encode monads working on a multi parameter data structure like
-        ([('a,'b) result]). *)
+    (** Multi parameter monad. The second parameter gets unified across all
+        the computation.  This is used to encode monads working on a multi
+        parameter data structure like ([('a,'b) result]). *)
 
     type ('a, 'e) t
 
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 
     val return : 'a -> ('a, _) t
+  end
+
+  module type S = sig
+    type 'a t
+
+    val bind : 'a t -> ('a -> 'b t) -> 'b t
+
+    (** [>>=] is a synonym for [bind] *)
+    val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+
+    (** [return v] returns the (trivial) computation that returns v. *)
+    val return : 'a -> 'a t
+
+    val map : ('a -> 'b) -> 'a t -> 'b t
+
+    (** [join t] is [t >>= (fun t' -> t')]. *)
+    val join : 'a t t -> 'a t
+
+    (** [ignore_m t] is [map (fun _ -> ()) t]. *)
+    val ignore_m : 'a t -> unit t
+
+    val all : 'a t list -> 'a list t
+
+    (** Like [all], but ensures that every monadic value in the list produces
+        a unit value, all of which are discarded rather than being collected
+        into a list. *)
+    val all_unit : unit t list -> unit t
   end
 
   module type S2 = sig
@@ -129,8 +205,10 @@ module Monad : sig
     val all_unit : (unit, 'e) t list -> (unit, 'e) t
   end
 
+  module Make (X : Basic) : S with type 'a t = 'a X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t = ('a, 'e) X.t
 
+  module Option : S with type 'a t = 'a option
   module Result : S2 with type ('a, 'e) t = ('a, 'e) result
 end
 

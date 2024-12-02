@@ -26,3 +26,5 @@ type array_kind =
   | Punboxedfloatarray of unboxed_float
   | Punboxedintarray of unboxed_integer
   | Punboxedvectorarray of unboxed_vector
+  | Pgcscannableproductarray of unit
+  | Pgcignorableproductarray of unit

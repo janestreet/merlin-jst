@@ -607,7 +607,8 @@ let array_mode exp elt_sort = match Typeopt.array_kind exp elt_sort with
     (* non-generic, non-float arrays act as constructors *)
     Guard
   | Punboxedfloatarray _ | Punboxedintarray _
-  | Punboxedvectorarray _ ->
+  | Punboxedvectorarray _
+  | Pgcscannableproductarray _ | Pgcignorableproductarray _ ->
     Dereference
 
 (* Expression judgment:
@@ -718,7 +719,7 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_construct (_, desc, exprs, _) ->
       let access_constructor =
         match desc.cstr_tag with
-        | Extension (pth, _) ->
+        | Extension pth ->
           path pth << Dereference
         | _ -> empty
       in
