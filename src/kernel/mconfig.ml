@@ -614,7 +614,14 @@ let ocaml_ignored_flags =
     "-dvectorize";
     "-dump-into-csv";
     "-cfg-selection";
-    "-no-cfg-selection"
+    "-no-cfg-selection";
+    "-no-mach-ir";
+    "-flambda2-reaper";
+    "-no-flambda2-reaper";
+    "-dsimplify";
+    "-dreaper";
+    "-instantiate";
+    "-dflambda-heavy-invariants"
   ]
 
 let ocaml_ignored_parametrized_flags =
@@ -682,7 +689,8 @@ let ocaml_ignored_parametrized_flags =
     "-cfg-stack-checks-threshold";
     "-zero-alloc-checker-details-cutoff";
     "-zero-alloc-checker-join";
-    "-dgranularity"
+    "-dgranularity";
+    "-flambda2-expert-cont-lifting-budget"
   ]
 
 let ocaml_warnings_spec ~error =
