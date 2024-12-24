@@ -201,33 +201,34 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let external_locs =
       if scope = `Buffer then []
       else
-        List.filter_map config.merlin.index_files ~f:(fun file ->
+        List.filter_map config.merlin.index_files ~f:(fun index_file ->
             let external_locs =
               try
-                let external_index = Index_cache.read file in
+                let external_index = Index_cache.read index_file in
                 Index_format.Uid_map.find_opt def_uid external_index.defs
                 |> Option.map ~f:(fun uid_locs -> (external_index, uid_locs))
               with Index_format.Not_an_index _ | Sys_error _ ->
-                log ~title:"external_index" "Could not load index %s" file;
+                log ~title:"external_index" "Could not load index %s" index_file;
                 None
             in
             Option.map external_locs ~f:(fun (index, locs) ->
                 let stats = Stat_check.create ~cache_size:128 index in
                 ( Lid_set.filter
                     (fun ({ loc; _ } as lid) ->
-                      let is_current_buffer =
-                        (* We filter external results that concern the current buffer *)
-                        let file = loc.Location.loc_start.Lexing.pos_fname in
-                        let file, buf =
-                          match config.merlin.source_root with
-                          | Some root ->
-                            (Filename.concat root file, current_buffer_path)
-                          | None -> (file, config.query.filename)
-                        in
-                        let file = Misc.canonicalize_filename file in
-                        let buf = Misc.canonicalize_filename buf in
-                        String.equal file buf
+                      (* We filter external results that concern the current buffer *)
+                      let file_rel_to_root =
+                        loc.Location.loc_start.Lexing.pos_fname
                       in
+                      let file_uncanon, buf_uncanon =
+                        match config.merlin.source_root with
+                        | Some root ->
+                          ( Filename.concat root file_rel_to_root,
+                            current_buffer_path )
+                        | None -> (file_rel_to_root, config.query.filename)
+                      in
+                      let file = Misc.canonicalize_filename file_uncanon in
+                      let buf = Misc.canonicalize_filename buf_uncanon in
+                      let is_current_buffer = String.equal file buf in
                       let should_be_ignored =
                         (* We ignore results that don't have a location *)
                         Index_occurrences.should_ignore_lid lid
@@ -235,7 +236,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
                       if is_current_buffer || should_be_ignored then false
                       else begin
                         (* We ignore external results if their source was modified *)
-                        let check = Stat_check.check stats ~file in
+                        let check = Stat_check.check stats ~file:file_rel_to_root in
                         if not check then
                           log ~title:"locs_of" "File %s might be out-of-sync."
                             file;
