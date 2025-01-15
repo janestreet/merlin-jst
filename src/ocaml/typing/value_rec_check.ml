@@ -266,7 +266,6 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_override _
     | Texp_letop _ ->
         Dynamic
-    | Texp_hole -> Static
   and classify_value_bindings rec_flag env bindings =
     (* We use a non-recursive classification, classifying each
         binding with respect to the old environment

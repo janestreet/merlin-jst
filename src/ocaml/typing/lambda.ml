@@ -6,20 +6,28 @@ type immediate_or_pointer =
   | Pointer
 
 type boxed_float = Primitive.boxed_float =
-  | Pfloat64
-  | Pfloat32
+  | Boxed_float64
+  | Boxed_float32
 
 type boxed_integer = Primitive.boxed_integer =
-    Pnativeint | Pint32 | Pint64
+  | Boxed_int64
+  | Boxed_nativeint
+  | Boxed_int32
 
-and boxed_vector = Primitive.boxed_vector =
-  | Pvec128
+type boxed_vector = Primitive.boxed_vector =
+  | Boxed_vec128
 
-type unboxed_float = boxed_float
+type unboxed_float = Primitive.unboxed_float =
+  | Unboxed_float64
+  | Unboxed_float32
 
-type unboxed_integer = boxed_integer
+type unboxed_integer = Primitive.unboxed_integer =
+  | Unboxed_int64
+  | Unboxed_nativeint
+  | Unboxed_int32
 
-and unboxed_vector = boxed_vector
+type unboxed_vector = Primitive.unboxed_vector =
+  | Unboxed_vec128
 
 type array_kind =
     Pgenarray | Paddrarray | Pintarray | Pfloatarray

@@ -620,6 +620,7 @@ let zero_alloc_attribute (attr : Parsetree.attribute)  =
       | _ ->
         warn_payload attr.attr_loc attr.attr_name.txt
           "Only 'all', 'check', 'check_opt', 'check_all', and 'check_none' are supported")
+*)
 
 let attribute_with_ignored_payload name attr =
   when_attribute_is [name; "ocaml." ^ name] attr ~f:(fun () -> ())
@@ -630,6 +631,7 @@ let unsafe_allow_any_kind_in_impl_attribute =
 let unsafe_allow_any_kind_in_intf_attribute =
   attribute_with_ignored_payload "unsafe_allow_any_kind_in_intf"
 
+(*
 let afl_inst_ratio_attribute attr =
   clflags_attribute_with_int_payload attr
     ~name:"afl_inst_ratio" Clflags.afl_inst_ratio

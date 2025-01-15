@@ -985,8 +985,7 @@ let merloc startpos ?endpos x =
   let default_loc = ref Location.none
 
   let default_expr () =
-    let id = Location.mkloc Ast_helper.hole_txt !default_loc in
-    Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
+    Exp.mk ~loc:!default_loc Pexp_hole
 
   let default_pattern () = Pat.any ~loc:!default_loc ()
 
@@ -3230,8 +3229,7 @@ comprehension_clause:
   | extension
       { Pexp_extension $1 }
   | UNDERSCORE
-      { let id = mkrhs Ast_helper.hole_txt $loc in
-        Pexp_extension (id, PStr []) }
+      { Pexp_hole }
   | od=open_dot_declaration DOT mkrhs(LPAREN RPAREN {Lident "()"})
       { Pexp_open(od, mkexp ~loc:($loc($3)) (Pexp_construct($3, None))) }
   (*

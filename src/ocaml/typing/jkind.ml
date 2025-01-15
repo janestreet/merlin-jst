@@ -247,13 +247,13 @@ module Layout = struct
       match Sort.decompose_into_product s2 (List.length ts1) with
       | None -> Not_le
       | Some ss2 ->
-        Misc.Le_result.combine_list
+        Misc_stdlib.Le_result.combine_list
           (List.map2 (fun t1 s2 -> sub t1 (Sort s2)) ts1 ss2))
     | Sort s1, Product ts2 -> (
       match Sort.decompose_into_product s1 (List.length ts2) with
       | None -> Not_le
       | Some ss1 ->
-        Misc.Le_result.combine_list
+        Misc_stdlib.Le_result.combine_list
           (List.map2 (fun s1 t2 -> sub (Sort s1) t2) ss1 ts2))
 
   let rec intersection t1 t2 =

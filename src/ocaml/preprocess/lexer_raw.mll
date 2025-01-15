@@ -786,19 +786,19 @@ rule token state = parse
   | "&&" { return AMPERAMPER }
   | "`"  { return BACKQUOTE }
   | "\'" { return QUOTE }
-  | "("  { LPAREN }
-  | ")"  { RPAREN }
-  | "#(" { HASHLPAREN }
-  | "#{" { HASHLBRACE }
-  | "*"  { STAR }
-  | ","  { COMMA }
-  | "->" { MINUSGREATER }
-  | "."  { DOT }
-  | ".." { DOTDOT }
-  | ".#" { DOTHASH }
+  | "("  { return LPAREN }
+  | ")"  { return RPAREN }
+  | "#(" { return HASHLPAREN }
+  | "#{" { return HASHLBRACE }
+  | "*"  { return STAR }
+  | ","  { return COMMA }
+  | "->" { return MINUSGREATER }
+  | "."  { return DOT }
+  | ".." { return DOTDOT }
+  | ".#" { return DOTHASH }
   | "." (dotsymbolchar symbolchar* as op) { return (DOTOP op) }
-  | ":"  { COLON }
-  | "::" { COLONCOLON }
+  | ":"  { return COLON }
+  | "::" { return COLONCOLON }
   | ":=" { return COLONEQUAL }
   | ":>" { return COLONGREATER }
   | ";"  { return SEMI }

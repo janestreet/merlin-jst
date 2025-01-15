@@ -202,7 +202,7 @@ let iter_on_occurrences
       | Kept _ -> ()) fields
   in
   let iter_field_pats ~namespace pat_env fields =
-    List.iter (fun (lid, label_descr, pat) ->
+    List.iter ~f:(fun (lid, label_descr, pat) ->
       let lid =
         let open Location in
         (* In the presence of punning we want to index the label

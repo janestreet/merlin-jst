@@ -140,8 +140,8 @@ let label_usage_complaint priv mut lu
 let stamped_used_labels = s_table local_stamped 32
 let used_labels_changelog, used_labels = !stamped_used_labels
 
-let used_unboxed_labels : label_usage usage_tbl ref =
-  s_table Types.Uid.Tbl.create 16
+let stamped_used_unboxed_labels = s_table local_stamped 32
+let used_unboxed_labels_changelog, used_unboxed_labels = !stamped_used_unboxed_labels
 
 (** Map indexed by the name of module components. *)
 module NameMap = String.Map
@@ -872,8 +872,8 @@ let mode_default mode = {
 
 let used_labels_by_form (type rep) (record_form : rep record_form) =
   match record_form with
-  | Legacy -> !used_labels
-  | Unboxed_product -> !used_unboxed_labels
+  | Legacy -> used_labels
+  | Unboxed_product -> used_unboxed_labels
 
 let find_used_label_by_uid (type rep) (record_form : rep record_form) uid =
   stamped_find (used_labels_by_form record_form) uid
@@ -4978,4 +4978,5 @@ let cleanup_usage_tables ~stamp =
   Stamped_hashtable.backtrack type_declarations_changelog ~stamp;
   Stamped_hashtable.backtrack module_declarations_changelog ~stamp;
   Stamped_hashtable.backtrack used_constructors_changelog ~stamp;
-  Stamped_hashtable.backtrack used_labels_changelog ~stamp
+  Stamped_hashtable.backtrack used_labels_changelog ~stamp;
+  Stamped_hashtable.backtrack used_unboxed_labels_changelog ~stamp

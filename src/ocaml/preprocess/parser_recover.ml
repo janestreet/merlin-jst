@@ -8,8 +8,7 @@ module Default = struct
   let default_loc = ref Location.none
 
   let default_expr () =
-    let id = Location.mkloc Ast_helper.hole_txt !default_loc in
-    Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
+    Exp.mk ~loc:!default_loc Pexp_hole
 
   let default_pattern () = Pat.any ~loc:!default_loc ()
 

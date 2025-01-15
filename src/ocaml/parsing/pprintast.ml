@@ -1093,8 +1093,6 @@ and expression ctxt f x =
           (binding_op ctxt) let_
           (list ~sep:"@," (binding_op ctxt)) ands
           (expression ctxt) body
-    | Pexp_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
-        pp f "%a" (simple_expr ctxt) x
     | Pexp_extension e -> extension ctxt f e
     | Pexp_unreachable -> pp f "."
     | Pexp_overwrite (e1, e2) ->
@@ -1189,8 +1187,7 @@ and simple_expr ctxt f x =
         let expression = expression ctxt in
         pp f fmt (pattern ctxt) s expression e1 direction_flag
           df expression e2 expression e3
-    | Pexp_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
-        pp f "_"
+    | Pexp_hole -> pp f "_"
     | _ ->  paren true (expression ctxt) f x
 
 and attributes ctxt f l =
@@ -2423,20 +2420,23 @@ let prepare_error err =
             Format.fprintf ppf
               "only module type identifier and %a constraints are supported"
               Style.inline_code "with type"
+        | Misplaced_attribute ->
+            Format.fprintf ppf "an attribute cannot go here"
       in
-      Location.errorf ~source ~loc "invalid package type: %a" invalid ipt
+      Location.errorf ~loc "invalid package type: %a" invalid ipt
   | Removed_string_set loc ->
-    Location.errorf ~source ~loc
-      "Syntax error: strings are immutable, there is no assignment \
-       syntax for them.\n\
-       @{<hint>Hint@}: Mutable sequences of bytes are available in \
-       the Bytes module.\n\
-       @{<hint>Hint@}: Did you mean to use 'Bytes.set'?"
+      Location.errorf ~source ~loc
+        "Syntax error: strings are immutable, there is no assignment \
+         syntax for them.\n\
+         @{<hint>Hint@}: Mutable sequences of bytes are available in \
+         the Bytes module.\n\
+         @{<hint>Hint@}: Did you mean to use %a?"
+        Style.inline_code "Bytes.set"
   | Missing_unboxed_literal_suffix loc ->
-    Location.errorf ~loc
-      "Syntax error: Unboxed integer literals require width suffixes."
+      Location.errorf ~source ~loc
+        "Syntax error: Unboxed integer literals require width suffixes."
   | Malformed_instance_identifier loc ->
-      Location.errorf ~loc
+      Location.errorf ~source ~loc
         "Syntax error: Unexpected in module instance"
 
 let () =
