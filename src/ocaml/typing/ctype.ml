@@ -2389,28 +2389,12 @@ let constrain_type_jkind ~fixed env ty jkind =
              let num_components = List.length tys in
              let recur ty's_jkinds jkinds =
                let results =
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
                  Misc_stdlib.List.map3
-                   (fun (_, ty) -> loop ~fuel ~expanded:false ty)
-                   ltys ty's_jkinds jkinds
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-                 Misc.Stdlib.List.map3
-                   (fun (_, ty) -> loop ~fuel ~expanded:false ty)
-                   ltys ty's_jkinds jkinds
-=======
-                 Misc.Stdlib.List.map3
                    (loop ~fuel ~expanded:false) tys ty's_jkinds jkinds
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
                in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-               Misc_stdlib.Monad.Result.all_unit results
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-               Misc.Stdlib.Monad.Result.all_unit results
-=======
                if List.for_all Result.is_ok results
                then Ok ()
                else Error (Jkind.Violation.of_ (Not_a_subjkind (ty's_jkind, jkind)))
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
              in
              begin match Jkind.decompose_product ty's_jkind,
                          Jkind.decompose_product jkind with

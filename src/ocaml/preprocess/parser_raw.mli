@@ -37,6 +37,7 @@ type token =
   | PLUSDOT
   | PLUS
   | PERCENT
+  | OVERWRITE
   | OR
   | OPTLABEL of (string)
   | OPEN
@@ -92,6 +93,7 @@ type token =
   | HASH_FLOAT of (string * char option)
   | HASHOP of (string)
   | HASHLPAREN
+  | HASHLBRACE
   | HASH
   | GREATERRBRACKET
   | GREATERRBRACE
@@ -116,6 +118,7 @@ type token =
   | DOTTILDE
   | DOTOP of (string)
   | DOTLESS
+  | DOTHASH
   | DOTDOT
   | DOT
   | DONE
@@ -228,6 +231,7 @@ module MenhirInterpreter : sig
     | T_PLUSDOT : unit terminal
     | T_PLUS : unit terminal
     | T_PERCENT : unit terminal
+    | T_OVERWRITE : unit terminal
     | T_OR : unit terminal
     | T_OPTLABEL : (string) terminal
     | T_OPEN : unit terminal
@@ -283,6 +287,7 @@ module MenhirInterpreter : sig
     | T_HASH_FLOAT : (string * char option) terminal
     | T_HASHOP : (string) terminal
     | T_HASHLPAREN : unit terminal
+    | T_HASHLBRACE : unit terminal
     | T_HASH : unit terminal
     | T_GREATERRBRACKET : unit terminal
     | T_GREATERRBRACE : unit terminal
@@ -307,6 +312,7 @@ module MenhirInterpreter : sig
     | T_DOTTILDE : unit terminal
     | T_DOTOP : (string) terminal
     | T_DOTLESS : unit terminal
+    | T_DOTHASH : unit terminal
     | T_DOTDOT : unit terminal
     | T_DOT : unit terminal
     | T_DONE : unit terminal
@@ -442,6 +448,7 @@ module MenhirInterpreter : sig
     | N_parenthesized_type_parameter : (Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) nonterminal
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
+    | N_optional_atomic_constraint_ : (Parsetree.function_constraint) nonterminal
     | N_optional_atat_modalities_expr : (Parsetree.modalities) nonterminal
     | N_optional_at_modalities_expr : (Parsetree.modalities) nonterminal
     | N_option_type_constraint_ : (Parsetree.type_constraint option) nonterminal
@@ -450,9 +457,9 @@ module MenhirInterpreter : sig
     | N_option_preceded_EQUAL_module_type__ : (Parsetree.module_type option) nonterminal
     | N_option_preceded_EQUAL_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_COLON_core_type__ : (Parsetree.core_type option) nonterminal
-    | N_option_preceded_COLON_atomic_type__ : (Parsetree.core_type option) nonterminal
     | N_option_preceded_AS_mkrhs_LIDENT___ : (string Location.loc option) nonterminal
     | N_option_jkind_constraint_ : (Parsetree.jkind_annotation option) nonterminal
+    | N_option_constraint__ : ((Parsetree.type_constraint option * Parsetree.modes) option) nonterminal
     | N_option_SEMI_ : (unit option) nonterminal
     | N_option_BAR_ : (unit option) nonterminal
     | N_opt_ampersand : (bool) nonterminal

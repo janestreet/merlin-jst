@@ -2931,16 +2931,10 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
       let coercion =
         try Includemod.modtypes
               ~loc:arg.mod_loc ~mark:Mark_both env arg.mod_type mty_param
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
+              ~modes:Legacy
         with Includemod.Error _ ->
           Msupport.raise_error (apply_error ());
           Tcoerce_none
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-        with Includemod.Error _ -> apply_error ()
-=======
-              ~modes:Legacy
-        with Includemod.Error _ -> apply_error ()
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
       in
       let mty_appl =
         match arg_path with

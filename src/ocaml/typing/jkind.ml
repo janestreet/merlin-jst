@@ -269,31 +269,9 @@ module Layout = struct
     | Any, _ -> Some t2
     | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Some t1 else None
     | Product ts1, Product ts2 ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-      if List.compare_lengths ts1 ts2 = 0
-      then
-        let components = List.map2 intersection ts1 ts2 in
-        Option.map
-          (fun x -> Product x)
-          (Misc_stdlib.List.some_if_all_elements_are_some components)
-      else None
-    | (Product ts as t), Sort sort | Sort sort, (Product ts as t) -> (
-      match to_product_sort ts with
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-      if List.compare_lengths ts1 ts2 = 0
-      then
-        let components = List.map2 intersection ts1 ts2 in
-        Option.map
-          (fun x -> Product x)
-          (Misc.Stdlib.List.some_if_all_elements_are_some components)
-      else None
-    | (Product ts as t), Sort sort | Sort sort, (Product ts as t) -> (
-      match to_product_sort ts with
-=======
       if List.compare_lengths ts1 ts2 = 0 then products ts1 ts2 else None
     | Product ts, Sort sort | Sort sort, Product ts -> (
       match Sort.decompose_into_product sort (List.length ts) with
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
       | None -> None
       | Some sorts -> products ts (List.map (fun x -> Sort x) sorts))
 
@@ -1390,14 +1368,10 @@ module Format_history = struct
         "it's the layout polymorphic type in an external declaration@ \
          ([@@layout_poly] forces all variables of layout 'any' to be@ \
          representable at call sites)"
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    | Merlin ->
-      fprintf ppf "merlin needed to create a fake AST node"
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
     | Peek_or_poke ->
       fprintf ppf "it's the type being used for a peek or poke primitive"
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+    | Merlin ->
+      fprintf ppf "merlin needed to create a fake AST node"
 
   let format_concrete_legacy_creation_reason ppf :
       History.concrete_legacy_creation_reason -> unit = function
@@ -1937,12 +1911,8 @@ module Debug_printers = struct
     | Optional_arg_default -> fprintf ppf "Optional_arg_default"
     | Layout_poly_in_external -> fprintf ppf "Layout_poly_in_external"
     | Unboxed_tuple_element -> fprintf ppf "Unboxed_tuple_element"
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    | Merlin -> fprintf ppf "Merlin"
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
     | Peek_or_poke -> fprintf ppf "Peek_or_poke"
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+    | Merlin -> fprintf ppf "Merlin"
 
   let concrete_legacy_creation_reason ppf :
       History.concrete_legacy_creation_reason -> unit = function

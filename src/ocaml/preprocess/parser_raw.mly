@@ -847,21 +847,13 @@ let package_type_of_module_type pmty =
   in
   match pmty with
   | {pmty_desc = Pmty_ident lid} -> (lid, [], pmty.pmty_attributes)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
-      (lid, List.filter_map map_cstr cstrs, pmty.pmty_attributes)
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
-      (lid, List.map map_cstr cstrs, pmty.pmty_attributes)
-=======
   | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid; pmty_attributes = inner_attributes}, cstrs)} ->
       begin match inner_attributes with
       | [] -> ()
       | attr :: _ ->
         err attr.attr_loc Syntaxerr.Misplaced_attribute
       end;
-      (lid, List.map map_cstr cstrs, pmty.pmty_attributes)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+      (lid, List.filter_map map_cstr cstrs, pmty.pmty_attributes)
   | _ ->
       err pmty.pmty_loc Neither_identifier_nor_with_type
       ; (Location.mkloc (Lident "_") pmty.pmty_loc, [], [])
@@ -988,23 +980,6 @@ let merloc startpos ?endpos x =
 
 %[@recovery.header
   open Parsetree
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-%token DONE                   "done"
-%token DOT                    "."
-%token DOTDOT                 ".."
-%token DOWNTO                 "downto"
-%token ELSE                   "else"
-%token END                    "end"
-=======
-%token DONE                   "done"
-%token DOT                    "."
-%token DOTDOT                 ".."
-%token DOTHASH                ".#"
-%token DOWNTO                 "downto"
-%token ELSE                   "else"
-%token END                    "end"
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   open Ast_helper
 
   let default_loc = ref Location.none
@@ -1025,23 +1000,6 @@ let merloc startpos ?endpos x =
         psg_items = [];
         psg_loc = !default_loc;
       } 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-%token GREATERRBRACE          ">}"
-%token GREATERRBRACKET        ">]"
-%token HASHLPAREN             "#("
-%token IF                     "if"
-%token IN                     "in"
-%token INCLUDE                "include"
-=======
-%token GREATERRBRACE          ">}"
-%token GREATERRBRACKET        ">]"
-%token HASHLPAREN             "#("
-%token HASHLBRACE             "#{"
-%token IF                     "if"
-%token IN                     "in"
-%token INCLUDE                "include"
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
     in
     Mty.signature ~loc:!default_loc desc
 ]
@@ -1081,6 +1039,7 @@ let merloc startpos ?endpos x =
 %token DONE [@symbol "done"]
 %token DOT [@symbol "."]
 %token DOTDOT [@symbol ".."]
+%token DOTHASH [@symbol ".#"]
 %token DOWNTO [@symbol "downto"]
 %token ELSE [@symbol "else"]
 %token END [@symbol "end"]
@@ -1097,27 +1056,11 @@ let merloc startpos ?endpos x =
 %token FUNCTION [@symbol "function"]
 %token FUNCTOR [@symbol "functor"]
 %token GLOBAL [@symbol "global_"]
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-%token OPEN                   "open"
-%token <string> OPTLABEL      "?label:" (* just an example *)
-%token OR                     "or"
-/* %token PARSER              "parser" */
-%token PERCENT                "%"
-%token PLUS                   "+"
-=======
-%token OPEN                   "open"
-%token <string> OPTLABEL      "?label:" (* just an example *)
-%token OR                     "or"
-%token OVERWRITE              "overwrite_"
-/* %token PARSER              "parser" */
-%token PERCENT                "%"
-%token PLUS                   "+"
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 %token GREATER [@symbol ">"]
 %token GREATERRBRACE [@symbol ">}"]
 %token GREATERRBRACKET [@symbol ">]"]
 %token HASHLPAREN [@symbol "#("]
+%token HASHLBRACE [@symbol "#{"]
 %token IF [@symbol "if"]
 %token IN [@symbol "in"]
 %token INCLUDE [@symbol "include"]
@@ -1173,6 +1116,7 @@ let merloc startpos ?endpos x =
 %token OPEN [@symbol "open"]
 %token <string> OPTLABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "OPTLABEL(%S)"] [@symbol "?<label>"]
 %token OR [@symbol "or"]
+%token OVERWRITE [@symbol "overwrite_"]
 /* %token PARSER */
 %token PERCENT [@symbol "%"]
 %token PLUS [@symbol "+"]
@@ -1291,17 +1235,9 @@ The precedences must be listed from low to high.
 /* Finally, the first tokens of simple_expr are above everything else. */
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT HASH_FLOAT INT HASH_INT OBJECT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LBRACKETCOLON LIDENT LPAREN
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
           NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
-          LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLPAREN
-          DOTLESS DOTTILDE GREATERDOT
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-          NEW PREFIXOP STRING TRUE UIDENT
-          LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLPAREN
-=======
-          NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLBRACE HASHLPAREN
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+          DOTLESS DOTTILDE GREATERDOT
 
 
 /* Entry points */
@@ -2983,11 +2919,6 @@ let_pattern_no_modes:
 
 %inline qualified_dotop: ioption(DOT mod_longident {$2}) DOTOP { $1, $2 };
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-%public fun_expr [@recovery default_expr ()]:
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-fun_expr:
-=======
 optional_atomic_constraint_:
   | COLON atomic_type optional_atat_mode_expr {
     { ret_type_constraint = Some (Pconstraint $2)
@@ -3003,8 +2934,7 @@ optional_atomic_constraint_:
   }
   | { empty_body_constraint }
 
-fun_expr:
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+%public fun_expr [@recovery default_expr ()]:
     simple_expr %prec below_HASH
       { $1 }
   | fun_expr_attrs
@@ -3037,24 +2967,8 @@ fun_expr:
     { mk_indexop_expr user_indexing_operators ~loc:$sloc $1 }
   | fun_expr attribute
       { Exp.attr $1 $2 }
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  (*
-/* BEGIN AVOID */
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-/* BEGIN AVOID */
-=======
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   | UNDERSCORE
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-     { not_expecting $loc($1) "wildcard \"_\"" }
-/* END AVOID */
-  *)
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-     { not_expecting $loc($1) "wildcard \"_\"" }
-/* END AVOID */
-=======
     { mkexp ~loc:$sloc Pexp_hole }
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   | mode=mode_legacy exp=seq_expr
      { mkexp_constraint ~loc:$sloc ~exp ~cty:None ~modes:[mode] }
   | EXCLAVE seq_expr
@@ -3082,13 +2996,9 @@ fun_expr:
   (*
   | TRY ext_attributes seq_expr WITH error
       { syntax_error() }
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
   *)
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   | OVERWRITE ext_attributes seq_expr WITH expr
-      { Pexp_overwrite($3, $5), $2 }
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+      { Pexp_overwrite($3, (merloc $endpos($4) $5)), $2 }
   | IF ext_attributes seq_expr THEN expr ELSE expr
       { Pexp_ifthenelse($3, (merloc $endpos($4) $5), Some (merloc $endpos($6) $7)), $2 }
   | IF ext_attributes seq_expr THEN expr
@@ -3331,14 +3241,10 @@ comprehension_clause:
   | LBRACE record_expr_content RBRACE
       { let (exten, fields) = $2 in
         Pexp_record(fields, exten) }
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  (*
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   | HASHLBRACE record_expr_content RBRACE
       { let (exten, fields) = $2 in
         Pexp_record_unboxed_product(fields, exten) }
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+  (*
   | LBRACE record_expr_content error
       { unclosed "{" $loc($1) "}" $loc($3) }
   *)
@@ -4003,19 +3909,11 @@ simple_delimited_pattern:
       LBRACE record_pat_content RBRACE
       { let (fields, closed) = $2 in
         Ppat_record(fields, closed) }
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    (*| LBRACE record_pat_content error
-      { unclosed "{" $loc($1) "}" $loc($3) } *)
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-    | LBRACE record_pat_content error
-      { unclosed "{" $loc($1) "}" $loc($3) }
-=======
     | HASHLBRACE record_pat_content RBRACE
       { let (fields, closed) = $2 in
         Ppat_record_unboxed_product(fields, closed) }
-    | LBRACE record_pat_content error
-      { unclosed "{" $loc($1) "}" $loc($3) }
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+    (*| LBRACE record_pat_content error
+      { unclosed "{" $loc($1) "}" $loc($3) } *)
     | LBRACKET pattern_semi_list RBRACKET
       { fst (mktailpat $loc($3) $2) }
     (*| LBRACKET pattern_semi_list error

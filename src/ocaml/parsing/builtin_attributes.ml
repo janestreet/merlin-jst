@@ -647,21 +647,14 @@ let parse_standard_implementation_attributes attr =
   principal_attribute attr;
   noprincipal_attribute attr;
   nolabels_attribute attr;
-  ()
   (* merlin-jst: See {comments} above
   inline_attribute attr;
   afl_inst_ratio_attribute attr;
   flambda_o3_attribute attr;
   flambda_oclassic_attribute attr;
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
   zero_alloc_attribute attr
   *)
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  zero_alloc_attribute attr
-=======
-  zero_alloc_attribute attr;
   unsafe_allow_any_kind_in_impl_attribute attr
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 let has_no_mutable_implied_modalities attrs =
   has_attribute "no_mutable_implied_modalities" attrs

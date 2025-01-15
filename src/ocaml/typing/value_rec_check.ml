@@ -1023,10 +1023,6 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_probe_is_enabled _ -> empty
     | Texp_exclave e -> expression e
     | Texp_src_pos -> empty
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    | Texp_hole -> empty
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
     | Texp_overwrite (exp1, exp2) ->
       (* This is untested, since we currently mark Texp_overwrite as Dynamic and
          the analysis always stops if there is an overwrite_ in a recursive expression.
@@ -1040,7 +1036,6 @@ let rec expression : Typedtree.expression -> term_judg =
         expression exp2
       ]
     | Texp_hole _ -> empty
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 (* Function bodies.
     G |-{body} b : m

@@ -2368,10 +2368,6 @@ let rec check_uniqueness_exp ~overwrite (ienv : Ienv.t) exp : UF.t =
   | Texp_probe_is_enabled _ -> UF.unused
   | Texp_exclave e -> check_uniqueness_exp ~overwrite:None ienv e
   | Texp_src_pos -> UF.unused
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Texp_hole -> UF.unused
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   | Texp_overwrite (e1, e2) ->
     let value, uf = check_uniqueness_exp_as_value ienv e1 in
     let uf_tag =
@@ -2393,7 +2389,6 @@ let rec check_uniqueness_exp ~overwrite (ienv : Ienv.t) exp : UF.t =
       Paths.mark
         (Usage.maybe_unique use occ)
         Learned_tags.empty Overwrites.empty p)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 (**
 Corresponds to the first mode.

@@ -970,11 +970,6 @@ let pats_of_type env ty =
               labels
           in
           [make_pat (Tpat_record (fields, Closed)) ty env]
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-      | _ -> [omega]
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-      | Type_variant _ | Type_abstract _ | Type_open -> [omega]
-=======
       | Type_record_unboxed_product (labels, _) ->
           let fields =
             List.map (fun ld ->
@@ -983,7 +978,6 @@ let pats_of_type env ty =
           in
           [make_pat (Tpat_record_unboxed_product (fields, Closed)) ty env]
       | Type_variant _ | Type_abstract _ | Type_open -> [omega]
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
       end
   | Has_no_typedecl ->
       begin match get_desc (Ctype.expand_head env ty) with

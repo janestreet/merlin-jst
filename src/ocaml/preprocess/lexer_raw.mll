@@ -782,20 +782,10 @@ rule token state = parse
         else try directive state Hash lexbuf with Failure _ -> return HASH
       }
   | "#"  { return HASH }
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  | "("  { LPAREN }
-  | ")"  { RPAREN }
-  | "#(" { HASHLPAREN }
-  | "*"  { STAR }
-  | ","  { COMMA }
-  | "->" { MINUSGREATER }
-  | "."  { DOT }
-  | ".." { DOTDOT }
-  | "." (dotsymbolchar symbolchar* as op) { DOTOP op }
-  | ":"  { COLON }
-  | "::" { COLONCOLON }
-=======
+  | "&"  { return AMPERSAND }
+  | "&&" { return AMPERAMPER }
+  | "`"  { return BACKQUOTE }
+  | "\'" { return QUOTE }
   | "("  { LPAREN }
   | ")"  { RPAREN }
   | "#(" { HASHLPAREN }
@@ -806,25 +796,9 @@ rule token state = parse
   | "."  { DOT }
   | ".." { DOTDOT }
   | ".#" { DOTHASH }
-  | "." (dotsymbolchar symbolchar* as op) { DOTOP op }
+  | "." (dotsymbolchar symbolchar* as op) { return (DOTOP op) }
   | ":"  { COLON }
   | "::" { COLONCOLON }
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-  | "&"  { return AMPERSAND }
-  | "&&" { return AMPERAMPER }
-  | "`"  { return BACKQUOTE }
-  | "\'" { return QUOTE }
-  | "("  { return LPAREN }
-  | ")"  { return RPAREN }
-  | "#(" { return HASHLPAREN }
-  | "*"  { return STAR }
-  | ","  { return COMMA }
-  | "->" { return MINUSGREATER }
-  | "."  { return DOT }
-  | "." (dotsymbolchar symbolchar* as op) { return (DOTOP op) }
-  | ".." { return DOTDOT }
-  | ":"  { return COLON }
-  | "::" { return COLONCOLON }
   | ":=" { return COLONEQUAL }
   | ":>" { return COLONGREATER }
   | ";"  { return SEMI }

@@ -185,12 +185,7 @@ let iter_on_occurrences
   in
   let add_label ~namespace env lid { Types.lbl_name; lbl_res; _ } =
     let path = path_in_type lbl_res lbl_name in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    Option.iter ~f:(fun path -> f ~namespace:Label env path lid) path
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-    Option.iter (fun path -> f ~namespace:Label env path lid) path
-=======
-    Option.iter (fun path -> f ~namespace env path lid) path
+    Option.iter ~f:(fun path -> f ~namespace env path lid) path
   in
   let iter_field_exps ~namespace exp_env fields =
     Array.iter (fun (label_descr, record_label_definition) ->
@@ -220,7 +215,6 @@ let iter_on_occurrences
       in
       add_label ~namespace pat_env lid label_descr)
     fields
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   in
   let with_constraint ~env (_path, _lid, with_constraint) =
     match with_constraint with
@@ -269,13 +263,7 @@ let iter_on_occurrences
       | Texp_object _ | Texp_pack _ | Texp_letop _ | Texp_unreachable
       | Texp_list_comprehension _ | Texp_array_comprehension _ | Texp_probe _
       | Texp_probe_is_enabled _ | Texp_exclave _
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-      | Texp_open _ | Texp_hole | Texp_src_pos -> ());
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-      | Texp_open _ | Texp_src_pos -> ());
-=======
       | Texp_open _ | Texp_src_pos | Texp_overwrite _ | Texp_hole _ -> ());
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
       default_iterator.expr sub e);
 
   (* Remark: some types get iterated over twice due to how constraints are
@@ -306,39 +294,9 @@ let iter_on_occurrences
       | Tpat_construct (lid, constr_desc, _, _) ->
           add_constructor_description pat_env lid constr_desc
       | Tpat_record (fields, _) ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-        List.iter ~f:(fun (lid, label_descr, pat) ->
-          let lid =
-            let open Location in
-            (* In the presence of punning we want to index the label
-               even if it is ghosted *)
-            if (not pat.pat_loc.loc_ghost
-              && lid.loc.loc_start = pat.pat_loc.loc_start
-              && lid.loc.loc_end = pat.pat_loc.loc_end)
-            then {lid with loc = {lid.loc with loc_ghost = false}}
-            else lid
-          in
-          add_label pat_env lid label_descr)
-        fields
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-        List.iter (fun (lid, label_descr, pat) ->
-          let lid =
-            let open Location in
-            (* In the presence of punning we want to index the label
-               even if it is ghosted *)
-            if (not pat.pat_loc.loc_ghost
-              && lid.loc.loc_start = pat.pat_loc.loc_start
-              && lid.loc.loc_end = pat.pat_loc.loc_end)
-            then {lid with loc = {lid.loc with loc_ghost = false}}
-            else lid
-          in
-          add_label pat_env lid label_descr)
-        fields
-=======
         iter_field_pats ~namespace:Label pat_env fields
       | Tpat_record_unboxed_product (fields, _) ->
         iter_field_pats ~namespace:Unboxed_label pat_env fields
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
       | Tpat_any | Tpat_var _ | Tpat_alias _ | Tpat_constant _ | Tpat_tuple _
       | Tpat_unboxed_tuple _
       | Tpat_variant _ | Tpat_array _ | Tpat_lazy _ | Tpat_value _

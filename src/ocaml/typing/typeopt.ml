@@ -169,34 +169,12 @@ let classify ~classify_product env ty sort : _ classification =
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ | Tunboxed_tuple _ ->
       assert false
   end
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Base Float64 -> Unboxed_float Pfloat64
-  | Base Float32 -> Unboxed_float Pfloat32
-  | Base Bits32 -> Unboxed_int Pint32
-  | Base Bits64 -> Unboxed_int Pint64
-  | Base Vec128 -> Unboxed_vector Pvec128
-  | Base Word -> Unboxed_int Pnativeint
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  | Base Float64 -> Unboxed_float Pfloat64
-  | Base Float32 -> Unboxed_float Pfloat32
-  | Base Bits32 -> Unboxed_int Pint32
-  | Base Bits64 -> Unboxed_int Pint64
-  | Base Vec128 -> Unboxed_vector Pvec128
-  | Base Word -> Unboxed_int Pnativeint
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product c -> Product (classify_product ty c)
-=======
   | Base Float64 -> Unboxed_float Unboxed_float64
   | Base Float32 -> Unboxed_float Unboxed_float32
   | Base Bits32 -> Unboxed_int Unboxed_int32
   | Base Bits64 -> Unboxed_int Unboxed_int64
   | Base Vec128 -> Unboxed_vector Unboxed_vec128
   | Base Word -> Unboxed_int Unboxed_nativeint
-  | Base Void as c ->
-    raise (Error (loc, Unsupported_sort c))
-  | Product c -> Product (classify_product ty c)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   | Base Void (* as c *) ->
     (* raise (Error (loc, Unsupported_sort c)) *)
     Misc.fatal_error "merlin-jst: void encountered in classify"
@@ -207,10 +185,11 @@ let array_kind_of_elt ~elt_sort env loc ty =
     match elt_sort with
     | Some s -> s
     | None ->
-      type_legacy_sort ~why:Array_element env loc ty
+      Jkind.Sort.default_for_transl_and_get
+        (type_legacy_sort ~why:Array_element env loc ty)
   in
   let classify_product ty _sorts =
-    if Language_extension.(is_at_least Layouts Alpha) then
+    if Language_extension.(is_at_least Layouts Beta) then
       if is_always_gc_ignorable env ty then
         Pgcignorableproductarray ()
       else
@@ -219,32 +198,6 @@ let array_kind_of_elt ~elt_sort env loc ty =
       (* let sort = Jkind.Sort.of_const (Jkind.Sort.Const.Product sorts) in
       raise (Error (loc, Sort_without_extension (sort, Alpha, Some ty))) *)
       Misc.fatal_error "merlin-jst: language extension not enabled for non-value sort"
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-and sort_to_ignorable_product_element_kind loc (s : Jkind.Sort.Const.t) =
-  match s with
-  | Base Value -> Pint_ignorable
-  | Base Float64 -> Punboxedfloat_ignorable Pfloat64
-  | Base Float32 -> Punboxedfloat_ignorable Pfloat32
-  | Base Bits32 -> Punboxedint_ignorable Pint32
-  | Base Bits64 -> Punboxedint_ignorable Pint64
-  | Base Word -> Punboxedint_ignorable Pnativeint
-  | Base Vec128 -> raise (Error (loc, Unsupported_vector_in_product_array))
-  | Base Void as c -> raise (Error (loc, Unsupported_sort c))
-  | Product sorts -> Pproduct_ignorable (ignorable_product_array_kind loc sorts)
-=======
-and sort_to_ignorable_product_element_kind loc (s : Jkind.Sort.Const.t) =
-  match s with
-  | Base Value -> Pint_ignorable
-  | Base Float64 -> Punboxedfloat_ignorable Unboxed_float64
-  | Base Float32 -> Punboxedfloat_ignorable Unboxed_float32
-  | Base Bits32 -> Punboxedint_ignorable Unboxed_int32
-  | Base Bits64 -> Punboxedint_ignorable Unboxed_int64
-  | Base Word -> Punboxedint_ignorable Unboxed_nativeint
-  | Base Vec128 -> raise (Error (loc, Unsupported_vector_in_product_array))
-  | Base Void as c -> raise (Error (loc, Unsupported_sort c))
-  | Product sorts -> Pproduct_ignorable (ignorable_product_array_kind loc sorts)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   in
   match classify ~classify_product env ty elt_sort with
   | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
@@ -435,36 +388,9 @@ let rec value_kind env ~loc ~visited ~depth ~num_nodes_visited ty
   : int * value_kind =
   let[@inline] cannot_proceed () =
     Numbers.Int.Set.mem (get_id ty) visited
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
     || depth >= 2
     || num_nodes_visited >= 30
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-    match elt_sort with
-    | Some s -> s
-    | None ->
-      type_legacy_sort ~why:Array_element env loc ty
-=======
-    match elt_sort with
-    | Some s -> s
-    | None ->
-      Jkind.Sort.default_for_transl_and_get
-        (type_legacy_sort ~why:Array_element env loc ty)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  let classify_product ty sorts =
-    if Language_extension.(is_at_least Layouts Alpha) then
-      if is_always_gc_ignorable env ty then
-        Pgcignorableproductarray (ignorable_product_array_kind loc sorts)
-      else
-=======
-  let classify_product ty sorts =
-    if Language_extension.(is_at_least Layouts Beta) then
-      if is_always_gc_ignorable env ty then
-        Pgcignorableproductarray (ignorable_product_array_kind loc sorts)
-      else
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   let scty = scrape_ty env ty in
   begin
     (* CR layouts: We want to avoid correcting levels twice, and scrape_ty will
@@ -935,22 +861,8 @@ let function_arg_layout env loc sort ty =
 
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.
     if the value can be represented as a float/forward/lazy *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
 let lazy_val_requires_forward env (* loc *) ty =
-  let sort = Jkind.Sort.for_lazy_body in
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-let lazy_val_requires_forward env loc ty =
-  let sort = Jkind.Sort.for_lazy_body in
-  let classify_product _ sorts =
-    let kind = Jkind.Sort.Const.Product sorts in
-    raise (Error (loc, Unsupported_product_in_lazy kind))
-=======
-let lazy_val_requires_forward env loc ty =
   let sort = Jkind.Sort.Const.for_lazy_body in
-  let classify_product _ sorts =
-    let kind = Jkind.Sort.Const.Product sorts in
-    raise (Error (loc, Unsupported_product_in_lazy kind))
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   let classify_product _ _sorts =
     (* let kind = Jkind.Sort.Const.Product sorts in
     raise (Error (loc, Unsupported_product_in_lazy kind)) *)

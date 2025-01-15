@@ -657,13 +657,6 @@ and expression i ppf x =
       line i ppf "Texp_exclave";
       expression i ppf e
   | Texp_src_pos ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    line i ppf "Texp_src_pos"
-  | Texp_hole ->
-      line i ppf "Texp_hole"
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-    line i ppf "Texp_src_pos"
-=======
       line i ppf "Texp_src_pos"
   | Texp_overwrite (e1, e2) ->
     line i ppf "Texp_overwrite\n";
@@ -671,7 +664,6 @@ and expression i ppf x =
     expression i ppf e2
   | Texp_hole _ ->
     line i ppf "Texp_hole"
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_ident x.val_id fmt_location

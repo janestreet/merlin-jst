@@ -507,30 +507,11 @@ let expression sub exp =
                 match exp_extra with
                 | Some (Texp_coerce (ty1, ty2)) ->
                     Some
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2), [])
-                | Some (Texp_constraint (Some ty, modes)) ->
-                  Some (
-                    Pconstraint (sub.typ sub ty),
-                    Typemode.untransl_mode_annots ~loc modes
-                  )
-                | Some (Texp_poly _ | Texp_newtype _)
-                | Some (Texp_constraint (None, _))
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-                      (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2), [])
-                | Some (Texp_constraint (Some ty, modes)) ->
-                  Some (
-                    Pconstraint (sub.typ sub ty),
-                    Typemode.untransl_mode_annots ~loc modes
-                  )
-                | Some (Texp_poly _ | Texp_newtype _) | Some (Texp_constraint (None, _))
-=======
                       (Pcoerce (Option.map (sub.typ sub) ty1, sub.typ sub ty2))
                 | Some (Texp_constraint ty) ->
                   Some (Pconstraint (sub.typ sub ty))
                 | Some (Texp_mode _) (* CR zqian: [Texp_mode] should be possible here *)
                 | Some (Texp_poly _ | Texp_newtype _)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
                 | Some Texp_stack
                 | None -> None
               in
@@ -727,16 +708,9 @@ let expression sub exp =
         pexp_attributes = [];
       }, [Nolabel, sub.expr sub exp])
     | Texp_src_pos -> Pexp_extension ({ txt = "src_pos"; loc }, PStr [])
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    | Texp_hole ->
-        let id = Location.mkloc hole_txt loc in
-        Pexp_extension (id, PStr [])
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
     | Texp_overwrite (exp1, exp2) ->
         Pexp_overwrite(sub.expr sub exp1, sub.expr sub exp2)
     | Texp_hole _ -> Pexp_hole
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   in
   List.fold_right (exp_extra sub) exp.exp_extra
     (Exp.mk ~loc ~attrs desc)

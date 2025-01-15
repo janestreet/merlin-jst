@@ -299,13 +299,8 @@ and expression_desc =
   | Texp_probe_is_enabled of { name:string }
   | Texp_exclave of expression
   | Texp_src_pos
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Texp_hole
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   | Texp_overwrite of expression * expression
   | Texp_hole of unique_use
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 and ident_kind =
   | Id_value
@@ -1182,15 +1177,6 @@ let pat_bound_idents_full sort pat =
 
 (* In these two, we don't know the sort, but the sort information isn't used so
    it's fine to lie. *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-let pat_bound_idents_with_types pat =
-  rev_only_idents_and_types (rev_pat_bound_idents_full Jkind.Sort.value pat)
-
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-let pat_bound_idents_with_types pat =
-  rev_only_idents_and_types (rev_pat_bound_idents_full Jkind.Sort.value pat)
-=======
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 let pat_bound_idents pat =
   rev_only_idents
     (for_typing rev_pat_bound_idents_full Jkind.Sort.value pat)

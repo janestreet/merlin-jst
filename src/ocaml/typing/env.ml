@@ -876,7 +876,7 @@ let used_labels_by_form (type rep) (record_form : rep record_form) =
   | Unboxed_product -> !used_unboxed_labels
 
 let find_used_label_by_uid (type rep) (record_form : rep record_form) uid =
-  Types.Uid.Tbl.find (used_labels_by_form record_form) uid
+  stamped_find (used_labels_by_form record_form) uid
 
 let env_labels (type rep) (record_form : rep record_form) env
     : rep gen_label_description TycompTbl.t  =
@@ -1243,18 +1243,8 @@ let reset_declaration_caches () =
   Stamped_hashtable.clear type_declarations;
   Stamped_hashtable.clear module_declarations;
   Stamped_hashtable.clear used_constructors;
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
   Stamped_hashtable.clear used_labels;
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  Types.Uid.Tbl.clear !module_declarations;
-  Types.Uid.Tbl.clear !used_constructors;
-  Types.Uid.Tbl.clear !used_labels;
-=======
-  Types.Uid.Tbl.clear !module_declarations;
-  Types.Uid.Tbl.clear !used_constructors;
-  Types.Uid.Tbl.clear !used_labels;
-  Types.Uid.Tbl.clear !used_unboxed_labels;
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+  Stamped_hashtable.clear used_unboxed_labels;
   ()
 
 let reset_cache ~preserve_persistent_env =
@@ -2356,21 +2346,9 @@ and store_label
     let loc = lbl.lbl_loc in
     let mut = lbl.lbl_mut in
     let k = lbl.lbl_uid in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    if not (stamped_mem used_labels k) then
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-    if not (Types.Uid.Tbl.mem !used_labels k) then
-=======
-    if not (Types.Uid.Tbl.mem (used_labels_by_form record_form) k) then
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+    if not (stamped_mem (used_labels_by_form record_form) k) then
       let used = label_usages () in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-      stamped_uid_add used_labels k
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-      Types.Uid.Tbl.add !used_labels k
-=======
-      Types.Uid.Tbl.add (used_labels_by_form record_form) k
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+      stamped_uid_add (used_labels_by_form record_form) k
         (add_label_usage used);
       if not (ty_name = "" || ty_name.[0] = '_' || name.[0] = '_')
       then !add_delayed_check_forward
@@ -2986,16 +2964,8 @@ let mark_extension_used usage ext =
   | mark -> mark usage
   | exception Not_found -> ()
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-let mark_label_used usage ld =
-  match stamped_find used_labels ld.ld_uid with
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-let mark_label_used usage ld =
-  match Types.Uid.Tbl.find !used_labels ld.ld_uid with
-=======
 let mark_label_used record_form usage ld =
   match find_used_label_by_uid record_form ld.ld_uid with
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   | mark -> mark usage
   | exception Not_found -> ()
 
@@ -3013,13 +2983,7 @@ let mark_label_description_used record_form usage env lbl =
     | _ -> assert false
   in
   mark_type_path_used env ty_path;
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  match stamped_find used_labels lbl.lbl_uid with
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  match Types.Uid.Tbl.find !used_labels lbl.lbl_uid with
-=======
   match find_used_label_by_uid record_form lbl.lbl_uid with
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   | mark -> mark usage
   | exception Not_found -> ()
 

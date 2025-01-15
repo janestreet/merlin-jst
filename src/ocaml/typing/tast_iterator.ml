@@ -447,15 +447,10 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_probe_is_enabled _ -> ()
   | Texp_exclave exp -> sub.expr sub exp
   | Texp_src_pos -> ()
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Texp_hole -> ()
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   | Texp_overwrite(exp1, exp2) ->
     sub.expr sub exp1;
     sub.expr sub exp2
   | Texp_hole _ -> ()
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 
 let package_type sub {pack_fields; pack_txt; _} =

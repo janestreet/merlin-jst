@@ -681,31 +681,13 @@ let equal_constructor_representation r1 r2 = r1 == r2 || match r1, r2 with
 let equal_variant_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Variant_unboxed, Variant_unboxed ->
       true
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Variant_boxed cstrs_and_jkinds1, Variant_boxed cstrs_and_jkinds2 ->
-      array_equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  | Variant_boxed cstrs_and_jkinds1, Variant_boxed cstrs_and_jkinds2 ->
-      Misc.Stdlib.Array.equal (fun (cstr1, jkinds1) (cstr2, jkinds2) ->
-=======
   | Variant_boxed cstrs_and_sorts1, Variant_boxed cstrs_and_sorts2 ->
-      Misc.Stdlib.Array.equal (fun (cstr1, sorts1) (cstr2, sorts2) ->
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+      array_equal (fun (cstr1, sorts1) (cstr2, sorts2) ->
           equal_constructor_representation cstr1 cstr2
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-          && array_equal !jkind_equal jkinds1 jkinds2)
-        cstrs_and_jkinds1
-        cstrs_and_jkinds2
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-          && Misc.Stdlib.Array.equal !jkind_equal jkinds1 jkinds2)
-        cstrs_and_jkinds1
-        cstrs_and_jkinds2
-=======
-          && Misc.Stdlib.Array.equal Jkind_types.Sort.Const.equal
+          && array_equal Jkind_types.Sort.Const.equal
                sorts1 sorts2)
         cstrs_and_sorts1
         cstrs_and_sorts2
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   | Variant_extensible, Variant_extensible ->
       true
   | Variant_with_null, Variant_with_null -> true
@@ -721,16 +703,8 @@ let equal_record_representation r1 r2 = match r1, r2 with
       ignore (cr1 : constructor_representation);
       ignore (cr2 : constructor_representation);
       equal_tag tag1 tag2 && equal_variant_representation vr1 vr2
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Record_boxed lays1, Record_boxed lays2 ->
-      array_equal !jkind_equal lays1 lays2
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-  | Record_boxed lays1, Record_boxed lays2 ->
-      Misc.Stdlib.Array.equal !jkind_equal lays1 lays2
-=======
   | Record_boxed sorts1, Record_boxed sorts2 ->
-      Misc.Stdlib.Array.equal Jkind_types.Sort.Const.equal sorts1 sorts2
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
+      array_equal Jkind_types.Sort.Const.equal sorts1 sorts2
   | Record_float, Record_float ->
       true
   | Record_ufloat, Record_ufloat ->

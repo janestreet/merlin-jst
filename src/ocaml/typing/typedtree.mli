@@ -281,15 +281,9 @@ and exp_extra =
         must be able to deserialize typedtrees produced by the compiler. Thus, we include
         them here, as the cost of tracking this additional information is minimal. *)
   | Texp_stack
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-      (** stack_ E *)
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-        (** stack_ E *)
-=======
         (** stack_ E *)
   | Texp_mode of Mode.Alloc.Const.Option.t
         (** E : _ @@ M  *)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 and arg_label = Types.arg_label =
   | Nolabel
@@ -509,13 +503,8 @@ and expression_desc =
     (* A source position value which has been automatically inferred, either
        as a result of [%call_pos] occuring in an expression, or omission of a
        Position argument in function application *)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  | Texp_hole
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   | Texp_overwrite of expression * expression (** overwrite_ exp with exp *)
   | Texp_hole of unique_use (** _ *)
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 and function_curry =
   | More_args of { partial_mode : Mode.Alloc.l }

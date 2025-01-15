@@ -261,15 +261,8 @@ module Exp = struct
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
   let stack ?loc ?attrs e = mk ?loc ?attrs (Pexp_stack e)
   let comprehension ?loc ?attrs e = mk ?loc ?attrs (Pexp_comprehension e)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-  let hole ?(loc = !default_loc) ?attrs () =
-    let id = Location.mkloc hole_txt loc in
-    mk ~loc ?attrs  @@ Pexp_extension (id, PStr [])
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
   let overwrite ?loc ?attrs a b = mk ?loc ?attrs (Pexp_overwrite (a, b))
   let hole ?loc ?attrs () = mk ?loc ?attrs Pexp_hole
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
   let case lhs ?guard rhs =
     {

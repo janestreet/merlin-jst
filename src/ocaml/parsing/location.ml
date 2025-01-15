@@ -1103,17 +1103,9 @@ let () =
       | _ -> None
     )
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
 let raise_errorf ?(loc = none) ?(sub = []) ?(source = Typer)=
   Format.kdprintf (fun txt -> raise (Error (mkerror loc sub txt source)))
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-let raise_errorf ?(loc = none) ?(sub = []) =
-  Format.kdprintf (fun txt -> raise (Error (mkerror loc sub txt)))
-=======
-let raise_errorf ?(loc = none) ?(sub = []) =
-  Format.kdprintf (fun txt -> raise (Error (mkerror loc sub txt)))
 
 let todo_overwrite_not_implemented ?(kind = "") t =
   alert ~kind t "Overwrite not implemented.";
   assert false
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b

@@ -619,15 +619,9 @@ let expr sub x =
     | Texp_exclave exp ->
         Texp_exclave (sub.expr sub exp)
     | Texp_src_pos -> Texp_src_pos
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
-    | Texp_hole ->
-        Texp_hole
-||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
-=======
     | Texp_overwrite (exp1, exp2) ->
         Texp_overwrite (sub.expr sub exp1, sub.expr sub exp2)
     | Texp_hole use -> Texp_hole use
->>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
   in
   let exp_attributes = sub.attributes sub x.exp_attributes in
   {x with exp_loc; exp_extra; exp_desc; exp_env; exp_attributes}
