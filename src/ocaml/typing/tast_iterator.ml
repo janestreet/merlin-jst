@@ -201,6 +201,7 @@ let type_kind sub = function
   | Ttype_abstract -> ()
   | Ttype_variant list -> List.iter (constructor_decl sub) list
   | Ttype_record list -> List.iter (label_decl sub) list
+  | Ttype_record_unboxed_product list -> List.iter (label_decl sub) list
   | Ttype_open -> ()
 
 let type_declaration sub x =
@@ -274,6 +275,8 @@ let pat
   | Tpat_variant (_, po, _) -> Option.iter (sub.pat sub) po
   | Tpat_record (l, _) ->
       List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
+  | Tpat_record_unboxed_product (l, _) ->
+      List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
   | Tpat_array (_, _, l) -> List.iter (sub.pat sub) l
   | Tpat_alias (p, _, s, _, _) -> sub.pat sub p; iter_loc sub s
   | Tpat_lazy p -> sub.pat sub p
@@ -284,13 +287,14 @@ let pat
       sub.pat sub p2
 
 let extra sub = function
-  | Texp_constraint (cty, _modes) -> Option.iter (sub.typ sub) cty
+  | Texp_constraint (cty) -> sub.typ sub cty
   | Texp_coerce (cty1, cty2) ->
       Option.iter (sub.typ sub) cty1;
       sub.typ sub cty2
   | Texp_newtype _ -> ()
   | Texp_poly cto -> Option.iter (sub.typ sub) cto
   | Texp_stack -> ()
+  | Texp_mode _ -> ()
 
 let function_param sub { fp_loc; fp_kind; fp_newtypes; _ } =
   sub.location sub fp_loc;
@@ -326,6 +330,12 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   sub.attributes sub exp_attributes;
   List.iter (fun (e, loc, _) -> extra e; sub.location sub loc) exp_extra;
   sub.env sub exp_env;
+  let iter_fields fields =
+    Array.iter (function
+      | _, Kept _ -> ()
+      | _, Overridden (lid, exp) -> iter_loc sub lid; sub.expr sub exp)
+      fields
+  in
   match exp_desc with
   | Texp_ident (_, lid, _, _, _)  -> iter_loc sub lid
   | Texp_constant _ -> ()
@@ -354,12 +364,15 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
       List.iter (sub.expr sub) args
   | Texp_variant (_, expo) -> Option.iter (fun (expr, _) -> sub.expr sub expr) expo
   | Texp_record { fields; extended_expression; _} ->
-      Array.iter (function
-        | _, Kept _ -> ()
-        | _, Overridden (lid, exp) -> iter_loc sub lid; sub.expr sub exp)
-        fields;
+      iter_fields fields;
+      Option.iter (fun (exp, _) -> sub.expr sub exp) extended_expression;
+  | Texp_record_unboxed_product { fields; extended_expression; _} ->
+      iter_fields fields;
       Option.iter (fun (exp, _) -> sub.expr sub exp) extended_expression;
   | Texp_field (exp, lid, _, _, _) ->
+      iter_loc sub lid;
+      sub.expr sub exp
+  | Texp_unboxed_field (exp, _, lid, _, _) ->
       iter_loc sub lid;
       sub.expr sub exp
   | Texp_setfield (exp1, _, lid, _, exp2) ->
@@ -434,7 +447,15 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_probe_is_enabled _ -> ()
   | Texp_exclave exp -> sub.expr sub exp
   | Texp_src_pos -> ()
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-5
   | Texp_hole -> ()
+||||||| ocaml-flambda/flambda-backend:581b385a59911c05d91e2de7868e16f791e0c67a
+=======
+  | Texp_overwrite(exp1, exp2) ->
+    sub.expr sub exp1;
+    sub.expr sub exp2
+  | Texp_hole _ -> ()
+>>>>>>> ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
 
 
 let package_type sub {pack_fields; pack_txt; _} =

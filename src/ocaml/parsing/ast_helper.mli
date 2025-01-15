@@ -130,6 +130,8 @@ module Pat:
     val variant: ?loc:loc -> ?attrs:attrs -> label -> pattern option -> pattern
     val record: ?loc:loc -> ?attrs:attrs -> (lid * pattern) list -> closed_flag
                 -> pattern
+    val record_unboxed_product: ?loc:loc -> ?attrs:attrs -> (lid * pattern) list
+                -> closed_flag -> pattern
     val array: ?loc:loc -> ?attrs:attrs -> mutable_flag -> pattern list ->
       pattern
     val or_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern -> pattern
@@ -154,7 +156,7 @@ module Exp:
     val let_: ?loc:loc -> ?attrs:attrs -> rec_flag -> value_binding list
               -> expression -> expression
     val function_ : ?loc:loc -> ?attrs:attrs -> function_param list
-                   -> function_constraint option -> function_body
+                   -> function_constraint -> function_body
                    -> expression
     val apply: ?loc:loc -> ?attrs:attrs -> expression
                -> (arg_label * expression) list -> expression
@@ -170,7 +172,10 @@ module Exp:
                  -> expression
     val record: ?loc:loc -> ?attrs:attrs -> (lid * expression) list
                 -> expression option -> expression
+    val record_unboxed_product: ?loc:loc -> ?attrs:attrs -> (lid * expression) list
+                -> expression option -> expression
     val field: ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression
+    val unboxed_field: ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression
     val setfield: ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression
                   -> expression
     val array: ?loc:loc -> ?attrs:attrs -> mutable_flag -> expression list ->
@@ -216,6 +221,8 @@ module Exp:
     val stack : ?loc:loc -> ?attrs:attrs -> expression -> expression
     val comprehension :
       ?loc:loc -> ?attrs:attrs -> comprehension_expression -> expression
+    val overwrite : ?loc:loc -> ?attrs:attrs -> expression -> expression -> expression
+    val hole : ?loc:loc -> ?attrs:attrs -> unit -> expression
 
     val case: pattern -> ?guard:expression -> expression -> case
     val binding_op: str -> pattern -> expression -> loc -> binding_op

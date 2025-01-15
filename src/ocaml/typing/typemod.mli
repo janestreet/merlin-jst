@@ -80,6 +80,7 @@ module Sig_component_kind : sig
     | Type
     | Constructor
     | Label
+    | Unboxed_label
     | Module
     | Module_type
     | Extension_constructor
