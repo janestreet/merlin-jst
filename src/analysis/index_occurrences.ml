@@ -18,7 +18,13 @@ let decl_of_path_or_lid env namespace path lid =
       Some { Env_lookup.uid = cstr_uid; loc = cstr_loc; namespace }
   end
   | Label -> begin
-    match Env.find_label_by_name lid env with
+    match Env.find_label_by_name Legacy lid env with
+    | exception Not_found -> None
+    | { lbl_uid; lbl_loc; _ } ->
+      Some { Env_lookup.uid = lbl_uid; loc = lbl_loc; namespace }
+  end
+  | Unboxed_label -> begin
+    match Env.find_label_by_name Unboxed_product lid env with
     | exception Not_found -> None
     | { lbl_uid; lbl_loc; _ } ->
       Some { Env_lookup.uid = lbl_uid; loc = lbl_loc; namespace }
