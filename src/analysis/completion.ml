@@ -124,8 +124,8 @@ let classify_node = function
   | Class_description _ -> `Type
   | Class_type_declaration _ -> `Type
   | Method_call _ -> `Expression
-  | Record_field (`Expression _, _, _) -> `Expression
-  | Record_field (`Pattern _, _, _) -> `Pattern
+  | Record_field (`Expression _, _, _, _) -> `Expression
+  | Record_field (`Pattern _, _, _, _) -> `Pattern
   | Module_binding_name _ -> `Module
   | Module_declaration_name _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
