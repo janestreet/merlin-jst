@@ -240,7 +240,7 @@ Syntax errors also shouldn't escape:
           "line": 1,
           "col": 41
         },
-        "type": "parser",
+        "type": "typer",
         "sub": [],
         "valid": true,
         "message": "invalid package type: parametrized types are not supported"
