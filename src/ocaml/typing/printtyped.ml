@@ -658,6 +658,8 @@ and expression i ppf x =
       expression i ppf e
   | Texp_src_pos ->
       line i ppf "Texp_src_pos"
+  | Texp_typed_hole ->
+      line i ppf "Texp_typed_hole"
   | Texp_overwrite (e1, e2) ->
     line i ppf "Texp_overwrite\n";
     expression i ppf e1;

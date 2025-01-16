@@ -266,6 +266,7 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_override _
     | Texp_letop _ ->
         Dynamic
+    | Texp_typed_hole -> Static
   and classify_value_bindings rec_flag env bindings =
     (* We use a non-recursive classification, classifying each
         binding with respect to the old environment
@@ -1022,6 +1023,7 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_probe_is_enabled _ -> empty
     | Texp_exclave e -> expression e
     | Texp_src_pos -> empty
+    | Texp_typed_hole -> empty
     | Texp_overwrite (exp1, exp2) ->
       (* This is untested, since we currently mark Texp_overwrite as Dynamic and
          the analysis always stops if there is an overwrite_ in a recursive expression.

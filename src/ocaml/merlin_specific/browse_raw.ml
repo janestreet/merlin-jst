@@ -374,7 +374,7 @@ let of_method_call obj meth loc env (f : _ f0) acc =
 let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_, None)
-  | Texp_new _ | Texp_src_pos | Texp_hole _ -> id_fold
+  | Texp_new _ | Texp_src_pos | Texp_typed_hole -> id_fold
   | Texp_let (_, vbs, e) -> of_expression e ** list_fold of_value_binding vbs
   | Texp_function { params; body; _ } ->
     list_fold of_function_param params ** of_function_body body
@@ -470,6 +470,7 @@ let rec of_expression_desc loc = function
   | Texp_probe p -> of_expression p.handler
   | Texp_probe_is_enabled _ -> id_fold
   | Texp_exclave e -> of_expression e
+  | Texp_hole _ -> id_fold
 
 (* We should consider taking into account param.fp_loc at some point, as it
    allows us to respond with the *parameter*'s type (as opposed to the
@@ -991,7 +992,7 @@ let all_holes (env, node) =
   let rec aux acc (env, node) =
     let f env node acc =
       match node with
-      | Expression { exp_desc = Texp_hole _; exp_loc; exp_type; exp_env; _ } ->
+      | Expression { exp_desc = Texp_typed_hole; exp_loc; exp_type; exp_env; _ } ->
         (exp_loc, exp_env, `Exp exp_type) :: acc
       | Module_expr { mod_desc = Tmod_hole; mod_loc; mod_type; mod_env; _ } ->
         (mod_loc, mod_env, `Mod mod_type) :: acc

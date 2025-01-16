@@ -80,13 +80,14 @@ let expr_tail_positions = function
   | Texp_unreachable
   | Texp_extension_constructor _
   | Texp_letop _
-  | Texp_hole _
+  | Texp_typed_hole
   | Texp_list_comprehension _
   | Texp_array_comprehension _
   | Texp_probe _
   | Texp_probe_is_enabled _
   | Texp_src_pos
-  | Texp_overwrite _ -> []
+  | Texp_overwrite _
+  | Texp_hole _ -> []
   | Texp_match (_, _, cs, _) -> List.map cs ~f:(fun c -> Case c)
   | Texp_try (_, cs) -> List.map cs ~f:(fun c -> Case c)
   | Texp_letmodule (_, _, _, _, e)

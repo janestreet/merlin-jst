@@ -301,6 +301,7 @@ and expression_desc =
   | Texp_src_pos
   | Texp_overwrite of expression * expression
   | Texp_hole of unique_use
+  | Texp_typed_hole
 
 and ident_kind =
   | Id_value

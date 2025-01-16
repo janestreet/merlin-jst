@@ -4248,7 +4248,8 @@ let rec is_nonexpansive exp =
   | Texp_function _
   | Texp_probe_is_enabled _
   | Texp_src_pos
-  | Texp_array (_, _, [], _) -> true
+  | Texp_array (_, _, [], _)
+  | Texp_typed_hole -> true
   | Texp_let(_rec_flag, pat_exp_list, body) ->
       List.for_all (fun vb -> is_nonexpansive vb.vb_expr) pat_exp_list &&
       is_nonexpansive body
@@ -4814,6 +4815,7 @@ let check_partial_application ~statement exp =
             | Texp_apply _ | Texp_send _ | Texp_new _ | Texp_letop _ ->
                 Location.prerr_warning exp_loc
                   Warnings.Ignored_partial_application
+            | Texp_typed_hole -> ()
           end
         in
         check exp
@@ -7114,7 +7116,12 @@ and type_expect_
           exp_type = ty_expected_explained.ty;
           exp_attributes = sexp.pexp_attributes;
           exp_env = env }
-      | _ -> raise (error (loc, env, Unexpected_hole));
+      | _ ->
+        { exp_desc = Texp_typed_hole;
+          exp_loc = loc; exp_extra = [];
+          exp_type = instance ty_expected;
+          exp_attributes = sexp.pexp_attributes;
+          exp_env = env };
       end
 
 and expression_constraint pexp =

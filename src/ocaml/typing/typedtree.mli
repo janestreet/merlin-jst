@@ -505,6 +505,10 @@ and expression_desc =
        Position argument in function application *)
   | Texp_overwrite of expression * expression (** overwrite_ exp with exp *)
   | Texp_hole of unique_use (** _ *)
+  (* merlin-specific: a [Texp_typed_hole] is a typed hole written by the user as a
+      placeholder. This is in contrast to a Texp_hole, which is used in overwrite
+      expressions *)
+  | Texp_typed_hole
 
 and function_curry =
   | More_args of { partial_mode : Mode.Alloc.l }

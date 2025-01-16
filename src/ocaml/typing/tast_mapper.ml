@@ -619,6 +619,7 @@ let expr sub x =
     | Texp_exclave exp ->
         Texp_exclave (sub.expr sub exp)
     | Texp_src_pos -> Texp_src_pos
+    | Texp_typed_hole -> Texp_typed_hole
     | Texp_overwrite (exp1, exp2) ->
         Texp_overwrite (sub.expr sub exp1, sub.expr sub exp2)
     | Texp_hole use -> Texp_hole use
