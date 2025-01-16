@@ -68,7 +68,9 @@ let expr_tail_positions = function
   | Texp_construct _
   | Texp_variant _
   | Texp_record _
+  | Texp_record_unboxed_product _
   | Texp_field _
+  | Texp_unboxed_field _
   | Texp_setfield _
   | Texp_array _
   | Texp_while _
@@ -83,7 +85,8 @@ let expr_tail_positions = function
   | Texp_array_comprehension _
   | Texp_probe _
   | Texp_probe_is_enabled _
-  | Texp_src_pos -> []
+  | Texp_src_pos
+  | Texp_overwrite _ -> []
   | Texp_match (_, _, cs, _) -> List.map cs ~f:(fun c -> Case c)
   | Texp_try (_, cs) -> List.map cs ~f:(fun c -> Case c)
   | Texp_letmodule (_, _, _, _, e)
