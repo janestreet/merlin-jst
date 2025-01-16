@@ -5532,6 +5532,8 @@ and type_expect_
   let type_expect_record (type rep) ~overwrite (record_form : rep record_form)
         (lid_sexp_list: (Longident.t loc * Parsetree.expression) list)
         (opt_sexp : Parsetree.expression option) =
+      let saved_levels = save_levels () in
+      begin try
       assert (lid_sexp_list <> []);
       let opt_exp =
         match opt_sexp with
@@ -5780,6 +5782,20 @@ and type_expect_
         exp_type = instance ty_expected;
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
+    with exn ->
+      raise_error exn;
+      set_levels saved_levels;
+      re {
+        exp_desc = Texp_record {
+            fields = [||]; representation = Record_boxed [||];
+            extended_expression = None;
+            alloc_mode = None
+          };
+        exp_loc = loc; exp_extra = [];
+        exp_type = instance ty_expected;
+        exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
+        exp_env = env }
+    end
   in
   match desc with
   | Pexp_ident lid ->
