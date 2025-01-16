@@ -344,7 +344,7 @@ let classify_expression : Typedtree.expression -> sd =
         end
     | Tmod_unpack (e, _) ->
         classify_expression env e
-    | Tmod_hole -> Static
+    | Tmod_typed_hole -> Static
   in classify_expression Ident.empty
 
 
@@ -1148,7 +1148,7 @@ and modexp : Typedtree.module_expr -> term_judg =
       coercion coe (fun m -> modexp mexp << m)
     | Tmod_unpack (e, _) ->
       expression e
-    | Tmod_hole -> empty
+    | Tmod_typed_hole -> empty
 
 
 (* G |- pth : m *)
