@@ -1,7 +1,7 @@
 merlin 5.2
 ==========
 Thu Sep 26 18:48:42 CEST 2024
-
+foo
   + merlin binary
     - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
       what to append to the current unit name in the presence of wrapping (#1788)
