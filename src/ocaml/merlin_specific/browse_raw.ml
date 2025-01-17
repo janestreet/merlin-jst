@@ -419,12 +419,12 @@ let rec of_expression_desc loc = function
   | Texp_unboxed_field (e, _, lid_loc, lbl, _) ->
     of_expression e ** of_exp_record_field e lid_loc lbl Unboxed_product
   | Texp_setfield (e1, _, lid_loc, lbl, e2) ->
-    of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl Legacy
+    of_expression e1 ** of_expression e2
+    ** of_exp_record_field e1 lid_loc lbl Legacy
   | Texp_ifthenelse (e1, e2, None)
   | Texp_sequence (e1, _, e2)
   | Texp_while { wh_cond = e1; wh_body = e2; _ }
-  | Texp_overwrite (e1, e2) ->
-    of_expression e1 ** of_expression e2
+  | Texp_overwrite (e1, e2) -> of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1, e2, Some e3)
   | Texp_for { for_from = e1; for_to = e2; for_body = e3; _ } ->
     of_expression e1 ** of_expression e2 ** of_expression e3
@@ -680,8 +680,8 @@ let of_node = function
   | Type_kind (Ttype_abstract | Ttype_open) -> id_fold
   | Type_kind (Ttype_variant cds) ->
     list_fold (fun cd -> app (Constructor_declaration cd)) cds
-  | Type_kind (Ttype_record lds)
-  | Type_kind (Ttype_record_unboxed_product lds) -> list_fold of_label_declaration lds
+  | Type_kind (Ttype_record lds) | Type_kind (Ttype_record_unboxed_product lds)
+    -> list_fold of_label_declaration lds
   | Type_extension { tyext_params; tyext_constructors } ->
     list_fold of_typ_param tyext_params
     ** list_fold (fun ec -> app (Extension_constructor ec)) tyext_constructors
@@ -992,9 +992,10 @@ let all_holes (env, node) =
   let rec aux acc (env, node) =
     let f env node acc =
       match node with
-      | Expression { exp_desc = Texp_typed_hole; exp_loc; exp_type; exp_env; _ } ->
-        (exp_loc, exp_env, `Exp exp_type) :: acc
-      | Module_expr { mod_desc = Tmod_typed_hole; mod_loc; mod_type; mod_env; _ } ->
+      | Expression { exp_desc = Texp_typed_hole; exp_loc; exp_type; exp_env; _ }
+        -> (exp_loc, exp_env, `Exp exp_type) :: acc
+      | Module_expr
+          { mod_desc = Tmod_typed_hole; mod_loc; mod_type; mod_env; _ } ->
         (mod_loc, mod_env, `Mod mod_type) :: acc
       | _ -> aux acc (env, node)
     in

@@ -691,7 +691,7 @@ let ocaml_ignored_parametrized_flags =
     "-zero-alloc-checker-join";
     "-dgranularity";
     "-flambda2-expert-cont-lifting-budget";
-    "-vectorize-max-block-size";
+    "-vectorize-max-block-size"
   ]
 
 let ocaml_warnings_spec ~error =
