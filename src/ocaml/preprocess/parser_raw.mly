@@ -2966,8 +2966,12 @@ optional_atomic_constraint_:
     { mk_indexop_expr user_indexing_operators ~loc:$sloc $1 }
   | fun_expr attribute
       { Exp.attr $1 $2 }
+  (* Merlin-only: this is commented out because we already accept UNDERSCORE in this
+     position via the simple_expr -> simple_expr_ rules (in order to support typed holes) *)
+  (*
   | UNDERSCORE
     { mkexp ~loc:$sloc Pexp_hole }
+  *)
   | mode=mode_legacy exp=seq_expr
      { mkexp_constraint ~loc:$sloc ~exp ~cty:None ~modes:[mode] }
   | EXCLAVE seq_expr
