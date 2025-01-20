@@ -591,9 +591,9 @@ let complete_prefix ?get_doc ?target_type ?(kinds = []) ~keywords ~prefix
       match (is_label : is_label) with
       | No -> []
       | Maybe ->
-        Env.fold_labels Legacy add_label_description prefix_path env []
-        @ Env.fold_labels Unboxed_product add_label_description prefix_path env
-            []
+        Env.fold_all_labels
+          { fold_all_labels_f = (fun _ -> add_label_description) }
+          prefix_path env []
       | Description lbls ->
         List.fold_right ~f:add_label_description lbls ~init:[]
       | Declaration (ty, decls) ->

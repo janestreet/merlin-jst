@@ -137,12 +137,8 @@ let by_longident (nss : Namespace.inferred list) ident env =
             raise (Found (path, Label, lbl.lbl_uid, loc))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace";
-            let module Pack = struct
-              (* This gadt is used to mint the existential type [rep] *)
-              type t = P : 'rep Types.gen_label_description -> t
-            end in
-            let (P (type rep) (lbl : rep Types.gen_label_description)) : Pack.t
-                =
+            let (P (type rep) (lbl : rep Types.gen_label_description)) :
+                Namespace.packed_label_description =
               (* Try looking up in boxed namespace, and then fallback to unboxed if that
                  fails *)
               try P (Env.find_label_by_name Legacy ident env)

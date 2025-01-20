@@ -4980,3 +4980,12 @@ let cleanup_usage_tables ~stamp =
   Stamped_hashtable.backtrack used_constructors_changelog ~stamp;
   Stamped_hashtable.backtrack used_labels_changelog ~stamp;
   Stamped_hashtable.backtrack used_unboxed_labels_changelog ~stamp
+
+type 'acc fold_all_labels_f =
+  {
+    fold_all_labels_f : 'rcd. 'rcd record_form -> 'rcd gen_label_description -> 'acc -> 'acc
+  }
+
+let fold_all_labels f ident env init =
+  let acc_after_legacy = fold_labels Legacy (f.fold_all_labels_f Legacy) ident env init in
+  fold_labels Unboxed_product (f.fold_all_labels_f Unboxed_product) ident env acc_after_legacy

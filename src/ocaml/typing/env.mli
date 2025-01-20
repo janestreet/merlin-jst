@@ -688,3 +688,8 @@ val cleanup_usage_tables : stamp:int -> unit
 (** This value should be filled in with [Msupport.raise_error]. [Env] cannot use this
     function directly because [Msupport] depends on [Env] *)
 val msupport_raise_error : (?ignore_unify:bool -> exn -> unit) ref
+
+type 'acc fold_all_labels_f = {
+  fold_all_labels_f : 'rcd. 'rcd record_form -> 'rcd gen_label_description -> 'acc -> 'acc
+}
+val fold_all_labels: 'a fold_all_labels_f -> Longident.t option -> t -> 'a -> 'a
