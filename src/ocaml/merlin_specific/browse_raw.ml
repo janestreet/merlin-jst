@@ -77,10 +77,12 @@ type node =
   | Open_description of open_description
   | Open_declaration of open_declaration
   | Method_call of expression * meth * Location.t
-  | Record_field of
+  | Record_field :
       [ `Expression of expression | `Pattern of pattern ]
-      * Types.label_description
+      * 'rep Types.gen_label_description
+      * 'rep Types.record_form
       * Longident.t Location.loc
+      -> node
   | Module_binding_name of module_binding
   | Module_declaration_name of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -90,8 +92,8 @@ let node_update_env env0 = function
   | Expression { exp_env = env }
   | Class_expr { cl_env = env }
   | Method_call ({ exp_env = env }, _, _)
-  | Record_field (`Expression { exp_env = env }, _, _)
-  | Record_field (`Pattern { pat_env = env }, _, _)
+  | Record_field (`Expression { exp_env = env }, _, _, _)
+  | Record_field (`Pattern { pat_env = env }, _, _, _)
   | Module_expr { mod_env = env }
   | Module_type { mty_env = env }
   | Structure_item (_, env)
@@ -138,7 +140,7 @@ let node_real_loc loc0 = function
   | Expression { exp_loc = loc }
   | Pattern { pat_loc = loc }
   | Method_call (_, _, loc)
-  | Record_field (_, _, { loc })
+  | Record_field (_, _, _, { loc })
   | Class_expr { cl_loc = loc }
   | Module_expr { mod_loc = loc }
   | Structure_item ({ str_loc = loc }, _)
@@ -213,8 +215,8 @@ let node_attributes = function
   | Class_description ci -> ci.ci_attributes
   | Class_type_declaration ci -> ci.ci_attributes
   | Method_call (obj, _, _) -> obj.exp_attributes
-  | Record_field (`Expression obj, _, _) -> obj.exp_attributes
-  | Record_field (`Pattern obj, _, _) -> obj.pat_attributes
+  | Record_field (`Expression obj, _, _, _) -> obj.exp_attributes
+  | Record_field (`Pattern obj, _, _, _) -> obj.pat_attributes
   | _ -> []
 
 let has_attr ~name node =
@@ -285,10 +287,10 @@ let of_core_type ct = app (Core_type ct)
 
 let of_exp_extra (exp, _, _) =
   match exp with
-  | Texp_constraint (ct, _) -> option_fold of_core_type ct
+  | Texp_constraint ct -> of_core_type ct
   | Texp_coerce (cto, ct) -> of_core_type ct ** option_fold of_core_type cto
   | Texp_poly cto -> option_fold of_core_type cto
-  | Texp_stack | Texp_newtype _ -> id_fold
+  | Texp_stack | Texp_newtype _ | Texp_mode _ -> id_fold
 let of_expression e = app (Expression e) ** list_fold of_exp_extra e.exp_extra
 
 let of_pat_extra (pat, _, _) =
@@ -313,13 +315,14 @@ let of_constructor_arguments = function
 let of_bop ({ bop_exp; _ } as bop) =
   app (Binding_op bop) ** of_expression bop_exp
 
-let of_record_field obj loc lbl env (f : _ f0) acc =
-  app (Record_field (obj, lbl, loc)) env f acc
+let of_record_field obj loc lbl form env (f : _ f0) acc =
+  app (Record_field (obj, lbl, form, loc)) env f acc
 
-let of_exp_record_field obj lid_loc lbl =
-  of_record_field (`Expression obj) lid_loc lbl
+let of_exp_record_field obj lid_loc lbl form =
+  of_record_field (`Expression obj) lid_loc lbl form
 
-let of_pat_record_field obj loc lbl = of_record_field (`Pattern obj) loc lbl
+let of_pat_record_field obj loc lbl form =
+  of_record_field (`Pattern obj) loc lbl form
 
 let of_comprehension_clause_binding { comp_cb_iterator; _ } =
   match comp_cb_iterator with
@@ -353,7 +356,12 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_record (ls, _) ->
     list_fold
       (fun (lid_loc, desc, p) ->
-        of_pat_record_field p lid_loc desc ** of_pattern p)
+        of_pat_record_field p lid_loc desc Legacy ** of_pattern p)
+      ls
+  | Tpat_record_unboxed_product (ls, _) ->
+    list_fold
+      (fun (lid_loc, desc, p) ->
+        of_pat_record_field p lid_loc desc Unboxed_product ** of_pattern p)
       ls
   | Tpat_or (p1, p2, _) -> of_pattern p1 ** of_pattern p2
 
@@ -366,7 +374,7 @@ let of_method_call obj meth loc env (f : _ f0) acc =
 let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_, None)
-  | Texp_new _ | Texp_src_pos | Texp_hole -> id_fold
+  | Texp_new _ | Texp_src_pos | Texp_typed_hole -> id_fold
   | Texp_let (_, vbs, e) -> of_expression e ** list_fold of_value_binding vbs
   | Texp_function { params; body; _ } ->
     list_fold of_function_param params ** of_function_body body
@@ -394,17 +402,29 @@ let rec of_expression_desc loc = function
     let fold_field = function
       | _, Typedtree.Kept _ -> id_fold
       | desc, Typedtree.Overridden (lid_loc, e) ->
-        of_exp_record_field e lid_loc desc ** of_expression e
+        of_exp_record_field e lid_loc desc Legacy ** of_expression e
+    in
+    array_fold fold_field fields
+  | Texp_record_unboxed_product { fields; extended_expression } ->
+    option_fold (fun (e, _) -> of_expression e) extended_expression
+    **
+    let fold_field = function
+      | _, Typedtree.Kept _ -> id_fold
+      | desc, Typedtree.Overridden (lid_loc, e) ->
+        of_exp_record_field e lid_loc desc Unboxed_product ** of_expression e
     in
     array_fold fold_field fields
   | Texp_field (e, lid_loc, lbl, _, _) ->
-    of_expression e ** of_exp_record_field e lid_loc lbl
+    of_expression e ** of_exp_record_field e lid_loc lbl Legacy
+  | Texp_unboxed_field (e, _, lid_loc, lbl, _) ->
+    of_expression e ** of_exp_record_field e lid_loc lbl Unboxed_product
   | Texp_setfield (e1, _, lid_loc, lbl, e2) ->
-    of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
+    of_expression e1 ** of_expression e2
+    ** of_exp_record_field e1 lid_loc lbl Legacy
   | Texp_ifthenelse (e1, e2, None)
   | Texp_sequence (e1, _, e2)
-  | Texp_while { wh_cond = e1; wh_body = e2; _ } ->
-    of_expression e1 ** of_expression e2
+  | Texp_while { wh_cond = e1; wh_body = e2; _ }
+  | Texp_overwrite (e1, e2) -> of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1, e2, Some e3)
   | Texp_for { for_from = e1; for_to = e2; for_body = e3; _ } ->
     of_expression e1 ** of_expression e2 ** of_expression e3
@@ -450,6 +470,7 @@ let rec of_expression_desc loc = function
   | Texp_probe p -> of_expression p.handler
   | Texp_probe_is_enabled _ -> id_fold
   | Texp_exclave e -> of_expression e
+  | Texp_hole _ -> id_fold
 
 (* We should consider taking into account param.fp_loc at some point, as it
    allows us to respond with the *parameter*'s type (as opposed to the
@@ -508,7 +529,7 @@ and of_module_expr_desc = function
   | Tmod_constraint (me, _, mtc, _) ->
     of_module_expr me ** app (Module_type_constraint mtc)
   | Tmod_unpack (e, _) -> of_expression e
-  | Tmod_hole -> id_fold
+  | Tmod_typed_hole -> id_fold
 
 and of_structure_item_desc = function
   | Tstr_eval (e, _, _) -> of_expression e
@@ -659,7 +680,8 @@ let of_node = function
   | Type_kind (Ttype_abstract | Ttype_open) -> id_fold
   | Type_kind (Ttype_variant cds) ->
     list_fold (fun cd -> app (Constructor_declaration cd)) cds
-  | Type_kind (Ttype_record lds) -> list_fold of_label_declaration lds
+  | Type_kind (Ttype_record lds) | Type_kind (Ttype_record_unboxed_product lds)
+    -> list_fold of_label_declaration lds
   | Type_extension { tyext_params; tyext_constructors } ->
     list_fold of_typ_param tyext_params
     ** list_fold (fun ec -> app (Extension_constructor ec)) tyext_constructors
@@ -932,7 +954,7 @@ let node_paths_full =
   | Class_declaration ci -> ci_paths ci
   | Class_description ci -> ci_paths ci
   | Class_type_declaration ci -> ci_paths ci
-  | Record_field (_, { Types.lbl_res; lbl_name; _ }, lid_loc) ->
+  | Record_field (_, { Types.lbl_res; lbl_name; _ }, _, lid_loc) ->
     fake_path lid_loc lbl_res lbl_name
   | _ -> []
 
@@ -970,9 +992,10 @@ let all_holes (env, node) =
   let rec aux acc (env, node) =
     let f env node acc =
       match node with
-      | Expression { exp_desc = Texp_hole; exp_loc; exp_type; exp_env; _ } ->
-        (exp_loc, exp_env, `Exp exp_type) :: acc
-      | Module_expr { mod_desc = Tmod_hole; mod_loc; mod_type; mod_env; _ } ->
+      | Expression { exp_desc = Texp_typed_hole; exp_loc; exp_type; exp_env; _ }
+        -> (exp_loc, exp_env, `Exp exp_type) :: acc
+      | Module_expr
+          { mod_desc = Tmod_typed_hole; mod_loc; mod_type; mod_env; _ } ->
         (mod_loc, mod_env, `Mod mod_type) :: acc
       | _ -> aux acc (env, node)
     in

@@ -90,10 +90,12 @@ type node =
   | Open_description of open_description
   | Open_declaration of open_declaration
   | Method_call of expression * meth * Location.t
-  | Record_field of
+  | Record_field :
       [ `Expression of expression | `Pattern of pattern ]
-      * Types.label_description
+      * 'rep Types.gen_label_description
+      * 'rep Types.record_form
       * Longident.t Location.loc
+      -> node
   | Module_binding_name of module_binding
   | Module_declaration_name of module_declaration
   | Module_type_declaration_name of module_type_declaration

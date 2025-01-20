@@ -37,7 +37,9 @@ type t =
        path (cf. #486, #794). *)
   | Unknown_constructor
   | Expr
-  | Label of Types.label_description (* Similar to constructors. *)
+  | Label :
+      'rep Types.gen_label_description * 'rep Types.record_form
+      -> t (* Similar to constructors. *)
   | Unknown_label
   | Module_path
   | Module_type
@@ -50,8 +52,10 @@ let to_string = function
   | Constructor (cd, _) -> Printf.sprintf "constructor %s" cd.cstr_name
   | Unknown_constructor -> Printf.sprintf "unknown constructor"
   | Expr -> "expression"
-  | Label lbl -> Printf.sprintf "record field %s" lbl.lbl_name
-  | Unknown_label -> Printf.sprintf "record field"
+  | Label (lbl, Legacy) -> Printf.sprintf "record field %s" lbl.lbl_name
+  | Label (lbl, Unboxed_product) ->
+    Printf.sprintf "unboxed record field %s" lbl.lbl_name
+  | Unknown_label -> Printf.sprintf "(unboxed?) record field"
   | Module_path -> "module path"
   | Module_type -> "module type"
   | Patt -> "pattern"
@@ -158,9 +162,10 @@ let inspect_browse_tree ?let_pun_behavior ~cursor lid browse : t option =
     | Module_type _ -> Some Module_type
     | Core_type { ctyp_desc = Ttyp_package _; _ } -> Some Module_type
     | Core_type _ -> Some Type
-    | Record_field (_, lbl, _) when Longident.last lid = lbl.lbl_name ->
+    | Record_field (_, lbl, record_form, _)
+      when Longident.last lid = lbl.lbl_name ->
       (* if we stopped here, then we're on the label itself, and whether or
           not punning is happening is not important *)
-      Some (Label lbl)
+      Some (Label (lbl, record_form))
     | Expression e -> Some (inspect_expression ~cursor ~lid e)
     | _ -> Some Unknown)

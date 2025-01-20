@@ -33,7 +33,9 @@ type t =
        path (cf. #486, #794). *)
   | Unknown_constructor
   | Expr
-  | Label of Types.label_description (* Similar to constructors. *)
+  | Label :
+      'rep Types.gen_label_description * 'rep Types.record_form
+      -> t (* Similar to constructors. *)
   | Unknown_label
   | Module_path
   | Module_type

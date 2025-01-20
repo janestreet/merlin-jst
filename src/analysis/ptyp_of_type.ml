@@ -172,7 +172,7 @@ and value_description id
     pval_loc = val_loc
   }
 
-and constructor_argument { ca_type; ca_loc; ca_modalities; ca_jkind = _ } =
+and constructor_argument { ca_type; ca_loc; ca_modalities; ca_sort = _ } =
   { Parsetree.pca_type = core_type ca_type;
     pca_loc = ca_loc;
     pca_modalities = const_modalities ~attrs:[] ca_modalities
@@ -230,6 +230,8 @@ and type_declaration id
       Ptype_variant (List.map ~f:constructor_declaration constrs)
     | Type_record (labels, _repr) ->
       Ptype_record (List.map ~f:label_declaration labels)
+    | Type_record_unboxed_product (labels, _repr) ->
+      Ptype_record_unboxed_product (List.map ~f:label_declaration labels)
   in
   let manifest = Option.map ~f:core_type type_manifest in
   Ast_helper.Type.mk ~attrs:type_attributes ~params ~kind ~priv:type_private

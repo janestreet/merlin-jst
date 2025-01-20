@@ -124,6 +124,7 @@ let keyword_table : keywords =
     "once_", ONCE;
     "open", OPEN;
     "or", OR;
+    "overwrite_", OVERWRITE;
 (*  "parser", PARSER; *)
     "private", PRIVATE;
     "rec", REC;
@@ -788,12 +789,14 @@ rule token state = parse
   | "("  { return LPAREN }
   | ")"  { return RPAREN }
   | "#(" { return HASHLPAREN }
+  | "#{" { return HASHLBRACE }
   | "*"  { return STAR }
   | ","  { return COMMA }
   | "->" { return MINUSGREATER }
   | "."  { return DOT }
-  | "." (dotsymbolchar symbolchar* as op) { return (DOTOP op) }
   | ".." { return DOTDOT }
+  | ".#" { return DOTHASH }
+  | "." (dotsymbolchar symbolchar* as op) { return (DOTOP op) }
   | ":"  { return COLON }
   | "::" { return COLONCOLON }
   | ":=" { return COLONEQUAL }

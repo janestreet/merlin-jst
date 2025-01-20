@@ -392,6 +392,11 @@ let rec subst_patt initial ~by patt =
         List.map sub ~f:(fun (lid, lbl_descr, patt) -> (lid, lbl_descr, f patt))
       in
       { patt with pat_desc = Tpat_record (sub', flg) }
+    | Tpat_record_unboxed_product (sub, flg) ->
+      let sub' =
+        List.map sub ~f:(fun (lid, lbl_descr, patt) -> (lid, lbl_descr, f patt))
+      in
+      { patt with pat_desc = Tpat_record_unboxed_product (sub', flg) }
     | Tpat_array (m, sort, lst) ->
       { patt with pat_desc = Tpat_array (m, sort, List.map lst ~f) }
     | Tpat_or (p1, p2, row) ->
@@ -424,6 +429,11 @@ let rec rm_sub patt sub =
       List.map sub ~f:(fun (lid, lbl_descr, patt) -> (lid, lbl_descr, f patt))
     in
     { patt with pat_desc = Tpat_record (sub', flg) }
+  | Tpat_record_unboxed_product (sub, flg) ->
+    let sub' =
+      List.map sub ~f:(fun (lid, lbl_descr, patt) -> (lid, lbl_descr, f patt))
+    in
+    { patt with pat_desc = Tpat_record_unboxed_product (sub', flg) }
   | Tpat_array (m, sort, lst) ->
     { patt with pat_desc = Tpat_array (m, sort, List.map lst ~f) }
   | Tpat_or (p1, p2, row) ->
@@ -435,6 +445,32 @@ let rec rm_sub patt sub =
 let rec qualify_constructors ~unmangling_tables f pat =
   let open Typedtree in
   let qualify_constructors = qualify_constructors ~unmangling_tables in
+  let qualify_in_record (type rep)
+      (labels : (_ * rep Types.gen_label_description * _) list) lable_table
+      closed (record_form : rep Types.record_form) =
+    let labels =
+      let open Longident in
+      List.map labels ~f:(fun ((Location.{ txt; _ } as lid), lbl_des, pat) ->
+          let lid_name = flatten txt |> String.concat ~sep:"." in
+          let pat = qualify_constructors f pat in
+          (* Un-mangle *)
+          match Hashtbl.find_opt lable_table lid_name with
+          | Some lbl_des ->
+            ({ lid with txt = Lident lbl_des.Types.lbl_name }, lbl_des, pat)
+          | None -> (lid, lbl_des, pat))
+    in
+    let closed =
+      if List.length labels > 0 then
+        let _, lbl_des, _ = List.hd labels in
+        if List.length labels = Array.length lbl_des.Types.lbl_all then
+          Asttypes.Closed
+        else Asttypes.Open
+      else closed
+    in
+    match record_form with
+    | Legacy -> Tpat_record (labels, closed)
+    | Unboxed_product -> Tpat_record_unboxed_product (labels, closed)
+  in
   let pat_desc =
     match pat.pat_desc with
     | Tpat_alias (p, id, loc, uid, m) ->
@@ -447,34 +483,18 @@ let rec qualify_constructors ~unmangling_tables f pat =
         (List.map ps ~f:(fun (lbl, p, sort) ->
              (lbl, qualify_constructors f p, sort)))
     | Tpat_record (labels, closed) ->
-      let labels =
-        let open Longident in
-        List.map labels ~f:(fun ((Location.{ txt; _ } as lid), lbl_des, pat) ->
-            let lid_name = flatten txt |> String.concat ~sep:"." in
-            let pat = qualify_constructors f pat in
-            (* Un-mangle *)
-            let _, labels = unmangling_tables in
-            match Hashtbl.find_opt labels lid_name with
-            | Some lbl_des ->
-              ({ lid with txt = Lident lbl_des.Types.lbl_name }, lbl_des, pat)
-            | None -> (lid, lbl_des, pat))
-      in
-      let closed =
-        if List.length labels > 0 then
-          let _, lbl_des, _ = List.hd labels in
-          if List.length labels = Array.length lbl_des.Types.lbl_all then
-            Asttypes.Closed
-          else Asttypes.Open
-        else closed
-      in
-      Tpat_record (labels, closed)
+      let _, label_table, _ = unmangling_tables in
+      qualify_in_record labels label_table closed Legacy
+    | Tpat_record_unboxed_product (labels, closed) ->
+      let _, _, label_table = unmangling_tables in
+      qualify_in_record labels label_table closed Unboxed_product
     | Tpat_construct (lid, cstr_desc, ps, lco) ->
       let lid =
         match lid.Asttypes.txt with
         | Longident.Lident name ->
           (* Un-mangle *)
           let name =
-            let constrs, _ = unmangling_tables in
+            let constrs, _, _ = unmangling_tables in
             match Hashtbl.find_opt constrs name with
             | Some cstr_des -> cstr_des.Types.cstr_name
             | None -> name
@@ -522,6 +542,8 @@ let find_branch patterns sub =
         List.exists lst ~f:(is_sub_patt ~sub)
       | Tpat_record (subs, _) ->
         List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p ~sub)
+      | Tpat_record_unboxed_product (subs, _) ->
+        List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p ~sub)
       | Tpat_or (p1, p2, _) -> is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
   in
   let rec aux before = function
@@ -568,7 +590,24 @@ module Conv = struct
   let conv typed =
     let constrs = Hashtbl.create 7 in
     let labels = Hashtbl.create 7 in
+    let unboxed_labels = Hashtbl.create 7 in
     let rec loop pat =
+      let conv_record (type rep)
+          (label_table : (_, rep gen_label_description) Hashtbl.t)
+          (subpatterns : (_ * rep gen_label_description * _) list)
+          (record_form : rep Types.record_form) =
+        let fields =
+          List.map
+            ~f:(fun (_, lbl, p) ->
+              let id = fresh lbl.lbl_name in
+              Hashtbl.add label_table id lbl;
+              (mknoloc (Longident.Lident id), loop p))
+            subpatterns
+        in
+        match record_form with
+        | Legacy -> mkpat (Ppat_record (fields, Open))
+        | Unboxed_product -> mkpat (Ppat_record_unboxed_product (fields, Open))
+      in
       match pat.pat_desc with
       | Tpat_or (pa, pb, _) -> mkpat (Ppat_or (loop pa, loop pb))
       | Tpat_var (_, ({ txt = "*extension*"; _ } as nm), _, _) ->
@@ -600,15 +639,9 @@ module Conv = struct
         let arg = Option.map ~f:loop p_opt in
         mkpat (Ppat_variant (label, arg))
       | Tpat_record (subpatterns, _closed_flag) ->
-        let fields =
-          List.map
-            ~f:(fun (_, lbl, p) ->
-              let id = fresh lbl.lbl_name in
-              Hashtbl.add labels id lbl;
-              (mknoloc (Longident.Lident id), loop p))
-            subpatterns
-        in
-        mkpat (Ppat_record (fields, Open))
+        conv_record labels subpatterns Legacy
+      | Tpat_record_unboxed_product (subpatterns, _closed_flag) ->
+        conv_record unboxed_labels subpatterns Unboxed_product
       | Tpat_array (mut, _, lst) ->
         let lst = List.map ~f:loop lst in
         let mut : Asttypes.mutable_flag =
@@ -624,7 +657,7 @@ module Conv = struct
       | Tpat_lazy p -> mkpat (Ppat_lazy (loop p))
     in
     let ps = loop typed in
-    (ps, constrs, labels)
+    (ps, constrs, labels, unboxed_labels)
 end
 
 let need_recover_labeled_args = function
@@ -687,8 +720,8 @@ let destruct_expression loc config source parents expr =
 let refine_partial_match last_case_loc config source patterns =
   let cases =
     List.map patterns ~f:(fun pat ->
-        let _pat, constrs, labels = Conv.conv pat in
-        let unmangling_tables = (constrs, labels) in
+        let _pat, constrs, labels, unboxed_labels = Conv.conv pat in
+        let unmangling_tables = (constrs, labels, unboxed_labels) in
         (* Unmangling and prefixing *)
         let pat =
           qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat
@@ -782,15 +815,15 @@ let destruct_pattern (type a) (patt : a Typedtree.general_pattern) config source
   | patterns -> refine_partial_match last_case_loc config source patterns
 
 let rec destruct_record config source selected_node = function
-  | (Expression { exp_desc = Texp_field _; _ } as parent) :: rest ->
-    node config source parent rest
+  | (Expression { exp_desc = Texp_field _ | Texp_unboxed_field _; _ } as parent)
+    :: rest -> node config source parent rest
   | Expression e :: rest -> node config source (Expression e) rest
   | _ -> raise (Not_allowed (string_of_node selected_node))
 
 and node config source selected_node parents =
   let loc = Mbrowse.node_loc selected_node in
   match selected_node with
-  | Record_field (`Expression _, _, _) ->
+  | Record_field (`Expression _, _, _, _) ->
     destruct_record config source selected_node parents
   | Expression expr -> destruct_expression loc config source parents expr
   | Pattern patt -> destruct_pattern patt config source loc parents

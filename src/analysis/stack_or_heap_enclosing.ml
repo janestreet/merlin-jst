@@ -95,7 +95,8 @@ let from_nodes ~lsp_compat ~pos ~path =
           | [] -> ret_no_alloc ?loc "constructor without arguments"
           | _ :: _ -> (
             match cstr_repr with
-            | Variant_unboxed -> ret_no_alloc ?loc "unboxed constructor"
+            | Variant_unboxed | Variant_with_null ->
+              ret_no_alloc ?loc "unboxed constructor"
             | Variant_extensible | Variant_boxed _ ->
               ret ?loc Unexpected_no_alloc)))
       | Texp_record { representation; alloc_mode = maybe_alloc_mode; _ } -> (

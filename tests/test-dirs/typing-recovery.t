@@ -94,10 +94,10 @@
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
             Tpat_var \"f/278\"
-            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
-            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[aliased,contended .. unique,uncontended])
+            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable,unyielding .. global,many,nonportable,unyielding]);id(modevar#3[aliased,contended .. unique,uncontended])
             [
               Nolabel
               Param_pat
@@ -108,7 +108,7 @@
                       Ttyp_constr \"t/275\"
                       []
                   Tpat_var \"x/280\"
-                  value_mode global,many,portable;unique,uncontended
+                  value_mode global,many,portable,unyielding;unique,uncontended
             ]
             Tfunction_body
               expression (test.ml[3,31+2]..test.ml[6,69+12])
@@ -254,10 +254,10 @@
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
             Tpat_var \"f/278\"
-            value_mode meet(local,once,nonportable)(modevar#0[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,uncontended .. unique,uncontended])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
-            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable .. global,many,nonportable]);id(modevar#3[aliased,contended .. unique,uncontended])
+            alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable,unyielding .. global,many,nonportable,unyielding]);id(modevar#3[aliased,contended .. unique,uncontended])
             [
               Nolabel
               Param_pat
@@ -284,11 +284,9 @@
                   ]
                 extra
                   Texp_constraint
-                  Some
-                    core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
-                      Ttyp_constr \"int/1!\"
-                      []
-                  alloc_const_option_mode None,None,None,None,None
+                  core_type (test2.ml[2,15+16]..test2.ml[2,15+19])
+                    Ttyp_constr \"int/1!\"
+                    []
                 Texp_ident \"*type-error*/280\"
       ]
   ]
@@ -563,15 +561,15 @@ make sure we also handle that correctly in structures:
                 Ttyp_constr \"int/1!\"
                 []
             Tpat_var \"foo1/275\"
-            value_mode global,many,portable;unique,uncontended
+            value_mode global,many,portable,unyielding;unique,uncontended
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
+              Texp_mode
+              alloc_const_option_mode None,None,None,None,None,None
               Texp_constraint
-              Some
-                core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
-                  Ttyp_constr \"int/1!\"
-                  []
-              alloc_const_option_mode None,None,None,None,None
+              core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
+                Ttyp_constr \"int/1!\"
+                []
             Texp_constant Const_int 3
       ]
     structure_item (test_ct.ml[3,20+0]..test_ct.ml[3,20+28])
@@ -594,26 +592,26 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/276\"
-            value_mode meet(local,once,nonportable)(modevar#3[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#4[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#3[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#4[aliased,uncontended .. unique,uncontended])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
+              Texp_mode
+              alloc_const_option_mode None,None,None,None,None,None
               Texp_constraint
-              Some
-                core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
-                  Ttyp_tuple
-                  [
-                    Label: None
-                    core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
-                      Ttyp_constr \"int/1!\"
-                      []
-                    Label: None
-                    core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
-                      Ttyp_var _
-                      None
-                  ]
-              alloc_const_option_mode None,None,None,None,None
+              core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
+                Ttyp_tuple
+                [
+                  Label: None
+                  core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
+                    Ttyp_constr \"int/1!\"
+                    []
+                  Label: None
+                  core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
+                    Ttyp_var _
+                    None
+                ]
             Texp_tuple
-            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#3[global,many,portable .. global,many,nonportable]));unique,uncontended
+            alloc_mode meet(local,once,nonportable,yielding,map_comonadic(regional_to_global)(modevar#3[global,many,portable,unyielding .. global,many,nonportable,unyielding]));unique,uncontended
             [
               Label: None
                 expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+25])
@@ -643,26 +641,26 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/277\"
-            value_mode meet(local,once,nonportable)(modevar#6[global,many,portable .. global,many,nonportable]);join(aliased,contended)(modevar#7[aliased,uncontended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#6[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#7[aliased,uncontended .. unique,uncontended])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
+              Texp_mode
+              alloc_const_option_mode None,None,None,None,None,None
               Texp_constraint
-              Some
-                core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20])
-                  Ttyp_tuple
-                  [
-                    Label: None
-                    core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+14])
-                      Ttyp_constr \"int/1!\"
-                      []
-                    Label: None
-                    core_type (test_ct.ml[5,50+17]..test_ct.ml[5,50+20])
-                      Ttyp_constr \"int/1!\"
-                      []
-                  ]
-              alloc_const_option_mode None,None,None,None,None
+              core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20])
+                Ttyp_tuple
+                [
+                  Label: None
+                  core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+14])
+                    Ttyp_constr \"int/1!\"
+                    []
+                  Label: None
+                  core_type (test_ct.ml[5,50+17]..test_ct.ml[5,50+20])
+                    Ttyp_constr \"int/1!\"
+                    []
+                ]
             Texp_tuple
-            alloc_mode meet(local,once,nonportable,map_comonadic(regional_to_global)(modevar#6[global,many,portable .. global,many,nonportable]));unique,uncontended
+            alloc_mode meet(local,once,nonportable,yielding,map_comonadic(regional_to_global)(modevar#6[global,many,portable,unyielding .. global,many,nonportable,unyielding]));unique,uncontended
             [
               Label: None
                 expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+24])

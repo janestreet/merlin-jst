@@ -148,6 +148,7 @@ module Axis = struct
       | Uniqueness : Mode.Uniqueness.Const.t t
       | Portability : Mode.Portability.Const.t t
       | Contention : Mode.Contention.Const.t t
+      | Yielding : Mode.Yielding.Const.t t
   end
 
   module Nonmodal = struct
@@ -186,6 +187,8 @@ module Axis = struct
       (module Accent_lattice (Mode.Portability.Const) : Axis_s with type t = a)
     | Modal Contention ->
       (module Accent_lattice (Mode.Contention.Const) : Axis_s with type t = a)
+    | Modal Yielding ->
+      (module Accent_lattice (Mode.Yielding.Const) : Axis_s with type t = a)
     | Nonmodal Externality -> (module Externality : Axis_s with type t = a)
     | Nonmodal Nullability -> (module Nullability : Axis_s with type t = a)
 
@@ -195,6 +198,7 @@ module Axis = struct
       Pack (Modal Uniqueness);
       Pack (Modal Portability);
       Pack (Modal Contention);
+      Pack (Modal Yielding);
       Pack (Nonmodal Externality);
       Pack (Nonmodal Nullability) ]
 
@@ -204,6 +208,7 @@ module Axis = struct
     | Modal Uniqueness -> "uniqueness"
     | Modal Portability -> "portability"
     | Modal Contention -> "contention"
+    | Modal Yielding -> "yielding"
     | Nonmodal Externality -> "externality"
     | Nonmodal Nullability -> "nullability"
 end
@@ -216,6 +221,7 @@ module Axis_collection (T : Misc_stdlib.T1) = struct
       uniqueness : Mode.Uniqueness.Const.t T.t;
       portability : Mode.Portability.Const.t T.t;
       contention : Mode.Contention.Const.t T.t;
+      yielding : Mode.Yielding.Const.t T.t;
       externality : Externality.t T.t;
       nullability : Nullability.t T.t
     }
@@ -227,6 +233,7 @@ module Axis_collection (T : Misc_stdlib.T1) = struct
     | Modal Uniqueness -> values.uniqueness
     | Modal Portability -> values.portability
     | Modal Contention -> values.contention
+    | Modal Yielding -> values.yielding
     | Nonmodal Externality -> values.externality
     | Nonmodal Nullability -> values.nullability
 
@@ -237,6 +244,7 @@ module Axis_collection (T : Misc_stdlib.T1) = struct
     | Modal Uniqueness -> { values with uniqueness = value }
     | Modal Portability -> { values with portability = value }
     | Modal Contention -> { values with contention = value }
+    | Modal Yielding -> { values with yielding = value }
     | Nonmodal Externality -> { values with externality = value }
     | Nonmodal Nullability -> { values with nullability = value }
 
@@ -252,6 +260,7 @@ module Axis_collection (T : Misc_stdlib.T1) = struct
       uniqueness = f ~axis:Axis.(Modal Uniqueness);
       portability = f ~axis:Axis.(Modal Portability);
       contention = f ~axis:Axis.(Modal Contention);
+      yielding = f ~axis:Axis.(Modal Yielding);
       externality = f ~axis:Axis.(Nonmodal Externality);
       nullability = f ~axis:Axis.(Nonmodal Nullability)
     }

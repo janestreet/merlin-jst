@@ -24,19 +24,19 @@ val maybe_pointer_type : Env.t -> Types.type_expr
 val maybe_pointer : Typedtree.expression -> Lambda.immediate_or_pointer
 
 val array_type_kind :
-  elt_sort:(Jkind.Sort.t option)
+  elt_sort:(Jkind.Sort.Const.t option)
   -> Env.t -> Location.t -> Types.type_expr -> Lambda.array_kind
 (*
 val array_type_mut : Env.t -> Types.type_expr -> Lambda.mutable_flag
 val array_kind_of_elt :
-  elt_sort:(Jkind.Sort.t option)
+  elt_sort:(Jkind.Sort.Const.t option)
   -> Env.t -> Location.t -> Types.type_expr -> Lambda.array_kind
 *)
 val array_kind :
-  Typedtree.expression -> Jkind.Sort.t -> Lambda.array_kind
+  Typedtree.expression -> Jkind.Sort.Const.t -> Lambda.array_kind
 (*
 val array_pattern_kind :
-  Typedtree.pattern -> Jkind.Sort.t -> Lambda.array_kind
+  Typedtree.pattern -> Jkind.Sort.Const.t -> Lambda.array_kind
 
 (* If [kind] or [layout] is unknown, attempt to specialize it by examining the
    type parameters of the bigarray. If [kind] or [length] is not unknown, returns

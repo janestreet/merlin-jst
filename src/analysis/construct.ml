@@ -451,7 +451,7 @@ module Gen = struct
         |> List.flatten |> List.rev
     in
 
-    let record env typ path labels =
+    let record env typ path labels record_form =
       log ~title:"record labels" "[%s]"
         (String.concat ~sep:"; "
            (List.map labels ~f:(fun l -> l.Types.lbl_name)));
@@ -461,8 +461,9 @@ module Gen = struct
             let _, arg, res = Ctype.instance_label ~fixed:true lbl in
             Ctype.unify env res typ;
             let lid =
-              Util.maybe_prefix env ~env_check:Env.find_label_by_name path
-                lbl_name
+              Util.maybe_prefix env
+                ~env_check:(Env.find_label_by_name record_form)
+                path lbl_name
               |> Location.mknoloc
             in
             let exprs = exp_or_hole env arg in
@@ -504,7 +505,9 @@ module Gen = struct
             let def = Env.find_type_descrs path env in
             match def with
             | Type_variant (constrs, _) -> constructor env rtyp path constrs
-            | Type_record (labels, _) -> record env rtyp path labels
+            | Type_record (labels, _) -> record env rtyp path labels Legacy
+            | Type_record_unboxed_product (labels, _) ->
+              record env rtyp path labels Unboxed_product
             | Type_abstract _ | Type_open -> [])
         end
         | Tarrow _ ->
@@ -532,7 +535,12 @@ module Gen = struct
           let arguments, body_type, env = left_types [] env rtyp in
           let exps = arrow_rhs env body_type in
           List.map exps ~f:(fun e ->
-              Ast_helper.Exp.function_ arguments None (Pfunction_body e))
+              Ast_helper.Exp.function_ arguments
+                { mode_annotations = [];
+                  ret_mode_annotations = [];
+                  ret_type_constraint = None
+                }
+                (Pfunction_body e))
         | Ttuple types ->
           let choices =
             List.map types ~f:(fun (lbl, ty) ->

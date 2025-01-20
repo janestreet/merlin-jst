@@ -825,7 +825,7 @@ let merge_constraint initial_env loc sg lid constr =
         in
         let md'' = { md' with md_type = mty } in
         let newmd = Mtype.strengthen_decl ~aliasable:false md'' path in
-        ignore(Includemod.modtypes  ~mark:Mark_both ~loc sig_env
+        ignore(Includemod.modtypes  ~mark:Mark_both ~loc sig_env ~modes:Legacy
                  newmd.md_type md.md_type);
         return
           ~replace_by:(Some(Sig_module(id, pres, newmd, rs, priv)))
@@ -836,7 +836,7 @@ let merge_constraint initial_env loc sg lid constr =
         let aliasable = not (Env.is_functor_arg path sig_env) in
         ignore
           (Includemod.strengthened_module_decl ~loc ~mark:Mark_both
-             ~aliasable sig_env md' path md);
+             ~aliasable sig_env ~mmodes:Legacy md' path md);
         real_ids := [Pident id];
         return ~replace_by:None
           (Pident id, lid, Some (Twith_modsubst (path, lid')))
@@ -1046,6 +1046,37 @@ let check_no_modal_modules ~env modes =
   match loc_of_modes modes with
   | None -> ()
   | Some loc -> raise(Error(loc, env, Modal_module_not_supported))
+
+let apply_pmd_modalities env sig_modalities pmd_modalities mty =
+  let modalities =
+    match pmd_modalities with
+    | [] -> sig_modalities
+    | _ :: _ ->
+      Typemode.transl_modalities ~maturity:Alpha Immutable [] pmd_modalities
+  in
+  (*
+  Workaround for pmd_modalities
+
+  Let [f] be the mapping representing [pmd_modalities].
+
+  In the future with proper modal modules, let [m] be the mode of the enclosing
+  structure. This module will be of mode [f m], and a value inside the module
+  will of mode [g (f m)] where [g] is the modalities on the value. Note that [m]
+  itself is of the form [f0 (f1 .. (fn legacy))] where [legacy] is the mode of
+  the file-level structure, and [fi] is the sequence of [pmd_modalities] that
+  corresponds to the enclosing structure nested inside layers of structures.
+  Therefore, the aforementioned value will be of mode
+  [g (f (f0 (f1 .. (fn legacy))))].
+
+  Currently, all modules are legacy. To simulate the above effect, we apply each
+  [pmd_modalities] of a structure deeply to all [val_modalities] in that
+  structure.
+
+  We still don't support [pmd_modalities] on functors.
+  *)
+  match Mode.Modality.Value.Const.is_id modalities with
+  | true -> mty
+  | false -> apply_modalities_module_type env modalities mty
 
 (* Auxiliary for translating recursively-defined module types.
    Return a module type that approximates the shape of the given module
@@ -1378,7 +1409,7 @@ end = struct
     let open Sig_component_kind in
     match component with
     | Value -> names.values
-    | Type | Label | Constructor -> names.types
+    | Type | Label | Unboxed_label | Constructor -> names.types
     | Module -> names.modules
     | Module_type -> names.modtypes
     | Extension_constructor -> names.typexts
@@ -1690,7 +1721,7 @@ and transl_modtype_aux env smty =
       let aliasable = not (Env.is_functor_arg path env) in
       try
         ignore
-          (Includemod.modtypes ~loc env
+          (Includemod.modtypes ~loc env ~modes:Legacy
             ~mark:Includemod.Mark_both md.md_type tmty.mty_type);
         mkmty
           (Tmty_strengthen (tmty, path, mod_id))
@@ -1735,11 +1766,6 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
 and transl_signature ?(keep_warnings = false) env sig_acc {psg_items; psg_modalities; psg_loc} =
   let names = Signature_names.create () in
 
-  let has_sig_modalities =
-    match psg_modalities with
-    | [] -> false
-    | _ :: _ -> true
-  in
   let sig_modalities =
       Typemode.transl_modalities ~maturity:Alpha Immutable [] psg_modalities
   in
@@ -1763,14 +1789,14 @@ and transl_signature ?(keep_warnings = false) env sig_acc {psg_items; psg_modali
       | Structure ->
         Tincl_structure, extract_sig env smty.pmty_loc mty
     in
-    let has_modalities, modalities =
+    let modalities =
       match modalities with
-      | [] -> has_sig_modalities, sig_modalities
+      | [] -> sig_modalities
       | _ ->
-        true, Typemode.transl_modalities ~maturity:Alpha Immutable [] modalities
+        Typemode.transl_modalities ~maturity:Alpha Immutable [] modalities
     in
     let sg =
-      if has_modalities then
+      if not @@ Mode.Modality.Value.Const.is_id modalities then
         let recursive =
           not @@ Builtin_attributes.has_attribute "no_recursive_modalities"
             sincl.pincl_attributes
@@ -1878,6 +1904,10 @@ and transl_signature ?(keep_warnings = false) env sig_acc {psg_items; psg_modali
           Builtin_attributes.warning_scope pmd.pmd_attributes
             (fun () -> transl_modtype env pmd.pmd_type)
         in
+        let mty_type =
+          apply_pmd_modalities env sig_modalities pmd.pmd_modalities tmty.mty_type
+        in
+        let tmty = {tmty with mty_type} in
         let pres =
           match tmty.mty_type with
           | Mty_alias _ -> Mp_absent
@@ -1954,7 +1984,7 @@ and transl_signature ?(keep_warnings = false) env sig_acc {psg_items; psg_modali
         sig_item, [], newenv
     | Psig_recmodule sdecls ->
         let (tdecls, newenv) =
-          transl_recmodule_modtypes env sdecls in
+          transl_recmodule_modtypes env sig_modalities sdecls in
         let decls =
           List.filter_map (fun (md, uid, _) ->
             match md.md_id with
@@ -2119,7 +2149,7 @@ and transl_modtype_decl_aux env
   in
   newenv, mtd, decl
 
-and transl_recmodule_modtypes env sdecls =
+and transl_recmodule_modtypes env sig_modalities sdecls =
   let make_env curr =
     List.fold_left (fun env (id_shape, _, md, _) ->
       Option.fold ~none:env ~some:(fun (id, shape) ->
@@ -2135,6 +2165,10 @@ and transl_recmodule_modtypes env sdecls =
           Builtin_attributes.warning_scope pmd.pmd_attributes
             (fun () -> transl_modtype env_c pmd.pmd_type)
         in
+        let mty_type =
+          apply_pmd_modalities env sig_modalities pmd.pmd_modalities tmty.mty_type
+        in
+        let tmty = {tmty with mty_type} in
         let md = { md with Types.md_type = tmty.mty_type } in
         (id_shape, id_loc, md, tmty))
       sdecls curr in
@@ -2162,8 +2196,12 @@ and transl_recmodule_modtypes env sdecls =
     List.map2
       (fun id pmd ->
          let md_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+         let md_type =
+          approx_modtype approx_env pmd.pmd_type
+          |> apply_pmd_modalities env sig_modalities pmd.pmd_modalities
+         in
          let md =
-           { md_type = approx_modtype approx_env pmd.pmd_type;
+           { md_type;
              md_loc = pmd.pmd_loc;
              md_attributes = pmd.pmd_attributes;
              md_uid }
@@ -2215,7 +2253,7 @@ let rec path_of_module mexp =
   | Tmod_constraint (mexp, _, _, _) ->
       path_of_module mexp
   | (Tmod_structure _ | Tmod_functor _ | Tmod_apply_unit _ | Tmod_unpack _ |
-    Tmod_apply _ | Tmod_hole) ->
+    Tmod_apply _ | Tmod_typed_hole) ->
     raise Not_a_path
 
 let path_of_module mexp =
@@ -2394,7 +2432,7 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes_with_shape ~shape
               ~loc:modl.mod_loc ~mark:Mark_both
-              env mty_actual' mty_decl'
+              env ~modes:Legacy mty_actual' mty_decl'
           with Includemod.Error msg ->
             Msupport.raise_error(Error(modl.mod_loc, env, Not_included msg));
             Tcoerce_none, shape
@@ -2475,6 +2513,8 @@ let modtype_of_package env loc p fl =
   in
   Subst.modtype Keep Subst.identity mty
 
+(* CR zqian: [package_subtype] should take [modes], but piping this through
+  [ctype] is too much. Instead, we take the conservative approach. *)
 let package_subtype env p1 fl1 p2 fl2 =
   let mkmty p fl =
     let fl =
@@ -2485,7 +2525,7 @@ let package_subtype env p1 fl1 p2 fl2 =
   | exception Error(_, _, Cannot_scrape_package_type _) -> false
   | mty1, mty2 ->
     let loc = Location.none in
-    match Includemod.modtypes ~loc ~mark:Mark_both env mty1 mty2 with
+    match Includemod.modtypes ~loc ~mark:Mark_both env ~modes:All mty1 mty2 with
     | Tcoerce_none -> true
     | _ | exception Includemod.Error _ -> false
 
@@ -2497,7 +2537,7 @@ let wrap_constraint_package env mark arg mty explicit =
   let mty2 = Subst.modtype Keep Subst.identity mty in
   let coercion =
     try
-      Includemod.modtypes ~loc:arg.mod_loc env ~mark mty1 mty2
+      Includemod.modtypes ~loc:arg.mod_loc env ~mark ~modes:Legacy mty1 mty2
     with Includemod.Error msg ->
       Msupport.raise_error(Error(arg.mod_loc, env, Not_included msg));
       Tcoerce_none
@@ -2514,7 +2554,7 @@ let wrap_constraint_with_shape env mark arg mty
   let coercion, shape =
     try
       Includemod.modtypes_with_shape ~shape ~loc:arg.mod_loc env ~mark
-        arg.mod_type mty
+        ~modes:Legacy arg.mod_type mty
     with Includemod.Error msg ->
       Msupport.raise_error(Error(arg.mod_loc, env, Not_included msg));
       Tcoerce_none, Shape.dummy_mod
@@ -2555,6 +2595,19 @@ let simplify_app_summary app_view = match app_view.arg with
 
 let maybe_infer_modalities ~loc ~env ~md_mode ~mode =
   if Language_extension.(is_at_least Mode Alpha) then begin
+    (* Values are packed into a structure at modes weaker than they actually
+      are. This is to allow our legacy zapping behavior. For example:
+
+      module M = struct
+        let foo x = x
+        let bar = use_portable foo
+      end
+      module type S = module type of M
+      use_portable M.foo
+
+      would type error at the last line.
+    *)
+    let mode, _ = Mode.Value.newvar_above mode in
     (* Upon construction, for comonadic (prescriptive) axes, module
     must be weaker than the values therein, for otherwise operations
     would be allowed to performed on the module (and extended to the
@@ -2685,7 +2738,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
             Msupport.raise_error exn;
             {
-              mod_desc = Tmod_hole;
+              mod_desc = Tmod_typed_hole;
               mod_type = Mty_for_hole;
               mod_loc = sarg.pmod_loc;
               mod_env = env;
@@ -2729,7 +2782,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_loc = smod.pmod_loc },
       Shape.leaf_for_unpack
   | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
-      { mod_desc = Tmod_hole;
+      { mod_desc = Tmod_typed_hole;
         mod_type = Mty_for_hole;
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
@@ -2878,6 +2931,7 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
       let coercion =
         try Includemod.modtypes
               ~loc:arg.mod_loc ~mark:Mark_both env arg.mod_type mty_param
+              ~modes:Legacy
         with Includemod.Error _ ->
           Msupport.raise_error (apply_error ());
           Tcoerce_none
@@ -2915,6 +2969,7 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
             begin match
               Includemod.modtypes
                 ~loc:app_loc ~mark:Mark_neither env mty_res nondep_mty
+                ~modes:Legacy
             with
             | Tcoerce_none -> ()
             | _ ->
@@ -3297,7 +3352,7 @@ and type_structure ?(toplevel = None) ?(keep_warnings = false) funct_body anchor
             sbind
         in
         let (decls, newenv) =
-          transl_recmodule_modtypes env
+          transl_recmodule_modtypes env Mode.Modality.Value.Const.id
             (List.map (fun (name, smty, _smodl, attrs, loc) ->
                  {pmd_name=name; pmd_type=smty;
                   pmd_attributes=attrs; pmd_loc=loc; pmd_modalities=[]}) sbind

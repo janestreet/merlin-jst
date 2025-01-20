@@ -139,6 +139,7 @@ let human_unique n id = Printf.sprintf "%s/%d" (Ident.name id) n
     | Type
     | Constructor
     | Label
+    | Unboxed_label
     | Module
     | Module_type
     | Extension_constructor
@@ -155,9 +156,10 @@ module Namespace = struct
     | Class -> 3
     | Class_type -> 4
     | Extension_constructor | Value | Constructor | Label -> 5
+    | Unboxed_label -> 6
      (* we do not handle those component *)
 
-  let size = 1 + id Value
+  let size = 1 + id Unboxed_label
 
 
   let pp ppf x =
@@ -174,7 +176,8 @@ module Namespace = struct
     | Some Module_type -> to_lookup Env.find_modtype_by_name
     | Some Class -> to_lookup Env.find_class_by_name
     | Some Class_type -> to_lookup Env.find_cltype_by_name
-    | None | Some(Value|Extension_constructor|Constructor|Label) ->
+    | None
+    | Some(Value|Extension_constructor|Constructor|Label|Unboxed_label) ->
          fun _ -> raise Not_found
 
   let location namespace id =
@@ -186,7 +189,8 @@ module Namespace = struct
         | Some Module_type -> (in_printing_env @@ Env.find_modtype path).mtd_loc
         | Some Class -> (in_printing_env @@ Env.find_class path).cty_loc
         | Some Class_type -> (in_printing_env @@ Env.find_cltype path).clty_loc
-        | Some (Extension_constructor|Value|Constructor|Label) | None ->
+        | Some (Extension_constructor|Value|Constructor|Label|Unboxed_label)
+        | None ->
             Location.none
       ) with Not_found -> None
 
@@ -1415,7 +1419,8 @@ let tree_of_modes modes =
     tree_of_mode diff.uniqueness [Mode.Uniqueness.Const.Unique, Omd_new "unique"];
     tree_of_mode diff.portability [Mode.Portability.Const.Portable, Omd_new "portable"];
     tree_of_mode diff.contention [Mode.Contention.Const.Contended, Omd_new "contended";
-                                  Mode.Contention.Const.Shared, Omd_new "shared"]]
+                                  Mode.Contention.Const.Shared, Omd_new "shared"];
+    tree_of_mode diff.yielding [Mode.Yielding.Const.Yielding, Omd_new "yielding"]]
   in
   List.filter_map Fun.id l
 
@@ -1868,6 +1873,8 @@ let prepare_decl id decl =
         cstrs
   | Type_record(l, _rep) ->
       List.iter (fun l -> prepare_type l.ld_type) l
+  | Type_record_unboxed_product(l, _rep) ->
+      List.iter (fun l -> prepare_type l.ld_type) l
   | Type_open -> ()
   end;
   ty_manifest, params
@@ -1886,6 +1893,8 @@ let tree_of_type_decl id decl =
         Type_abstract _ ->
           decl.type_manifest = None || decl.type_private = Private
       | Type_record _ ->
+          decl.type_private = Private
+      | Type_record_unboxed_product _ ->
           decl.type_private = Private
       | Type_variant (tll, _rep) ->
           decl.type_private = Private ||
@@ -1926,30 +1935,46 @@ let tree_of_type_decl id decl =
   in
   let (name, args) = type_defined decl in
   let constraints = tree_of_constraints params in
-  let ty, priv, unboxed =
+  let ty, priv, unboxed, or_null_reexport =
     match decl.type_kind with
     | Type_abstract _ ->
         begin match ty_manifest with
-        | None -> (Otyp_abstract, Public, false)
+        | None -> (Otyp_abstract, Public, false, false)
         | Some ty ->
-            tree_of_typexp Type ty, decl.type_private, false
+            tree_of_typexp Type ty, decl.type_private, false, false
         end
     | Type_variant (cstrs, rep) ->
         let unboxed =
           match rep with
           | Variant_unboxed -> true
-          | Variant_boxed _ | Variant_extensible -> false
+          | Variant_boxed _ | Variant_extensible | Variant_with_null -> false
+        in
+        (* CR layouts v3.5: remove when [Variant_with_null] is merged into
+           [Variant_unboxed]. *)
+        let or_null_reexport =
+          match rep with
+          | Variant_with_null -> true
+          | Variant_boxed _ | Variant_unboxed | Variant_extensible -> false
         in
         tree_of_manifest (Otyp_sum (List.map tree_of_constructor_in_decl cstrs)),
         decl.type_private,
-        unboxed
+        unboxed,
+        or_null_reexport
     | Type_record(lbls, rep) ->
         tree_of_manifest (Otyp_record (List.map tree_of_label lbls)),
         decl.type_private,
-        (match rep with Record_unboxed -> true | _ -> false)
+        (match rep with Record_unboxed -> true | _ -> false),
+        false
+    | Type_record_unboxed_product(lbls, Record_unboxed_product) ->
+        tree_of_manifest
+          (Otyp_record_unboxed_product (List.map tree_of_label lbls)),
+        decl.type_private,
+        false,
+        false
     | Type_open ->
         tree_of_manifest Otyp_open,
         decl.type_private,
+        false,
         false
   in
   (* The algorithm for setting [lay] here is described as Case (C1) in
@@ -1971,6 +1996,7 @@ let tree_of_type_decl id decl =
       otype_private = priv;
       otype_jkind;
       otype_unboxed = unboxed;
+      otype_or_null_reexport = or_null_reexport;
       otype_cstrs = constraints }
 
 let add_type_decl_to_preparation id decl =

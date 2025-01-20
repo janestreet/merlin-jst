@@ -124,8 +124,8 @@ let classify_node = function
   | Class_description _ -> `Type
   | Class_type_declaration _ -> `Type
   | Method_call _ -> `Expression
-  | Record_field (`Expression _, _, _) -> `Expression
-  | Record_field (`Pattern _, _, _) -> `Pattern
+  | Record_field (`Expression _, _, _, _) -> `Expression
+  | Record_field (`Pattern _, _, _, _) -> `Pattern
   | Module_binding_name _ -> `Module
   | Module_declaration_name _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
@@ -285,7 +285,10 @@ let fold_sumtype_constructors ~env ~init ~f t =
     begin
       match Env.find_type_descrs path env with
       | exception Not_found -> init
-      | Type_record _ | Type_abstract _ | Type_open -> init
+      | Type_record _
+      | Type_record_unboxed_product _
+      | Type_abstract _
+      | Type_open -> init
       | Type_variant (constrs, _) -> List.fold_right constrs ~init ~f
     end
   | _ -> init
@@ -460,14 +463,15 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
               :: candidates)
           prefix_path env []
       | `Labels ->
-        Env.fold_labels
-          (fun ({ Types.lbl_name = name; _ } as l) candidates ->
-            if not (validate `Lident `Label name) then candidates
-            else
-              make_weighted_candidate ~exact:(name = prefix) name (`Label l)
-                ~attrs:(lbl_attributes l)
-              :: candidates)
-          prefix_path env []
+        let step ({ Types.lbl_name = name; _ } as l) candidates =
+          if not (validate `Lident `Label name) then candidates
+          else
+            make_weighted_candidate ~exact:(name = prefix) name (`Label l)
+              ~attrs:(lbl_attributes l)
+            :: candidates
+        in
+        Env.fold_labels Legacy step prefix_path env []
+        @ Env.fold_labels Unboxed_product step prefix_path env []
     in
     let of_kind_group = function
       | #Query_protocol.Compl.kind as k -> of_kind k
@@ -528,10 +532,10 @@ let complete_methods ~env ~prefix obj =
       })
 
 type is_label =
-  [ `No
-  | `Maybe
-  | `Description of Types.label_description list
-  | `Declaration of Types.type_expr * Types.label_declaration list ]
+  | No
+  | Maybe
+  | Description : 'rep Types.gen_label_description list -> is_label
+  | Declaration of Types.type_expr * Types.label_declaration list
 
 let complete_prefix ?get_doc ?target_type ?(kinds = []) ~keywords ~prefix
     ~is_label config (env, node) branch =
@@ -585,11 +589,14 @@ let complete_prefix ?get_doc ?target_type ?(kinds = []) ~keywords ~prefix
     in
     let base_completion =
       match (is_label : is_label) with
-      | `No -> []
-      | `Maybe -> Env.fold_labels add_label_description prefix_path env []
-      | `Description lbls ->
+      | No -> []
+      | Maybe ->
+        Env.fold_all_labels
+          { fold_all_labels_f = (fun _ -> add_label_description) }
+          prefix_path env []
+      | Description lbls ->
         List.fold_right ~f:add_label_description lbls ~init:[]
-      | `Declaration (ty, decls) ->
+      | Declaration (ty, decls) ->
         List.fold_right ~f:(add_label_declaration ty) decls ~init:[]
     in
     if base_completion = [] then
@@ -671,15 +678,15 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
           match Types.get_desc t with
           | Types.Tconstr (p, _, _) -> (
             match (Env.find_type p env).Types.type_kind with
-            | Types.Type_record (labels, _) -> `Declaration (t, labels)
-            | _ -> `Maybe)
-          | _ -> `Maybe
-        with _ -> `Maybe
+            | Types.Type_record (labels, _) -> Declaration (t, labels)
+            | _ -> Maybe)
+          | _ -> Maybe
+        with _ -> Maybe
       in
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
       complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix ~is_label
         buffer (env, node) branch
-    | Record_field (parent, lbl, _) ->
+    | Record_field (parent, lbl, _, _) ->
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
       let snap = Btype.snapshot () in
       let is_label =
@@ -712,15 +719,15 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
                       { lbl with Types.lbl_res; lbl_arg }
                     with _ -> lbl)
               in
-              `Description labels
+              Description labels
             with _ -> (
               match decl.Types.type_kind with
-              | Types.Type_record (lbls, _) -> `Declaration (ty, lbls)
-              | _ -> `Maybe)
+              | Types.Type_record (lbls, _) -> Declaration (ty, lbls)
+              | _ -> Maybe)
           end
-          | _ | (exception _) -> `Maybe
+          | _ | (exception _) -> Maybe
         end
-        | lbls -> `Description (Array.to_list lbls)
+        | lbls -> Description (Array.to_list lbls)
       in
       let result =
         complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix ~is_label
@@ -731,7 +738,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
     | _ ->
       let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
       complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix buffer
-        ~is_label:(if is_label then `Maybe else `No)
+        ~is_label:(if is_label then Maybe else No)
         (env, node) branch)
 
 let expand_prefix ~global_modules ?(kinds = []) env prefix =

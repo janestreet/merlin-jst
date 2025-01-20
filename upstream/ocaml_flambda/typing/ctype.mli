@@ -219,7 +219,7 @@ val instance_poly:
 val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * bool
 val instance_label:
         fixed:bool ->
-        label_description -> type_expr list * type_expr * type_expr
+        _ gen_label_description -> type_expr list * type_expr * type_expr
         (* Same, for a label *)
 val prim_mode :
         (Mode.allowed * 'r) Mode.Locality.t option -> (Primitive.mode * Primitive.native_repr)
@@ -580,6 +580,10 @@ val get_unboxed_type_approximation : Env.t -> type_expr -> type_expr
     (* [get_unboxed_type_approximation] does the same thing as
        [get_unboxed_type_representation], but doesn't indicate whether the type
        was fully expanded or not. *)
+
+val contained_without_boxing : Env.t -> type_expr -> type_expr list
+    (* Return all types that are directly contained without boxing
+      (or "without indirection" or "flatly") *)
 
 (* Given the row from a variant type, determine if it is immediate.  Currently
    just checks that all constructors have no arguments, doesn't consider

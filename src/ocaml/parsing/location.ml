@@ -1105,3 +1105,7 @@ let () =
 
 let raise_errorf ?(loc = none) ?(sub = []) ?(source = Typer)=
   Format.kdprintf (fun txt -> raise (Error (mkerror loc sub txt source)))
+
+let todo_overwrite_not_implemented ?(kind = "") t =
+  alert ~kind t "Overwrite not implemented.";
+  assert false

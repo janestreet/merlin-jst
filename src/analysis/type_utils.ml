@@ -315,7 +315,7 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
       try
         begin
           match context with
-          | Label lbl_des ->
+          | Label (lbl_des, _) ->
             (* We use information from the context because `Env.find_label_by_name`
                can fail *)
             Printtyp.type_expr ppf lbl_des.lbl_arg
