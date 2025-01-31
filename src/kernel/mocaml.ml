@@ -54,7 +54,7 @@ let setup_reader_config config =
 
 let init_params params =
   List.iter params ~f:(fun s ->
-    Env.register_parameter (s |> Global_module.Name.create_no_args))
+      Env.register_parameter (s |> Global_module.Name.create_no_args))
 
 let setup_typer_config config =
   setup_reader_config config;
