@@ -28,6 +28,18 @@ type error. The exact output may change slightly -- that's fine.
         },
         "end": {
           "line": 1,
+          "col": 16
+        },
+        "type": "int",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 15
+        },
+        "end": {
+          "line": 1,
           "col": 20
         },
         "type": "int",
@@ -79,6 +91,18 @@ type error. The exact output may change slightly -- that's fine.
   {
     "class": "return",
     "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 27
+        },
+        "end": {
+          "line": 1,
+          "col": 28
+        },
+        "type": "int",
+        "tail": "no"
+      },
       {
         "start": {
           "line": 1,
@@ -159,18 +183,6 @@ type error. The exact output may change slightly -- that's fine.
           "col": 19
         },
         "type": "int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 1,
-          "col": 8
-        },
-        "end": {
-          "line": 1,
-          "col": 40
-        },
-        "type": "int -> ?z:int -> int -> int",
         "tail": "no"
       },
       {
