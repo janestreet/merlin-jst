@@ -309,18 +309,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
        typedtree's nodes and can provide types for modules appearing in paths.
 
        This introduces two possible sources of duplicate results:
-       - Sometimes the typedtree nodes in 1 overlaps and we simply remove these.
        - The last reconstructed enclosing usually overlaps with the first
          typedtree node but the printed types are not always the same (generic /
          specialized types). Because systematically printing these types to
          compare them can be very expensive in the presence of large modules, we
          defer this deduplication to the clients.
+       - Sometimes the typedtree nodes in 1 overlaps. We choose not to dedpulicate because
+         if the types are the same, the client is already responsible for deduplication.
+         If they are different, then they are likely useful to display to the user.
+       So, we choose to not duplicate results and delegate this to the client.
     *)
-    let enclosing_nodes =
-      let cmp (loc1, _, _) (loc2, _, _) = Location_aux.compare loc1 loc2 in
-      (* There might be duplicates in the list: we remove them *)
-      Type_enclosing.from_nodes ~path |> List.dedup_adjacent ~cmp
-    in
+    let enclosing_nodes = Type_enclosing.from_nodes ~path in
 
     (* Enclosings of cursor in given expression *)
     let exprs = Misc_utils.reconstruct_identifier pipeline pos expro in
