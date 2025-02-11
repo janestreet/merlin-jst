@@ -298,13 +298,21 @@ module type S = sig
       | Contention : (monadic, Contention.Const.t) t
 
     val print : Format.formatter -> ('p, 'r) t -> unit
+
+    val eq : ('p, 'r0) t -> ('p, 'r1) t -> ('r0, 'r1) Misc.eq option
   end
 
   module type Mode := sig
     module Areality : Common
 
     module Monadic : sig
-      module Const : Lattice with type t = monadic
+      module Const : sig
+        include Lattice with type t = monadic
+
+        val max_axis : (t, 'a) Axis.t -> 'a
+
+        val min_axis : (t, 'a) Axis.t -> 'a
+      end
 
       include Common with module Const := Const
 
@@ -318,6 +326,10 @@ module type S = sig
         val eq : t -> t -> bool
 
         val print_axis : (t, 'a) Axis.t -> Format.formatter -> 'a -> unit
+
+        val max_axis : (t, 'a) Axis.t -> 'a
+
+        val min_axis : (t, 'a) Axis.t -> 'a
       end
 
       type error = Error : (Const.t, 'a) Axis.t * 'a Solver.error -> error
@@ -336,6 +348,14 @@ module type S = sig
       | Comonadic :
           (Comonadic.Const.t, 'a) Axis.t
           -> (('a, 'd) mode_comonadic, 'a, 'd) axis
+
+    type 'd axis_packed = P : ('m, 'a, 'd) axis -> 'd axis_packed
+
+    val print_axis : Format.formatter -> ('m, 'a, 'd) axis -> unit
+
+    val lattice_of_axis : ('m, 'a, 'd) axis -> (module Lattice with type t = 'a)
+
+    val all_axes : ('l * 'r) axis_packed list
 
     type ('a, 'b, 'c, 'd, 'e, 'f) modes =
       { areality : 'a;
@@ -376,6 +396,10 @@ module type S = sig
 
         val print : Format.formatter -> t -> unit
       end
+
+      val is_max : ('m, 'a, 'd) axis -> 'a -> bool
+
+      val is_min : ('m, 'a, 'd) axis -> 'a -> bool
 
       val split : t -> (Monadic.Const.t, Comonadic.Const.t) monadic_comonadic
 
@@ -455,6 +479,10 @@ module type S = sig
   module Const : sig
     val alloc_as_value : Alloc.Const.t -> Value.Const.t
 
+    module Axis : sig
+      val alloc_as_value : 'd Alloc.axis_packed -> 'd Value.axis_packed
+    end
+
     val locality_as_regionality : Locality.Const.t -> Regionality.Const.t
   end
 
@@ -494,6 +522,9 @@ module type S = sig
     (** Test if the given modality is the identity modality. *)
     val is_id : t -> bool
 
+    (** Test if the given modality is a constant modality. *)
+    val is_constant : t -> bool
+
     (** Printing for debugging *)
     val print : Format.formatter -> t -> unit
 
@@ -504,6 +535,19 @@ module type S = sig
         | Error : ('m, 'a, _) Value.axis * ('m, 'a) raw Solver.error -> error
 
       type nonrec equate_error = equate_step * error
+
+      (* In the following we have both [Const.t] and [t]. The former is parameterized by
+         constant modes and thus its behavior fully determined. It is what users read and
+         write on constructor arguments, record fields and value descriptions in signatures.
+
+         The latter is parameterized by variable modes and thus its behavior changes as the
+         variable modes change. It is used in module type inference: structures are inferred
+         to have a signature containing a list of value descriptions, each of which carries a
+         modality. This modality depends on the mode of the value, which is a variable.
+         Therefore, we parameterize the modality over the variable mode.
+
+         Utilities are provided to convert between [Const.t] and [t], such as [of_const],
+         [zap_to_id], [zap_to_floor], etc.. *)
 
       module Const : sig
         (** A modality that acts on [Value] modes. Conceptually it is a sequnce
@@ -529,12 +573,23 @@ module type S = sig
         val singleton : atom -> t
 
         (** Returns the list of [atom] in the given modality. The list is
-            commutative. *)
+            commutative. Post-condition: each axis is represented in the
+            output list exactly once. *)
         val to_list : t -> atom list
+
+        (** Builds up a modality from a list of [atom], by composing each atom with
+            identity. The modalities are applied left to right. *)
+        val of_list : atom list -> t
+
+        (** Project out the [atom] for the given axis in the given modality. *)
+        val proj : ('m, 'a, 'd) Value.axis -> t -> atom
 
         (** [equate t0 t1] checks that [t0 = t1].
             Definition: [t0 = t1] iff [t0 <= t1] and [t1 <= t0]. *)
         val equate : t -> t -> (unit, equate_error) Result.t
+
+        (** Printing for debugging. *)
+        val print : Format.formatter -> t -> unit
       end
 
       (** A modality that acts on [Value] modes. Conceptually it is a sequnce of
