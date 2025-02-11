@@ -21,7 +21,7 @@ let as_parameter        = ref false
 let as_argument_for     = ref None
 let zero_alloc_check    = ref Zero_alloc_annotations.Check_default
 let zero_alloc_check_assert_all = ref false
-let allow_illegal_crossing = ref false
+let infer_with_bounds   = ref false
 
 let annotations         = ref false
 let binary_annotations  = ref true
