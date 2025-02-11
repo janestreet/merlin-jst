@@ -46,7 +46,7 @@ since we want to overwrite it later).
 
   $ cp p_original.mli p.mli --no-preserve=mode
 
-Start by compiling P and a module that uses it:
+Start by compiling [P] and a module that uses it:
 
   $ $OCAMLC -bin-annot-cms -c p.mli -as-parameter
 
@@ -58,7 +58,7 @@ Start by compiling P and a module that uses it:
   $ query_errors ./basic.ml -parameter P
   []
 
-The following test is broken. It asks about P itself:
+The following test is broken. It asks about [P] itself:
 
   $ multi_query ./basic.mli 10:11 -parameter P
   "sig
@@ -70,7 +70,7 @@ The following test is broken. It asks about P itself:
   "\"P\" is a builtin, no documentation is available"
   "\"<internal>\" is a builtin, and it is therefore impossible to jump to its definition"
 
-But this one works. It asks for P.t:
+But this one works. It asks for [P.t]:
 
   $ multi_query ./basic.mli 10:13 -parameter P
   "type t"
@@ -83,7 +83,7 @@ But this one works. It asks for P.t:
     }
   }
 
-Now check the implementation. This is P.create:
+Now check the implementation. This is [P.create]:
 
   $ multi_query_impl ./basic.ml 3:21 -parameter P
   "unit -> P.t"
@@ -103,7 +103,7 @@ Now check the implementation. This is P.create:
     }
   }
 
-And P.to_string:
+And [P.to_string]:
 
   $ multi_query_impl ./basic.ml 6:32 -parameter P
   "P.t -> string"
@@ -180,7 +180,7 @@ Test that we can add a parameter this way and things don't break:
 
   $ rm .merlin
 
-Now let's try with a file that uses P indirectly via Basic:
+Now let's try with a file that uses [P] indirectly via [Basic]:
 
   $ $OCAMLC -bin-annot-cms -c fancy.mli fancy.ml -parameter P
 
@@ -190,7 +190,7 @@ Now let's try with a file that uses P indirectly via Basic:
   $ query_errors ./fancy.ml -parameter P
   []
 
-This is Basic itself:
+This is [Basic] itself:
 
   $ multi_query fancy.mli 4:13 -parameter P
   "sig
@@ -209,7 +209,7 @@ This is Basic itself:
     }
   }
 
-And Basic.t:
+And [Basic.t]:
 
   $ multi_query fancy.mli 4:19 -parameter P
   "type t"
@@ -222,7 +222,7 @@ And Basic.t:
     }
   }
 
-Also check the implementation. This is Basic.to_string:
+Also check the implementation. This is [Basic.to_string]:
 
   $ multi_query_impl fancy.ml 5:37 -parameter P
   "Basic.t -> string"
@@ -242,7 +242,7 @@ Also check the implementation. This is Basic.to_string:
     }
   }
 
-And Basic.wrap, whose type involves the parameter P:
+And [Basic.wrap], whose type involves the parameter [P]:
 
   $ multi_query_impl fancy.ml 4:21 -parameter P
   "P.t -> Basic.t"
@@ -266,7 +266,7 @@ Now let's see what happens with aliases and includes:
 
   $ $OCAMLC -bin-annot-cms -c reexport.mli reexport.ml -parameter P
 
-First check this file without -parameter P to make sure it breaks. This means
+First check this file without [-parameter P] to make sure it breaks. This means
 we're correctly tracking parameters separately per file, even in server mode.
 
   $ query_errors reexport.mli
@@ -360,7 +360,7 @@ Compile a file that uses things from an instance of [Basic]:
 
   $ query_errors use_basic_int.ml $instance_warnings
   []
- 
+
 Check that we understand everything about [Basic[P:P_int].create]:
 
   $ multi_query_impl use_basic_int.ml 3:28
@@ -390,7 +390,7 @@ Do the same with [Fancy]:
 
 The type of [Fancy_p_int.create] is something that isn't currently valid OCaml
 syntax, so this output isn't ideal:
- 
+
   $ multi_query_impl use_fancy_int.ml 5:28
   "Basic[P:P_int].t -> Fancy_int.t"
   "Make something fancy out of something basic."
