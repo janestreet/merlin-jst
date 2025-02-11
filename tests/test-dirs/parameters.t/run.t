@@ -17,8 +17,7 @@ Check that merlin understands the `-parameter` flag.
   > }
 
   $ j() {
-  >   # The embedded newlines that merlin-wrapper introduces confuse jq
-  >   tr '\n' ' ' | jq "$@"
+  >   revert-newlines | jq "$@" | sed 's/\\n/\n/g'
   > }
 
   $ query_errors() {
@@ -57,7 +56,12 @@ Start by compiling P and a module that uses it:
 The following test is broken. It asks about P itself:
 
   $ multi_query ./basic.mli 10:11 -parameter P
-  "sig   type t   val create : unit -> t   val frob : t -> t   val to_string : t -> string end"
+  "sig
+    type t
+    val create : unit -> t
+    val frob : t -> t
+    val to_string : t -> string
+  end"
   "\"P\" is a builtin, no documentation is available"
   "\"<internal>\" is a builtin, and it is therefore impossible to jump to its definition"
 
@@ -113,7 +117,13 @@ Now let's try with a file that uses P indirectly via Basic:
 This is Basic itself:
 
   $ multi_query fancy.mli 4:13 -parameter P
-  "sig   type t   val create : unit -> t   val wrap : P.t -> t   val p : t -> P.t   val to_string : t -> string end"
+  "sig
+    type t
+    val create : unit -> t
+    val wrap : P.t -> t
+    val p : t -> P.t
+    val to_string : t -> string
+  end"
   "Basic functionality implemented over the [P] parameter."
   {
     "file": "$TESTCASE_ROOT/basic.mli",
@@ -197,7 +207,10 @@ we're correctly tracking parameters separately per file, even in server mode.
       "type": "typer",
       "sub": [],
       "valid": true,
-      "message": "The file $TESTCASE_ROOT/p.cmi contains the interface of a parameter. P is not declared as a parameter for the current unit. Hint: Compile the current unit with -parameter P."
+      "message": "The file $TESTCASE_ROOT/p.cmi
+  contains the interface of a parameter. P
+  is not declared as a parameter for the current unit.
+  Hint: Compile the current unit with -parameter P."
     }
   ]
 
@@ -212,7 +225,12 @@ Now check that it works with the flag.
 Do we understand the type of [As_alias]?
 
   $ query_type reexport.ml 4:10 -parameter P
-  "sig   type t = P.t   val create : unit -> t   val frob : t -> t   val to_string : t -> string end"
+  "sig
+    type t = P.t
+    val create : unit -> t
+    val frob : t -> t
+    val to_string : t -> string
+  end"
 
 This only compiles if the various ways of getting at [P.t] are equivalent:
 
