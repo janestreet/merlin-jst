@@ -66,9 +66,9 @@ We can locate the value that was used incorrectly
 
 Error from closure lock
   $ cat > closure2.ml <<EOF
-  > let y = ref ()
+  > let y = ref 5
   > let foo x =
-  >   let _ = y in
+  >   y := !y + 1;
   >   x
   > ;;
   > let (f @ portable) x =
