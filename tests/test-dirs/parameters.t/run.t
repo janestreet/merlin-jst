@@ -461,9 +461,7 @@ rather than [p.mli].)
 
 Now let's try changing [p.mli] and see what breaks. (Some things should break!)
 
-  $ diff -u p_original.mli p_modified.mli
-  --- p_original.mli	2025-02-11 12:16:39.903200513 +0000
-  +++ p_modified.mli	2025-02-11 12:28:34.643434234 +0000
+  $ diff -u p_original.mli p_modified.mli | tail -n +3
   @@ -4,7 +4,7 @@
    type t
    
@@ -473,7 +471,6 @@ Now let's try changing [p.mli] and see what breaks. (Some things should break!)
    
    (** Frobnicate the thing. *)
    val frob : t -> t
-  [1]
 
   $ cp p_modified.mli p.mli
 
