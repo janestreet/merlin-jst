@@ -41,6 +41,11 @@ Check that merlin understands the `-parameter` flag.
   >   query locate "$@" -look-for implementation | j '.value'
   > }
 
+Copy the original version of [p.mli] into place (but don't preserve modes,
+since we want to overwrite it later).
+
+  $ cp p_original.mli p.mli --no-preserve=mode
+
 Start by compiling P and a module that uses it:
 
   $ $OCAMLC -bin-annot-cms -c p.mli -as-parameter
@@ -80,9 +85,16 @@ But this one works. It asks for P.t:
 
 Now check the implementation. This is P.create:
 
-  $ multi_query ./basic.ml 3:16 -parameter P
+  $ multi_query_impl ./basic.ml 3:21 -parameter P
   "unit -> P.t"
   "Make a thing."
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 7,
+      "col": 4
+    }
+  }
   {
     "file": "$TESTCASE_ROOT/p.mli",
     "pos": {
@@ -93,7 +105,7 @@ Now check the implementation. This is P.create:
 
 And P.to_string:
 
-  $ multi_query ./basic.ml 6:32 -parameter P
+  $ multi_query_impl ./basic.ml 6:32 -parameter P
   "P.t -> string"
   "Show the thing."
   {
@@ -103,6 +115,70 @@ And P.to_string:
       "col": 4
     }
   }
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 13,
+      "col": 4
+    }
+  }
+
+Repeat a few tests using [.merlin] rather than the command line.
+
+  $ cat > .merlin <<EOF
+  > S .
+  > B .
+  > FLG -parameter P
+  > EOF
+
+  $ query_errors basic.mli
+  []
+
+  $ multi_query ./basic.mli 10:13
+  "type t"
+  "A thing."
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 4,
+      "col": 5
+    }
+  }
+
+  $ multi_query ./basic.ml 6:32
+  "P.t -> string"
+  "Show the thing."
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 13,
+      "col": 4
+    }
+  }
+
+Test that we can add a parameter this way and things don't break:
+
+  $ cat > .merlin <<EOF
+  > S .
+  > B .
+  > FLG -parameter P -parameter Q
+  > EOF
+
+  $ query_errors basic.mli
+  []
+
+  $ multi_query ./basic.mli 10:13
+  "type t"
+  "A thing."
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 4,
+      "col": 5
+    }
+  }
+
+  $ rm .merlin
 
 Now let's try with a file that uses P indirectly via Basic:
 
@@ -269,6 +345,9 @@ And this goes to [Reexport.Included.create]:
 
 Now let's try instantiating things.
 
+  $ query_errors p_int.mli -as-argument-for P
+  []
+
   $ $OCAMLC -bin-annot-cms -c p_int.mli p_int.ml -as-argument-for P
 
 Suppress some warnings that are only there due to compiler bugs:
@@ -379,3 +458,66 @@ rather than [p.mli].)
       "col": 4
     }
   }
+
+Now let's try changing [p.mli] and see what breaks. (Some things should break!)
+
+  $ diff -u p_original.mli p_modified.mli
+  --- p_original.mli	2025-02-11 12:16:39.903200513 +0000
+  +++ p_modified.mli	2025-02-11 12:28:34.643434234 +0000
+  @@ -4,7 +4,7 @@
+   type t
+   
+   (** Make a thing. *)
+  -val create : unit -> t
+  +val create : int -> t
+   
+   (** Frobnicate the thing. *)
+   val frob : t -> t
+  [1]
+
+  $ cp p_modified.mli p.mli
+
+  $ $OCAMLC -bin-annot-cms -c p.mli -as-parameter
+
+  $ query_errors basic.mli -parameter P
+  []
+
+Look at [P.create] in [basic.ml] again:
+
+  $ multi_query_impl ./basic.ml 3:21 -parameter P
+  "int -> P.t"
+  "Make a thing."
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 7,
+      "col": 4
+    }
+  }
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 7,
+      "col": 4
+    }
+  }
+
+Check that [basic.ml] no longer compiles:
+
+  $ query_errors basic.ml -parameter P
+  [
+    {
+      "start": {
+        "line": 3,
+        "col": 25
+      },
+      "end": {
+        "line": 3,
+        "col": 27
+      },
+      "type": "typer",
+      "sub": [],
+      "valid": true,
+      "message": "This expression has type unit but an expression was expected of type int"
+    }
+  ]
