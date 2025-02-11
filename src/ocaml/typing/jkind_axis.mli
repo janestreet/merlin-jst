@@ -68,51 +68,6 @@ module Axis : sig
   val is_modal : _ t -> bool
 end
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-(** A collection with one item for each jkind axis.
-    [T] parametizes what element is being held for each axis. *)
-module Axis_collection (T : Misc_stdlib.T1) : sig
-  type t =
-    { locality : Mode.Locality.Const.t T.t;
-      linearity : Mode.Linearity.Const.t T.t;
-      uniqueness : Mode.Uniqueness.Const.t T.t;
-      portability : Mode.Portability.Const.t T.t;
-      contention : Mode.Contention.Const.t T.t;
-      yielding : Mode.Yielding.Const.t T.t;
-      externality : Externality.t T.t;
-      nullability : Nullability.t T.t
-    }
-
-  val get : axis:'a Axis.t -> t -> 'a T.t
-
-  val set : axis:'a Axis.t -> t -> 'a T.t -> t
-
-  module Create_f : sig
-    (** This record type is used to pass a polymorphic function to [create] *)
-    type t = { f : 'a. axis:'a Axis.t -> 'a T.t }
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-(** A collection with one item for each jkind axis.
-    [T] parametizes what element is being held for each axis. *)
-module Axis_collection (T : Misc.T1) : sig
-  type t =
-    { locality : Mode.Locality.Const.t T.t;
-      linearity : Mode.Linearity.Const.t T.t;
-      uniqueness : Mode.Uniqueness.Const.t T.t;
-      portability : Mode.Portability.Const.t T.t;
-      contention : Mode.Contention.Const.t T.t;
-      yielding : Mode.Yielding.Const.t T.t;
-      externality : Externality.t T.t;
-      nullability : Nullability.t T.t
-    }
-
-  val get : axis:'a Axis.t -> t -> 'a T.t
-
-  val set : axis:'a Axis.t -> t -> 'a T.t -> t
-
-  module Create_f : sig
-    (** This record type is used to pass a polymorphic function to [create] *)
-    type t = { f : 'a. axis:'a Axis.t -> 'a T.t }
-=======
 (** A collection with one item for each jkind axis *)
 module Axis_collection : sig
   module type S_gen := sig
@@ -140,7 +95,7 @@ module Axis_collection : sig
 
     (** Create an axis collection by applying the function on each axis *)
     module Create : sig
-      module Monadic (M : Misc.Stdlib.Monad.S) : sig
+      module Monadic (M : Misc_stdlib.Monad.S) : sig
         type 'a f = { f : 'axis. axis:'axis Axis.t -> ('axis, 'a) u M.t }
         [@@unboxed]
 
@@ -148,14 +103,14 @@ module Axis_collection : sig
       end
 
       (** This record type is used to pass a polymorphic function to [create] *)
-      type 'a f = 'a Monadic(Misc.Stdlib.Monad.Identity).f
+      type 'a f = 'a Monadic(Misc_stdlib.Monad.Identity).f
 
       val f : 'a f -> 'a t_poly
     end
 
     (** Map an operation over all the bounds *)
     module Map : sig
-      module Monadic (M : Misc.Stdlib.Monad.S) : sig
+      module Monadic (M : Misc_stdlib.Monad.S) : sig
         type ('a, 'b) f =
           { f : 'axis. axis:'axis Axis.t -> ('axis, 'a) u -> ('axis, 'b) u M.t }
         [@@unboxed]
@@ -163,7 +118,7 @@ module Axis_collection : sig
         val f : ('a, 'b) f -> 'a t_poly -> 'b t_poly M.t
       end
 
-      type ('a, 'b) f = ('a, 'b) Monadic(Misc.Stdlib.Monad.Identity).f
+      type ('a, 'b) f = ('a, 'b) Monadic(Misc_stdlib.Monad.Identity).f
 
       val f : ('a, 'b) f -> 'a t_poly -> 'b t_poly
     end
@@ -177,7 +132,7 @@ module Axis_collection : sig
 
     (** Map an operation over two sets of bounds *)
     module Map2 : sig
-      module Monadic (M : Misc.Stdlib.Monad.S) : sig
+      module Monadic (M : Misc_stdlib.Monad.S) : sig
         type ('a, 'b, 'c) f =
           { f :
               'axis.
@@ -191,7 +146,7 @@ module Axis_collection : sig
         val f : ('a, 'b, 'c) f -> 'a t_poly -> 'b t_poly -> 'c t_poly M.t
       end
 
-      type ('a, 'b, 'c) f = ('a, 'b, 'c) Monadic(Misc.Stdlib.Monad.Identity).f
+      type ('a, 'b, 'c) f = ('a, 'b, 'c) Monadic(Misc_stdlib.Monad.Identity).f
 
       val f : ('a, 'b, 'c) f -> 'a t_poly -> 'b t_poly -> 'c t_poly
     end
@@ -231,7 +186,6 @@ module Axis_collection : sig
     include S_gen
 
     type t = unit t_poly
->>>>>>> ocaml-flambda/flambda-backend:main
   end
 
   module Indexed_gen (T : Misc.T2) : S_poly with type ('a, 'b) u := ('a, 'b) T.t

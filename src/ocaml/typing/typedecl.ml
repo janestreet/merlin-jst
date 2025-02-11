@@ -1610,7 +1610,7 @@ let update_constructor_representation
 let add_types_to_env decls shapes env =
   List.fold_right2
     (fun (id, decl) shape env ->
-      add_type ~check:true ~shape id decl env)
+      add_type ~long_path:false ~check:true ~shape id decl env)
     decls shapes env
 
 (* This function updates jkind stored in kinds with more accurate jkinds.
@@ -2450,20 +2450,6 @@ let check_redefined_unit (td: Parsetree.type_declaration) =
   | _ ->
       ()
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let add_types_to_env decls shapes env =
-  List.fold_right2
-    (fun (id, decl) shape env ->
-      add_type ~long_path:false ~check:true ~shape id decl env)
-    decls shapes env
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-let add_types_to_env decls shapes env =
-  List.fold_right2
-    (fun (id, decl) shape env ->
-      add_type ~check:true ~shape id decl env)
-    decls shapes env
-=======
-
 (* Note [Quality of jkinds during inference]
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2562,7 +2548,6 @@ let normalize_decl_jkinds env shapes decls =
     env
     decls
     shapes
->>>>>>> ocaml-flambda/flambda-backend:main
 
 (* Translate a set of type declarations, mutually recursive or not *)
 let transl_type_decl env rec_flag sdecl_list =

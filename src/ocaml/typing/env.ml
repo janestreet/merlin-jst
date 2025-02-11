@@ -2510,19 +2510,7 @@ and store_module ?(update_summary=true) ~check
     if not update_summary then env.summary
     else Env_module (env.summary, id, presence, force_module_decl md) in
   { env with
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-    modules = IdTbl.add id (Mod_local mda) env.modules;
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-    modules = IdTbl.add id (Mod_local mda) env.modules;
-    summary }
-
-and store_modtype ?(update_summary=true) id info shape env =
-=======
     modules = IdTbl.add id (Mod_local (mda, alias_locks)) env.modules;
-    summary }
-
-and store_modtype ?(update_summary=true) id info shape env =
->>>>>>> ocaml-flambda/flambda-backend:main
     summary;
     short_paths_additions =
       short_paths_module id md comps env.short_paths_additions; }

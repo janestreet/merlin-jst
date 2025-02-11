@@ -2667,14 +2667,8 @@ let map_type_expr f t = { t with jkind = Jkind_desc.map_type_expr f t.jkind }
 let check_sub ~jkind_of_type sub super =
   Jkind_desc.sub ~jkind_of_type sub.jkind super.jkind
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let sub sub super = Le_result.is_le (check_sub sub super)
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-let sub sub super = Misc.Le_result.is_le (check_sub sub super)
-=======
 let sub ~type_equal ~jkind_of_type sub super =
-  Misc.Le_result.is_le (check_sub ~type_equal ~jkind_of_type sub super)
->>>>>>> ocaml-flambda/flambda-backend:main
+  Le_result.is_le (check_sub ~type_equal ~jkind_of_type sub super)
 
 type sub_or_intersect =
   | Sub

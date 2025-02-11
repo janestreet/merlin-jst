@@ -12,34 +12,14 @@
 (*                                                                        *)
 (**************************************************************************)
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
 (* Merlin-specific: Change the module path of Misc_stdlib.Le_result to Misc.Le_result to
    match the compiler *)
 module Misc = struct
   module Le_result = Misc_stdlib.Le_result
 end
 
-module type Axis_s = sig
-  type t
-
-  val max : t
-
-  val min : t
-
-  val equal : t -> t -> bool
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-module type Axis_s = sig
-  type t
-
-  val max : t
-
-  val min : t
-
-  val equal : t -> t -> bool
-=======
 module type Axis_ops = sig
   include Mode_intf.Lattice
->>>>>>> ocaml-flambda/flambda-backend:main
 
   val less_or_equal : t -> t -> Misc.Le_result.t
 
@@ -198,89 +178,8 @@ module Axis = struct
     | Nonmodal Nullability -> false
 end
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-(* Sadly this needs to be functorized since we don't have higher-kinded types *)
-module Axis_collection (T : Misc_stdlib.T1) = struct
-  type t =
-    { locality : Mode.Locality.Const.t T.t;
-      linearity : Mode.Linearity.Const.t T.t;
-      uniqueness : Mode.Uniqueness.Const.t T.t;
-      portability : Mode.Portability.Const.t T.t;
-      contention : Mode.Contention.Const.t T.t;
-      yielding : Mode.Yielding.Const.t T.t;
-      externality : Externality.t T.t;
-      nullability : Nullability.t T.t
-    }
-
-  let get (type a) ~(axis : a Axis.t) values : a T.t =
-    match axis with
-    | Modal Locality -> values.locality
-    | Modal Linearity -> values.linearity
-    | Modal Uniqueness -> values.uniqueness
-    | Modal Portability -> values.portability
-    | Modal Contention -> values.contention
-    | Modal Yielding -> values.yielding
-    | Nonmodal Externality -> values.externality
-    | Nonmodal Nullability -> values.nullability
-
-  let set (type a) ~(axis : a Axis.t) values (value : a T.t) =
-    match axis with
-    | Modal Locality -> { values with locality = value }
-    | Modal Linearity -> { values with linearity = value }
-    | Modal Uniqueness -> { values with uniqueness = value }
-    | Modal Portability -> { values with portability = value }
-    | Modal Contention -> { values with contention = value }
-    | Modal Yielding -> { values with yielding = value }
-    | Nonmodal Externality -> { values with externality = value }
-    | Nonmodal Nullability -> { values with nullability = value }
-
-  (* Since we don't have polymorphic parameters, use a record to pass the polymorphic
-     function *)
-  module Create_f = struct
-    type t = { f : 'a. axis:'a Axis.t -> 'a T.t }
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-(* Sadly this needs to be functorized since we don't have higher-kinded types *)
-module Axis_collection (T : Misc.T1) = struct
-  type t =
-    { locality : Mode.Locality.Const.t T.t;
-      linearity : Mode.Linearity.Const.t T.t;
-      uniqueness : Mode.Uniqueness.Const.t T.t;
-      portability : Mode.Portability.Const.t T.t;
-      contention : Mode.Contention.Const.t T.t;
-      yielding : Mode.Yielding.Const.t T.t;
-      externality : Externality.t T.t;
-      nullability : Nullability.t T.t
-    }
-
-  let get (type a) ~(axis : a Axis.t) values : a T.t =
-    match axis with
-    | Modal Locality -> values.locality
-    | Modal Linearity -> values.linearity
-    | Modal Uniqueness -> values.uniqueness
-    | Modal Portability -> values.portability
-    | Modal Contention -> values.contention
-    | Modal Yielding -> values.yielding
-    | Nonmodal Externality -> values.externality
-    | Nonmodal Nullability -> values.nullability
-
-  let set (type a) ~(axis : a Axis.t) values (value : a T.t) =
-    match axis with
-    | Modal Locality -> { values with locality = value }
-    | Modal Linearity -> { values with linearity = value }
-    | Modal Uniqueness -> { values with uniqueness = value }
-    | Modal Portability -> { values with portability = value }
-    | Modal Contention -> { values with contention = value }
-    | Modal Yielding -> { values with yielding = value }
-    | Nonmodal Externality -> { values with externality = value }
-    | Nonmodal Nullability -> { values with nullability = value }
-
-  (* Since we don't have polymorphic parameters, use a record to pass the polymorphic
-     function *)
-  module Create_f = struct
-    type t = { f : 'a. axis:'a Axis.t -> 'a T.t }
-=======
 module Axis_collection = struct
-  module Indexed_gen (T : Misc.T2) = struct
+  module Indexed_gen (T : Misc_stdlib.T2) = struct
     type 'a t_poly =
       { locality : (Mode.Locality.Const.t, 'a) T.t;
         linearity : (Mode.Linearity.Const.t, 'a) T.t;
@@ -319,7 +218,7 @@ module Axis_collection = struct
     (* Since we don't have polymorphic parameters, use a record to pass the
        polymorphic function *)
     module Create = struct
-      module Monadic (M : Misc.Stdlib.Monad.S) = struct
+      module Monadic (M : Misc_stdlib.Monad.S) = struct
         type 'a f = { f : 'axis. axis:'axis Axis.t -> ('axis, 'a) T.t M.t }
         [@@unboxed]
 
@@ -346,7 +245,7 @@ module Axis_collection = struct
       end
       [@@inline]
 
-      module Monadic_identity = Monadic (Misc.Stdlib.Monad.Identity)
+      module Monadic_identity = Monadic (Misc_stdlib.Monad.Identity)
 
       type 'a f = 'a Monadic_identity.f
 
@@ -354,7 +253,7 @@ module Axis_collection = struct
     end
 
     module Map = struct
-      module Monadic (M : Misc.Stdlib.Monad.S) = struct
+      module Monadic (M : Misc_stdlib.Monad.S) = struct
         type ('a, 'b) f =
           { f :
               'axis. axis:'axis Axis.t -> ('axis, 'a) T.t -> ('axis, 'b) T.t M.t
@@ -368,7 +267,7 @@ module Axis_collection = struct
       end
       [@@inline]
 
-      module Monadic_identity = Monadic (Misc.Stdlib.Monad.Identity)
+      module Monadic_identity = Monadic (Misc_stdlib.Monad.Identity)
 
       type ('a, 'b) f = ('a, 'b) Monadic_identity.f
 
@@ -400,7 +299,7 @@ module Axis_collection = struct
     end
 
     module Map2 = struct
-      module Monadic (M : Misc.Stdlib.Monad.S) = struct
+      module Monadic (M : Misc_stdlib.Monad.S) = struct
         type ('a, 'b, 'c) f =
           { f :
               'axis.
@@ -420,7 +319,7 @@ module Axis_collection = struct
       end
       [@@inline]
 
-      module Monadic_identity = Monadic (Misc.Stdlib.Monad.Identity)
+      module Monadic_identity = Monadic (Misc_stdlib.Monad.Identity)
 
       type ('a, 'b, 'c) f = ('a, 'b, 'c) Monadic_identity.f
 
@@ -489,16 +388,15 @@ module Axis_collection = struct
     end
   end
 
-  module Indexed (T : Misc.T1) = struct
+  module Indexed (T : Misc_stdlib.T1) = struct
     include Indexed_gen (struct
       type ('a, 'b) t = 'a T.t
     end)
 
     type nonrec t = unit t
->>>>>>> ocaml-flambda/flambda-backend:main
   end
 
-  module Identity = Indexed (Misc.Stdlib.Monad.Identity)
+  module Identity = Indexed (Misc_stdlib.Monad.Identity)
 
   include Indexed_gen (struct
     type ('a, 'b) t = 'b

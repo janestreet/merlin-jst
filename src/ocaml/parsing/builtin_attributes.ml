@@ -633,16 +633,8 @@ let zero_alloc_attribute ~in_signature (attr : Parsetree.attribute)  =
       | "all" -> Clflags.zero_alloc_assert := A.Assert.Assert_all
       | "all_opt" -> Clflags.zero_alloc_assert := A.Assert.Assert_all_opt
       | _ ->
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-        warn_payload attr.attr_loc attr.attr_name.txt
-          "Only 'all', 'check', 'check_opt', 'check_all', and 'check_none' are supported")
-*)
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-        warn_payload attr.attr_loc attr.attr_name.txt
-          "Only 'all', 'check', 'check_opt', 'check_all', and 'check_none' are supported")
-=======
         warn ())
->>>>>>> ocaml-flambda/flambda-backend:main
+*)
 
 let attribute_with_ignored_payload name attr =
   when_attribute_is [name; "ocaml." ^ name] attr ~f:(fun () -> ())
@@ -674,17 +666,9 @@ let parse_standard_implementation_attributes attr =
   afl_inst_ratio_attribute attr;
   flambda_o3_attribute attr;
   flambda_oclassic_attribute attr;
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
   zero_alloc_attribute attr
   *)
-  unsafe_allow_any_kind_in_impl_attribute attr
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-  zero_alloc_attribute attr;
-  unsafe_allow_any_kind_in_impl_attribute attr
-=======
-  zero_alloc_attribute ~in_signature:false attr;
   unsafe_allow_any_mode_crossing_attribute attr
->>>>>>> ocaml-flambda/flambda-backend:main
 
 let has_no_mutable_implied_modalities attrs =
   has_attribute "no_mutable_implied_modalities" attrs

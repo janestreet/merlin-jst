@@ -1921,19 +1921,11 @@ let tree_of_type_decl ?(print_non_value_inferred_jkind = false) id decl =
      Note [When to print jkind annotations] *)
   let is_value = Jkind.is_value_for_printing ~ignore_null:false decl.type_jkind in
   let otype_jkind =
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-    match ty, is_value, decl.type_has_illegal_crossings, print_non_value_inferred_jkind with
+    match ty, is_value, unsafe_mode_crossing, print_non_value_inferred_jkind with
     | (Otyp_abstract, false, _, _) | (_, _, true, _)
     (* Merlin only: we print the inferred jkind (not the jkind annotation) if
        the user asked for it hard enough. *)
     | (_, false, _, true) ->
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-    match ty, is_value, decl.type_has_illegal_crossings with
-    | (Otyp_abstract, false, _) | (_, _, true) ->
-=======
-    match ty, is_value, unsafe_mode_crossing with
-    | (Otyp_abstract, false, _) | (_, _, true) ->
->>>>>>> ocaml-flambda/flambda-backend:main
         (* The two cases of (C1) from the Note correspond to Otyp_abstract.
            Anything but the default must be user-written, so we print the
            user-written annotation. *)

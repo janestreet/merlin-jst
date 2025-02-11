@@ -998,7 +998,7 @@ let merloc startpos ?endpos x =
         psg_modalities = [];
         psg_items = [];
         psg_loc = !default_loc;
-      } 
+      }
     in
     Mty.signature ~loc:!default_loc desc
 ]
@@ -2933,19 +2933,13 @@ optional_atomic_constraint_:
   }
   | { empty_body_constraint }
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-%public fun_expr [@recovery default_expr ()]:
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-fun_expr:
-=======
 fun_:
     /* Cf #5939: we used to accept (fun p when e0 -> e) */
   | FUN ext_attributes fun_params body_constraint = optional_atomic_constraint_
       MINUSGREATER fun_body
     {  mkfunction $3 body_constraint $6 ~loc:$sloc ~attrs:$2 }
 
-fun_expr:
->>>>>>> ocaml-flambda/flambda-backend:main
+%public fun_expr [@recovery default_expr ()]:
     simple_expr %prec below_HASH
       { $1 }
   | fun_expr_attrs
@@ -3054,17 +3048,11 @@ fun_expr:
       { mkexp ~loc:$sloc (mkinfix e1 op e2) }
 ;
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-%public simple_expr:
-||||||| ocaml-flambda/flambda-backend:df4a6e0ba4f74dc790e0ad79f15ea73be1225c4b
-simple_expr:
-=======
 %inline constructor_app:
   | mkrhs(constr_longident) simple_expr
     { mkexp ~loc:$sloc (Pexp_construct($1, Some $2)) }
 
-simple_expr:
->>>>>>> ocaml-flambda/flambda-backend:main
+%public simple_expr:
   | LPAREN seq_expr RPAREN
       { reloc_exp ~loc:$sloc $2 }
   (*
