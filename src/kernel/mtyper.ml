@@ -289,10 +289,13 @@ let run config parsetree =
     (* Resetting the local store will clear the load_path cache.
        Save it now, reset the store and then restore the path. *)
     let { Load_path.visible; hidden } = Load_path.get_paths () in
+    (* Same story with the registered parameters. *)
+    let parameters = Env.parameters () in
     Mocaml.flush_caches ();
     Local_store.reset ();
     Load_path.reset ();
-    Load_path.(init ~auto_include:no_auto_include ~visible ~hidden));
+    Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
+    List.iter ~f:Env.register_parameter parameters);
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();

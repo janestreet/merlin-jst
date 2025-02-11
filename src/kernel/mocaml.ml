@@ -52,11 +52,16 @@ let setup_reader_config config =
   as_parameter := ocaml.as_parameter;
   zero_alloc_check := ocaml.zero_alloc_check
 
+let init_params params =
+  List.iter params ~f:(fun s ->
+      Env.register_parameter (s |> Global_module.Name.create_no_args))
+
 let setup_typer_config config =
   setup_reader_config config;
   let visible = Mconfig.build_path config in
   let hidden = Mconfig.hidden_build_path config in
-  Load_path.(init ~auto_include:no_auto_include ~visible ~hidden)
+  Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
+  init_params config.ocaml.parameters
 
 (** Switchable implementation of Oprint *)
 

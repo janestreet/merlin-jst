@@ -54,6 +54,7 @@ let dump_ocaml x =
       ("pp", Json.option (dump_with_workdir Json.string) x.pp);
       ("warnings", dump_warnings x.warnings);
       ("cmi_file", Json.option Json.string x.cmi_file);
+      ("parameters", `List (List.map ~f:Json.string x.parameters));
       ("as_parameter", `Bool x.as_parameter);
       ( "zero_alloc_check",
         `String (Zero_alloc_annotations.to_string x.zero_alloc_check) )
