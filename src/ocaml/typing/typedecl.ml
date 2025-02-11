@@ -2471,10 +2471,10 @@ let normalize_decl_jkinds env shapes decls =
   let env =
     List.fold_right2
       (fun (id, _, _, decl) shape env ->
-         add_type ~check:true ~shape id decl env)
+         add_type ~long_path:false ~check:true ~shape id decl env)
       decls shapes env
   in
-  Misc.Stdlib.List.fold_left_map2
+  Misc_stdlib.List.fold_left_map2
     (fun env (id, original_jkind, allow_any_crossing, decl) shape ->
        let normalized_jkind =
          Jkind.normalize
@@ -2486,7 +2486,7 @@ let normalize_decl_jkinds env shapes decls =
        (* Add the decl with the normalized kind back to the environment, so that later
           kinds don't have to normalize this kind if they mention this type in their
           with-bounds *)
-       let env = add_type ~check:false ~shape:shape id decl env in
+       let env = add_type ~long_path:false ~check:false ~shape:shape id decl env in
        if normalized_jkind != original_jkind then begin
          (* If the jkind has changed, check that it is a subjkind of the original jkind
             that we computed, either from a user-written annotation or as a dummy jkind.

@@ -575,6 +575,7 @@ module MenhirInterpreter : sig
     | N_fun_param_as_list : (Parsetree.function_param list) nonterminal
     | N_fun_expr : (Parsetree.expression) nonterminal
     | N_fun_body : (Parsetree.function_body) nonterminal
+    | N_fun_ : (Parsetree.expression) nonterminal
     | N_formal_class_parameters : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_floating_attribute : (Parsetree.attribute) nonterminal
     | N_extension_type : (Parsetree.core_type) nonterminal

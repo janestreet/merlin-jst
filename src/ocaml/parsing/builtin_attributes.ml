@@ -653,7 +653,9 @@ let parse_standard_interface_attributes attr =
   principal_attribute attr;
   noprincipal_attribute attr;
   nolabels_attribute attr;
+  (* merlin-jst: See {comments} above
   zero_alloc_attribute ~in_signature:true attr;
+  *)
   unsafe_allow_any_mode_crossing_attribute attr
 
 let parse_standard_implementation_attributes attr =

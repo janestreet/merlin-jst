@@ -2662,7 +2662,7 @@ and type_module_maybe_hold_locks ~alias sttn funct_body anchor env smod =
       mod_env = env;
       mod_attributes = Msupport.flush_saved_types () @ smod.pmod_attributes;
       mod_loc = smod.pmod_loc },
-      Shape.dummy_mod
+      Shape.dummy_mod, Env.locks_empty
 
 and type_module_aux ~alias sttn funct_body anchor env smod =
   match smod.pmod_desc with
@@ -2804,7 +2804,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
-      Shape.dummy_mod
+      Shape.dummy_mod, Env.locks_empty
   | Pmod_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
   | Pmod_instance glob ->

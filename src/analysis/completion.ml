@@ -289,7 +289,7 @@ let fold_sumtype_constructors ~env ~init ~f t =
       | Type_record_unboxed_product _
       | Type_abstract _
       | Type_open -> init
-      | Type_variant (constrs, _) -> List.fold_right constrs ~init ~f
+      | Type_variant (constrs, _, _) -> List.fold_right constrs ~init ~f
     end
   | _ -> init
 
@@ -678,7 +678,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
           match Types.get_desc t with
           | Types.Tconstr (p, _, _) -> (
             match (Env.find_type p env).Types.type_kind with
-            | Types.Type_record (labels, _) -> Declaration (t, labels)
+            | Types.Type_record (labels, _, _) -> Declaration (t, labels)
             | _ -> Maybe)
           | _ -> Maybe
         with _ -> Maybe
@@ -722,7 +722,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
               Description labels
             with _ -> (
               match decl.Types.type_kind with
-              | Types.Type_record (lbls, _) -> Declaration (ty, lbls)
+              | Types.Type_record (lbls, _, _) -> Declaration (ty, lbls)
               | _ -> Maybe)
           end
           | _ | (exception _) -> Maybe

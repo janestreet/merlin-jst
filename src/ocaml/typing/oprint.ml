@@ -642,7 +642,7 @@ and print_out_jkind_const ppf ojkind =
     | Ojkind_const_default -> fprintf ppf "_"
     | Ojkind_const_abbreviation abbrev -> fprintf ppf "%s" abbrev
     | Ojkind_const_mod (base, modes) ->
-      Misc.pp_parens_if nested (fun ppf (base, modes) ->
+      Misc_stdlib.pp_parens_if nested (fun ppf (base, modes) ->
         fprintf ppf "%a mod @[%a@]" (pp_element ~nested:true) base
           (pp_print_list
               ~pp_sep:(fun ppf () -> fprintf ppf "@ ")
@@ -651,7 +651,7 @@ and print_out_jkind_const ppf ojkind =
       ) ppf (base, modes)
     | Ojkind_const_product ts ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     | Ojkind_const_with _ -> failwith "XXX unreachable (stripped off earlier)"
     | Ojkind_const_kind_of _ ->
       failwith "XXX unimplemented jkind syntax");
@@ -677,7 +677,7 @@ and print_out_jkind ppf ojkind =
     | Ojkind_const jkind -> print_out_jkind_const ppf jkind
     | Ojkind_product ts ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
   in
   pp_element ~nested:false ppf ojkind
 

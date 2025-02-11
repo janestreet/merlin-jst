@@ -188,9 +188,9 @@ module Axis_collection : sig
     type t = unit t_poly
   end
 
-  module Indexed_gen (T : Misc.T2) : S_poly with type ('a, 'b) u := ('a, 'b) T.t
+  module Indexed_gen (T : Misc_stdlib.T2) : S_poly with type ('a, 'b) u := ('a, 'b) T.t
 
-  module Indexed (T : Misc.T1) : S_mono with type ('a, 'b) u := 'a T.t
+  module Indexed (T : Misc_stdlib.T1) : S_mono with type ('a, 'b) u := 'a T.t
 
   module Identity : S_mono with type ('a, 'b) u := 'a
 

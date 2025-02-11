@@ -24,7 +24,7 @@ type ocaml =
     parameters : string list;
     as_parameter : bool;
     as_argument_for : string option;
-    zero_alloc_check : Zero_alloc_annotations.t;
+    zero_alloc_check : Zero_alloc_annotations.Check.t;
     allow_illegal_crossing : bool
   }
 

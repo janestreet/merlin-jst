@@ -226,11 +226,11 @@ and type_declaration id
     match type_kind with
     | Type_abstract _ -> Parsetree.Ptype_abstract
     | Type_open -> Ptype_open
-    | Type_variant (constrs, _) ->
+    | Type_variant (constrs, _, _) ->
       Ptype_variant (List.map ~f:constructor_declaration constrs)
-    | Type_record (labels, _repr) ->
+    | Type_record (labels, _repr, _) ->
       Ptype_record (List.map ~f:label_declaration labels)
-    | Type_record_unboxed_product (labels, _repr) ->
+    | Type_record_unboxed_product (labels, _repr, _) ->
       Ptype_record_unboxed_product (List.map ~f:label_declaration labels)
   in
   let manifest = Option.map ~f:core_type type_manifest in

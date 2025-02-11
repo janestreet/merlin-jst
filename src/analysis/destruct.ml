@@ -101,7 +101,7 @@ let rec gen_patterns ?(recurse = true) env type_expr =
     [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) -> begin
     match Env.find_type_descrs path env with
-    | Type_record (labels, _) ->
+    | Type_record (labels, _, _) ->
       let lst =
         List.map labels ~f:(fun lbl_descr ->
             let lidloc = mk_id lbl_descr.lbl_name in
@@ -111,7 +111,7 @@ let rec gen_patterns ?(recurse = true) env type_expr =
                 (mk_var lbl_descr.lbl_name) ))
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
-    | Type_variant (constructors, _) ->
+    | Type_variant (constructors, _, _) ->
       let prefix =
         let path = Printtyp.shorten_type_path env path in
         fun name ->

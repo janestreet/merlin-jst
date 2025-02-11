@@ -19,8 +19,8 @@ let open_modules        = ref []
 let parameters          = ref ([] : string list)
 let as_parameter        = ref false
 let as_argument_for     = ref None
-let zero_alloc_check    = ref Zero_alloc_annotations.Check_default
-let zero_alloc_check_assert_all = ref false
+let zero_alloc_check    = ref Zero_alloc_annotations.Check.Check_default
+let zero_alloc_assert   = ref Zero_alloc_annotations.Assert.Assert_default
 let infer_with_bounds   = ref false
 
 let annotations         = ref false

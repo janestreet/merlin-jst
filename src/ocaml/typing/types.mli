@@ -70,7 +70,7 @@ val is_mutable : mutability -> bool
 
 (** The mod-bounds of a jkind *)
 module Jkind_mod_bounds :
-  module type of Jkind_axis.Axis_collection.Indexed (Misc.Stdlib.Monad.Identity)
+  module type of Jkind_axis.Axis_collection.Indexed (Misc_stdlib.Monad.Identity)
 
 (** Information tracked about an individual type within the with-bounds for a jkind *)
 module With_bounds_type_info : sig

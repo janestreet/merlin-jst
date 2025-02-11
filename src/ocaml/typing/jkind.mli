@@ -97,7 +97,7 @@ module Layout : sig
 
   val of_const : Const.t -> Sort.t t
 
-  val sub : Sort.t t -> Sort.t t -> Misc.Le_result.t
+  val sub : Sort.t t -> Sort.t t -> Misc_stdlib.Le_result.t
 end
 
 (** A Jkind.t is a full description of the runtime representation of values

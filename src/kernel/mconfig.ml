@@ -26,7 +26,7 @@ type ocaml =
     parameters : string list;
     as_parameter : bool;
     as_argument_for : string option;
-    zero_alloc_check : Zero_alloc_annotations.t;
+    zero_alloc_check : Zero_alloc_annotations.Check.t;
     allow_illegal_crossing : bool
   }
 
@@ -57,7 +57,7 @@ let dump_ocaml x =
       ("parameters", `List (List.map ~f:Json.string x.parameters));
       ("as_parameter", `Bool x.as_parameter);
       ( "zero_alloc_check",
-        `String (Zero_alloc_annotations.to_string x.zero_alloc_check) )
+        `String (Zero_alloc_annotations.Check.to_string x.zero_alloc_check) )
     ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -828,12 +828,12 @@ let ocaml_flags =
     );
     ( "-zero-alloc-check",
       Marg.param "string" (fun zero_alloc_str ocaml ->
-          match Zero_alloc_annotations.of_string zero_alloc_str with
+          match Zero_alloc_annotations.Check.of_string zero_alloc_str with
           | Some zero_alloc_check -> { ocaml with zero_alloc_check }
           | None ->
             failwith ("Invalid value for -zero-alloc-check: " ^ zero_alloc_str)),
       " Check that annotated functions do not allocate and do not have \
-       indirect calls. " ^ Zero_alloc_annotations.doc );
+       indirect calls. " ^ Zero_alloc_annotations.Check.doc );
     ( "-allow-illegal-crossing",
       Marg.unit (fun ocaml -> { ocaml with allow_illegal_crossing = true }),
       "Type declarations will not be checked along the portability or \
@@ -865,7 +865,7 @@ let initial =
         parameters = [];
         as_parameter = false;
         as_argument_for = None;
-        zero_alloc_check = Zero_alloc_annotations.Check_default;
+        zero_alloc_check = Zero_alloc_annotations.Check.Check_default;
         allow_illegal_crossing = false
       };
     merlin =

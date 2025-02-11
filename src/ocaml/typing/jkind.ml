@@ -564,7 +564,7 @@ module Mod_bounds = struct
             let (module Bound_ops) = Axis.get axis in
             Bound_ops.less_or_equal)
       }
-      ~combine:Misc.Le_result.combine
+      ~combine:Le_result.combine
 
   let equal =
     Fold2.f
@@ -1458,7 +1458,7 @@ module Jkind_desc = struct
         Mod_bounds.t * (l2 * r2) with_bounds * Fuel_status.t = function
       (* early cutoff *)
       | _
-        when Misc.Le_result.is_le
+        when Le_result.is_le
                (Mod_bounds.less_or_equal Mod_bounds.max bounds_so_far) ->
         (* CR layouts v2.8: we can do better by early-terminating on a per-axis basis *)
         bounds_so_far, No_with_bounds, Sufficient_fuel
@@ -1560,7 +1560,7 @@ module Jkind_desc = struct
     in
     let layout = Layout.sub lay1 lay2 in
     let bounds = Mod_bounds.less_or_equal bounds1 bounds2 in
-    Misc.Le_result.combine layout bounds
+    Le_result.combine layout bounds
 
   let intersection
       { layout = lay1; mod_bounds = mod_bounds1; with_bounds = with_bounds1 }
@@ -2692,7 +2692,7 @@ let sub_jkind_l ~type_equal ~jkind_of_type ?(allow_any_crossing = false) sub
   (* This function implements the "SUB" judgement from kind-inference.md. *)
   let open Misc.Stdlib.Monad.Result.Syntax in
   let require_le le_result =
-    match Misc.Le_result.is_le le_result with
+    match Le_result.is_le le_result with
     | true -> Ok ()
     | false ->
       (* When we report an error, we want to show the best-normalized version of sub, but
