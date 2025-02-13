@@ -1,21 +1,21 @@
   $ $MERLIN single version | revert-newlines | jq .value.magicNumbers
   {
-    "cmi_magic_number": "Caml1999I555",
-    "ast_intf_magic_number": "Caml1999N555",
-    "ast_impl_magic_number": "Caml1999M555",
-    "cmt_magic_number": "Caml1999T555",
-    "cms_magic_number": "Caml1999S555",
-    "index_magic_number": "Merl2023I555"
+    "cmi_magic_number": "Caml1999I556",
+    "ast_intf_magic_number": "Caml1999N556",
+    "ast_impl_magic_number": "Caml1999M556",
+    "cmt_magic_number": "Caml1999T556",
+    "cms_magic_number": "Caml1999S556",
+    "index_magic_number": "Merl2023I556"
   }
 
   $ ocaml-index magic-numbers | jq
   {
-    "cmi_magic_number": "Caml1999I555",
-    "ast_intf_magic_number": "Caml1999N555",
-    "ast_impl_magic_number": "Caml1999M555",
-    "cmt_magic_number": "Caml1999T555",
-    "cms_magic_number": "Caml1999S555",
-    "index_magic_number": "Merl2023I555"
+    "cmi_magic_number": "Caml1999I556",
+    "ast_intf_magic_number": "Caml1999N556",
+    "ast_impl_magic_number": "Caml1999M556",
+    "cmt_magic_number": "Caml1999T556",
+    "cms_magic_number": "Caml1999S556",
+    "index_magic_number": "Merl2023I556"
   }
 
 Verify there is no difference between Merlin and Ocaml-index
