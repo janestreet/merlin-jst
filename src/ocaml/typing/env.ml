@@ -354,6 +354,8 @@ type lock =
 
 type locks = lock list
 
+type held_locks = locks * Longident.t * Location.t
+
 let locks_empty = []
 
 let locks_is_empty l = l = locks_empty
@@ -801,8 +803,6 @@ and short_paths_addition =
   | Module_type_open of Path.t * modtype_declaration NameMap.t
   | Module_open of Path.t * module_data NameMap.t
 
-let mda_mode = Mode.Value.legacy |> Mode.Value.disallow_right
-
 let clda_mode = Mode.Value.legacy |> Mode.Value.disallow_right
 
 let cm_mode = Mode.Value.legacy |> Mode.Value.disallow_right
@@ -1019,14 +1019,14 @@ let check_functor_application =
   (* to be filled by Includemod *)
   ref ((fun ~errors:_ ~loc:_
          ~lid_whole_app:_  ~f0_path:_ ~args:_
-         ~arg_path:_ ~arg_mty:_ ~arg_mode:_ ~param_mty:_
+         ~arg_path:_ ~arg_mty:_ ~param_mty:_
          _env
          -> assert false) :
          errors:bool -> loc:Location.t ->
        lid_whole_app:Longident.t ->
-       f0_path:Path.t -> args:(Path.t * Types.module_type * Mode.Value.l) list ->
-       arg_path:Path.t -> arg_mty:module_type -> arg_mode:Mode.Value.l ->
-       param_mty:module_type -> t -> unit)
+       f0_path:Path.t -> args:(Path.t * Types.module_type) list ->
+       arg_path:Path.t -> arg_mty:module_type -> param_mty:module_type ->
+       t -> unit)
 
 let scrape_alias =
   (* to be filled with Mtype.scrape_alias *)
@@ -1220,13 +1220,30 @@ let runtime_parameter_bindings () =
 
 let parameters () = Persistent_env.parameters !persistent_env
 
+<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
 let read_pers_mod modname cmi ~add_binding =
   Persistent_env.read !persistent_env read_sign_of_cmi short_paths_components
     modname cmi ~add_binding
+||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
+let read_pers_mod modname cmi ~add_binding =
+  Persistent_env.read !persistent_env read_sign_of_cmi modname cmi
+    ~add_binding
+=======
+let read_pers_mod modname cmi =
+  Persistent_env.read !persistent_env modname cmi
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 
+<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
 let find_pers_mod name =
   Persistent_env.find !persistent_env
     read_sign_of_cmi short_paths_components name
+||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
+let find_pers_mod name =
+  Persistent_env.find !persistent_env read_sign_of_cmi name
+=======
+let find_pers_mod name ~allow_excess_args =
+  Persistent_env.find !persistent_env read_sign_of_cmi name ~allow_excess_args
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 
 let check_pers_mod ~loc name =
   Persistent_env.check !persistent_env
@@ -1310,12 +1327,12 @@ let modtype_of_functor_appl fcomp p1 p2 =
 let check_functor_appl
     ~errors ~loc ~lid_whole_app ~f0_path ~args
     ~f_comp
-    ~arg_path ~arg_mty ~arg_mode ~param_mty
+    ~arg_path ~arg_mty ~param_mty
     env =
   if not (stamped_mem f_comp.fcomp_cache arg_path) then
     !check_functor_application
       ~errors ~loc ~lid_whole_app ~f0_path ~args
-      ~arg_path ~arg_mty ~arg_mode ~param_mty
+      ~arg_path ~arg_mty ~param_mty
       env
 
 (* Lookup by identifier *)
@@ -1326,7 +1343,24 @@ let find_ident_module id env =
   | Mod_unbound _ -> raise Not_found
   | Mod_persistent ->
       match Ident.to_global id with
-      | Some global_name -> find_pers_mod ~allow_hidden:true global_name
+      | Some global_name ->
+          let allow_excess_args =
+            (* This may be a global that arose by substituting instance
+               arguments into an overapproximated instance name, so we have to
+               allow it to have more arguments than expected. For example, if
+               [foo.ml] is compiled with [-parameter P] and says
+               [module Alias = M], we assume that [m.ml] was (or will be)
+               compiled with [-parameter P] as well, sa [foo.cmi] will record
+               [M{P}] as an approximate elaboration of [M]. Then if [bar.ml]
+               refers to [Foo[P:Int]], we substitute in [Foo]'s signature and
+               get [module Alias = M[P:Int]] whether or not [M] takes [P].) *)
+            (* CR-someday lmaurer: This does mean that the original alias may
+               have had too many arguments and we'll never have checked them.
+               One solution would be to remember somewhere what the user
+               actually typed in addition to the approximation. *)
+            true
+          in
+          find_pers_mod ~allow_hidden:true ~allow_excess_args global_name
       | None -> Misc.fatal_errorf "Not global: %a" Ident.print id
 
 let rec find_module_components path env =
@@ -1576,6 +1610,7 @@ let global_of_instance_compilation_unit cu =
     (* We could just convert the global name ourselves by filling in empty lists
        of hidden arguments, but this doubles as a typecheck of the instance. *)
     Persistent_env.global_of_global_name !persistent_env global_name ~check:true
+      ~allow_excess_args:false
   in
   let rec check (global : Global_module.t) =
     match global.hidden_args with
@@ -1717,6 +1752,31 @@ and expand_modtype_path env path =
   match (find_modtype_lazy path env).mtd_type with
   | Some (Mty_ident path) -> normalize_modtype_path env path
   | _ | exception Not_found -> path
+
+let normalize_instance_names_in_ident ident =
+  if Ident.is_instance ident then
+    let modname = Ident.to_global_exn ident in
+    let modname2 =
+      Persistent_env.normalize_global_name !persistent_env modname
+    in
+    if modname == modname2 then ident else Ident.create_global modname2
+  else
+    ident
+
+let rec normalize_instance_names_in_module_path path =
+  match path with
+  | Pident i ->
+      let i2 = normalize_instance_names_in_ident i in
+      if i == i2 then path else Pident i2
+  | Pdot (p, s) ->
+      let p2 = normalize_instance_names_in_module_path p in
+      if p == p2 then path else Pdot (p2, s)
+  | Pextra_ty (p, extra) ->
+      let p2 = normalize_instance_names_in_module_path p in
+      if p == p2 then path else Pextra_ty (p2, extra)
+  | Papply (p, a) ->
+      let p2 = normalize_instance_names_in_module_path p in
+      if p == p2 then path else Papply (p2, a)
 
 let find_module_lazy path env =
   find_module_lazy ~alias:false path env
@@ -2858,8 +2918,8 @@ let enter_unbound_module name reason env =
     summary = Env_module_unbound(env.summary, name, reason) }
 
 (* Read a signature from a file *)
-let read_signature modname cmi ~add_binding =
-  let mty = read_pers_mod modname cmi ~add_binding in
+let read_signature modname cmi =
+  let mty = read_pers_mod modname cmi in
   Subst.Lazy.force_signature mty
 
 let register_parameter modname =
@@ -3135,7 +3195,7 @@ let lookup_global_name_module_no_locks
       check_pers_mod ~allow_hidden:false ~loc name;
       path, (() : a)
   | Load -> begin
-      match find_pers_mod ~allow_hidden:false name with
+      match find_pers_mod ~allow_hidden:false name ~allow_excess_args:false with
       | mda ->
           use_module ~use ~loc path mda;
           path, (mda : a)
@@ -3370,7 +3430,8 @@ let rec lookup_module_components ~errors ~use ~loc lid env =
       let f_path, f_comp, arg = lookup_apply ~errors ~use ~loc lid env in
       let comps =
         !components_of_functor_appl' ~loc ~f_path ~f_comp ~arg env in
-      Papply (f_path, arg), [], comps
+      (* [Lapply] is for [F(M).t] so nothing is closed over. *)
+      Papply (f_path, arg), locks_empty, comps
 
 and lookup_structure_components ~errors ~use ~loc ?(reason = Project) lid env =
   let path, locks, comps = lookup_module_components ~errors ~use ~loc lid env in
@@ -3403,43 +3464,44 @@ and lookup_all_args ~errors ~use ~loc lid0 env =
     | Lident _ | Ldot _ as f_lid ->
         (f_lid, args)
     | Lapply (f_lid, arg_lid) ->
-        let arg_path, arg_md, arg_vmode =
-          lookup_module ~errors ~use ~lock:false ~loc arg_lid env
-        in
-        loop_lid_arg ((f_lid,arg_path,arg_md.md_type,arg_vmode)::args) f_lid
+        (* [Lapply] only appears in e.g. [F(M).t], which does not incur functor
+         application at runtime and thus both the functor and the arguments are not closed
+         over. Therefore, they all remains at legacy mode which don't need to be tracked.
+         *)
+        let arg_path, arg_md, _ = lookup_module ~errors ~use ~loc arg_lid env in
+        loop_lid_arg ((f_lid,arg_path,arg_md.md_type)::args) f_lid
   in
   loop_lid_arg [] lid0
 
 and lookup_apply ~errors ~use ~loc lid0 env =
   let f0_lid, args0 = lookup_all_args ~errors ~use ~loc lid0 env in
-  let args_for_errors = List.map (fun (_,p,mty,vmode) -> (p,mty,vmode.mode)) args0 in
+  let args_for_errors = List.map (fun (_,p,mty) -> (p,mty)) args0 in
   let f0_path, _, f0_comp =
     lookup_module_components ~errors ~use ~loc f0_lid env
   in
-  let check_one_apply ~errors ~loc ~f_lid ~f_comp ~arg_path ~arg_mty ~arg_mode
-    env =
+  let check_one_apply ~errors ~loc ~f_lid ~f_comp ~arg_path ~arg_mty env =
     let f_comp, param_mty =
       get_functor_components ~errors ~loc f_lid env f_comp
     in
     check_functor_appl
       ~errors ~loc ~lid_whole_app:lid0
       ~f0_path ~args:args_for_errors ~f_comp
-      ~arg_path ~arg_mty ~arg_mode:arg_mode.mode ~param_mty
+      ~arg_path ~arg_mty ~param_mty
       env;
     arg_path, f_comp
   in
   let rec check_apply ~path:f_path ~comp:f_comp = function
     | [] -> invalid_arg "Env.lookup_apply: empty argument list"
-    | [ f_lid, arg_path, arg_mty, arg_mode ] ->
+    | [ f_lid, arg_path, arg_mty ] ->
         let arg_path, comps =
           check_one_apply ~errors ~loc ~f_lid ~f_comp
-            ~arg_path ~arg_mty ~arg_mode env
+            ~arg_path ~arg_mty env
         in
         f_path, comps, arg_path
-    | (f_lid, arg_path, arg_mty, arg_mode) :: args ->
+    | (f_lid, arg_path, arg_mty) :: args ->
         let arg_path, f_comp =
           check_one_apply ~errors ~loc ~f_lid ~f_comp
-            ~arg_path ~arg_mty ~arg_mode env
+            ~arg_path ~arg_mty env
         in
         let comp =
           !components_of_functor_appl' ~loc ~f_path ~f_comp ~arg:arg_path env
@@ -3449,29 +3511,21 @@ and lookup_apply ~errors ~use ~loc lid0 env =
   in
   check_apply ~path:f0_path ~comp:f0_comp args0
 
-and lookup_module ~errors ~use ~lock ~loc lid env =
-  let path, locks, md =
-    match lid with
-    | Lident s ->
-        let path, locks, data = lookup_ident_module Load ~errors ~use ~loc s env in
-        let md = Subst.Lazy.force_module_decl data.mda_declaration in
-        path, locks, md
-    | Ldot(l, s) ->
-        let path, locks, data = lookup_dot_module ~errors ~use ~loc l s env in
-        let md = Subst.Lazy.force_module_decl data.mda_declaration in
-        path, locks, md
-    | Lapply _ as lid ->
-        let path_f, comp_f, path_arg = lookup_apply ~errors ~use ~loc lid env in
-        let md = md (modtype_of_functor_appl comp_f path_f path_arg) in
-        Papply(path_f, path_arg), [], md
-  in
-  let vmode =
-    if lock then
-      walk_locks ~errors ~loc ~env ~item:Module ~lid mda_mode None locks
-    else
-      mode_default mda_mode
-  in
-  path, md, vmode
+and lookup_module ~errors ~use ~loc lid env =
+  match lid with
+  | Lident s ->
+      let path, locks, data = lookup_ident_module Load ~errors ~use ~loc s env in
+      let md = Subst.Lazy.force_module_decl data.mda_declaration in
+      path, md, locks
+  | Ldot(l, s) ->
+      let path, locks, data = lookup_dot_module ~errors ~use ~loc l s env in
+      let md = Subst.Lazy.force_module_decl data.mda_declaration in
+      path, md, locks
+  | Lapply _ as lid ->
+      let path_f, comp_f, path_arg = lookup_apply ~errors ~use ~loc lid env in
+      let md = md (modtype_of_functor_appl comp_f path_f path_arg) in
+      (* [Lapply] is for [F(M).t] so nothing is closed over. *)
+      Papply(path_f, path_arg), md, locks_empty
 
 and lookup_dot_module ~errors ~use ~loc l s env =
   let p, locks, comps = lookup_structure_components ~errors ~use ~loc l env in
@@ -3646,7 +3700,7 @@ let add_components slot root env0 comps locks =
 
 let open_signature_by_path path env0 =
   let comps = find_structure_components path env0 in
-  add_components None path env0 comps []
+  add_components None path env0 comps locks_empty
 
 let open_signature ~errors ~loc slot lid env0 =
   let (root, locks, comps) =
@@ -3767,7 +3821,8 @@ let lookup_module_path ~errors ~use ~loc ~load lid env =
       path, locks
   | Lapply _ as lid ->
       let path_f, _comp_f, path_arg = lookup_apply ~errors ~use ~loc lid env in
-      Papply(path_f, path_arg), []
+      (* [Lapply] is for [F(M).t] so nothing is closed over. *)
+      Papply(path_f, path_arg), locks_empty
 
 let lookup_module_instance_path ~errors ~use ~loc ~load name env =
   (* The locks are whatever locks we would find if we went through
@@ -3908,9 +3963,7 @@ let lookup_all_constructors_from_type ~use ~loc usage ty_path env =
 
 let find_module_by_name lid env =
   let loc = Location.(in_file !input_name) in
-  let path, desc, _ =
-    lookup_module ~errors:false ~use:false ~lock:false ~loc lid env
-  in
+  let path, desc, _ = lookup_module ~errors:false ~use:false ~loc lid env in
   path, desc
 
 let find_value_by_name lid env =
@@ -3962,7 +4015,7 @@ let find_cltype_index id env = find_index_tbl id env.cltypes
 
 (* Ordinary lookup functions *)
 
-let walk_locks ~loc ~env ~item ~lid mode ty locks =
+let walk_locks ~env ~item mode ty (locks, lid, loc) =
   walk_locks ~errors:true ~loc ~env ~item ~lid mode ty locks
 
 let lookup_module_path ?(use=true) ~loc ~load lid env =
@@ -3971,9 +4024,8 @@ let lookup_module_path ?(use=true) ~loc ~load lid env =
 let lookup_module_instance_path ?(use=true) ~loc ~load lid env =
   lookup_module_instance_path ~errors:true ~use ~loc ~load lid env
 
-let lookup_module ?(use=true) ?(lock=use) ~loc lid env =
-  let path, desc, vmode = lookup_module ~errors:true ~use ~lock ~loc lid env in
-  path, desc, vmode.mode
+let lookup_module ?(use=true) ~loc lid env =
+  lookup_module ~errors:true ~use ~loc lid env
 
 let lookup_value ?(use=true) ~loc lid env =
   lookup_value ~errors:true ~use ~loc lid env
@@ -4050,10 +4102,10 @@ let bound_module name env =
       if Current_unit_name.is name then false
       else begin
         match
-          find_pers_mod ~allow_hidden:false
+          find_pers_mod ~allow_hidden:false ~allow_excess_args:false
             (Global_module.Name.create_no_args name)
         with
-        | _ -> true
+        | (_ : module_data) -> true
         | exception Not_found -> false
       end
 
@@ -4397,9 +4449,23 @@ let sharedness_hint ppf : shared_context -> _ = function
           because it is defined outside of the probe.@]"
 
 let print_lock_item ppf (item, lid) =
+<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
   match (item : lock_item) with
   | Module -> fprintf ppf "Modules are"
   | Class -> fprintf ppf "Classes are"
+||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
+  match item with
+  | Module -> fprintf ppf "Modules are"
+  | Class -> fprintf ppf "Classes are"
+=======
+  match item with
+  | Module ->
+      fprintf ppf "%a is a module, and modules are always"
+        (Style.as_inline_code !print_longident) lid
+  | Class ->
+      fprintf ppf "%a is a class, and classes are always"
+        (Style.as_inline_code !print_longident) lid
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
   | Value -> fprintf ppf "The value %a is"
       (Style.as_inline_code !print_longident) lid
 

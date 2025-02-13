@@ -165,7 +165,8 @@ let rec reduce_lazy ~aliases env mty =
   | Mty_alias path when aliases ->
         begin try
           let mty = (Env.find_module_lazy path env).md_type in
-          let mty = strengthen_lazy ~aliasable:true mty path in
+          let normal_path = Env.normalize_instance_names_in_module_path path in
+          let mty = strengthen_lazy ~aliasable:true mty normal_path in
           Some mty
         with Not_found ->
           (*Location.prerr_warning Location.none
@@ -188,6 +189,8 @@ let rec scrape_lazy ~aliases env mty =
   match reduce_lazy ~aliases env mty with
   | Some mty -> scrape_lazy ~aliases env mty
   | None -> mty
+
+let reduce_alias_lazy env mty = reduce_lazy ~aliases:true env mty
 
 let reduce_lazy env mty = reduce_lazy ~aliases:false env mty
 

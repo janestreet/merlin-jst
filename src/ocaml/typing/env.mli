@@ -141,6 +141,10 @@ val normalize_value_path: Location.t option -> t -> Path.t -> Path.t
 val normalize_modtype_path: t -> Path.t -> Path.t
 (* Normalize a module type path *)
 
+val normalize_instance_names_in_module_path: Path.t -> Path.t
+(* Normalize the instance names appearing in a module path by removing
+   excess arguments arising from transparent aliases *)
+
 val reset_required_globals: unit -> unit
 val get_required_globals: unit -> Compilation_unit.t list
 val add_required_global: Path.t -> t -> unit
@@ -203,6 +207,11 @@ type shared_context =
   | Probe
 
 type locks
+
+type held_locks = locks * Longident.t * Location.t
+(** Sometimes we get the locks for something, but either want to walk them later, or
+walk them for something else. The [Longident.t] and [Location.t] are only for error
+messages, and point to the variable for which we actually want to walk the locks. *)
 
 val locks_empty : locks
 
@@ -270,8 +279,8 @@ type actual_mode = {
     locks and constrains [mode] and [ty]. Return the access mode of the value allowed by
     the locks. [ty] is optional as the function works on modules and classes as well, for
     which [ty] should be [None]. *)
-val walk_locks : loc:Location.t -> env:t -> item:lock_item -> lid:Longident.t ->
-  Mode.Value.l -> type_expr option -> locks -> actual_mode
+val walk_locks : env:t -> item:lock_item -> Mode.Value.l -> type_expr option ->
+  held_locks -> actual_mode
 
 val lookup_value:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
@@ -280,8 +289,8 @@ val lookup_type:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
   Path.t * type_declaration
 val lookup_module:
-  ?use:bool -> ?lock:bool -> loc:Location.t -> Longident.t -> t ->
-  Path.t * module_declaration * Mode.Value.l
+  ?use:bool -> loc:Location.t -> Longident.t -> t ->
+  Path.t * module_declaration * locks
 val lookup_modtype:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
   Path.t * modtype_declaration
@@ -511,7 +520,7 @@ val get_unit_name: unit -> Compilation_unit.t option
 
 (* Read, save a signature to/from a file. *)
 val read_signature:
-  Global_module.Name.t -> Unit_info.Artifact.t -> add_binding:bool
+  Global_module.Name.t -> Unit_info.Artifact.t
   -> signature
         (* Arguments: module name, file name, [add_binding] flag.
            Results: signature. If [add_binding] is true, creates an entry for
@@ -611,8 +620,8 @@ val set_type_used_callback:
 val check_functor_application:
   (errors:bool -> loc:Location.t ->
    lid_whole_app:Longident.t ->
-   f0_path:Path.t -> args:(Path.t * Types.module_type * Mode.Value.l) list ->
-   arg_path:Path.t -> arg_mty:Types.module_type -> arg_mode:Mode.Value.l ->
+   f0_path:Path.t -> args:(Path.t * Types.module_type) list ->
+   arg_path:Path.t -> arg_mty:Types.module_type ->
    param_mty:Types.module_type ->
    t -> unit) ref
 (* Forward declaration to break mutual recursion with Typemod. *)

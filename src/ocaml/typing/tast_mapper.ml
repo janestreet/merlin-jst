@@ -319,8 +319,16 @@ let pat
         Tpat_record_unboxed_product
           (List.map (tuple3 (map_loc sub) id (sub.pat sub)) l, closed)
     | Tpat_array (am, arg_sort, l) -> Tpat_array (am, arg_sort, List.map (sub.pat sub) l)
+<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
     | Tpat_alias (p, id, s, uid, m) ->
       Tpat_alias (sub.pat sub p, id, map_loc sub s, uid, m)
+||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
+    | Tpat_alias (p, id, s, uid, m) ->
+        Tpat_alias (sub.pat sub p, id, map_loc sub s, uid, m)
+=======
+    | Tpat_alias (p, id, s, uid, m, ty) ->
+        Tpat_alias (sub.pat sub p, id, map_loc sub s, uid, m, ty)
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
     | Tpat_lazy p -> Tpat_lazy (sub.pat sub p)
     | Tpat_value p ->
        (as_computation_pattern (sub.pat sub (p :> pattern))).pat_desc

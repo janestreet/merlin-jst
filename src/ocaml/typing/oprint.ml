@@ -642,8 +642,21 @@ and print_out_jkind_const ppf ojkind =
     | Ojkind_const_default -> fprintf ppf "_"
     | Ojkind_const_abbreviation abbrev -> fprintf ppf "%s" abbrev
     | Ojkind_const_mod (base, modes) ->
+<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
       Misc_stdlib.pp_parens_if nested (fun ppf (base, modes) ->
         fprintf ppf "%a mod @[%a@]" (pp_element ~nested:true) base
+||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
+      Misc.pp_parens_if nested (fun ppf (base, modes) ->
+        fprintf ppf "%a mod @[%a@]" (pp_element ~nested:true) base
+=======
+      let pp_base ppf base =
+        match base with
+        | Some base -> fprintf ppf "%a " (pp_element ~nested:true) base
+        | None -> ()
+      in
+      Misc.pp_parens_if nested (fun ppf (base, modes) ->
+        fprintf ppf "%amod @[%a@]" pp_base base
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
           (pp_print_list
               ~pp_sep:(fun ppf () -> fprintf ppf "@ ")
               (fun ppf -> fprintf ppf "%s"))

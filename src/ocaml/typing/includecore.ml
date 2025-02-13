@@ -49,7 +49,7 @@ exception Dont_match of value_mismatch
 
 type mmodes =
   | All
-  | Legacy
+  | Legacy of Env.held_locks option
 
 (** Mode cross a right mode *)
 (* This is very similar to Ctype.mode_cross_right. Any bugs here are likely bugs
@@ -57,13 +57,44 @@ type mmodes =
 let right_mode_cross_jkind env jkind mode =
   let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
   let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
+  let upper_bounds =
+    Alloc.Const.merge
+      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
+  in
   let upper_bounds = Const.alloc_as_value upper_bounds in
-  Value.imply upper_bounds mode
+  let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
+  let lower_bounds =
+    Alloc.Const.merge
+      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
+  in
+  let lower_bounds = Const.alloc_as_value lower_bounds in
+  Value.imply upper_bounds (Value.join_const lower_bounds mode)
 
 let right_mode_cross env ty mode =
   if not (Ctype.is_principal ty) then mode else
   let jkind = Ctype.type_jkind_purely env ty in
   right_mode_cross_jkind env jkind mode
+
+let left_mode_cross_jkind env jkind mode =
+  let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
+  let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
+  let upper_bounds =
+    Alloc.Const.merge
+      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
+  in
+  let upper_bounds = Const.alloc_as_value upper_bounds in
+  let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
+  let lower_bounds =
+    Alloc.Const.merge
+      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
+  in
+  let lower_bounds = Const.alloc_as_value lower_bounds in
+  Value.subtract lower_bounds (Value.meet_const upper_bounds mode)
+
+let left_mode_cross env ty mode=
+  if not (Ctype.is_principal ty) then mode else
+  let jkind = Ctype.type_jkind_purely env ty in
+  left_mode_cross_jkind env jkind mode
 
 let native_repr_args nra1 nra2 =
   let rec loop i nra1 nra2 =
@@ -128,17 +159,27 @@ let value_descriptions ~loc env name
       | Ok () -> ()
       | Error e -> raise (Dont_match (Modality e))
       end;
-  | Legacy when (vd1.val_modalities == vd2.val_modalities) ->
+  | Legacy close_over_coercion ->
+    match Mode.Modality.Value.to_const_opt vd2.val_modalities with
       (* [wrap_constraint_with_shape] invokes inclusion check with identical
         inferred modalities, which we need to workaround. *)
-      ()
-  | Legacy ->
+    | None -> ()
+    | Some val2_modalities ->
       let mmode1, mmode2 =
         Mode.Value.(disallow_right legacy), Mode.Value.(disallow_left legacy)
       in
       let mode1 = Mode.Modality.Value.apply vd1.val_modalities mmode1 in
-      let mode2 =
-        Mode.Modality.Value.(Const.apply (to_const_exn vd2.val_modalities) mmode2)
+      let mode2 = Mode.Modality.Value.(Const.apply val2_modalities mmode2) in
+      let mode1 =
+        match close_over_coercion with
+        | Some held_locks ->
+          (* Cross modes according to RHS type as it tends to be by the user. *)
+          let mode1 = left_mode_cross env vd2.val_type mode1 in
+          let mode1 =
+            Env.walk_locks ~env ~item:Value mode1 (Some vd1.val_type) held_locks
+          in
+          mode1.mode
+        | None -> mode1
       in
       let mode2 = right_mode_cross env vd2.val_type mode2 in
       begin match Mode.Value.submode mode1 mode2 with
@@ -667,11 +708,10 @@ let compare_unsafe_mode_crossing umc1 umc2 =
   | None, None -> None
   | Some _, None -> Some (Unsafe_mode_crossing (Mode_crossing_only_on First))
   | None, Some _ -> Some (Unsafe_mode_crossing (Mode_crossing_only_on Second))
-  | Some ({ modal_upper_bounds = mub1 }),
-    Some ({ modal_upper_bounds = mub2 }) ->
-    if (Mode.Alloc.Const.le mub1 mub2 && Mode.Alloc.Const.le mub2 mub1)
-    then None
-    else Some (Unsafe_mode_crossing Mode_crossing_not_equal)
+  | Some umc1, Some umc2 ->
+      if equal_unsafe_mode_crossing umc1 umc2
+      then None
+      else Some (Unsafe_mode_crossing Mode_crossing_not_equal)
 
 module Record_diffing = struct
 
@@ -1445,7 +1485,8 @@ let type_declarations ?(equality = false) ~loc env ~mark name
      Some (Parameter_jkind
              (ty, Jkind.Violation.of_
                     (Not_a_subjkind (Jkind.disallow_right original_jkind,
-                                     Jkind.disallow_left inferred_jkind))))
+                                     Jkind.disallow_left inferred_jkind,
+                                     []))))
   | All_good ->
   let abstr = Btype.type_kind_is_abstract decl2 && decl2.type_manifest = None in
   let need_variance =
