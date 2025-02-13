@@ -25,7 +25,7 @@ end
 
 [@@@warning "+9"]
 
-module Nonempty_list = Misc.Nonempty_list
+module Nonempty_list = Misc_stdlib.Nonempty_list
 
 (* A *sort* is the information the middle/back ends need to be able to
    compile a manipulation (storing, passing, etc) of a runtime value. *)

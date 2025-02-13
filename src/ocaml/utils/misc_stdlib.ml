@@ -77,18 +77,18 @@ module List = struct
         | Error _ as e -> e
 
   let [@inline] merge_fold ~cmp ~left_only ~right_only ~both ~init t1 t2 =
-    let rec loop acc t1 t2 =
-      match t1, t2 with
-      | [], [] -> acc
-      | a :: t1', [] -> loop (left_only acc a) t1' []
-      | [], b :: t2' -> loop (right_only acc b) [] t2'
-      | a :: t1', b :: t2' ->
-          match cmp a b with
-          | 0 -> loop (both acc a b) t1' t2'
-          | c when c < 0 -> loop (left_only acc a) t1' t2
-          | _ -> loop (right_only acc b) t1 t2'
-    in
-    loop init t1 t2
+      let rec loop acc t1 t2 =
+        match t1, t2 with
+        | [], [] -> acc
+        | a :: t1', [] -> loop (left_only acc a) t1' []
+        | [], b :: t2' -> loop (right_only acc b) [] t2'
+        | a :: t1', b :: t2' ->
+            match cmp a b with
+            | 0 -> loop (both acc a b) t1' t2'
+            | c when c < 0 -> loop (left_only acc a) t1' t2
+            | _ -> loop (right_only acc b) t1 t2'
+      in
+      loop init t1 t2
 
   let [@inline] merge_iter ~cmp ~left_only ~right_only ~both t1 t2 =
       merge_fold t1 t2 ~cmp
@@ -426,4 +426,22 @@ end
 
 module type T2 = sig
   type ('a, 'b) t
+end
+
+module Nonempty_list = struct
+  type nonrec 'a t = ( :: ) of 'a * 'a list
+
+  let to_list (x :: xs) : _ list = x :: xs
+
+  let of_list_opt : _ list -> _ t option = function
+    | [] -> None
+    | (x :: xs)-> Some (x :: xs)
+
+  let map f (x :: xs) = f x :: List.map f xs
+
+  let pp_print ?pp_sep f ppf t =
+    Format.pp_print_list ?pp_sep f ppf (to_list t)
+
+  let (@) (x :: xs) (y :: ys) =
+    x :: List.(xs @ (y :: ys))
 end

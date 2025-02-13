@@ -60,6 +60,20 @@ module List : sig
     -> 'b list
     -> unit
 
+  val merge_fold
+      : cmp:('a -> 'b -> int)
+      -> left_only:('acc -> 'a -> 'acc)
+      -> right_only:('acc -> 'b -> 'acc)
+      -> both:('acc -> 'a -> 'b -> 'acc)
+      -> init:'acc
+      -> 'a list
+      -> 'b list
+      -> 'acc
+      (** Folds over two sorted lists, calling [left_only] on those elements
+          that appear only in the left list, [right_only] on those elements
+          that appear only in the right list, and [both] on those elements that
+          appear in both. *)
+
   val fold_left_map2
     : ('acc -> 'a -> 'b -> 'acc * 'r)
     -> 'acc
@@ -257,4 +271,22 @@ end
 
 module type T2 = sig
   type ('a, 'b) t
+end
+
+(** Non-empty lists *)
+module Nonempty_list : sig
+  type nonrec 'a t = ( :: ) of 'a * 'a list
+
+  val to_list : 'a t -> 'a list
+  val of_list_opt : 'a list -> 'a t option
+  val map : ('a -> 'b) -> 'a t -> 'b t
+
+  val pp_print :
+    ?pp_sep:(Format.formatter -> unit -> unit) ->
+    (Format.formatter -> 'a -> unit) ->
+    Format.formatter ->
+    'a t ->
+    unit
+
+  val (@) : 'a t -> 'a t -> 'a t
 end

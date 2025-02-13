@@ -860,7 +860,7 @@ type 'a sig_reader =
 (* Add a persistent structure to the hash table and bind it in the [Env].
    Checks that OCaml source is allowed to refer to this module. *)
 
-let acknowledge_new_pers_struct penv short_path_comps modname pers_name val_of_pers_sig =
+let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig short_path_comps =
   let {persistent_structures; _} = penv in
   let import = pers_name.pn_import in
   let global = pers_name.pn_global in
@@ -922,8 +922,8 @@ let acknowledge_pers_struct penv modname pers_name val_of_pers_sig short_path_co
     match Hashtbl.find_opt persistent_structures canonical_modname with
     | Some ps -> ps
     | None ->
-        acknowledge_new_pers_struct penv short_path_comps canonical_modname pers_name
-          val_of_pers_sig
+        acknowledge_new_pers_struct penv canonical_modname pers_name
+          val_of_pers_sig short_path_comps
   in
   if not (Global_module.Name.equal modname canonical_modname) then
     Hashtbl.add persistent_structures modname { ps with ps_canonical = false };
@@ -944,7 +944,7 @@ let find_pers_struct
       let pers_name =
         find_pers_name ~allow_hidden penv ~check name ~allow_excess_args
       in
-      acknowledge_pers_struct penv short_path_comps name pers_name val_of_pers_sig
+      acknowledge_pers_struct penv name pers_name val_of_pers_sig short_path_comps
 
 let describe_prefix ppf prefix =
   if CU.Prefix.is_empty prefix then

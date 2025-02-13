@@ -2645,7 +2645,7 @@ and type_module_maybe_hold_locks ?(alias=false) ~hold_locks sttn funct_body anch
       mod_env = env;
       mod_attributes = Msupport.flush_saved_types () @ smod.pmod_attributes;
       mod_loc = smod.pmod_loc },
-      Shape.dummy_mod, Env.locks_empty
+      Shape.dummy_mod, None
 
 and type_module_aux ~alias ~hold_locks sttn funct_body anchor env smod =
   match smod.pmod_desc with
@@ -2744,7 +2744,7 @@ and type_module_aux ~alias ~hold_locks sttn funct_body anchor env smod =
               mod_env = env;
               mod_attributes = sarg.pmod_attributes;
             },
-            Shape.dummy_mod, locks
+            Shape.dummy_mod, None
         | _ -> raise exn
       end
   | Pmod_unpack sexp ->

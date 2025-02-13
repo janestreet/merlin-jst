@@ -105,7 +105,6 @@ type 'a sig_reader =
   -> 'a
 
 val read : 'a t
-  -> (Global_module.Name.t -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> Global_module.Name.t -> Unit_info.Artifact.t
   -> Subst.Lazy.signature
 

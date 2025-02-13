@@ -1221,7 +1221,7 @@ let runtime_parameter_bindings () =
 let parameters () = Persistent_env.parameters !persistent_env
 
 let read_pers_mod modname cmi =
-  Persistent_env.read !persistent_env short_paths_components modname cmi
+  Persistent_env.read !persistent_env modname cmi
 
 let find_pers_mod name ~allow_excess_args =
   Persistent_env.find !persistent_env

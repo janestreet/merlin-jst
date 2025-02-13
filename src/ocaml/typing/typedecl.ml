@@ -1903,7 +1903,7 @@ let update_decl_jkind env id decl =
         Pident id,
         Jkind.Violation.of_ (
           Not_a_subjkind (
-            new_decl.type_jkind, decl.type_jkind, Nonempty_list.to_list reason)))))
+            new_decl.type_jkind, decl.type_jkind, Misc_stdlib.Nonempty_list.to_list reason)))))
   | Less | Equal -> new_decl
 
 let update_decls_jkind_reason env decls =
