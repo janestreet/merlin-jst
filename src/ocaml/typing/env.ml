@@ -1220,30 +1220,12 @@ let runtime_parameter_bindings () =
 
 let parameters () = Persistent_env.parameters !persistent_env
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let read_pers_mod modname cmi ~add_binding =
-  Persistent_env.read !persistent_env read_sign_of_cmi short_paths_components
-    modname cmi ~add_binding
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let read_pers_mod modname cmi ~add_binding =
-  Persistent_env.read !persistent_env read_sign_of_cmi modname cmi
-    ~add_binding
-=======
 let read_pers_mod modname cmi =
-  Persistent_env.read !persistent_env modname cmi
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
+  Persistent_env.read !persistent_env short_paths_components modname cmi
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let find_pers_mod name =
-  Persistent_env.find !persistent_env
-    read_sign_of_cmi short_paths_components name
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let find_pers_mod name =
-  Persistent_env.find !persistent_env read_sign_of_cmi name
-=======
 let find_pers_mod name ~allow_excess_args =
-  Persistent_env.find !persistent_env read_sign_of_cmi name ~allow_excess_args
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
+  Persistent_env.find !persistent_env
+    read_sign_of_cmi short_paths_components name ~allow_excess_args
 
 let check_pers_mod ~loc name =
   Persistent_env.check !persistent_env
@@ -4449,23 +4431,13 @@ let sharedness_hint ppf : shared_context -> _ = function
           because it is defined outside of the probe.@]"
 
 let print_lock_item ppf (item, lid) =
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
   match (item : lock_item) with
-  | Module -> fprintf ppf "Modules are"
-  | Class -> fprintf ppf "Classes are"
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-  match item with
-  | Module -> fprintf ppf "Modules are"
-  | Class -> fprintf ppf "Classes are"
-=======
-  match item with
   | Module ->
       fprintf ppf "%a is a module, and modules are always"
         (Style.as_inline_code !print_longident) lid
   | Class ->
       fprintf ppf "%a is a class, and classes are always"
         (Style.as_inline_code !print_longident) lid
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
   | Value -> fprintf ppf "The value %a is"
       (Style.as_inline_code !print_longident) lid
 

@@ -860,13 +860,7 @@ type 'a sig_reader =
 (* Add a persistent structure to the hash table and bind it in the [Env].
    Checks that OCaml source is allowed to refer to this module. *)
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let acknowledge_pers_struct penv short_path_comps modname pers_name val_of_pers_sig =
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let acknowledge_pers_struct penv modname pers_name val_of_pers_sig =
-=======
-let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig =
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
+let acknowledge_new_pers_struct penv short_path_comps modname pers_name val_of_pers_sig =
   let {persistent_structures; _} = penv in
   let import = pers_name.pn_import in
   let global = pers_name.pn_global in
@@ -919,22 +913,7 @@ let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig =
   register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
   ps
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let read_pers_struct penv val_of_pers_sig short_path_comps check modname cmi ~add_binding =
-  let pers_name = read_pers_name penv check modname cmi in
-  if add_binding then
-    ignore
-      (acknowledge_pers_struct penv short_path_comps modname pers_name val_of_pers_sig
-       : _ pers_struct_info);
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let read_pers_struct penv val_of_pers_sig check modname cmi ~add_binding =
-  let pers_name = read_pers_name penv check modname cmi in
-  if add_binding then
-    ignore
-      (acknowledge_pers_struct penv modname pers_name val_of_pers_sig
-       : _ pers_struct_info);
-=======
-let acknowledge_pers_struct penv modname pers_name val_of_pers_sig =
+let acknowledge_pers_struct penv modname pers_name val_of_pers_sig short_path_comps =
   (* This is the same dance that [acknowledge_pers_name] does. See comments
      there. *)
   let {persistent_structures; _} = penv in
@@ -943,7 +922,7 @@ let acknowledge_pers_struct penv modname pers_name val_of_pers_sig =
     match Hashtbl.find_opt persistent_structures canonical_modname with
     | Some ps -> ps
     | None ->
-        acknowledge_new_pers_struct penv canonical_modname pers_name
+        acknowledge_new_pers_struct penv short_path_comps canonical_modname pers_name
           val_of_pers_sig
   in
   if not (Global_module.Name.equal modname canonical_modname) then
@@ -954,33 +933,18 @@ let read_pers_struct penv check modname cmi =
   let pers_name =
     read_pers_name penv check modname cmi ~allow_excess_args:false
   in
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
   pers_name.pn_sign
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check name =
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let find_pers_struct ~allow_hidden penv val_of_pers_sig check name =
-=======
 let find_pers_struct
-    ~allow_hidden penv val_of_pers_sig ~check name ~allow_excess_args =
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
+    ~allow_hidden penv val_of_pers_sig short_path_comps ~check name ~allow_excess_args =
   let {persistent_structures; _} = penv in
   match Hashtbl.find persistent_structures name with
   | ps -> check_visibility ~allow_hidden ps.ps_name_info.pn_import; ps
   | exception Not_found ->
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-      let pers_name = find_pers_name ~allow_hidden penv check name in
-      acknowledge_pers_struct penv short_path_comps name pers_name val_of_pers_sig
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-      let pers_name = find_pers_name ~allow_hidden penv check name in
-      acknowledge_pers_struct penv name pers_name val_of_pers_sig
-=======
       let pers_name =
         find_pers_name ~allow_hidden penv ~check name ~allow_excess_args
       in
-      acknowledge_pers_struct penv name pers_name val_of_pers_sig
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
+      acknowledge_pers_struct penv short_path_comps name pers_name val_of_pers_sig
 
 let describe_prefix ppf prefix =
   if CU.Prefix.is_empty prefix then
@@ -993,14 +957,8 @@ module Style = Misc.Style
 let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
   let name_as_string = CU.Name.to_string (CU.Name.of_head_of_global_name name) in
   try
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-    ignore (find_pers_struct ~allow_hidden penv f1 f2 false name)
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-    ignore (find_pers_struct ~allow_hidden penv f false name)
-=======
-    ignore (find_pers_struct ~allow_hidden penv f ~check:false name
+    ignore (find_pers_struct ~allow_hidden penv f1 f2 ~check:false name
               ~allow_excess_args:true)
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
   with
   | Not_found ->
       let warn = Warnings.No_cmi_file(name_as_string, None) in
@@ -1042,32 +1000,12 @@ let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
       let warn = Warnings.No_cmi_file(name_as_string, Some msg) in
         Location.prerr_warning loc warn
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let read penv f modname a ~add_binding =
-  read_pers_struct penv f true modname a ~add_binding
-
-let find ~allow_hidden penv f name =
-  (find_pers_struct ~allow_hidden penv f true name).ps_val
-
-let check ~allow_hidden penv f ~loc name =
-  let {persistent_structures; _} = penv in
-=======
 let read penv modname a =
   read_pers_struct penv true modname a
 
-let find ~allow_hidden penv f name ~allow_excess_args =
-  (find_pers_struct ~allow_hidden ~allow_excess_args penv f ~check:true
+let find ~allow_hidden penv f1 f2 name ~allow_excess_args =
+  (find_pers_struct ~allow_hidden ~allow_excess_args penv f1 f2 ~check:true
      name).ps_val
-
-let check ~allow_hidden penv f ~loc name =
-  let {persistent_structures; _} = penv in
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
-let read penv f1 f2 modname a ~add_binding =
-  read_pers_struct penv f1 f2 true modname a ~add_binding
-
-let find ~allow_hidden penv f1 f2 name =
-  (find_pers_struct ~allow_hidden penv f1 f2 true name).ps_val
 
 let check ~allow_hidden penv f1 f2 ~loc name =
   let {persistent_structures; _} = penv in

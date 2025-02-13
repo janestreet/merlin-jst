@@ -103,13 +103,7 @@ module Layout : sig
 
   val of_const : Const.t -> Sort.t t
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-  val sub : Sort.t t -> Sort.t t -> Misc_stdlib.Le_result.t
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-  val sub : Sort.t t -> Sort.t t -> Misc.Le_result.t
-=======
   val sub : Sort.t t -> Sort.t t -> Sub_result.t
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 end
 
 (** A Jkind.t is a full description of the runtime representation of values

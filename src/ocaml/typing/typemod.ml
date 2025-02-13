@@ -2626,46 +2626,14 @@ let rec type_module ?alias sttn funct_body anchor env smod =
   assert (Option.is_none held_locks);
   md, shape
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-and  type_module_maybe_hold_locks ~alias sttn funct_body anchor env smod =
-  Builtin_attributes.warning_scope smod.pmod_attributes
-    (fun () -> type_module_aux ~alias sttn funct_body anchor env smod)
-
-and type_module_aux ~alias sttn funct_body anchor env smod =
-  match smod.pmod_desc with
-    Pmod_ident lid ->
-      let path, locks =
-        Env.lookup_module_path ~load:(not @@ is_alias alias) ~loc:smod.pmod_loc lid.txt env
-      in
-      type_module_path_aux ~alias sttn env path locks lid smod
-  | Pmod_structure sstr ->
-      let (str, sg, names, shape, _finalenv) =
-        type_structure funct_body anchor env sstr in
-=======
-and  type_module_maybe_hold_locks ?(alias=false) ~hold_locks sttn funct_body anchor env smod =
-  Builtin_attributes.warning_scope smod.pmod_attributes
-    (fun () -> type_module_aux ~alias ~hold_locks sttn funct_body anchor env smod)
-
-and type_module_aux ~alias ~hold_locks sttn funct_body anchor env smod =
-  match smod.pmod_desc with
-    Pmod_ident lid ->
-      let path, locks =
-        Env.lookup_module_path ~load:(not alias) ~loc:smod.pmod_loc lid.txt env
-      in
-      type_module_path_aux ~alias ~hold_locks sttn env path locks lid smod
-  | Pmod_structure sstr ->
-      let (str, sg, names, shape, _finalenv) =
-        type_structure funct_body anchor env sstr in
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
-and type_module_maybe_hold_locks ~alias sttn funct_body anchor env smod =
+and type_module_maybe_hold_locks ?(alias=false) ~hold_locks sttn funct_body anchor env smod =
   (* Merlin: when we start typing a module we don't want to include potential
     saved_items from its parent. We backup them before starting and restore them
     when finished. *)
   Msupport.with_saved_types @@ fun () ->
   try
     Builtin_attributes.warning_scope smod.pmod_attributes
-      (fun () -> type_module_aux ~alias sttn funct_body anchor env smod)
+      (fun () -> type_module_aux ~alias ~hold_locks sttn funct_body anchor env smod)
   with exn ->
     Msupport.raise_error exn;
     { mod_desc = Tmod_structure {
@@ -2679,13 +2647,13 @@ and type_module_maybe_hold_locks ~alias sttn funct_body anchor env smod =
       mod_loc = smod.pmod_loc },
       Shape.dummy_mod, Env.locks_empty
 
-and type_module_aux ~alias sttn funct_body anchor env smod =
+and type_module_aux ~alias ~hold_locks sttn funct_body anchor env smod =
   match smod.pmod_desc with
     Pmod_ident lid ->
       let path, locks =
-        Env.lookup_module_path ~load:(not @@ is_alias alias) ~loc:smod.pmod_loc lid.txt env
+        Env.lookup_module_path ~load:(not alias) ~loc:smod.pmod_loc lid.txt env
       in
-      type_module_path_aux ~alias sttn env path locks lid smod
+      type_module_path_aux ~alias ~hold_locks sttn env path locks lid smod
   | Pmod_structure sstr ->
       let (str, sg, names, shape, _finalenv) =
         type_structure funct_body anchor env [] sstr in
@@ -2752,47 +2720,17 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
       let arg, arg_shape, held_locks =
         type_module_maybe_hold_locks ~alias ~hold_locks:true true funct_body anchor env sarg
       in
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-      let mty = transl_modtype env smty in
-      let md, final_shape =
-        wrap_constraint_with_shape env true arg mty.mty_type arg_shape
-          (Tmodtype_explicit mty)
-      in
-      { md with
-        mod_loc = smod.pmod_loc;
-        mod_attributes = smod.pmod_attributes;
-      },
-      final_shape, locks
-  | Pmod_unpack sexp ->
-      let exp =
-        Ctype.with_local_level_if_principal
-=======
-      let mty = transl_modtype env smty in
-      let md, final_shape =
-        wrap_constraint_with_shape env true arg held_locks mty.mty_type arg_shape
-          (Tmodtype_explicit mty)
-      in
-      { md with
-        mod_loc = smod.pmod_loc;
-        mod_attributes = smod.pmod_attributes;
-      },
-      final_shape, None
-  | Pmod_unpack sexp ->
-      let exp =
-        Ctype.with_local_level_if_principal
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
       begin try
         let mty = transl_modtype env smty in
         let md, final_shape =
-          wrap_constraint_with_shape env true arg mty.mty_type arg_shape
+          wrap_constraint_with_shape env true arg held_locks mty.mty_type arg_shape
             (Tmodtype_explicit mty)
         in
         { md with
           mod_loc = smod.pmod_loc;
           mod_attributes = smod.pmod_attributes;
         },
-        final_shape, locks
+        final_shape, None
       with exn ->
        (* [merlin] For better Construct error messages we need to keep holes
           in the recovered typedtree *)
@@ -2842,20 +2780,14 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-      Shape.leaf_for_unpack, Env.locks_empty
+      Shape.leaf_for_unpack, None
   | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
       { mod_desc = Tmod_typed_hole;
         mod_type = Mty_for_hole;
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
-      Shape.dummy_mod, Env.locks_empty
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-      Shape.leaf_for_unpack, Env.locks_empty
-=======
-      Shape.leaf_for_unpack, None
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
+      Shape.dummy_mod, None
   | Pmod_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
   | Pmod_instance glob ->
@@ -2922,19 +2854,11 @@ and type_module_path_aux ~alias ~hold_locks sttn env path locks (lid : _ loc) sm
 and type_application loc strengthen funct_body env smod =
   let rec extract_application funct_body env sargs smod =
     match smod.pmod_desc with
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
     | Pmod_apply (f, sarg) ->
-        let arg, shape = type_module true funct_body None env sarg in
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-    | Pmod_apply(f, sarg) ->
-        let arg, shape = type_module true funct_body None env sarg in
-=======
-    | Pmod_apply(f, sarg) ->
         let arg, shape, held_locks =
           type_module_maybe_hold_locks ~hold_locks:true true funct_body None env
             sarg
         in
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
         let summary = {
           loc = smod.pmod_loc;
           attributes = smod.pmod_attributes;
@@ -3021,18 +2945,10 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
       let coercion =
         try Includemod.modtypes
               ~loc:arg.mod_loc ~mark:Mark_both env arg.mod_type mty_param
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-              ~modes:Legacy
+              ~modes:(Legacy held_locks)
         with Includemod.Error _ ->
           Msupport.raise_error (apply_error ());
           Tcoerce_none
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-              ~modes:Legacy
-        with Includemod.Error _ -> apply_error ()
-=======
-              ~modes:(Legacy held_locks)
-        with Includemod.Error _ -> apply_error ()
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
       in
       let mty_appl =
         match arg_path with
@@ -3676,13 +3592,7 @@ let type_module_alias env smod =
   md, shape, locks
 
 let type_module = type_module true false None
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-let type_structure = type_structure false None
-=======
 let type_module_maybe_hold_locks = type_module_maybe_hold_locks true false None
-let type_structure = type_structure false None
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 
 let merlin_type_structure env sig_acc str =
   let (str, sg, _sg_names, _shape, env) =

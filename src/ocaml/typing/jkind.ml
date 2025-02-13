@@ -54,7 +54,7 @@ module Sub_result = struct
     | Less
     | Not_le of Sub_failure_reason.t Nonempty_list.t
 
-  let of_le_result ~failure_reason (le_result : Misc.Le_result.t) =
+  let of_le_result ~failure_reason (le_result : Le_result.t) =
     match le_result with
     | Less -> Less
     | Equal -> Equal
@@ -270,63 +270,8 @@ module Layout = struct
     | Any, Any -> true
     | (Any | Sort _ | Product _), _ -> false
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-  let rec sub t1 t2 : Le_result.t =
-    match t1, t2 with
-    | Any, Any -> Equal
-    | _, Any -> Less
-    | Any, _ -> Not_le
-    | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
-    | Product ts1, Product ts2 ->
-      if List.compare_lengths ts1 ts2 = 0
-      then Le_result.combine_list (List.map2 sub ts1 ts2)
-      else Not_le
-    | Product ts1, Sort s2 -> (
-      (* This case could use [to_product_sort] because every component will need
-         to end up less than a sort (so, no [any]), but it seems easier to keep
-         this case lined up with the inverse case, which definitely cannot use
-         [to_product_sort]. *)
-      match Sort.decompose_into_product s2 (List.length ts1) with
-      | None -> Not_le
-      | Some ss2 ->
-        Misc_stdlib.Le_result.combine_list
-          (List.map2 (fun t1 s2 -> sub t1 (Sort s2)) ts1 ss2))
-    | Sort s1, Product ts2 -> (
-      match Sort.decompose_into_product s1 (List.length ts2) with
-      | None -> Not_le
-      | Some ss1 ->
-        Misc_stdlib.Le_result.combine_list
-          (List.map2 (fun s1 t2 -> sub (Sort s1) t2) ss1 ts2))
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-  let rec sub t1 t2 : Misc.Le_result.t =
-    match t1, t2 with
-    | Any, Any -> Equal
-    | _, Any -> Less
-    | Any, _ -> Not_le
-    | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
-    | Product ts1, Product ts2 ->
-      if List.compare_lengths ts1 ts2 = 0
-      then Misc.Le_result.combine_list (List.map2 sub ts1 ts2)
-      else Not_le
-    | Product ts1, Sort s2 -> (
-      (* This case could use [to_product_sort] because every component will need
-         to end up less than a sort (so, no [any]), but it seems easier to keep
-         this case lined up with the inverse case, which definitely cannot use
-         [to_product_sort]. *)
-      match Sort.decompose_into_product s2 (List.length ts1) with
-      | None -> Not_le
-      | Some ss2 ->
-        Misc.Le_result.combine_list
-          (List.map2 (fun t1 s2 -> sub t1 (Sort s2)) ts1 ss2))
-    | Sort s1, Product ts2 -> (
-      match Sort.decompose_into_product s1 (List.length ts2) with
-      | None -> Not_le
-      | Some ss1 ->
-        Misc.Le_result.combine_list
-          (List.map2 (fun s1 t2 -> sub (Sort s1) t2) ss1 ts2))
-=======
   let sub t1 t2 =
-    let rec sub t1 t2 : Misc.Le_result.t =
+    let rec sub t1 t2 : Le_result.t =
       match t1, t2 with
       | Any, Any -> Equal
       | _, Any -> Less
@@ -334,7 +279,7 @@ module Layout = struct
       | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
       | Product ts1, Product ts2 ->
         if List.compare_lengths ts1 ts2 = 0
-        then Misc.Le_result.combine_list (List.map2 sub ts1 ts2)
+        then Le_result.combine_list (List.map2 sub ts1 ts2)
         else Not_le
       | Product ts1, Sort s2 -> (
         (* This case could use [to_product_sort] because every component will need
@@ -344,18 +289,17 @@ module Layout = struct
         match Sort.decompose_into_product s2 (List.length ts1) with
         | None -> Not_le
         | Some ss2 ->
-          Misc.Le_result.combine_list
+          Le_result.combine_list
             (List.map2 (fun t1 s2 -> sub t1 (Sort s2)) ts1 ss2))
       | Sort s1, Product ts2 -> (
         match Sort.decompose_into_product s1 (List.length ts2) with
         | None -> Not_le
         | Some ss1 ->
-          Misc.Le_result.combine_list
+          Le_result.combine_list
             (List.map2 (fun s1 t2 -> sub (Sort s1) t2) ss1 ts2))
     in
     Sub_result.of_le_result (sub t1 t2) ~failure_reason:(fun () ->
         [Layout_disagreement])
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 
   let rec intersection t1 t2 =
     (* pre-condition to [products]: [ts1] and [ts2] have the same length *)
@@ -703,208 +647,6 @@ module With_bounds = struct
     | With_bounds tys -> With_bounds (add_bound type_expr { relevant_axes } tys)
 end
 
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-module Mod_bounds = struct
-  include Types.Jkind_mod_bounds
-
-  let debug_print ppf
-      { locality;
-        linearity;
-        uniqueness;
-        portability;
-        contention;
-        yielding;
-        externality;
-        nullability
-      } =
-    Format.fprintf ppf
-      "@[{ locality = %a;@ linearity = %a;@ uniqueness = %a;@ portability = \
-       %a;@ contention = %a;@ yielding = %a;@ externality = %a;@ nullability = \
-       %a }@]"
-      Mode.Locality.Const.print locality Mode.Linearity.Const.print linearity
-      Mode.Uniqueness.Const.print uniqueness Mode.Portability.Const.print
-      portability Mode.Contention.Const.print contention
-      Mode.Yielding.Const.print yielding Externality.print externality
-      Nullability.print nullability
-
-  let min =
-    Create.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.min)
-      }
-
-  let max =
-    Create.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.max)
-      }
-
-  let simple ~locality ~linearity ~uniqueness ~portability ~contention ~yielding
-      ~externality ~nullability =
-    { locality;
-      linearity;
-      uniqueness;
-      portability;
-      contention;
-      yielding;
-      externality;
-      nullability
-    }
-
-  let join =
-    Map2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.join)
-      }
-
-  let meet =
-    Map2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.meet)
-      }
-
-  let less_or_equal =
-    Fold2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.less_or_equal)
-      }
-      ~combine:Le_result.combine
-
-  let equal =
-    Fold2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.equal)
-      }
-      ~combine:( && )
-
-  (** Get all axes that are set to max *)
-  let get_max_axes t =
-    Axis_set.create ~f:(fun ~axis:(Pack axis) ->
-        let (module Axis_ops) = Axis.get axis in
-        let bound = get ~axis t in
-        Axis_ops.le Axis_ops.max bound)
-
-  let for_arrow =
-    simple ~linearity:Linearity.Const.max ~locality:Locality.Const.max
-      ~uniqueness:Uniqueness.Const.min ~portability:Portability.Const.max
-      ~contention:Contention.Const.min ~yielding:Yielding.Const.max
-      ~externality:Externality.max ~nullability:Nullability.Non_null
-end
-
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-module Mod_bounds = struct
-  include Types.Jkind_mod_bounds
-
-  let debug_print ppf
-      { locality;
-        linearity;
-        uniqueness;
-        portability;
-        contention;
-        yielding;
-        externality;
-        nullability
-      } =
-    Format.fprintf ppf
-      "@[{ locality = %a;@ linearity = %a;@ uniqueness = %a;@ portability = \
-       %a;@ contention = %a;@ yielding = %a;@ externality = %a;@ nullability = \
-       %a }@]"
-      Mode.Locality.Const.print locality Mode.Linearity.Const.print linearity
-      Mode.Uniqueness.Const.print uniqueness Mode.Portability.Const.print
-      portability Mode.Contention.Const.print contention
-      Mode.Yielding.Const.print yielding Externality.print externality
-      Nullability.print nullability
-
-  let min =
-    Create.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.min)
-      }
-
-  let max =
-    Create.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.max)
-      }
-
-  let simple ~locality ~linearity ~uniqueness ~portability ~contention ~yielding
-      ~externality ~nullability =
-    { locality;
-      linearity;
-      uniqueness;
-      portability;
-      contention;
-      yielding;
-      externality;
-      nullability
-    }
-
-  let join =
-    Map2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.join)
-      }
-
-  let meet =
-    Map2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.meet)
-      }
-
-  let less_or_equal =
-    Fold2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.less_or_equal)
-      }
-      ~combine:Misc.Le_result.combine
-
-  let equal =
-    Fold2.f
-      { f =
-          (fun (type axis) ~(axis : axis Axis.t) ->
-            let (module Bound_ops) = Axis.get axis in
-            Bound_ops.equal)
-      }
-      ~combine:( && )
-
-  (** Get all axes that are set to max *)
-  let get_max_axes t =
-    Axis_set.create ~f:(fun ~axis:(Pack axis) ->
-        let (module Axis_ops) = Axis.get axis in
-        let bound = get ~axis t in
-        Axis_ops.le Axis_ops.max bound)
-
-  let for_arrow =
-    simple ~linearity:Linearity.Const.max ~locality:Locality.Const.max
-      ~uniqueness:Uniqueness.Const.min ~portability:Portability.Const.max
-      ~contention:Contention.Const.min ~yielding:Yielding.Const.max
-      ~externality:Externality.max ~nullability:Nullability.Non_null
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 module Layout_and_axes = struct
   module Allow_disallow = Allowance.Magic_allow_disallow (struct
     type (_, 'layout, 'd) sided = ('layout, 'd) layout_and_axes
@@ -1779,13 +1521,7 @@ module Jkind_desc = struct
         Mod_bounds.t * (l2 * r2) with_bounds * Fuel_status.t = function
       (* early cutoff *)
       | _
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-        when Le_result.is_le
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-        when Misc.Le_result.is_le
-=======
         when Sub_result.is_le
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
                (Mod_bounds.less_or_equal Mod_bounds.max bounds_so_far) ->
         (* CR layouts v2.8: we can do better by early-terminating on a per-axis basis *)
         bounds_so_far, No_with_bounds, Sufficient_fuel
@@ -1887,13 +1623,7 @@ module Jkind_desc = struct
     in
     let layout = Layout.sub lay1 lay2 in
     let bounds = Mod_bounds.less_or_equal bounds1 bounds2 in
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-    Le_result.combine layout bounds
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-    Misc.Le_result.combine layout bounds
-=======
     Sub_result.combine layout bounds
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 
   let intersection
       { layout = lay1; mod_bounds = mod_bounds1; with_bounds = with_bounds1 }
@@ -2893,16 +2623,8 @@ module Violation = struct
   let report_general preamble pp_former former ppf t =
     let mismatch_type =
       match t.violation with
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-      | Not_a_subjkind (k1, k2) ->
-        if Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-      | Not_a_subjkind (k1, k2) ->
-        if Misc.Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
-=======
       | Not_a_subjkind (k1, k2, _) ->
         if Sub_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
         then Mode
         else Layout
       | No_intersection _ -> Layout
@@ -3098,13 +2820,7 @@ let sub_with_reason ~type_equal ~jkind_of_type sub super =
   Sub_result.require_le (check_sub ~type_equal ~jkind_of_type sub super)
 
 let sub ~type_equal ~jkind_of_type sub super =
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-  Le_result.is_le (check_sub ~type_equal ~jkind_of_type sub super)
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-  Misc.Le_result.is_le (check_sub ~type_equal ~jkind_of_type sub super)
-=======
   Result.is_ok (sub_with_reason ~type_equal ~jkind_of_type sub super)
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
 
 type sub_or_intersect =
   | Sub
@@ -3128,35 +2844,6 @@ let sub_jkind_l ~type_equal ~jkind_of_type ?(allow_any_crossing = false) sub
     super =
   (* This function implements the "SUB" judgement from kind-inference.md. *)
   let open Misc.Stdlib.Monad.Result.Syntax in
-<<<<<<< janestreet/merlin-jst:rae/with-kinds-roll
-  let require_le le_result =
-    match Le_result.is_le le_result with
-    | true -> Ok ()
-    | false ->
-      (* When we report an error, we want to show the best-normalized version of sub, but
-         the original super. When this check fails, it is usually the case that the super
-         was written by the user and the sub was inferred. Thus, we should display the
-         user-written jkind, but simplify the inferred one, since the inferred one is
-         probably overly complex. *)
-      (* CR layouts v2.8: It would be useful report to the user why this
-         violation occurred, specifically which axes the violation is along. *)
-      let best_sub = normalize ~mode:Require_best ~jkind_of_type sub in
-      Error (Violation.of_ (Not_a_subjkind (best_sub, super)))
-||||||| ocaml-flambda/flambda-backend:4eb95cdd48f3f2f6193e59c53e4640a008a7fd13
-  let require_le le_result =
-    match Misc.Le_result.is_le le_result with
-    | true -> Ok ()
-    | false ->
-      (* When we report an error, we want to show the best-normalized version of sub, but
-         the original super. When this check fails, it is usually the case that the super
-         was written by the user and the sub was inferred. Thus, we should display the
-         user-written jkind, but simplify the inferred one, since the inferred one is
-         probably overly complex. *)
-      (* CR layouts v2.8: It would be useful report to the user why this
-         violation occurred, specifically which axes the violation is along. *)
-      let best_sub = normalize ~mode:Require_best ~jkind_of_type sub in
-      Error (Violation.of_ (Not_a_subjkind (best_sub, super)))
-=======
   let require_le sub_result =
     Sub_result.require_le sub_result
     |> Result.map_error (fun reasons ->
@@ -3170,7 +2857,6 @@ let sub_jkind_l ~type_equal ~jkind_of_type ?(allow_any_crossing = false) sub
            let best_sub = normalize ~mode:Require_best ~jkind_of_type sub in
            Violation.of_
              (Not_a_subjkind (best_sub, super, Nonempty_list.to_list reasons)))
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-6
   in
   let* () =
     (* Validate layouts *)
