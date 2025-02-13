@@ -40,25 +40,6 @@ open Allowance
    This will eventually be incorporated into the mode
    solver, but it is defined here because we do not yet track externalities
    on expressions, just in jkinds. *)
-(* CR externals: Move to mode.ml. But see
-   https://github.com/goldfirere/flambda-backend/commit/d802597fbdaaa850e1ed9209a1305c5dcdf71e17
-   first, which was reisenberg's attempt to do so. *)
-module Externality : sig
-  type t = Jkind_axis.Externality.t =
-    | External (* not managed by the garbage collector *)
-    | External64 (* not managed by the garbage collector on 64-bit systems *)
-    | Internal (* managed by the garbage collector *)
-
-  include module type of Jkind_axis.Externality with type t := t
-end
-
-module Nullability : sig
-  type t = Jkind_axis.Nullability.t =
-    | Non_null (* proven to not have NULL values *)
-    | Maybe_null (* may have NULL values *)
-
-  include module type of Jkind_axis.Nullability with type t := t
-end
 
 module Sort : sig
   include
@@ -76,6 +57,31 @@ module Sort : sig
 end
 
 type sort = Sort.t
+
+module Sub_failure_reason : sig
+  type t =
+    | Axis_disagreement of Jkind_axis.Axis.packed
+    | Layout_disagreement
+    | Constrain_ran_out_of_fuel
+end
+
+module Sub_result : sig
+  type t =
+    | Equal
+    | Less
+    | Not_le of Sub_failure_reason.t Misc.Nonempty_list.t
+
+  val of_le_result :
+    failure_reason:(unit -> Sub_failure_reason.t Misc.Nonempty_list.t) ->
+    Misc.Le_result.t ->
+    t
+
+  val combine : t -> t -> t
+
+  val require_le : t -> (unit, Sub_failure_reason.t Misc.Nonempty_list.t) result
+
+  val is_le : t -> bool
+end
 
 (* The layout of a type describes its memory layout. A layout is either the
    indeterminate [Any] or a sort, which is a concrete memory layout. *)
@@ -97,7 +103,7 @@ module Layout : sig
 
   val of_const : Const.t -> Sort.t t
 
-  val sub : Sort.t t -> Sort.t t -> Misc.Le_result.t
+  val sub : Sort.t t -> Sort.t t -> Sub_result.t
 end
 
 (** A Jkind.t is a full description of the runtime representation of values
@@ -153,7 +159,9 @@ module Violation : sig
        in [sub_jkind_l]. There is no downside to this, as the printing
        machinery works over l-jkinds. *)
     | Not_a_subjkind :
-        (allowed * 'r1) Types.jkind * ('l * 'r2) Types.jkind
+        (allowed * 'r1) Types.jkind
+        * ('l * 'r2) Types.jkind
+        * Sub_failure_reason.t list
         -> violation
     | No_intersection : 'd Types.jkind * ('l * allowed) Types.jkind -> violation
 
@@ -503,22 +511,28 @@ val get_layout : 'd Types.jkind -> Layout.Const.t option
 (** Gets the layout of a jkind, without looking through sort variables. *)
 val extract_layout : 'd Types.jkind -> Sort.t Layout.t
 
-(** Gets the maximum modes for types of this jkind. *)
+(** Gets the maximum comonadic modes for types of this jkind. *)
 val get_modal_upper_bounds :
   jkind_of_type:(Types.type_expr -> Types.jkind_l option) ->
   'd Types.jkind ->
-  Mode.Alloc.Const.t
+  Mode.Alloc.Comonadic.Const.t
+
+(** Gets the minimum monadic modes for types of this jkind. *)
+val get_modal_lower_bounds :
+  jkind_of_type:(Types.type_expr -> Types.jkind_l option) ->
+  'd Types.jkind ->
+  Mode.Alloc.Monadic.Const.t
 
 (** Gets the maximum mode on the externality axis for types of this jkind. *)
 val get_externality_upper_bound :
   jkind_of_type:(Types.type_expr -> Types.jkind_l option) ->
   'd Types.jkind ->
-  Externality.t
+  Jkind_axis.Externality.t
 
 (** Computes a jkind that is the same as the input but with an updated maximum
     mode for the externality axis *)
 val set_externality_upper_bound :
-  Types.jkind_r -> Externality.t -> Types.jkind_r
+  Types.jkind_r -> Jkind_axis.Externality.t -> Types.jkind_r
 
 (** Sets the layout in a jkind. *)
 val set_layout : 'd Types.jkind -> Sort.t Layout.t -> 'd Types.jkind
@@ -627,8 +641,11 @@ val sub :
 
 type sub_or_intersect =
   | Sub  (** The first jkind is a subjkind of the second. *)
-  | Disjoint  (** The two jkinds have no common ground. *)
-  | Has_intersection  (** The two jkinds have an intersection: try harder. *)
+  | Disjoint of Sub_failure_reason.t Misc.Nonempty_list.t
+      (** The two jkinds have no common ground. *)
+  | Has_intersection of Sub_failure_reason.t Misc.Nonempty_list.t
+      (** The first jkind is not a subjkind of the second, but the two jkinds have an
+          intersection: try harder. *)
 
 (** [sub_or_intersect t1 t2] does a subtype check, returning a [sub_or_intersect];
     see comments there for more info. *)

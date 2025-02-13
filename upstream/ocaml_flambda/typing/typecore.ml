@@ -934,15 +934,25 @@ let has_poly_constraint spat =
 (* This is very similar to Ctype.mode_cross_left_alloc. Any bugs here are likely
    bugs there, too. *)
 let mode_cross_left_value env ty mode =
-  let mode =
-    if not (is_principal ty) then mode else
+  if not (is_principal ty) then
+    Value.disallow_right mode
+  else begin
     let jkind = type_jkind_purely env ty in
     let jkind_of_type = type_jkind_purely_if_principal env in
     let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
+    let upper_bounds =
+      Alloc.Const.merge
+        { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
+    in
     let upper_bounds = Const.alloc_as_value upper_bounds in
-    Value.meet_const upper_bounds mode
-  in
-  mode |> Value.disallow_right
+    let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
+    let lower_bounds =
+      Alloc.Const.merge
+        { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
+    in
+    let lower_bounds = Const.alloc_as_value lower_bounds in
+    Value.subtract lower_bounds (Value.meet_const upper_bounds mode)
+  end
 
 let actual_mode_cross_left env ty (actual_mode : Env.actual_mode)
   : Env.actual_mode =
@@ -958,9 +968,9 @@ let alloc_mode_cross_to_max_min env ty { monadic; comonadic } =
   let jkind = type_jkind_purely env ty in
   let jkind_of_type = type_jkind_purely_if_principal env in
   let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
-  let upper_bounds = Alloc.Const.split upper_bounds in
-  let comonadic = Alloc.Comonadic.meet_const upper_bounds.comonadic comonadic in
-  let monadic = Alloc.Monadic.imply upper_bounds.monadic monadic in
+  let comonadic = Alloc.Comonadic.meet_const upper_bounds comonadic in
+  let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
+  let monadic = Alloc.Monadic.join_const lower_bounds monadic in
   { monadic; comonadic }
 
 (** Mode cross a right mode *)
@@ -969,8 +979,22 @@ let alloc_mode_cross_to_max_min env ty { monadic; comonadic } =
 let expect_mode_cross_jkind env jkind (expected_mode : expected_mode) =
   let jkind_of_type = type_jkind_purely_if_principal env in
   let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
+  let upper_bounds =
+    Alloc.Const.merge
+      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
+  in
   let upper_bounds = Const.alloc_as_value upper_bounds in
-  mode_morph (Value.imply upper_bounds) expected_mode
+  let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
+  let lower_bounds =
+    Alloc.Const.merge
+      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
+  in
+  let lower_bounds = Const.alloc_as_value lower_bounds in
+  mode_morph
+    (fun m ->
+      Value.imply upper_bounds
+        (Value.join_const lower_bounds m))
+    expected_mode
 
 let expect_mode_cross env ty (expected_mode : expected_mode) =
   if not (is_principal ty) then expected_mode else
@@ -1449,7 +1473,7 @@ and build_as_type_aux (env : Env.t) p ~mode =
     ty, mode
   in
   match p.pat_desc with
-    Tpat_alias(p1,_, _, _, _) -> build_as_type_and_mode env p1 ~mode
+    Tpat_alias(p1,_, _, _, _, _) -> build_as_type_and_mode env p1 ~mode
   | Tpat_tuple pl ->
       let labeled_tyl =
         List.map (fun (label, p) -> label, build_as_type env p) pl in
@@ -2860,7 +2884,7 @@ and type_pat_aux
         enter_variable ~is_as_variable:true tps name.loc name mode ty_var
           sp.ppat_attributes
       in
-      rvp { pat_desc = Tpat_alias(q, id, name, uid, mode);
+      rvp { pat_desc = Tpat_alias(q, id, name, uid, mode, ty_var);
             pat_loc = loc; pat_extra=[];
             pat_type = q.pat_type;
             pat_attributes = sp.ppat_attributes;
@@ -3509,7 +3533,7 @@ let rec check_counter_example_pat
           in
           check_rec ~info:(decrease 5) tp expected_ty k
       end
-  | Tpat_alias (p, _, _, _, _) -> check_rec ~info p expected_ty k
+  | Tpat_alias (p, _, _, _, _, _) -> check_rec ~info p expected_ty k
   | Tpat_constant cst ->
       let cst = constant_or_raise !!penv loc (Untypeast.constant cst) in
       k @@ solve_expected (mp (Tpat_constant cst) ~pat_type:(type_constant cst))
@@ -4868,7 +4892,7 @@ let rec name_pattern default = function
   | p :: rem ->
     match p.pat_desc with
       Tpat_var (id, _, _, _) -> id
-    | Tpat_alias(_, id, _, _, _) -> id
+    | Tpat_alias(_, id, _, _, _, _) -> id
     | _ -> name_pattern default rem
 
 let name_cases default lst =
@@ -6810,6 +6834,12 @@ and type_expect_
       | Texp_lazy _ -> unsupported Lazy
       | Texp_object _ -> unsupported Object
       | Texp_pack _ -> unsupported Module
+      | Texp_apply({ exp_desc = Texp_ident(_, _, {val_kind = Val_prim _}, _, _)},
+          _, _, _, _)
+          (* [stack_ (prim foo)] will be checked by [transl_primitive_application]. *)
+          (* CR zqian: Move/Copy [Lambda.primitive_may_allocate] to [typing], then we can
+          check primitive allocation here, and also improve the logic in [type_ident]. *)
+          -> ()
       | _ ->
         raise (Error (exp.exp_loc, env, Not_allocation))
       end;
@@ -7063,8 +7093,8 @@ and type_ident env ?(recarg=Rejected) lid =
   *)
   (* CR modes: codify the above per-axis argument. *)
   let actual_mode =
-    Env.walk_locks ~loc:lid.loc ~env ~item:Value ~lid:lid.txt mode
-      (Some desc.val_type) locks
+    Env.walk_locks ~env ~item:Value mode (Some desc.val_type)
+      (locks, lid.txt, lid.loc)
   in
   (* We need to cross again, because the monadic fragment might have been
   weakened by the locks. Ideally, the first crossing only deals with comonadic,
@@ -9187,7 +9217,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
         let pat_name =
           match p.pat_desc with
             Tpat_var (id, _, _, _) -> Some id
-          | Tpat_alias(_, id, _, _, _) -> Some id
+          | Tpat_alias(_, id, _, _, _, _) -> Some id
           | _ -> None in
         Ctype.check_and_update_generalized_ty_jkind
           ?name:pat_name ~loc:exp.exp_loc env exp.exp_type
