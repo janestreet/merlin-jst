@@ -59,7 +59,7 @@ let dump_ocaml x =
       ("as_parameter", `Bool x.as_parameter);
       ( "zero_alloc_check",
         `String (Zero_alloc_annotations.Check.to_string x.zero_alloc_check) );
-      ("zero_alloc_assert",
+      ( "zero_alloc_assert",
         `String (Zero_alloc_annotations.Assert.to_string x.zero_alloc_assert) )
     ]
 
@@ -839,15 +839,16 @@ let ocaml_flags =
        indirect calls. " ^ Zero_alloc_annotations.Check.doc );
     ( "-zero-alloc-assert",
       Marg.param "string" (fun zero_alloc_str ocaml ->
-         match Zero_alloc_annotations.Assert.of_string zero_alloc_str with
+          match Zero_alloc_annotations.Assert.of_string zero_alloc_str with
           | Some zero_alloc_assert -> { ocaml with zero_alloc_assert }
           | None ->
             failwith ("Invalid value for -zero-alloc-assert: " ^ zero_alloc_str)),
-      " Add zero_alloc annotations to all functions. " ^
-      Zero_alloc_annotations.Assert.doc );
+      " Add zero_alloc annotations to all functions. "
+      ^ Zero_alloc_annotations.Assert.doc );
     ( "-infer-with-bounds",
       Marg.unit (fun ocaml -> { ocaml with infer_with_bounds = true }),
-      "Infer with-bounds on kinds for type declarations. May impact performance." )
+      "Infer with-bounds on kinds for type declarations. May impact \
+       performance." )
   ]
 
 (** {1 Main configuration} *)

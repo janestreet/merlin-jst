@@ -532,8 +532,9 @@ let find_branch patterns sub =
       match patt.pat_desc with
       | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_, None, _) ->
         false
-      | Tpat_alias (p, _, _, _, _, _) | Tpat_variant (_, Some p, _) | Tpat_lazy p
-        -> is_sub_patt p ~sub
+      | Tpat_alias (p, _, _, _, _, _)
+      | Tpat_variant (_, Some p, _)
+      | Tpat_lazy p -> is_sub_patt p ~sub
       | Tpat_tuple lst ->
         List.exists lst ~f:(fun (_lbl, p) -> is_sub_patt ~sub p)
       | Tpat_unboxed_tuple lst ->
