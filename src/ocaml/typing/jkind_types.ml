@@ -16,6 +16,7 @@
 module Misc = struct
   let fatal_error = Misc.fatal_error
   include Misc_stdlib
+  module Stdlib = Misc_stdlib
 end
 
 module Sort = struct
@@ -301,7 +302,7 @@ module Sort = struct
         | Product cs ->
           Option.map
             (fun x -> Product x)
-            (Misc.List.map_option of_const cs)
+            (Misc.Stdlib.List.map_option of_const cs)
     end
 
     module Const = struct

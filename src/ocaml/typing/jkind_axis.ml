@@ -12,10 +12,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Merlin-specific: Change the module path of Misc_stdlib.Le_result to Misc.Le_result to
-   match the compiler *)
+(* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
-  module Le_result = Misc_stdlib.Le_result
+  module Stdlib = Misc_stdlib
+  include Misc_stdlib
 end
 
 module type Axis_ops = sig
@@ -179,7 +179,7 @@ module Axis = struct
 end
 
 module Axis_collection = struct
-  module Indexed_gen (T : Misc_stdlib.T2) = struct
+  module Indexed_gen (T : Misc.T2) = struct
     type 'a t_poly =
       { locality : (Mode.Locality.Const.t, 'a) T.t;
         linearity : (Mode.Linearity.Const.t, 'a) T.t;
@@ -218,7 +218,7 @@ module Axis_collection = struct
     (* Since we don't have polymorphic parameters, use a record to pass the
        polymorphic function *)
     module Create = struct
-      module Monadic (M : Misc_stdlib.Monad.S) = struct
+      module Monadic (M : Misc.Stdlib.Monad.S) = struct
         type 'a f = { f : 'axis. axis:'axis Axis.t -> ('axis, 'a) T.t M.t }
         [@@unboxed]
 
@@ -245,7 +245,7 @@ module Axis_collection = struct
       end
       [@@inline]
 
-      module Monadic_identity = Monadic (Misc_stdlib.Monad.Identity)
+      module Monadic_identity = Monadic (Misc.Stdlib.Monad.Identity)
 
       type 'a f = 'a Monadic_identity.f
 
@@ -253,7 +253,7 @@ module Axis_collection = struct
     end
 
     module Map = struct
-      module Monadic (M : Misc_stdlib.Monad.S) = struct
+      module Monadic (M : Misc.Stdlib.Monad.S) = struct
         type ('a, 'b) f =
           { f :
               'axis. axis:'axis Axis.t -> ('axis, 'a) T.t -> ('axis, 'b) T.t M.t
@@ -267,7 +267,7 @@ module Axis_collection = struct
       end
       [@@inline]
 
-      module Monadic_identity = Monadic (Misc_stdlib.Monad.Identity)
+      module Monadic_identity = Monadic (Misc.Stdlib.Monad.Identity)
 
       type ('a, 'b) f = ('a, 'b) Monadic_identity.f
 
@@ -299,7 +299,7 @@ module Axis_collection = struct
     end
 
     module Map2 = struct
-      module Monadic (M : Misc_stdlib.Monad.S) = struct
+      module Monadic (M : Misc.Stdlib.Monad.S) = struct
         type ('a, 'b, 'c) f =
           { f :
               'axis.
@@ -319,7 +319,7 @@ module Axis_collection = struct
       end
       [@@inline]
 
-      module Monadic_identity = Monadic (Misc_stdlib.Monad.Identity)
+      module Monadic_identity = Monadic (Misc.Stdlib.Monad.Identity)
 
       type ('a, 'b, 'c) f = ('a, 'b, 'c) Monadic_identity.f
 
@@ -388,7 +388,7 @@ module Axis_collection = struct
     end
   end
 
-  module Indexed (T : Misc_stdlib.T1) = struct
+  module Indexed (T : Misc.T1) = struct
     include Indexed_gen (struct
       type ('a, 'b) t = 'a T.t
     end)
@@ -396,7 +396,7 @@ module Axis_collection = struct
     type nonrec t = unit t
   end
 
-  module Identity = Indexed (Misc_stdlib.Monad.Identity)
+  module Identity = Indexed (Misc.Stdlib.Monad.Identity)
 
   include Indexed_gen (struct
     type ('a, 'b) t = 'b

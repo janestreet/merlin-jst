@@ -17,10 +17,11 @@ open Jkind_types
 open Jkind_axis
 open Types
 
-module Le_result = Misc_stdlib.Le_result
+(* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
   include Misc
   module Stdlib = Misc_stdlib
+  include Misc_stdlib
 end
 
 [@@@warning "+9"]
@@ -54,7 +55,7 @@ module Sub_result = struct
     | Less
     | Not_le of Sub_failure_reason.t Nonempty_list.t
 
-  let of_le_result ~failure_reason (le_result : Le_result.t) =
+  let of_le_result ~failure_reason (le_result : Misc.Le_result.t) =
     match le_result with
     | Less -> Less
     | Equal -> Equal
@@ -140,7 +141,7 @@ module Layout = struct
       | Product ts ->
         Option.map
           (fun x -> Sort.Const.Product x)
-          (Misc_stdlib.List.map_option get_sort ts)
+          (Misc.Stdlib.List.map_option get_sort ts)
 
     let of_sort s =
       let rec of_sort : Sort.t -> _ = function
@@ -215,7 +216,7 @@ module Layout = struct
   and to_product_sort ts =
     Option.map
       (fun x -> Sort.Product x)
-      (Misc_stdlib.List.map_option to_sort ts)
+      (Misc.Stdlib.List.map_option to_sort ts)
 
   let rec get : Sort.t t -> Sort.Flat.t t =
     let rec flatten_sort : Sort.t -> Sort.Flat.t t = function
@@ -271,7 +272,7 @@ module Layout = struct
     | (Any | Sort _ | Product _), _ -> false
 
   let sub t1 t2 =
-    let rec sub t1 t2 : Le_result.t =
+    let rec sub t1 t2 : Misc.Le_result.t =
       match t1, t2 with
       | Any, Any -> Equal
       | _, Any -> Less
@@ -279,7 +280,7 @@ module Layout = struct
       | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
       | Product ts1, Product ts2 ->
         if List.compare_lengths ts1 ts2 = 0
-        then Le_result.combine_list (List.map2 sub ts1 ts2)
+        then Misc.Le_result.combine_list (List.map2 sub ts1 ts2)
         else Not_le
       | Product ts1, Sort s2 -> (
         (* This case could use [to_product_sort] because every component will need
@@ -289,13 +290,13 @@ module Layout = struct
         match Sort.decompose_into_product s2 (List.length ts1) with
         | None -> Not_le
         | Some ss2 ->
-          Le_result.combine_list
+          Misc.Le_result.combine_list
             (List.map2 (fun t1 s2 -> sub t1 (Sort s2)) ts1 ss2))
       | Sort s1, Product ts2 -> (
         match Sort.decompose_into_product s1 (List.length ts2) with
         | None -> Not_le
         | Some ss1 ->
-          Le_result.combine_list
+          Misc.Le_result.combine_list
             (List.map2 (fun s1 t2 -> sub (Sort s1) t2) ss1 ts2))
     in
     Sub_result.of_le_result (sub t1 t2) ~failure_reason:(fun () ->
@@ -336,7 +337,7 @@ module Layout = struct
       | Sort s -> Sort.format ppf s
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf " & " in
-        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf layout
 end
@@ -1357,7 +1358,7 @@ module Desc = struct
          [Const.format] works better for atomic layouts, not products. *)
       | Product lays ->
         let pp_sep ppf () = fprintf ppf "@ & " in
-        Misc_stdlib.pp_nested_list ~nested ~pp_element:format_desc ~pp_sep ppf
+        Misc.pp_nested_list ~nested ~pp_element:format_desc ~pp_sep ppf
           (List.map (fun layout -> { desc with layout }) lays)
       | _ -> (
         match get_const desc with
@@ -2178,7 +2179,7 @@ end = struct
   let missing_cmi_hint ppf type_path =
     let root_module_name p = p |> Path.head |> Ident.name in
     let delete_trailing_double_underscore s =
-      if Misc.String.ends_with ~suffix:"__" s
+      if Misc.Stdlib.String.ends_with ~suffix:"__" s
       then String.sub s 0 (String.length s - 2)
       else s
     in
@@ -3007,7 +3008,7 @@ module Debug_printers = struct
     | Type_declaration p -> fprintf ppf "Type_declaration %a" Path.print p
     | Type_parameter (p, var) ->
       fprintf ppf "Type_parameter (%a, %a)" Path.print p
-        (Misc_stdlib.Option.print Misc_stdlib.String.print)
+        (Misc.Stdlib.Option.print Misc.Stdlib.String.print)
         var
     | Newtype_declaration name -> fprintf ppf "Newtype_declaration %s" name
     | Constructor_type_parameter (cstr, name) ->
