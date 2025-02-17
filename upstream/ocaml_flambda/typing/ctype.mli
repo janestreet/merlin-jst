@@ -602,11 +602,6 @@ val type_jkind : Env.t -> type_expr -> jkind_l
    expansion. *)
 val type_jkind_purely : Env.t -> type_expr -> jkind_l
 
-(* Like [type_jkind_purely], but returns [None] if the type is not
-   principally known. Useful to instantiate [jkind_of_type] in various
-   functions exported by [Jkind]. *)
-val type_jkind_purely_if_principal : Env.t -> type_expr -> jkind_l option
-
 (* Find a type's sort (if fixed is false: constraining it to be an
    arbitrary sort variable, if needed) *)
 val type_sort :
@@ -633,10 +628,6 @@ val check_decl_jkind :
 val constrain_decl_jkind :
   Env.t -> type_declaration -> jkind_l -> (unit, Jkind.Violation.t) result
 
-(* Compare two types for equality, with no renaming. This is useful for
-   the [type_equal] function that must be passed to certain jkind functions. *)
-val type_equal: Env.t -> type_expr -> type_expr -> bool
-
 val check_type_jkind :
   Env.t -> type_expr -> ('l * allowed) jkind -> (unit, Jkind.Violation.t) result
 val constrain_type_jkind :
@@ -645,8 +636,7 @@ val constrain_type_jkind :
 (* Check whether a type's externality's upper bound is less than some target.
    Potentially cheaper than just calling [type_jkind], because this can stop
    expansion once it succeeds. *)
-val check_type_externality :
-  Env.t -> type_expr -> Jkind_axis.Externality.t -> bool
+val check_type_externality : Env.t -> type_expr -> Jkind.Externality.t -> bool
 
 (* This function should get called after a type is generalized.
 
@@ -692,7 +682,7 @@ val check_type_externality :
 
    *)
 val check_and_update_generalized_ty_jkind :
-  ?name:Ident.t -> loc:Location.t -> Env.t -> type_expr -> unit
+  ?name:Ident.t -> loc:Location.t -> type_expr -> unit
 
 (* False if running in principal mode and the type is not principal.
    True otherwise. *)

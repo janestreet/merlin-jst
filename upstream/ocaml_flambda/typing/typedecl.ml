@@ -147,8 +147,6 @@ type error =
       }
   | Non_abstract_reexport of Path.t
   | Unsafe_mode_crossing_on_invalid_type_kind
-  | Unsafe_mode_crossing_with_with_bounds
-  | Illegal_baggage of jkind_l
 
 open Typedtree
 
@@ -270,21 +268,7 @@ let enter_type ?abstract_abbrevs rec_flag env sdecl (id, uid) =
   let type_jkind =
     Jkind.of_type_decl_default
       ~context:(Type_declaration path)
-      (* CR layouts v2.8: This next line is truly terrible. But I think it's OK
-         for now: it will mean that any [with] constraints get interpreted to
-         mean that the thing does not cross that mode. That's OK: the jkind
-         produced here can be an overapproximation of the correct jkind (note
-         that [any] is the default).  Indeed the only reason (I think) we need a
-         non-[any] jkind here is to produce better error messages.
-
-         Doing better here will be annoying, because a type is in scope in its
-         own jkind... and yet we don't have an env that we can use at this
-         point. I think probably the solution will be to have
-         [Jkind.of_type_decl_default] just return [max] every time it sees a
-         [with]-kind... which basically just does this [type_exn] trick but much
-         more sanely. *)
-      ~transl_type:(fun _ -> Predef.type_exn)
-      ~default:(Jkind.disallow_right any)
+      ~default:any
       sdecl
   in
   let abstract_source, type_manifest =
@@ -726,15 +710,6 @@ let verify_unboxed_attr unboxed_attr sdecl =
    which looks through unboxed types. So it's all OK for users, but it's
    unfortunate that the stored jkind on [t7_2] is imprecise.
 
-   The way this interacts with checking of with-bounds is somewhat subtle and complex.
-   With-bounds for mutually recursive type declarations need to be normalized and checked
-   in a pass /after/ computing the the proper (best) jkinds for all the types and storing
-   them in the environment, so that they can be queried during normalization. But it's
-   important that we call [Jkind.Layout.sub] on each type /eagerly/, so that its sort
-   variables (which might be referenced from the jkinds of other types) get filled in with
-   the right sort. So we do that early, in [update_decl_jkind], then check the full jkind
-   against the dummy jkind later, after normalizing in [transl_type_decl].
-
    (* CR layouts: see if we can do better here. *)
 *)
 
@@ -788,28 +763,8 @@ let transl_declaration env sdecl (id, uid) =
     | _ -> false, false (* Not unboxable, mark as boxed *)
   in
   verify_unboxed_attr unboxed_attr sdecl;
-  (* CR layouts v2.8: This next call to [transl_simple_type] probably can loop
-     because it will do perhaps-circular jkind checks. But actually I think the
-     same problem exists in e.g. record fields. We should probably look into this. *)
-  let transl_type sty =
-    (* CR layouts v2.8: The [~new_var_jkind:Any] is weird. The type is closed,
-       and so there shouldn't be any new vars. Investigate. *)
-    let cty =
-      Ctype.with_local_level begin fun () ->
-        Typetexp.transl_simple_type env ~new_var_jkind:Any
-          ~closed:true Mode.Alloc.Const.legacy sty
-      end
-      (* This call to [generalize_structure] is necessary so that copying
-         during instantiation traverses inside of any type constructors in the
-         [with]-bound. It's also necessary because the variables here are at
-         generic level, and so any containers of them should be, too! *)
-      ~post:(fun cty -> Ctype.generalize_structure cty.ctyp_type)
-    in
-    cty.ctyp_type  (* CR layouts v2.8: Do this more efficiently. Or probably
-                      add with-kinds to Typedtree. *)
-  in
   let jkind_from_annotation, jkind_annotation =
-    match Jkind.of_type_decl ~context:(Type_declaration path) ~transl_type sdecl with
+    match Jkind.of_type_decl ~context:(Type_declaration path) sdecl with
     | Some (jkind, annot) ->
         Some jkind, annot
     | None -> None, None
@@ -846,7 +801,10 @@ let transl_declaration env sdecl (id, uid) =
               { definition = path; expected = Predef.path_or_null }))
           in
           let type_kind = Predef.or_null_kind param in
-          let jkind = Predef.or_null_jkind in
+          let jkind =
+            Jkind.Builtin.value_or_null
+              ~why:(Primitive Predef.ident_or_null)
+          in
           Ttype_abstract, type_kind, jkind
       | (Ptype_variant _ | Ptype_record _ | Ptype_record_unboxed_product _
         | Ptype_open)
@@ -908,7 +866,8 @@ let transl_declaration env sdecl (id, uid) =
         let tcstrs, cstrs = List.split (List.map make_cstr scstrs) in
         let rep, jkind =
           if unbox then
-            Variant_unboxed, Jkind.of_new_legacy_sort ~why:Old_style_unboxed_type
+            Variant_unboxed,
+            Jkind.of_new_legacy_sort ~why:Old_style_unboxed_type
           else
             (* We mark all arg sorts "void" here.  They are updated later,
                after the circular type checks make it safe to check sorts.
@@ -958,15 +917,14 @@ let transl_declaration env sdecl (id, uid) =
           (* The jkinds below, and the ones in [lbls], are dummy jkinds which
              are replaced and made to correspond to each other in
              [update_decl_jkind]. *)
-          let jkind =
-            Jkind.Builtin.product_of_sorts ~why:Unboxed_record
-              (List.length lbls)
+          let jkind_ls =
+            List.map (fun _ -> Jkind.Builtin.any ~why:Initial_typedecl_env) lbls
           in
+          let jkind = Jkind.Builtin.product ~why:Unboxed_record jkind_ls in
           Ttype_record_unboxed_product lbls,
           Type_record_unboxed_product(lbls', Record_unboxed_product, None), jkind
       | Ptype_open ->
-        Ttype_open, Type_open,
-        Jkind.Builtin.value ~why:Extensible_variant
+        Ttype_open, Type_open, Jkind.Builtin.value ~why:Extensible_variant
       in
     let jkind =
     (* - If there's an annotation, we use that. It's checked against
@@ -985,23 +943,20 @@ let transl_declaration env sdecl (id, uid) =
       | None, None -> jkind_default
     in
     let jkind =
-      (* Hack: unboxed records are given a product-of-[any]s layout
+      (* Hack: unboxed records are given a product-of-[any]s jkind
          when they would otherwise be given [any].
 
          This allows [estimate_type_jkind] to give an estimate that's
          just barely good enough, such that [constain_type_jkind] can always
          decompose the product of [any]s and recurse on the labels.
          See https://github.com/ocaml-flambda/flambda-backend/pull/3399. *)
-      match kind with
-      | Type_record_unboxed_product _ ->
-        begin match Jkind.get_layout jkind with
-        | Some Any ->
-          (* [jkind_default] has just what we need here *)
-          Jkind.set_layout jkind (Jkind.extract_layout jkind_default)
-        | _ -> jkind
-        end
-      | Type_abstract _ | Type_variant _ | Type_record _
-      | Type_open -> jkind
+      match sdecl.ptype_kind with
+      | Ptype_record_unboxed_product lbls
+        when Jkind.has_layout_any (Jkind.terrible_relax_l jkind) ->
+        Jkind.Builtin.product ~why:Unboxed_record
+          (List.map (fun _ -> jkind) lbls)
+      | Ptype_abstract | Ptype_variant _ | Ptype_record _
+      | Ptype_record_unboxed_product _ | Ptype_open -> jkind
     in
     let arity = List.length params in
     let decl =
@@ -1102,8 +1057,7 @@ let rec check_constraints_rec env loc visited ty =
           let violation =
             Jkind.Violation.of_
               (Not_a_subjkind (Jkind.disallow_right original_jkind,
-                               Jkind.disallow_left inferred_jkind,
-                               []))
+                               Jkind.disallow_left inferred_jkind))
           in
           raise (Error(loc, Jkind_mismatch_due_to_bad_inference
                             (ty, violation, Check_constraints)))
@@ -1211,82 +1165,14 @@ let check_constraints env sdecl (_, decl) =
    immediate, we should check the manifest is immediate). Also, update the
    resulting jkind to match the manifest. *)
 let narrow_to_manifest_jkind env loc decl =
-  match decl.type_manifest, decl.type_kind with
-  | None, _ -> decl
-  | Some _, (Type_record _ | Type_record_unboxed_product _ | Type_variant _ | Type_open)
-    when not (Builtin_attributes.has_or_null_reexport decl.type_attributes)
-    ->
-    (* If there's both a manifest and a non-abstract kind, there's no reason to check that
-       the jkind of the manifest matches the annotation ([decl.type_jkind]). This is
-       because the manifest's jkind is exactly the kind's jkind, and we've already checked
-       and updated [type_jkind] based on the kind. *)
-    decl
-  | Some ty, _ ->
-    (* CR layouts v2.8: Remove this use of [type_jkind_purely], which is slow
-       and effectful. But we cannot do so easily, sadly. I tried using
-       [estimate_type_jkind] here instead, but this runs aground with mutually
-       recursive declarations with manifests. Example:
-
-       {[
-         type s1 = float#
-         and s2 = s1
-       ]}
-
-       We assign jkind [any] to both [s1] and [s2] in [transl_declaration],
-       because we really can't do better at that point. But then when we get
-       here, [estimate_type_jkind] on [s1] returns [any] -- it won't expand
-       the manifest to get [float64]. That's not unsound, because a jkind is
-       always just an approximation. But it does mean that we need to load more
-       cmi files in practice to get the "real" jkind. This was observed when
-       compiling Jane Street's codebase, requiring lots more dependencies to be
-       added. Boo. [type_jkind_purely] avoids this problem, by looking deeply
-       to find the [float#] and thus the [float64] jkind.
-
-       The solution I have in mind here is to change the jkind assigned in
-       [transl_declaration] to be [kind_of 'a], where ['a] is the type variable
-       invented in [enter_type]; that variable can be thought of an empty vessel
-       that accumulates information about jkinds from usages. It also,
-       critically, gets unified with the actual type being defined, in
-       [update_type], which happens before [narrow_to_manifest_jkind]. If we use
-       [kind_of 'a] in [transl_declaration], then [decl.type_jkind] will be
-       [kind_of 'a] here, and that will force the [constrain_type_jkind] below
-       to work just hard enough to find a jkind less than [kind_of 'a] --
-       exactly what we want to record in the final [type_jkind] of the decl.
-       (This will require changing [constrain_type_jkind] to return its best
-       jkind, but that is easy to do, and indeed used to be the case until the
-       result was never used anywhere.)
-
-       Do not try this (that is, removing the use of [type_jkind_purely]) before
-       removing the "horrible hack" just below, as that horrible hack sometimes
-       avoids calling [constrain_type_jkind], which is necessary for the plan
-       above to work.  *)
-    let manifest_jkind = Ctype.type_jkind_purely env ty in
-    (* CR layouts v2.8: Remove this horrible hack. In practice, this
-       [try_allow_r] fails in the case of a record re-export, because the jkind
-       from the record has been calculated and put in decl.type_jkind at this
-       point.  So we need to use the deeply broken [type_jkind_purely] and then
-       [sub_jkind_l] here. The right way forward is to parameterize
-       [constrain_type_jkind] over the [l]-ness of its bound. But probably not
-       until we have proper subsumption working, as this hack will likely hold
-       up for a little while. *)
-    begin match Jkind.try_allow_r decl.type_jkind with
-    | None -> begin
-        let type_equal = Ctype.type_equal env in
-        let jkind_of_type ty = Some (Ctype.type_jkind_purely env ty) in
-        match
-          Jkind.sub_jkind_l ~type_equal ~jkind_of_type
-            manifest_jkind decl.type_jkind
-        with
-        | Ok () -> ()
-        | Error v -> raise (Error (loc, Jkind_mismatch_of_type (ty,v)))
-      end
-    | Some type_jkind -> begin
-        match Ctype.constrain_type_jkind env ty type_jkind with
-        | Ok () -> ()
-        | Error v -> raise (Error (loc, Jkind_mismatch_of_type (ty,v)))
-      end
-    end;
-    { decl with type_jkind = manifest_jkind }
+  match decl.type_manifest with
+  | None -> decl
+  | Some ty ->
+    let jkind' = Ctype.type_jkind_purely env ty in
+    match Jkind.sub_jkind_l jkind' decl.type_jkind with
+    | Ok jkind' -> { decl with type_jkind = jkind' }
+    | Error v ->
+      raise (Error (loc, Jkind_mismatch_of_type (ty,v)))
 
 (* Check that the type expression (if present) is compatible with the kind.
    If both a variant/record definition and a type equation are given,
@@ -1341,7 +1227,6 @@ let check_abbrev env sdecl (id, decl) =
 *)
 (* [update_label_sorts] additionally returns whether all the jkinds
    were void, and the jkinds of the labels *)
-(* CR reisenberg: remove all_void return *)
 let update_label_sorts env loc lbls named =
   (* [named] is [Some sorts] for top-level records (we will update the
      sorts) and [None] for inlined records. *)
@@ -1452,8 +1337,7 @@ module Element_repr = struct
     else
       let layout = Jkind.get_layout_defaulting_to_value jkind in
       let sort = Jkind.Layout.Const.get_sort layout in
-      let jkind_of_type ty = Some (Ctype.type_jkind_purely env ty) in
-      let externality_upper_bound = Jkind.get_externality_upper_bound ~jkind_of_type jkind in
+      let externality_upper_bound = Jkind.get_externality_upper_bound jkind in
       let base = match sort with
         | None ->
             Misc.fatal_error "Element_repr.classify: unexpected abstract layout"
@@ -1605,22 +1489,16 @@ let update_constructor_representation
       Constructor_mixed shape
 
 
-let add_types_to_env decls shapes env =
-  List.fold_right2
-    (fun (id, decl) shape env ->
-      add_type ~check:true ~shape id decl env)
-    decls shapes env
-
 (* This function updates jkind stored in kinds with more accurate jkinds.
    It is called after the circularity checks and the delayed jkind checks
    have happened, so we can fully compute jkinds of types.
 
-   This function does not do any /checks/ on the jkind after performing the update; the
-   annotation, for example, is checked in the caller, [update_decls_jkind], so that
-   mutually recursive type decls see each others' best kinds during normalization and
-   subsumption
+   This function is an important part
+   of correctness, as it also checks that the jkind computed from a kind
+   is consistent with (i.e. a subjkind of) any jkind annotation.
+   See Note [Default jkinds in transl_declaration].
 *)
-let update_decl_jkind env id decl =
+let update_decl_jkind env dpath decl =
   let open struct
     (* For tracking what types appear in record blocks. *)
     type element_repr_summary =
@@ -1646,10 +1524,10 @@ let update_decl_jkind env id decl =
       let ld_sort = Jkind.Sort.default_to_value_and_get sort in
       [{lbl with ld_sort}], Record_unboxed, jkind
     | _, Record_boxed sorts ->
-      let lbls, _all_void, jkinds =
+      let lbls, all_void, jkinds =
         update_label_sorts env loc lbls (Some sorts)
       in
-      let jkind = Jkind.for_boxed_record lbls in
+      let jkind = Jkind.for_boxed_record ~all_void in
       let reprs =
         List.map2
           (fun lbl jkind ->
@@ -1780,8 +1658,8 @@ let update_decl_jkind env id decl =
           assert false
       end
     | cstrs, Variant_boxed cstr_shapes ->
-      let (_,cstrs) =
-        List.fold_left (fun (idx,cstrs) cstr ->
+      let (_,cstrs,all_voids) =
+        List.fold_left (fun (idx,cstrs,all_voids) cstr ->
           let arg_sorts =
             match cstr_shapes.(idx) with
             | Constructor_uniform_value, arg_sorts -> arg_sorts
@@ -1790,7 +1668,7 @@ let update_decl_jkind env id decl =
                   "Typedecl.update_variant_kind doesn't expect mixed \
                    constructor as input"
           in
-          let cd_args, _all_void, jkinds =
+          let cd_args, all_void, jkinds =
             update_constructor_arguments_sorts env cstr.Types.cd_loc
               cstr.Types.cd_args (Some arg_sorts)
           in
@@ -1805,110 +1683,107 @@ let update_decl_jkind env id decl =
             | Constructor_mixed _ -> cstr_shapes.(idx) <- cstr_repr, arg_sorts
           in
           let cstr = { cstr with Types.cd_args } in
-          (idx+1,cstr::cstrs)
-        ) (0,[]) cstrs
+          (idx+1,cstr::cstrs,all_voids && all_void)
+        ) (0,[],true) cstrs
       in
-      let jkind = Jkind.for_boxed_variant cstrs in
+      let jkind = Jkind.for_boxed_variant ~all_voids in
       List.rev cstrs, rep, jkind
     | (([] | (_ :: _)), Variant_unboxed | _, Variant_extensible) ->
       assert false
   in
 
-
-  let new_decl =
-    match decl.type_kind with
-    | Type_abstract _ ->
-      (* Abstract types should never have quality=best, but let's double check that here
-         just to be safe *)
-      assert (not (Jkind.is_best decl.type_jkind));
-      decl
+  let new_decl, new_jkind = match decl.type_kind with
+    | Type_abstract _ -> decl, decl.type_jkind
     | Type_open ->
-      let type_jkind =
-        Jkind.Builtin.value ~why:Extensible_variant
-        (* It's unlikely we'll ever be able to give better kinds than [value] to
-           extensible variants, so we're not worried about backwards compatibility if we
-           mark them as best here, and we want to be able to normalize them away *)
-        (* See Note [Quality of jkinds during inference] for more information about when
-           we mark jkinds as best *)
-        |> Jkind.mark_best
-      in
-      { decl with type_jkind }
+      let type_jkind = Jkind.Builtin.value ~why:Extensible_variant in
+      { decl with type_jkind }, type_jkind
     | Type_record (lbls, rep, umc) ->
       let lbls, rep, type_jkind = update_record_kind decl.type_loc lbls rep in
-      (* See Note [Quality of jkinds during inference] for more information about when we
-         mark jkinds as best *)
-      let type_jkind = Jkind.mark_best type_jkind in
-      { decl with type_kind = Type_record (lbls, rep, umc); type_jkind }
-    (* CR layouts v3.0: handle this case in [update_variant_jkind] when
-       [Variant_with_null] introduced.
-
-       No updating required for [or_null_reexport], and we must not
-       incorrectly override the jkind to [non_null].
-    *)
+      { decl with type_kind = Type_record (lbls, rep, umc); type_jkind },
+      type_jkind
     | Type_record_unboxed_product (lbls, rep, umc) ->
         begin match rep with
         | Record_unboxed_product ->
-          let lbls =
+          let lbls, jkinds =
             List.map (fun (Types.{ld_type} as lbl) ->
               let jkind = Ctype.type_jkind env ld_type in
               (* This next line is guaranteed to be OK because of a call to
                  [check_representable] *)
               let sort = Jkind.sort_of_jkind jkind in
               let ld_sort = Jkind.Sort.default_to_value_and_get sort in
-              {lbl with ld_sort}
+              {lbl with ld_sort}, jkind
             ) lbls
+            |> List.split
           in
-          let type_jkind =
-            Jkind.for_unboxed_record
-              ~jkind_of_type:(Ctype.type_jkind env)
-              ~jkind_of_first_type:(fun () ->
-                match lbls with
-                | [lbl] -> Ctype.type_jkind env lbl.ld_type
-                | [] | _ :: _ :: _ -> Misc.fatal_error
-                         "[for_unboxed_record] called [jkind_of_first_type] \
-                         for non-singleton record.")
-              lbls
-          in
-          (* See Note [Quality of jkinds during inference] for more information about when we
-             mark jkinds as best *)
-          let type_jkind = Jkind.mark_best type_jkind in
+          let type_jkind = Jkind.Builtin.product ~why:Unboxed_record jkinds in
           { decl with type_kind = Type_record_unboxed_product (lbls, rep, umc);
-                      type_jkind }
+                      type_jkind },
+          type_jkind
         end
-    | Type_variant _ when
-      Builtin_attributes.has_or_null_reexport decl.type_attributes ->
-      decl
     | Type_variant (cstrs, rep, umc) ->
       let cstrs, rep, type_jkind = update_variant_kind cstrs rep in
-      (* See Note [Quality of jkinds during inference] for more information about when we
-         mark jkinds as best *)
-      let type_jkind = Jkind.mark_best type_jkind in
-      { decl with type_kind = Type_variant (cstrs, rep, umc); type_jkind }
+      { decl with type_kind = Type_variant (cstrs, rep, umc);
+                  type_jkind },
+      type_jkind
   in
 
-  (* Check the layout here, both to check it, but more importantly to fill in any sort
-     variables in the original decl's jkind, which might be shared with the jkinds of
-     other types in a (maybe mutually recursive) type declaration. See Note [Default
-     jkinds in transl_declaration]) *)
-  match
-    Jkind.Layout.sub new_decl.type_jkind.jkind.layout decl.type_jkind.jkind.layout
-  with
-  | Not_le reason ->
-    raise (Error (
-      decl.type_loc,
-      Jkind_mismatch_of_path (
-        Pident id,
-        Jkind.Violation.of_ (
-          Not_a_subjkind (
-            new_decl.type_jkind, decl.type_jkind, Nonempty_list.to_list reason)))))
-  | Less | Equal -> new_decl
+  let allow_any_crossing =
+    Builtin_attributes.has_unsafe_allow_any_mode_crossing decl.type_attributes
+  in
 
-let update_decls_jkind_reason env decls =
+  (* Check that the attribute is valid, if set (unconditionally, for consistency). *)
+  if allow_any_crossing then begin
+    match decl.type_kind with
+    | Type_abstract _ | Type_open ->
+      raise(Error(decl.type_loc, Unsafe_mode_crossing_on_invalid_type_kind))
+    | _ -> ()
+  end;
+
+  (* check that the jkind computed from the kind matches the jkind
+     annotation, which was stored in decl.type_jkind *)
+  if new_jkind != decl.type_jkind then
+    (* CR layouts v2.8: Consider making a function that doesn't compute
+       histories for this use-case, which doesn't need it. *)
+    begin match Jkind.sub_jkind_l ~allow_any_crossing new_jkind decl.type_jkind with
+    | Ok _ ->
+      (* If the user is asking us to allow any crossing, we use the modal bounds from
+         the annotation rather than the modal bounds inferred from the type_kind.
+         However, we /only/ take the modal bounds, not the layout - because we still
+         want to be able to eg locally use a type declared as layout [any] as [value]
+         if that's its actual layout! *)
+      let type_jkind =
+        Jkind.unsafely_set_upper_bounds ~from:decl.type_jkind
+          new_decl.type_jkind
+      in
+      if allow_any_crossing then
+        let umc =
+          Some { modal_upper_bounds = Jkind.get_modal_upper_bounds type_jkind }
+        in
+        let type_kind =
+          match new_decl.type_kind with
+          | Type_abstract _ | Type_open -> assert false (* Checked above *)
+          | Type_record (lbls, rep, _) ->
+            Type_record (lbls, rep, umc)
+          | Type_record_unboxed_product (lbls, rep, _) ->
+            Type_record_unboxed_product (lbls, rep, umc)
+          | Type_variant (cs, rep, _) ->
+            Type_variant (cs, rep, umc)
+        in
+        { new_decl with
+          type_jkind;
+          type_kind; }
+      else new_decl
+    | Error err ->
+      raise(Error(decl.type_loc, Jkind_mismatch_of_path (dpath,err)))
+    end
+  else new_decl
+
+let update_decls_jkind_reason decls =
   List.map
     (fun (id, decl) ->
        let update_generalized =
         Ctype.check_and_update_generalized_ty_jkind
-          ~name:id ~loc:decl.type_loc env
+          ~name:id ~loc:decl.type_loc
        in
        List.iter update_generalized decl.type_params;
        Btype.iter_type_expr_kind update_generalized decl.type_kind;
@@ -1922,20 +1797,7 @@ let update_decls_jkind_reason env decls =
 
 let update_decls_jkind env decls =
   List.map
-    (fun (id, decl) ->
-       let allow_any_crossing =
-         Builtin_attributes.has_unsafe_allow_any_mode_crossing decl.type_attributes
-       in
-
-       (* Check that the attribute is valid, if set (unconditionally, for consistency). *)
-       if allow_any_crossing then begin
-         match decl.type_kind with
-         | Type_abstract _ | Type_open ->
-           raise(Error(decl.type_loc, Unsafe_mode_crossing_on_invalid_type_kind))
-         | _ -> ()
-       end;
-
-       (id, decl.type_jkind, allow_any_crossing, update_decl_jkind env id decl))
+    (fun (id, decl) -> (id, update_decl_jkind env (Pident id) decl))
     decls
 
 
@@ -2450,107 +2312,11 @@ let check_redefined_unit (td: Parsetree.type_declaration) =
   | _ ->
       ()
 
-
-(* Note [Quality of jkinds during inference]
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-   We're careful during inference of jkinds for type declarations not to ever call
-   [Jkind.mark_best] on a jkind before we've added all the various pieces of information
-   to the jkind (the full layout, and all the with-bounds). Early in translation, we give
-   "dummy" kinds to types, without any with bounds, and have been careful not to mark
-   these as having a [Best] quality. Later on, in [update_decls_jkind], once we've learned
-   everything there is to know about a type declaration, we mark the new kind as [Best].
-   It's important to do this /before/ [normalize_decl_jkinds], so that mutually recursive
-   type declarations can look up each others' (best, though perhaps not normalized!)
-   jkind.
-*)
-
-(* Normalize the jkinds in a list of (potentially mutually recursive) type declarations *)
-let normalize_decl_jkinds env shapes decls =
-  (* Add the types, with non-normalized kinds, to the environment to start, so that eg
-     types can look up their own (potentially non-normalized) kinds *)
-  let env =
-    List.fold_right2
-      (fun (id, _, _, decl) shape env ->
-         add_type ~check:true ~shape id decl env)
-      decls shapes env
-  in
-  Misc.Stdlib.List.fold_left_map2
-    (fun env (id, original_jkind, allow_any_crossing, decl) shape ->
-       let normalized_jkind =
-         Jkind.normalize
-           ~mode:Require_best
-           ~jkind_of_type:(fun ty -> Some (Ctype.type_jkind env ty))
-           decl.type_jkind
-       in
-       let decl = { decl with type_jkind = normalized_jkind } in
-       (* Add the decl with the normalized kind back to the environment, so that later
-          kinds don't have to normalize this kind if they mention this type in their
-          with-bounds *)
-       let env = add_type ~check:false ~shape:shape id decl env in
-       if normalized_jkind != original_jkind then begin
-         (* If the jkind has changed, check that it is a subjkind of the original jkind
-            that we computed, either from a user-written annotation or as a dummy jkind.
-
-            (see Note [Default jkinds in transl_declaration]) *)
-         (* CR layouts v2.8: it almost definitely has changed, but also we probably trust
-            the new jkind (we really only want this check here to check against the
-            user-written annotation). We might be able to do a better job here and save
-            some work. *)
-         let jkind_of_type ty = Some (Ctype.type_jkind_purely env ty) in
-         let type_equal = Ctype.type_equal env in
-         match
-           (* CR layouts v2.8: Consider making a function that doesn't compute
-              histories for this use-case, which doesn't need it. *)
-           Jkind.sub_jkind_l
-             ~type_equal
-             ~jkind_of_type
-             ~allow_any_crossing
-             decl.type_jkind
-             original_jkind
-         with
-         | Ok _ ->
-            if allow_any_crossing then
-              (* If the user is asking us to allow any crossing, we use the modal bounds from
-                 the annotation rather than the modal bounds inferred from the type_kind.
-                 However, we /only/ take the modal bounds, not the layout - because we still
-                 want to be able to eg locally use a type declared as layout [any] as [value]
-                 if that's its actual layout! *)
-              let type_jkind =
-                match
-                  Jkind.unsafely_set_mod_bounds
-                    ~from:original_jkind
-                    decl.type_jkind
-                with
-                | Ok jkind -> jkind
-                | Error () ->
-                  raise(Error(decl.type_loc, Unsafe_mode_crossing_with_with_bounds))
-              in
-              let umc =
-                Some { modal_upper_bounds =
-                         Jkind.get_modal_upper_bounds ~jkind_of_type type_jkind;
-                       modal_lower_bounds =
-                         Jkind.get_modal_lower_bounds ~jkind_of_type type_jkind }
-              in
-              let type_kind =
-                match decl.type_kind with
-                | Type_abstract _ | Type_open -> assert false (* Checked above *)
-                | Type_record (lbls, rep, _) ->
-                  Type_record (lbls, rep, umc)
-                | Type_record_unboxed_product (lbls, rep, _) ->
-                  Type_record_unboxed_product (lbls, rep, umc)
-                | Type_variant (cs, rep, _) ->
-                  Type_variant (cs, rep, umc)
-              in
-              env, (id, { decl with type_jkind; type_kind; })
-            else env, (id, decl)
-         | Error err ->
-           raise(Error(decl.type_loc, Jkind_mismatch_of_path (Pident id, err)))
-       end
-       else env, (id, decl))
-    env
-    decls
-    shapes
+let add_types_to_env decls shapes env =
+  List.fold_right2
+    (fun (id, decl) shape env ->
+      add_type ~check:true ~shape id decl env)
+    decls shapes env
 
 (* Translate a set of type declarations, mutually recursive or not *)
 let transl_type_decl env rec_flag sdecl_list =
@@ -2730,17 +2496,14 @@ let transl_type_decl env rec_flag sdecl_list =
   (* Check that constraints are enforced *)
   List.iter2 (check_constraints new_env) sdecl_list decls;
   (* Add type properties to declarations *)
-  let new_env, decls =
+  let decls =
     try
-      let new_env, decls =
-        decls
-        |> name_recursion_decls sdecl_list
-        |> Typedecl_variance.update_decls env sdecl_list
-        |> Typedecl_separability.update_decls env
-        |> update_decls_jkind new_env
-        |> normalize_decl_jkinds new_env shapes
-      in
-      new_env, update_decls_jkind_reason new_env decls
+      decls
+      |> name_recursion_decls sdecl_list
+      |> Typedecl_variance.update_decls env sdecl_list
+      |> Typedecl_separability.update_decls env
+      |> update_decls_jkind new_env
+      |> update_decls_jkind_reason
     with
     | Typedecl_variance.Error (loc, err) ->
         raise (Error (loc, Variance err))
@@ -3564,7 +3327,7 @@ let transl_value_decl env loc ~sig_modalities valdecl =
     Env.enter_value ~mode:Mode.Value.legacy valdecl.pval_name.txt v env
       ~check:(fun s -> Warnings.Unused_value_declaration s)
   in
-  Ctype.check_and_update_generalized_ty_jkind ~name:id ~loc newenv ty;
+  Ctype.check_and_update_generalized_ty_jkind ~name:id ~loc ty;
   let desc =
     {
      val_id = id;
@@ -3792,17 +3555,9 @@ let approx_type_decl sdecl_list =
        let id = Ident.create_scoped ~scope sdecl.ptype_name.txt in
        let path = Path.Pident id in
        let injective = sdecl.ptype_kind <> Ptype_abstract in
-       let transl_type sty =
-         Misc.fatal_errorf
-           "@[I do not yet know how to deal with [with]-types (such as %a)@ in \
-            recursive modules. Please contact the Jane Street OCaml Language@ \
-            team for help if you see this."
-           Pprintast.core_type sty
-       in
        let jkind =
          Jkind.of_type_decl_default
            ~context:(Type_declaration path)
-           ~transl_type
            ~default:(Jkind.Builtin.value ~why:Default_type_jkind)
            sdecl
        in
@@ -3825,15 +3580,7 @@ let check_recmod_typedecl env loc recmod_ids path decl =
   check_regularity ~abs_env:env env loc path decl to_check;
   (* additional coherence check, as one might build an incoherent signature,
      and use it to build an incoherent module, cf. #7851 *)
-  (* Call [check_kind_coherence] rather than [check_coherence] here, which
-     avoids a call to [narrow_to_manifest_jkind]. That call sometimes spuriously fails on
-     valid programs (see test 14 in testsuite/tests/typing-jkind-bounds/basics.ml). This
-     isn't sound, but this check is already unsound otherwise (see issue #13765)! And not
-     performing this check on the jkinds is no less sound than what already exists. So
-     instead of fixing the spurious failures, we choose to just not perform the check,
-     with the intention of fixing the jkind soundness issue once the other soundness issue
-     is resolved. *)
-  ignore (check_kind_coherence env loc path decl)
+  ignore (check_coherence env loc path decl)
 
 
 (**** Error report ****)
@@ -4398,17 +4145,8 @@ let report_error ppf = function
       (Path.name definition)
   | Unsafe_mode_crossing_on_invalid_type_kind ->
     fprintf ppf
-      "@[[%@%@unsafe_allow_any_mode_crossing] is not allowed on this kind of \
-       type declaration.@ Only records, unboxed products, and variants are \
-       supported.@]"
-  | Unsafe_mode_crossing_with_with_bounds ->
-    fprintf ppf
-      "@[[%@%@unsafe_allow_any_mode_crossing] is not allowed with a kind \
-       annotation containing with-bounds.@]"
-  | Illegal_baggage jkind ->
-    fprintf ppf
-      "@[Illegal %a in kind annotation of an abbreviation:@ %a@]"
-      Style.inline_code "with" Jkind.format jkind
+      "@[[%@%@unsafe_allow_any_mode_crossing] is not allowed on this kind of type declaration.\
+       @ Only records, unboxed products, and variants are supported.@]"
 
 let () =
   Location.register_error_of_exn

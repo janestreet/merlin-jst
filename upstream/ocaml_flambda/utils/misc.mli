@@ -163,15 +163,6 @@ module Stdlib : sig
     (** [fold_lefti f init l] is like [fold_left] but also takes as parameter
         the zero-based index of the element *)
 
-    val fold_left_map2
-      : ('acc -> 'a -> 'b -> 'acc * 'r)
-      -> 'acc
-      -> 'a list
-      -> 'b list
-      -> 'acc * 'r list
-    (** [fold_left_map2] is a combination of [fold_left2] and [map2] that threads an
-        accumulator through calls to [f]. *)
-
     val chunks_of : int -> 'a t -> 'a t t
     (** [chunks_of n t] returns a list of nonempty lists whose
         concatenation is equal to the original list. Every list has [n]
@@ -326,16 +317,11 @@ module Stdlib : sig
   external compare : 'a -> 'a -> int = "%compare"
 
   module Monad : sig
-    module type Basic2 = sig
-      (** Multi parameter monad. The second parameter gets unified across all
-          the computation.  This is used to encode monads working on a multi
-          parameter data structure like ([('a,'b) result]). *)
+    module type Basic = sig
+      type 'a t
 
-      type ('a, 'e) t
-
-      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-
-      val return : 'a -> ('a, _) t
+      val bind : 'a t -> ('a -> 'b t) -> 'b t
+      val return : 'a -> 'a t
 
       (** The following identities ought to hold (for some value of =):
 
@@ -346,58 +332,60 @@ module Stdlib : sig
           Note: [>>=] is the infix notation for [bind]) *)
     end
 
-    module type Basic = sig
+    module type Basic2 = sig
+      (** Multi parameter monad. The second parameter gets unified across all
+          the computation.  This is used to encode monads working on a multi
+          parameter data structure like ([('a,'b) result]). *)
+
+      type ('a, 'e) t
+
+      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+
+      val return : 'a -> ('a, _) t
+    end
+
+    module type S = sig
       type 'a t
-      include Basic2 with type ('a, _) t := 'a t
+
+      val bind : 'a t -> ('a -> 'b t) -> 'b t
+
+      (** [>>=] is a synonym for [bind] *)
+      val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+
+      (** [return v] returns the (trivial) computation that returns v. *)
+      val return : 'a -> 'a t
+
+      val map : ('a -> 'b) -> 'a t -> 'b t
+
+      (** [join t] is [t >>= (fun t' -> t')]. *)
+      val join : 'a t t -> 'a t
+
+      (** [ignore_m t] is [map (fun _ -> ()) t]. *)
+      val ignore_m : 'a t -> unit t
+
+      val all : 'a t list -> 'a list t
+
+      (** Like [all], but ensures that every monadic value in the list produces
+          a unit value, all of which are discarded rather than being collected
+          into a list. *)
+      val all_unit : unit t list -> unit t
     end
 
     module type S2 = sig
       type ('a, 'e) t
 
       val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-
-      (** [>>=] is a synonym for [bind] *)
-      val (>>=) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-
-      (** [return v] returns the (trivial) computation that returns v. *)
       val return : 'a -> ('a, _) t
-
       val map : ('a -> 'b) -> ('a, 'e) t -> ('b, 'e) t
-
-      (** [join t] is [t >>= (fun t' -> t')]. *)
       val join : (('a, 'e) t, 'e) t -> ('a, 'e) t
-
-      val both : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
-
-      (** [ignore_m t] is [map (fun _ -> ()) t]. *)
       val ignore_m : (_, 'e) t -> (unit, 'e) t
-
       val all : ('a, 'e) t list -> ('a list, 'e) t
-
-      (** Like [all], but ensures that every monadic value in the list produces
-          a unit value, all of which are discarded rather than being collected
-          into a list. *)
       val all_unit : (unit, 'e) t list -> (unit, 'e) t
-
-      (** As described at https://ocaml.org/manual/latest/bindingops.html *)
-      module Syntax : sig
-        val (let+) : ('a, 'e) t -> ('a -> 'b) -> ('b, 'e) t
-        val (and+) : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
-        val (let*) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-        val (and*) : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
-      end
     end
-
-    module type S = sig
-      type 'a t
-      include S2 with type ('a, _) t := 'a t
-    end
-
 
     module Make (X : Basic) : S with type 'a t = 'a X.t
     module Make2 (X : Basic2) : S2 with type ('a, 'e) t = ('a, 'e) X.t
 
-    module Identity : S with type 'a t = 'a
     module Option : S with type 'a t = 'a option
     module Result : S2 with type ('a, 'e) t = ('a, 'e) result
   end
@@ -1067,10 +1055,6 @@ module Le_result : sig
 
   val is_le : t -> bool
   val is_equal : t -> bool
-
-  (* adaptors for structures that can only compare less-or-equal *)
-  val less_or_equal : le:('a -> 'a -> bool) -> 'a -> 'a -> t
-  val equal : le:('a -> 'a -> bool) -> 'a -> 'a -> bool
 end
 
 (** Propositional equality *)
@@ -1104,21 +1088,3 @@ type filepath = string
 type alerts = string Stdlib.String.Map.t
 
 val remove_double_underscores : string -> string
-
-(** Non-empty lists *)
-module Nonempty_list : sig
-  type nonrec 'a t = ( :: ) of 'a * 'a list
-
-  val to_list : 'a t -> 'a list
-  val of_list_opt : 'a list -> 'a t option
-  val map : ('a -> 'b) -> 'a t -> 'b t
-
-  val pp_print :
-    ?pp_sep:(Format.formatter -> unit -> unit) ->
-    (Format.formatter -> 'a -> unit) ->
-    Format.formatter ->
-    'a t ->
-    unit
-
-  val (@) : 'a t -> 'a t -> 'a t
-end
