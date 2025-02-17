@@ -120,9 +120,9 @@ val ident_some : Ident.t
 val ident_or_null : Ident.t
 
 (* The jkind used for optional function argument types *)
-val option_argument_jkind : jkind_lr
+val option_argument_jkind : 'd jkind
 (* The jkind used for list argument types *)
-val list_argument_jkind : jkind_lr
+val list_argument_jkind : 'd jkind
 
 (* To build the initial environment. Since there is a nasty mutual
    recursion between predef and env, we break it by parameterizing
@@ -157,11 +157,6 @@ val add_or_null :
    while users can't define their own types with null constructors. *)
 (* CR layouts v3.5: remove this when users can define null constructors. *)
 val or_null_kind : type_expr -> ('a, 'b, constructor_declaration) type_kind
-
-(* Construct the [jkind] of [or_null]. For re-exporting [or_null]
-   while users can't define their own types with null constructors. *)
-(* CR layouts v3.5: remove this when users can define null constructors. *)
-val or_null_jkind : Types.jkind_l
 
 (* To initialize linker tables *)
 

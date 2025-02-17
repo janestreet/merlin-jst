@@ -54,42 +54,20 @@ type mmodes =
 (** Mode cross a right mode *)
 (* This is very similar to Ctype.mode_cross_right. Any bugs here are likely bugs
    there, too. *)
-let right_mode_cross_jkind env jkind mode =
-  let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
-  let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
-  let upper_bounds =
-    Alloc.Const.merge
-      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
-  in
+let right_mode_cross_jkind jkind mode =
+  let upper_bounds = Jkind.get_modal_upper_bounds jkind in
   let upper_bounds = Const.alloc_as_value upper_bounds in
-  let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
-  let lower_bounds =
-    Alloc.Const.merge
-      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
-  in
-  let lower_bounds = Const.alloc_as_value lower_bounds in
-  Value.imply upper_bounds (Value.join_const lower_bounds mode)
+  Value.imply upper_bounds mode
 
-let right_mode_cross env ty mode =
+let right_mode_cross env ty mode=
   if not (Ctype.is_principal ty) then mode else
   let jkind = Ctype.type_jkind_purely env ty in
-  right_mode_cross_jkind env jkind mode
+  right_mode_cross_jkind jkind mode
 
-let left_mode_cross_jkind env jkind mode =
-  let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
-  let upper_bounds = Jkind.get_modal_upper_bounds ~jkind_of_type jkind in
-  let upper_bounds =
-    Alloc.Const.merge
-      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
-  in
+let left_mode_cross_jkind _env jkind mode =
+  let upper_bounds = Jkind.get_modal_upper_bounds jkind in
   let upper_bounds = Const.alloc_as_value upper_bounds in
-  let lower_bounds = Jkind.get_modal_lower_bounds ~jkind_of_type jkind in
-  let lower_bounds =
-    Alloc.Const.merge
-      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
-  in
-  let lower_bounds = Const.alloc_as_value lower_bounds in
-  Value.subtract lower_bounds (Value.meet_const upper_bounds mode)
+  Value.meet_const upper_bounds mode
 
 let left_mode_cross env ty mode=
   if not (Ctype.is_principal ty) then mode else
@@ -708,10 +686,11 @@ let compare_unsafe_mode_crossing umc1 umc2 =
   | None, None -> None
   | Some _, None -> Some (Unsafe_mode_crossing (Mode_crossing_only_on First))
   | None, Some _ -> Some (Unsafe_mode_crossing (Mode_crossing_only_on Second))
-  | Some umc1, Some umc2 ->
-      if equal_unsafe_mode_crossing umc1 umc2
-      then None
-      else Some (Unsafe_mode_crossing Mode_crossing_not_equal)
+  | Some ({ modal_upper_bounds = mub1 }),
+    Some ({ modal_upper_bounds = mub2 }) ->
+    if (Mode.Alloc.Const.le mub1 mub2 && Mode.Alloc.Const.le mub2 mub1)
+    then None
+    else Some (Unsafe_mode_crossing Mode_crossing_not_equal)
 
 module Record_diffing = struct
 
@@ -1419,22 +1398,15 @@ let type_declarations ?(equality = false) ~loc env ~mark name
       rep1 rep2
   in
   let err = match (decl1.type_kind, decl2.type_kind) with
-      (_, Type_abstract _) ->
-        (* No need to check jkinds if decl2 has a manifest; we've already
-           checked for type equality, above. Oddly, this is not just an
-           optimization; unconditionally checking jkinds causes a failure
-           around recursive modules (test case: shapes/recmodules.ml).
-           Richard spent several hours trying to understand what was going
-           on there (after the substitution in [Typemod.check_recmodule_inclusion],
-           there was a type_declaration whose [type_jkind] didn't match its
-           [type_manifest]), but just skipping this check when there is a
-           manifest fixes the problem. *)
-        if Option.is_none decl2.type_manifest then
-          (* Note that [decl2.type_jkind] is an upper bound *)
-          match Ctype.check_decl_jkind env decl1 decl2.type_jkind with
-           | Ok _ -> None
-           | Error v -> Some (Jkind v)
-        else None
+      (_, Type_abstract _) -> begin
+        (* Note that [decl2.type_jkind] is an upper bound. If it isn't tight, [decl2] must
+           have a manifest, which we're already checking for equality above. Similarly,
+           [decl1]'s kind may conservatively approximate its jkind, but [check_decl_jkind]
+           will expand its manifest. *)
+        match Ctype.check_decl_jkind env decl1 decl2.type_jkind  with
+        | Ok _ -> None
+        | Error v -> Some (Jkind v)
+      end
     | (Type_variant (cstrs1, rep1, umc1), Type_variant (cstrs2, rep2, umc2)) -> begin
         if mark then begin
           let mark usage cstrs =
@@ -1485,8 +1457,7 @@ let type_declarations ?(equality = false) ~loc env ~mark name
      Some (Parameter_jkind
              (ty, Jkind.Violation.of_
                     (Not_a_subjkind (Jkind.disallow_right original_jkind,
-                                     Jkind.disallow_left inferred_jkind,
-                                     []))))
+                                     Jkind.disallow_left inferred_jkind))))
   | All_good ->
   let abstr = Btype.type_kind_is_abstract decl2 && decl2.type_manifest = None in
   let need_variance =

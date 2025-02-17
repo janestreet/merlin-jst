@@ -4156,8 +4156,8 @@ jkind_desc:
       in
       Mod ($1, modes)
     }
-  | jkind_annotation WITH core_type optional_atat_modalities_expr {
-      With ($1, $3, $4)
+  | jkind_annotation WITH core_type {
+      With ($1, $3)
     }
   | ident {
       Abbreviation $1
