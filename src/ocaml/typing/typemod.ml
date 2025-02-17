@@ -2854,7 +2854,7 @@ and type_module_path_aux ~alias ~hold_locks sttn env path locks (lid : _ loc) sm
 and type_application loc strengthen funct_body env smod =
   let rec extract_application funct_body env sargs smod =
     match smod.pmod_desc with
-    | Pmod_apply (f, sarg) ->
+    | Pmod_apply(f, sarg) ->
         let arg, shape, held_locks =
           type_module_maybe_hold_locks ~hold_locks:true true funct_body None env
             sarg
