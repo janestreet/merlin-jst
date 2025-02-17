@@ -298,14 +298,6 @@ module type S = sig
       | Contention : (monadic, Contention.Const.t) t
 
     val print : Format.formatter -> ('p, 'r) t -> unit
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-
-    val eq : ('p, 'r0) t -> ('p, 'r1) t -> ('r0, 'r1) Misc_stdlib.eq option
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-
-    val eq : ('p, 'r0) t -> ('p, 'r1) t -> ('r0, 'r1) Misc.eq option
-=======
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
   end
 
   module type Mode := sig

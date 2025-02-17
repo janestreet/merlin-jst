@@ -76,60 +76,6 @@ end
 
 type sort = Sort.t
 
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-module Sub_failure_reason : sig
-  type t =
-    | Axis_disagreement of Jkind_axis.Axis.packed
-    | Layout_disagreement
-    | Constrain_ran_out_of_fuel
-end
-
-module Sub_result : sig
-  type t =
-    | Equal
-    | Less
-    | Not_le of Sub_failure_reason.t Misc_stdlib.Nonempty_list.t
-
-  val of_le_result :
-    failure_reason:(unit -> Sub_failure_reason.t Misc_stdlib.Nonempty_list.t) ->
-    Misc_stdlib.Le_result.t ->
-    t
-
-  val combine : t -> t -> t
-
-  val require_le : t -> (unit, Sub_failure_reason.t Misc_stdlib.Nonempty_list.t) result
-
-  val is_le : t -> bool
-end
-
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-module Sub_failure_reason : sig
-  type t =
-    | Axis_disagreement of Jkind_axis.Axis.packed
-    | Layout_disagreement
-    | Constrain_ran_out_of_fuel
-end
-
-module Sub_result : sig
-  type t =
-    | Equal
-    | Less
-    | Not_le of Sub_failure_reason.t Misc.Nonempty_list.t
-
-  val of_le_result :
-    failure_reason:(unit -> Sub_failure_reason.t Misc.Nonempty_list.t) ->
-    Misc.Le_result.t ->
-    t
-
-  val combine : t -> t -> t
-
-  val require_le : t -> (unit, Sub_failure_reason.t Misc.Nonempty_list.t) result
-
-  val is_le : t -> bool
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
 (* The layout of a type describes its memory layout. A layout is either the
    indeterminate [Any] or a sort, which is a concrete memory layout. *)
 module Layout : sig
@@ -570,22 +516,8 @@ val sub : jkind_l -> jkind_r -> bool
 
 type sub_or_intersect =
   | Sub  (** The first jkind is a subjkind of the second. *)
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-  | Disjoint of Sub_failure_reason.t Misc_stdlib.Nonempty_list.t
-      (** The two jkinds have no common ground. *)
-  | Has_intersection of Sub_failure_reason.t Misc_stdlib.Nonempty_list.t
-      (** The first jkind is not a subjkind of the second, but the two jkinds have an
-          intersection: try harder. *)
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-  | Disjoint of Sub_failure_reason.t Misc.Nonempty_list.t
-      (** The two jkinds have no common ground. *)
-  | Has_intersection of Sub_failure_reason.t Misc.Nonempty_list.t
-      (** The first jkind is not a subjkind of the second, but the two jkinds have an
-          intersection: try harder. *)
-=======
   | Disjoint  (** The two jkinds have no common ground. *)
   | Has_intersection  (** The two jkinds have an intersection: try harder. *)
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
 
 (** [sub_or_intersect t1 t2] does a subtype check, returning a [sub_or_intersect];
     see comments there for more info. *)

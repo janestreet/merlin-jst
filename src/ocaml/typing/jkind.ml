@@ -15,22 +15,6 @@
 open Mode
 open Jkind_types
 
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-[@@@warning "+9"]
-
-module Nonempty_list = Misc.Nonempty_list
-
-(* A *sort* is the information the middle/back ends need to be able to
-   compile a manipulation (storing, passing, etc) of a runtime value. *)
-module Sort = struct
-=======
-[@@@warning "+9"]
-
-(* A *sort* is the information the middle/back ends need to be able to
-   compile a manipulation (storing, passing, etc) of a runtime value. *)
-module Sort = struct
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
 (* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
   include Misc
@@ -39,8 +23,6 @@ module Misc = struct
 end
 
 [@@@warning "+9"]
-
-module Nonempty_list = Misc_stdlib.Nonempty_list
 
 (* A *sort* is the information the middle/back ends need to be able to
    compile a manipulation (storing, passing, etc) of a runtime value. *)

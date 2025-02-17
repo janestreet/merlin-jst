@@ -28,24 +28,6 @@ let is_mutable = function
 
 (* Type expressions for the core language *)
 
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-module Jkind_mod_bounds =
-  Jkind_axis.Axis_collection.Indexed (Misc_stdlib.Monad.Identity)
-
-module With_bounds_type_info = struct
-  type t = {relevant_axes : Jkind_axis.Axis_set.t } [@@unboxed]
-end
-
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-module Jkind_mod_bounds =
-  Jkind_axis.Axis_collection.Indexed (Misc.Stdlib.Monad.Identity)
-
-module With_bounds_type_info = struct
-  type t = {relevant_axes : Jkind_axis.Axis_set.t } [@@unboxed]
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
 type transient_expr =
   { mutable desc: type_desc;
     mutable level: int;

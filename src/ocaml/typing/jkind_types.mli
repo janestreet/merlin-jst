@@ -143,10 +143,10 @@ module Layout_and_axes : sig
 
   val sub :
     ?allow_any_crossing:bool ->
-    ('layout -> 'layout -> Misc.Le_result.t) ->
+    ('layout -> 'layout -> Misc_stdlib.Le_result.t) ->
     ('layout, allowed * 'r) t ->
     ('layout, 'l * allowed) t ->
-    Misc.Le_result.t
+    Misc_stdlib.Le_result.t
 
   val format :
     (Format.formatter -> 'layout -> unit) ->

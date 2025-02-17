@@ -463,29 +463,11 @@ and jkind_annotation ?(nested = false) ctxt f k = match k.pjkind_desc with
           (pp_print_list ~pp_sep:pp_print_space mode) modes
       ) f (t, modes)
     end
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-  | With (t, ty, modalities) ->
-    Misc_stdlib.pp_parens_if nested (fun f (t, ty, modalities) ->
-      pp f "%a with %a%a"
-        (jkind_annotation ~nested:true ctxt) t
-        (core_type ctxt) ty
-        optional_space_atat_modalities modalities;
-    ) f (t, ty, modalities)
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-  | With (t, ty, modalities) ->
-    Misc.pp_parens_if nested (fun f (t, ty, modalities) ->
-      pp f "%a with %a%a"
-        (jkind_annotation ~nested:true ctxt) t
-        (core_type ctxt) ty
-        optional_space_atat_modalities modalities;
-    ) f (t, ty, modalities)
-=======
   | With (t, ty) ->
-    Misc.pp_parens_if nested (fun f (t, ty) ->
+    Misc_stdlib.pp_parens_if nested (fun f (t, ty) ->
       pp f "%a with %a" (jkind_annotation ~nested:true ctxt) t (core_type ctxt)
         ty
     ) f (t, ty)
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
   | Kind_of ty -> pp f "kind_of_ %a" (core_type ctxt) ty
   | Product ts ->
     Misc_stdlib.pp_parens_if nested (fun f ts ->

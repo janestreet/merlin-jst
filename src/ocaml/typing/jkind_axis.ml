@@ -12,22 +12,14 @@
 (*                                                                        *)
 (**************************************************************************)
 
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
 (* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
   module Stdlib = Misc_stdlib
   include Misc_stdlib
 end
 
-module type Axis_ops = sig
-  include Mode_intf.Lattice
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-module type Axis_ops = sig
-  include Mode_intf.Lattice
-=======
 module type Axis_s = sig
   type t
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
 
   val max : t
 

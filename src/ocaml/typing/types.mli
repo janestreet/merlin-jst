@@ -67,32 +67,6 @@ val is_mutable : mutability -> bool
 
     Note on mutability: TBD.
  *)
-<<<<<<< janestreet/merlin-jst:5.2.0minus-6
-
-(** The mod-bounds of a jkind *)
-module Jkind_mod_bounds :
-  module type of Jkind_axis.Axis_collection.Indexed (Misc_stdlib.Monad.Identity)
-
-(** Information tracked about an individual type within the with-bounds for a jkind *)
-module With_bounds_type_info : sig
-  (** The axes that the with-bound applies to *)
-  type t = { relevant_axes : Jkind_axis.Axis_set.t } [@@unboxed]
-end
-
-||||||| ocaml-flambda/flambda-backend:6a83bbad9dd6c86ea5019a84258b04c81aa34a38
-
-(** The mod-bounds of a jkind *)
-module Jkind_mod_bounds :
-  module type of Jkind_axis.Axis_collection.Indexed (Misc.Stdlib.Monad.Identity)
-
-(** Information tracked about an individual type within the with-bounds for a jkind *)
-module With_bounds_type_info : sig
-  (** The axes that the with-bound applies to *)
-  type t = { relevant_axes : Jkind_axis.Axis_set.t } [@@unboxed]
-end
-
-=======
->>>>>>> ocaml-flambda/flambda-backend:db3778f932fc0a2f9d71ba5f9dcf7c76fcc74a63
 type type_expr
 type row_desc
 type row_field
