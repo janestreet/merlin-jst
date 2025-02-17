@@ -1,3 +1,7 @@
+The server might already be running, we kill it to make sure we start from a
+clean slate:
+  $ $MERLIN server stop-server
+
 Check that merlin understands the `-parameter` flag.
 
   $ query_file() {
@@ -518,3 +522,5 @@ Check that [basic.ml] no longer compiles:
       "message": "This expression has type unit but an expression was expected of type int"
     }
   ]
+
+  $ $MERLIN server stop-server
