@@ -380,6 +380,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_fun_param_as_list) -> "fun_param_as_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_fun_expr) -> "fun_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_fun_body) -> "fun_body"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_fun_) -> "fun_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_formal_class_parameters) -> "formal_class_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_floating_attribute) -> "floating_attribute"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_extension_type) -> "extension_type"
@@ -789,6 +790,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_fun_param_as_list -> (fun _ -> "fun_param_as_list")
   | MenhirInterpreter.N MenhirInterpreter.N_fun_expr -> (fun _ -> "fun_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_fun_body -> (fun _ -> "fun_body")
+  | MenhirInterpreter.N MenhirInterpreter.N_fun_ -> (fun _ -> "fun_")
   | MenhirInterpreter.N MenhirInterpreter.N_formal_class_parameters -> (fun _ -> "formal_class_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_floating_attribute -> (fun _ -> "floating_attribute")
   | MenhirInterpreter.N MenhirInterpreter.N_extension_type -> (fun _ -> "extension_type")

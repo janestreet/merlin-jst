@@ -26,8 +26,9 @@ type ocaml =
     parameters : string list;
     as_parameter : bool;
     as_argument_for : string option;
-    zero_alloc_check : Zero_alloc_annotations.t;
-    allow_illegal_crossing : bool
+    zero_alloc_check : Zero_alloc_annotations.Check.t;
+    zero_alloc_assert : Zero_alloc_annotations.Assert.t;
+    infer_with_bounds : bool
   }
 
 let dump_warnings st =
@@ -57,7 +58,9 @@ let dump_ocaml x =
       ("parameters", `List (List.map ~f:Json.string x.parameters));
       ("as_parameter", `Bool x.as_parameter);
       ( "zero_alloc_check",
-        `String (Zero_alloc_annotations.to_string x.zero_alloc_check) )
+        `String (Zero_alloc_annotations.Check.to_string x.zero_alloc_check) );
+      ( "zero_alloc_assert",
+        `String (Zero_alloc_annotations.Assert.to_string x.zero_alloc_assert) )
     ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -452,7 +455,6 @@ let ocaml_ignored_flags =
     "-drawflambda";
     "-drawlambda";
     "-dreload";
-    "-dscheduling";
     "-dsel";
     "-dsource";
     "-dspill";
@@ -652,6 +654,7 @@ let ocaml_ignored_parametrized_flags =
     "-o";
     "-rounds";
     "-runtime-variant";
+    "-ocamlrunparam";
     "-unbox-closures-factor";
     "-use-prims";
     "-use_runtime";
@@ -828,16 +831,24 @@ let ocaml_flags =
     );
     ( "-zero-alloc-check",
       Marg.param "string" (fun zero_alloc_str ocaml ->
-          match Zero_alloc_annotations.of_string zero_alloc_str with
+          match Zero_alloc_annotations.Check.of_string zero_alloc_str with
           | Some zero_alloc_check -> { ocaml with zero_alloc_check }
           | None ->
             failwith ("Invalid value for -zero-alloc-check: " ^ zero_alloc_str)),
       " Check that annotated functions do not allocate and do not have \
-       indirect calls. " ^ Zero_alloc_annotations.doc );
-    ( "-allow-illegal-crossing",
-      Marg.unit (fun ocaml -> { ocaml with allow_illegal_crossing = true }),
-      "Type declarations will not be checked along the portability or \
-       contention axes" )
+       indirect calls. " ^ Zero_alloc_annotations.Check.doc );
+    ( "-zero-alloc-assert",
+      Marg.param "string" (fun zero_alloc_str ocaml ->
+          match Zero_alloc_annotations.Assert.of_string zero_alloc_str with
+          | Some zero_alloc_assert -> { ocaml with zero_alloc_assert }
+          | None ->
+            failwith ("Invalid value for -zero-alloc-assert: " ^ zero_alloc_str)),
+      " Add zero_alloc annotations to all functions. "
+      ^ Zero_alloc_annotations.Assert.doc );
+    ( "-infer-with-bounds",
+      Marg.unit (fun ocaml -> { ocaml with infer_with_bounds = true }),
+      "Infer with-bounds on kinds for type declarations. May impact \
+       performance." )
   ]
 
 (** {1 Main configuration} *)
@@ -865,8 +876,9 @@ let initial =
         parameters = [];
         as_parameter = false;
         as_argument_for = None;
-        zero_alloc_check = Zero_alloc_annotations.Check_default;
-        allow_illegal_crossing = false
+        zero_alloc_check = Zero_alloc_annotations.Check.Check_default;
+        zero_alloc_assert = Zero_alloc_annotations.Assert.Assert_default;
+        infer_with_bounds = false
       };
     merlin =
       { build_path = [];

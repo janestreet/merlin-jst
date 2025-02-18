@@ -211,6 +211,20 @@ module Stdlib : sig
         that appear only in the left list, [right_only] on those elements
         that appear only in the right list, and [both] on those elements that
         appear in both. *)
+
+    val merge_fold
+      : cmp:('a -> 'b -> int)
+      -> left_only:('acc -> 'a -> 'acc)
+      -> right_only:('acc -> 'b -> 'acc)
+      -> both:('acc -> 'a -> 'b -> 'acc)
+      -> init:'acc
+      -> 'a t
+      -> 'b t
+      -> 'acc
+      (** Folds over two sorted lists, calling [left_only] on those elements
+          that appear only in the left list, [right_only] on those elements
+          that appear only in the right list, and [both] on those elements that
+          appear in both. *)
   end
 
 (** {2 Extensions to the Option module} *)
@@ -461,6 +475,12 @@ val chop_extensions: string -> string
 val log2: int -> int
        (** [log2 n] returns [s] such that [n = 1 lsl s]
            if [n] is a power of 2*)
+
+val log2_nativeint: nativeint -> int
+(** [log2_nativeint n] computes [floor (log2 n)] when [ n > 0 ].
+    If [n] is also a power of 2, the result [s] satisfies
+    [n = Nativeint.shift_left 1n s]
+*)
 
 val align: int -> int -> int
        (** [align n a] rounds [n] upwards to a multiple of [a]

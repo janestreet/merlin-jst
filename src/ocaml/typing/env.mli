@@ -141,6 +141,10 @@ val normalize_value_path: Location.t option -> t -> Path.t -> Path.t
 val normalize_modtype_path: t -> Path.t -> Path.t
 (* Normalize a module type path *)
 
+val normalize_instance_names_in_module_path: Path.t -> Path.t
+(* Normalize the instance names appearing in a module path by removing
+   excess arguments arising from transparent aliases *)
+
 val reset_required_globals: unit -> unit
 val get_required_globals: unit -> Compilation_unit.t list
 val add_required_global: Path.t -> t -> unit
@@ -202,6 +206,17 @@ type shared_context =
   | Module
   | Probe
 
+type locks
+
+type held_locks = locks * Longident.t * Location.t
+(** Sometimes we get the locks for something, but either want to walk them later, or
+walk them for something else. The [Longident.t] and [Location.t] are only for error
+messages, and point to the variable for which we actually want to walk the locks. *)
+
+val locks_empty : locks
+
+val locks_is_empty : locks -> bool
+
 (** Items whose accesses are affected by locks *)
 type lock_item =
   | Value
@@ -260,15 +275,22 @@ type actual_mode = {
   (** Explains why [mode] is high. *)
 }
 
+(** Takes the [mode] and [ty] of a value at definition site, walks through the list of
+    locks and constrains [mode] and [ty]. Return the access mode of the value allowed by
+    the locks. [ty] is optional as the function works on modules and classes as well, for
+    which [ty] should be [None]. *)
+val walk_locks : env:t -> item:lock_item -> Mode.Value.l -> type_expr option ->
+  held_locks -> actual_mode
+
 val lookup_value:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
-  Path.t * value_description * actual_mode
+  Path.t * value_description * Mode.Value.l * locks
 val lookup_type:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
   Path.t * type_declaration
 val lookup_module:
-  ?use:bool -> ?lock:bool -> loc:Location.t -> Longident.t -> t ->
-  Path.t * module_declaration * Mode.Value.l
+  ?use:bool -> loc:Location.t -> Longident.t -> t ->
+  Path.t * module_declaration * locks
 val lookup_modtype:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
   Path.t * modtype_declaration
@@ -279,14 +301,16 @@ val lookup_cltype:
   ?use:bool -> loc:Location.t -> Longident.t -> t ->
   Path.t * class_type_declaration
 
+(* When locks are returned instead of walked for modules, the mode remains as
+  defined (always legacy), and thus not returned. *)
 val lookup_module_path:
-  ?use:bool -> ?lock:bool -> loc:Location.t -> load:bool -> Longident.t -> t ->
-    Path.t * Mode.Value.l
+  ?use:bool -> loc:Location.t -> load:bool -> Longident.t -> t ->
+    Path.t * locks
 val lookup_modtype_path:
   ?use:bool -> loc:Location.t -> Longident.t -> t -> Path.t
 val lookup_module_instance_path:
-  ?use:bool -> ?lock:bool -> loc:Location.t -> load:bool ->
-  Global_module.Name.t -> t -> Path.t * Mode.Value.l
+  ?use:bool -> loc:Location.t -> load:bool -> Global_module.Name.t -> t ->
+    Path.t * locks
 
 val lookup_constructor:
   ?use:bool -> loc:Location.t -> constructor_usage -> Longident.t -> t ->
@@ -384,7 +408,7 @@ val add_module: ?arg:bool -> ?shape:Shape.t ->
 val add_module_lazy: update_summary:bool ->
   Ident.t -> module_presence -> Subst.Lazy.module_type -> t -> t
 val add_module_declaration: ?arg:bool -> ?shape:Shape.t -> check:bool ->
-  Ident.t -> module_presence -> module_declaration -> t -> t
+  Ident.t -> module_presence -> module_declaration -> ?locks:locks -> t -> t
 val add_module_declaration_lazy: ?arg:bool -> update_summary:bool ->
   Ident.t -> module_presence -> Subst.Lazy.module_declaration -> t -> t
 val add_modtype: Ident.t -> modtype_declaration -> t -> t
@@ -448,7 +472,7 @@ val enter_module:
   module_type -> t -> Ident.t * t
 val enter_module_declaration:
   scope:int -> ?arg:bool -> ?shape:Shape.t -> string -> module_presence ->
-  module_declaration -> t -> Ident.t * t
+  module_declaration -> ?locks:locks -> t -> Ident.t * t
 val enter_modtype:
   scope:int -> string -> modtype_declaration -> t -> Ident.t * t
 val enter_class: scope:int -> string -> class_declaration -> t -> Ident.t * t
@@ -496,7 +520,7 @@ val get_unit_name: unit -> Compilation_unit.t option
 
 (* Read, save a signature to/from a file. *)
 val read_signature:
-  Global_module.Name.t -> Unit_info.Artifact.t -> add_binding:bool
+  Global_module.Name.t -> Unit_info.Artifact.t
   -> signature
         (* Arguments: module name, file name, [add_binding] flag.
            Results: signature. If [add_binding] is true, creates an entry for
@@ -596,8 +620,8 @@ val set_type_used_callback:
 val check_functor_application:
   (errors:bool -> loc:Location.t ->
    lid_whole_app:Longident.t ->
-   f0_path:Path.t -> args:(Path.t * Types.module_type * Mode.Value.l) list ->
-   arg_path:Path.t -> arg_mty:Types.module_type -> arg_mode:Mode.Value.l ->
+   f0_path:Path.t -> args:(Path.t * Types.module_type) list ->
+   arg_path:Path.t -> arg_mty:Types.module_type ->
    param_mty:Types.module_type ->
    t -> unit) ref
 (* Forward declaration to break mutual recursion with Typemod. *)

@@ -25,9 +25,9 @@ val open_modules         : string list ref
 val parameters           : string list ref
 val as_parameter         : bool ref
 val as_argument_for      : string option ref
-val zero_alloc_check : Zero_alloc_annotations.t ref
-val zero_alloc_check_assert_all : bool ref
-val allow_illegal_crossing : bool ref
+val zero_alloc_check     : Zero_alloc_annotations.Check.t ref
+val zero_alloc_assert    : Zero_alloc_annotations.Assert.t ref
+val infer_with_bounds    : bool ref
 
 (** {1 Dummy values}
     Ignored by merlin but kept for compatibility with upstream code. *)

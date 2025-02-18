@@ -12,10 +12,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Merlin-specific: Change the module path of Misc_stdlib.Le_result to Misc.Le_result to
-   match the compiler *)
+(* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
-  module Le_result = Misc_stdlib.Le_result
+  include Misc_stdlib
 end
 
 module type Axis_s = sig
@@ -214,7 +213,7 @@ module Axis = struct
 end
 
 (* Sadly this needs to be functorized since we don't have higher-kinded types *)
-module Axis_collection (T : Misc_stdlib.T1) = struct
+module Axis_collection (T : Misc.T1) = struct
   type t =
     { locality : Mode.Locality.Const.t T.t;
       linearity : Mode.Linearity.Const.t T.t;

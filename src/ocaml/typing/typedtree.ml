@@ -149,7 +149,8 @@ and 'k pattern_desc =
   | Tpat_any : value pattern_desc
   | Tpat_var : Ident.t * string loc * Uid.t * Mode.Value.l -> value pattern_desc
   | Tpat_alias :
-      value general_pattern * Ident.t * string loc * Uid.t * Mode.Value.l -> value pattern_desc
+      value general_pattern * Ident.t * string loc * Uid.t * Mode.Value.l
+      * Types.type_expr -> value pattern_desc
   | Tpat_constant : constant -> value pattern_desc
   | Tpat_tuple : (string option * value general_pattern) list -> value pattern_desc
   | Tpat_unboxed_tuple :
@@ -980,7 +981,7 @@ type pattern_action =
 let shallow_iter_pattern_desc
   : type k . pattern_action -> k pattern_desc -> unit
   = fun f -> function
-  | Tpat_alias(p, _, _, _, _) -> f.f p
+  | Tpat_alias(p, _, _, _, _, _) -> f.f p
   | Tpat_tuple patl -> List.iter (fun (_, p) -> f.f p) patl
   | Tpat_unboxed_tuple patl -> List.iter (fun (_, p, _) -> f.f p) patl
   | Tpat_construct(_, _, patl, _) -> List.iter f.f patl
@@ -1003,8 +1004,8 @@ type pattern_transformation =
 let shallow_map_pattern_desc
   : type k . pattern_transformation -> k pattern_desc -> k pattern_desc
   = fun f d -> match d with
-  | Tpat_alias (p1, id, s, uid, m) ->
-      Tpat_alias (f.f p1, id, s, uid, m)
+  | Tpat_alias (p1, id, s, uid, m, ty) ->
+      Tpat_alias (f.f p1, id, s, uid, m, ty)
   | Tpat_tuple pats ->
       Tpat_tuple (List.map (fun (label, pat) -> label, f.f pat) pats)
   | Tpat_unboxed_tuple pats ->
@@ -1073,9 +1074,9 @@ let rec iter_bound_idents
   match pat.pat_desc with
   | Tpat_var (id, s, uid, _mode) ->
      f (id,s,pat.pat_type, uid)
-  | Tpat_alias(p, id, s, uid, _mode) ->
+  | Tpat_alias(p, id, s, uid, _mode, ty) ->
       iter_bound_idents f p;
-      f (id,s,pat.pat_type, uid)
+      f (id, s, ty, uid)
   | Tpat_or(p1, _, _) ->
       (* Invariant : both arguments bind the same variables *)
       iter_bound_idents f p1
@@ -1114,9 +1115,9 @@ let iter_pattern_full ~of_sort ~of_const_sort ~both_sides_of_or f sort pat =
       (* Cases where we push the sort inwards: *)
       | Tpat_var (id, s, uid, mode) ->
           f id s pat.pat_type uid mode sort
-      | Tpat_alias(p, id, s, uid, mode) ->
+      | Tpat_alias(p, id, s, uid, mode, ty) ->
           loop f sort p;
-          f id s pat.pat_type uid mode sort
+          f id s ty uid mode sort
       | Tpat_or (p1, p2, _) ->
         if both_sides_of_or then (loop f sort p1; loop f sort p2)
         else loop f sort p1
@@ -1209,14 +1210,21 @@ let let_bound_idents_with_modes_sorts_and_checks bindings =
                 function - if it remains [Default_zero_alloc], translcore adds
                 the check. *)
              let arity = function_arity fn.params fn.body in
-             if !Clflags.zero_alloc_check_assert_all && arity > 0 then
-               Zero_alloc.create_const
-                 (Check { strict = false;
-                          arity;
-                          loc = Location.none;
-                          opt = false })
-             else
+             if arity <= 0 then
                fn.zero_alloc
+             else
+               let create_const ~opt =
+                 Zero_alloc.create_const
+                   (Check { strict = false;
+                            arity;
+                            custom_error_msg = None;
+                            loc = Location.none;
+                            opt })
+               in
+               (match !Clflags.zero_alloc_assert with
+                | Assert_default -> fn.zero_alloc
+                | Assert_all -> create_const ~opt:false
+                | Assert_all_opt -> create_const ~opt:true)
            | Ignore_assert_all | Check _ | Assume _ -> fn.zero_alloc
          in
          Ident.Map.add id zero_alloc checks
@@ -1247,10 +1255,11 @@ let rec alpha_pat
       {p with pat_desc =
        try Tpat_var (alpha_var env id, s, uid, mode) with
        | Not_found -> Tpat_any}
-  | Tpat_alias (p1, id, s, uid, mode) ->
+  | Tpat_alias (p1, id, s, uid, mode, ty) ->
       let new_p : k general_pattern =  alpha_pat env p1 in
       begin try
-        {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s, uid, mode)}
+        {p with pat_desc =
+           Tpat_alias (new_p, alpha_var env id, s, uid, mode, ty)}
       with
       | Not_found -> new_p
       end

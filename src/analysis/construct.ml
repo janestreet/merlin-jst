@@ -504,9 +504,9 @@ module Gen = struct
           with Not_found -> (
             let def = Env.find_type_descrs path env in
             match def with
-            | Type_variant (constrs, _) -> constructor env rtyp path constrs
-            | Type_record (labels, _) -> record env rtyp path labels Legacy
-            | Type_record_unboxed_product (labels, _) ->
+            | Type_variant (constrs, _, _) -> constructor env rtyp path constrs
+            | Type_record (labels, _, _) -> record env rtyp path labels Legacy
+            | Type_record_unboxed_product (labels, _, _) ->
               record env rtyp path labels Unboxed_product
             | Type_abstract _ | Type_open -> [])
         end

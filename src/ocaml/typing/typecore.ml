@@ -401,7 +401,8 @@ let error (loc, env, err) =
 
 let type_module =
   ref ((fun _env _md -> assert false) :
-       Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t)
+       Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t *
+        Env.locks)
 
 (* Forward declaration, to be filled in by Typemod.type_open *)
 
@@ -998,10 +999,10 @@ let extract_concrete_typedecl_protected env ty =
 let extract_concrete_record (type rep) (record_form : rep record_form) env ty
     : (rep record_extraction_result) =
   match record_form, extract_concrete_typedecl_protected env ty with
-  | Legacy, Typedecl(p0, p, {type_kind=Type_record (fields, repres)}) ->
+  | Legacy, Typedecl(p0, p, {type_kind=Type_record (fields, repres, _)}) ->
     Record_type (p0, p, fields, repres)
   | Unboxed_product,
-    Typedecl(p0, p, {type_kind=Type_record_unboxed_product (fields, repres)}) ->
+    Typedecl(p0, p, {type_kind=Type_record_unboxed_product (fields, repres, _)}) ->
     Record_type (p0, p, fields, repres)
   | Legacy, Typedecl(_, _, {type_kind=Type_record_unboxed_product _})
   | Unboxed_product, Typedecl(_, _, {type_kind=Type_record _}) ->
@@ -1016,7 +1017,7 @@ type variant_extraction_result =
 
 let extract_concrete_variant env ty =
   match extract_concrete_typedecl_protected env ty with
-  | Typedecl(p0, p, {type_kind=Type_variant (cstrs, _)}) ->
+  | Typedecl(p0, p, {type_kind=Type_variant (cstrs, _, _)}) ->
     Variant_type (p0, p, cstrs)
   | Typedecl(p0, p, {type_kind=Type_open}) ->
     Variant_type (p0, p, [])
@@ -1386,7 +1387,7 @@ let add_module_variables env module_variables =
          Here, on the other hand, we're calling [type_module] outside the
          raised level, so there's no extra step to take.
       *)
-      let modl, md_shape =
+      let modl, md_shape, locks =
         !type_module env
           Ast_helper.(
             Mod.unpack ~loc:mv_loc
@@ -1404,7 +1405,9 @@ let add_module_variables env module_variables =
           md_loc = mv_name.loc;
           md_uid = mv_uid; }
       in
-      Env.add_module_declaration ~shape:md_shape ~check:true mv_id pres md env
+      Env.add_module_declaration ~shape:md_shape ~check:true mv_id pres md
+        (* the [locks] is always empty, but typecore doesn't need to know *)
+        ~locks env
     end
   ) env module_variables_as_list
 
@@ -1553,7 +1556,7 @@ and build_as_type_aux (env : Env.t) p ~mode =
     ty, mode
   in
   match p.pat_desc with
-    Tpat_alias(p1,_, _, _, _) -> build_as_type_and_mode env p1 ~mode
+    Tpat_alias(p1,_, _, _, _, _) -> build_as_type_and_mode env p1 ~mode
   | Tpat_tuple pl ->
       let labeled_tyl =
         List.map (fun (label, p) -> label, build_as_type env p) pl in
@@ -2989,7 +2992,7 @@ and type_pat_aux
         enter_variable ~is_as_variable:true tps name.loc name mode
           ty_var sp.ppat_attributes
       in
-      rvp { pat_desc = Tpat_alias(q, id, name, uid, mode);
+      rvp { pat_desc = Tpat_alias(q, id, name, uid, mode, ty_var);
             pat_loc = loc; pat_extra=[];
             pat_type = q.pat_type;
             pat_attributes = sp.ppat_attributes;
@@ -3640,7 +3643,7 @@ let rec check_counter_example_pat
           in
           check_rec ~info:(decrease 5) tp expected_ty k
       end
-  | Tpat_alias (p, _, _, _, _) -> check_rec ~info p expected_ty k
+  | Tpat_alias (p, _, _, _, _, _) -> check_rec ~info p expected_ty k
   | Tpat_constant cst ->
       let cst = constant_or_raise !!penv loc (Untypeast.constant cst) in
       k @@ solve_expected (mp (Tpat_constant cst) ~pat_type:(type_constant cst))
@@ -5011,7 +5014,7 @@ let rec name_pattern default = function
   | p :: rem ->
     match p.pat_desc with
       Tpat_var (id, _, _, _) -> id
-    | Tpat_alias(_, id, _, _, _) -> id
+    | Tpat_alias(_, id, _, _, _, _) -> id
     | _ -> name_pattern default rem
 
 let name_cases default lst =
@@ -5470,6 +5473,7 @@ let add_zero_alloc_attribute expr attributes =
     let default_arity = function_arity fn.params fn.body in
     let za =
       get_zero_alloc_attribute ~in_signature:false ~default_arity attributes
+        ~on_application:false
     in
     begin match za with
     | Default_zero_alloc -> expr
@@ -6080,6 +6084,7 @@ and type_expect_
       in
       let zero_alloc =
         Builtin_attributes.get_zero_alloc_attribute ~in_signature:false
+          ~on_application:true
           ~default_arity:(List.length args) sfunct.pexp_attributes
         |> Builtin_attributes.zero_alloc_attribute_only_assume_allowed
       in
@@ -6635,7 +6640,7 @@ and type_expect_
         with_local_level begin fun () ->
           let modl, pres, id, new_env =
             Typetexp.TyVarEnv.with_local_scope begin fun () ->
-              let modl, md_shape = !type_module env smodl in
+              let modl, md_shape, locks = !type_module env smodl in
               Mtype.lower_nongen lv modl.mod_type;
               let pres =
                 match modl.mod_type with
@@ -6656,7 +6661,7 @@ and type_expect_
                 | Some name ->
                     let id, env =
                       Env.enter_module_declaration
-                        ~scope ~shape:md_shape name pres md env
+                        ~scope ~shape:md_shape name pres md ~locks env
                     in
                     Some id, env
               in
@@ -7041,6 +7046,12 @@ and type_expect_
       | Texp_lazy _ -> unsupported Lazy
       | Texp_object _ -> unsupported Object
       | Texp_pack _ -> unsupported Module
+      | Texp_apply({ exp_desc = Texp_ident(_, _, {val_kind = Val_prim _}, _, _)},
+          _, _, _, _)
+          (* [stack_ (prim foo)] will be checked by [transl_primitive_application]. *)
+          (* CR zqian: Move/Copy [Lambda.primitive_may_allocate] to [typing], then we can
+          check primitive allocation here, and also improve the logic in [type_ident]. *)
+          -> ()
       | _ ->
         raise (error (exp.exp_loc, env, Not_allocation))
       end;
@@ -7262,10 +7273,51 @@ and type_constraint_expect
   ret, ty, exp_extra
 
 and type_ident env ?(recarg=Rejected) lid =
-  let path, desc, actual_mode = Env.lookup_value ~loc:lid.loc lid.txt env in
-  (* Mode crossing here is needed only because of the strange behaviour of
-  [type_let] - it checks the LHS before RHS. Had it checks the RHS before LHS,
-  identifiers would be mode crossed when being added to the environment. *)
+  let path, desc, mode, locks = Env.lookup_value ~loc:lid.loc lid.txt env in
+  (* We cross modes when typing [Ppat_ident], before adding new variables into
+  the environment. Therefore, one might think all values in the environment are
+  already mode-crossed. That is not true for several reasons:
+  - [type_let] checks the LHS and adds bound variables to the environment
+  without the type information from the RHS.
+  - The identifer is [M.x], whose signature might not reflect mode crossing.
+
+  Therefore, we need to cross modes upon look-up. Ideally that should be done in
+  [Env], but that is difficult due to cyclic dependency between jkind and env. *)
+  let mode = mode_cross_left_value env desc.val_type mode in
+  (* There can be locks between the definition and a use of a value. For
+  example, if a function closes over a value, there will be Closure_lock between
+  the value's definition and the value's use in the function. Walking the locks
+  will constrain the function and the value's modes accordingly.
+
+  Note that the value could be from a module, and we have choices to make:
+  - We can walk the locks using the module's mode. That means the closures are
+  closing over the module.
+  - We can walk the locks using the value's mode. That means the closures are
+  closing over the value.
+
+  We pick the second for better ergonomics. It could be dangerous as it doesn't
+  reflect the real runtime behaviour. With the current set-up, it is sound:
+
+  - Locality: Modules are always global (the strongest mode), so it's fine.
+  - Linearity: Modules are always many (the strongest mode), so it's fine.
+  - Portability: Closing over a nonportable module only to extract a portable
+  value is fine.
+  - Yielding: Modules are always unyielding (the strongest mode), so it's fine.
+  - All monadic axes: values are in a module via some join_with_m modality.
+  Meanwhile, walking locks causes the mode to go through several join_with_m
+  where [m] is the mode of a closure lock. Since join is commutative and
+  associative, the order of which we apply those join does not matter.
+  *)
+  (* CR modes: codify the above per-axis argument. *)
+  let actual_mode =
+    Env.walk_locks ~env ~item:Value mode (Some desc.val_type)
+      (locks, lid.txt, lid.loc)
+  in
+  (* We need to cross again, because the monadic fragment might have been
+  weakened by the locks. Ideally, the first crossing only deals with comonadic,
+  and the second only deals with monadic. *)
+  (* CR layouts: allow to cross comonadic fragment and monadic fragment
+     separately. *)
   let actual_mode = actual_mode_cross_left env desc.val_type actual_mode in
   let is_recarg =
     match get_desc desc.val_type with
@@ -8402,10 +8454,14 @@ and type_apply_arg env ~app_loc ~funct ~index ~position_and_mode ~partial_app (l
       let arg =
         type_expect env expected_mode sarg (mk_expected ty_arg_mono)
       in
-      if is_optional lbl then
-        (* CR layouts v5: relax value requirement *)
-        unify_exp env arg
-          (type_option(newvar Predef.option_argument_jkind));
+      (match lbl with
+       | Labelled _ | Nolabel -> ()
+       | Optional _ ->
+           (* CR layouts v5: relax value requirement *)
+           unify_exp env arg
+             (type_option(newvar Predef.option_argument_jkind))
+       | Position _ ->
+           unify_exp env arg (instance Predef.type_lexing_position));
       (lbl, Arg (arg, mode_arg, sort_arg))
   | Arg (Known_arg { sarg; ty_arg; ty_arg0;
                      mode_arg; wrapped_in_some; sort_arg }) ->
@@ -8530,11 +8586,7 @@ and type_application env app_loc expected_mode position_and_mode
       let ty_ret, mode_ret, args, position_and_mode =
         with_local_level_if_principal begin fun () ->
           let sargs = List.map
-            (* Application will never contain Position labels, so no need to pass
-               argument type here. When checking against the function type,
-               Labelled arguments will be matched up to Position parameters
-               based on label names *)
-            (fun (label, e) -> Typetexp.transl_label label None, e) sargs
+            (fun (label, e) -> Typetexp.transl_label_from_expr label e) sargs
           in
           let ty_ret, mode_ret, untyped_args =
             collect_apply_args env funct ignore_labels ty (instance ty)
@@ -9553,7 +9605,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
         let pat_name =
           match p.pat_desc with
             Tpat_var (id, _, _, _) -> Some id
-          | Tpat_alias(_, id, _, _, _) -> Some id
+          | Tpat_alias(_, id, _, _, _, _) -> Some id
           | _ -> None in
         Ctype.check_and_update_generalized_ty_jkind
           ?name:pat_name ~loc:exp.exp_loc exp.exp_type
@@ -9920,6 +9972,7 @@ and type_n_ary_function
     end;
     let zero_alloc =
       Builtin_attributes.get_zero_alloc_attribute ~in_signature:false
+        ~on_application:false
         ~default_arity:syntactic_arity attributes
     in
     let zero_alloc =
@@ -10339,7 +10392,7 @@ let type_expression env jkind sexp =
       Pexp_ident lid ->
         let loc = sexp.pexp_loc in
         (* Special case for keeping type variables when looking-up a variable *)
-        let (_path, desc, _actual_mode) =
+        let (_path, desc, _, _) =
           Env.lookup_value ~use:false ~loc lid.txt env
         in
         {exp with exp_type = desc.val_type}

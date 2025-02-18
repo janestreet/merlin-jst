@@ -15,10 +15,11 @@
 open Mode
 open Jkind_types
 
-module Le_result = Misc_stdlib.Le_result
+(* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
   include Misc
   module Stdlib = Misc_stdlib
+  include Misc_stdlib
 end
 
 [@@@warning "+9"]
@@ -104,7 +105,7 @@ module Layout = struct
       | Product ts ->
         Option.map
           (fun x -> Sort.Const.Product x)
-          (Misc_stdlib.List.map_option get_sort ts)
+          (Misc.Stdlib.List.map_option get_sort ts)
 
     let of_sort s =
       let rec of_sort : Sort.t -> _ = function
@@ -174,7 +175,7 @@ module Layout = struct
   and to_product_sort ts =
     Option.map
       (fun x -> Sort.Product x)
-      (Misc_stdlib.List.map_option to_sort ts)
+      (Misc.Stdlib.List.map_option to_sort ts)
 
   let rec get : Sort.t t -> Sort.Flat.t t =
     let rec flatten_sort : Sort.t -> Sort.Flat.t t = function
@@ -229,7 +230,7 @@ module Layout = struct
     | Any, Any -> true
     | (Any | Sort _ | Product _), _ -> false
 
-  let rec sub t1 t2 : Le_result.t =
+  let rec sub t1 t2 : Misc.Le_result.t =
     match t1, t2 with
     | Any, Any -> Equal
     | _, Any -> Less
@@ -237,7 +238,7 @@ module Layout = struct
     | Sort s1, Sort s2 -> if Sort.equate s1 s2 then Equal else Not_le
     | Product ts1, Product ts2 ->
       if List.compare_lengths ts1 ts2 = 0
-      then Le_result.combine_list (List.map2 sub ts1 ts2)
+      then Misc.Le_result.combine_list (List.map2 sub ts1 ts2)
       else Not_le
     | Product ts1, Sort s2 -> (
       (* This case could use [to_product_sort] because every component will need
@@ -247,13 +248,13 @@ module Layout = struct
       match Sort.decompose_into_product s2 (List.length ts1) with
       | None -> Not_le
       | Some ss2 ->
-        Misc_stdlib.Le_result.combine_list
+        Misc.Le_result.combine_list
           (List.map2 (fun t1 s2 -> sub t1 (Sort s2)) ts1 ss2))
     | Sort s1, Product ts2 -> (
       match Sort.decompose_into_product s1 (List.length ts2) with
       | None -> Not_le
       | Some ss1 ->
-        Misc_stdlib.Le_result.combine_list
+        Misc.Le_result.combine_list
           (List.map2 (fun s1 t2 -> sub (Sort s1) t2) ss1 ts2))
 
   let rec intersection t1 t2 =
@@ -291,7 +292,7 @@ module Layout = struct
       | Sort s -> Sort.format ppf s
       | Product ts ->
         let pp_sep ppf () = Format.fprintf ppf " & " in
-        Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+        Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     in
     pp_element ~nested:false ppf layout
 end
@@ -816,13 +817,14 @@ module Const = struct
     let rec scan_layout (l : Layout.Const.t) : Language_extension.maturity =
       match l, jkind.nullability_upper_bound with
       | (Base (Float64 | Float32 | Word | Bits32 | Bits64 | Vec128) | Any), _
-      | Base Value, Non_null ->
+      | Base Value, Non_null
+      | Base Value, Maybe_null ->
         Stable
       | Product layouts, _ ->
         List.fold_left
           (fun m l -> Language_extension.Maturity.max m (scan_layout l))
           Language_extension.Stable layouts
-      | Base Void, _ | Base Value, Maybe_null -> Alpha
+      | Base Void, _ -> Alpha
     in
     scan_layout jkind.layout
 
@@ -854,7 +856,7 @@ module Desc = struct
          [Const.format] works better for atomic layouts, not products. *)
       | Product lays ->
         let pp_sep ppf () = fprintf ppf "@ & " in
-        Misc_stdlib.pp_nested_list ~nested ~pp_element:format_desc ~pp_sep ppf
+        Misc.pp_nested_list ~nested ~pp_element:format_desc ~pp_sep ppf
           (List.map (fun layout -> { desc with layout }) lays)
       | _ -> (
         match get_const desc with
@@ -872,29 +874,8 @@ module Jkind_desc = struct
   let add_nullability_crossing t =
     { t with nullability_upper_bound = Nullability.min }
 
-  let add_portability_and_contention_crossing ~from t =
-    let new_portability =
-      Portability.Const.meet t.modes_upper_bounds.portability
-        from.modes_upper_bounds.portability
-    in
-    let new_contention =
-      Contention.Const.meet t.modes_upper_bounds.contention
-        from.modes_upper_bounds.contention
-    in
-    let added_crossings =
-      (not
-         (Portability.Const.le t.modes_upper_bounds.portability new_portability))
-      || not
-           (Contention.Const.le t.modes_upper_bounds.contention new_contention)
-    in
-    ( { t with
-        modes_upper_bounds =
-          { t.modes_upper_bounds with
-            portability = new_portability;
-            contention = new_contention
-          }
-      },
-      added_crossings )
+  let unsafely_set_upper_bounds t ~from =
+    { t with modes_upper_bounds = from.modes_upper_bounds }
 
   let max = of_const Const.max
 
@@ -914,7 +895,8 @@ module Jkind_desc = struct
     && Externality.equal ext1 ext2
     && Nullability.equal null1 null2
 
-  let sub t1 t2 = Layout_and_axes.sub Layout.sub t1 t2
+  let sub ?allow_any_crossing t1 t2 =
+    Layout_and_axes.sub ?allow_any_crossing Layout.sub t1 t2
 
   let intersection
       { layout = lay1;
@@ -1074,11 +1056,10 @@ end
 let add_nullability_crossing t =
   { t with jkind = Jkind_desc.add_nullability_crossing t.jkind }
 
-let add_portability_and_contention_crossing ~from t =
-  let jkind, added_crossings =
-    Jkind_desc.add_portability_and_contention_crossing ~from:from.jkind t.jkind
-  in
-  { t with jkind }, added_crossings
+let unsafely_set_upper_bounds ~from t =
+  { t with
+    jkind = Jkind_desc.unsafely_set_upper_bounds t.jkind ~from:from.jkind
+  }
 
 (******************************)
 (* construction *)
@@ -1276,7 +1257,7 @@ end = struct
   let missing_cmi_hint ppf type_path =
     let root_module_name p = p |> Path.head |> Ident.name in
     let delete_trailing_double_underscore s =
-      if Misc.String.ends_with ~suffix:"__" s
+      if Misc.Stdlib.String.ends_with ~suffix:"__" s
       then String.sub s 0 (String.length s - 2)
       else s
     in
@@ -1641,7 +1622,7 @@ module Violation = struct
     let mismatch_type =
       match t.violation with
       | Not_a_subjkind (k1, k2) ->
-        if Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
+        if Misc.Le_result.is_le (Layout.sub k1.jkind.layout k2.jkind.layout)
         then Mode
         else Layout
       | No_intersection _ -> Layout
@@ -1822,9 +1803,10 @@ let has_intersection_l_l t1 t2 =
   has_intersection (terrible_relax_l t1) (terrible_relax_l t2)
 
 (* this is hammered on; it must be fast! *)
-let check_sub sub super = Jkind_desc.sub sub.jkind super.jkind
+let check_sub ?allow_any_crossing sub super =
+  Jkind_desc.sub ?allow_any_crossing sub.jkind super.jkind
 
-let sub sub super = Le_result.is_le (check_sub sub super)
+let sub sub super = Misc.Le_result.is_le (check_sub sub super)
 
 type sub_or_intersect =
   | Sub
@@ -1845,9 +1827,9 @@ let sub_or_error t1 t2 =
 
 (* CR layouts v2.8: Rewrite this to do the hard subjkind check from the
    kind polymorphism design. *)
-let sub_jkind_l sub super =
+let sub_jkind_l ?allow_any_crossing sub super =
   let super = terrible_relax_l super in
-  match check_sub sub super with
+  match check_sub ?allow_any_crossing sub super with
   | Less | Equal ->
     Ok { sub with history = combine_histories Subjkind (Pack sub) (Pack super) }
   | Not_le -> Error (Violation.of_ (Not_a_subjkind (sub, super)))
@@ -1863,7 +1845,7 @@ let is_max jkind = sub Builtin.any_dummy_jkind jkind
 let has_layout_any jkind =
   match jkind.jkind.layout with Any -> true | _ -> false
 
-let is_value_for_printing
+let is_value_for_printing ~ignore_null
     { jkind =
         { layout;
           modes_upper_bounds;
@@ -1878,11 +1860,9 @@ let is_value_for_printing
     Layout.Const.equal const value.layout
     && Modes.equal modes_upper_bounds value.modes_upper_bounds
     && Externality.equal externality_upper_bound value.externality_upper_bound
-    &&
-    if (* CR layouts v3.0: remove this hack once [or_null] is out of [Alpha]. *)
-       Language_extension.(is_at_least Layouts Alpha)
-    then Nullability.equal nullability_upper_bound Nullability.Non_null
-    else true
+    && (ignore_null
+       || Nullability.equal nullability_upper_bound
+            value.nullability_upper_bound)
   | None -> false
 
 (*********************************)
@@ -1929,7 +1909,7 @@ module Debug_printers = struct
     | Type_declaration p -> fprintf ppf "Type_declaration %a" Path.print p
     | Type_parameter (p, var) ->
       fprintf ppf "Type_parameter (%a, %a)" Path.print p
-        (Misc_stdlib.Option.print Misc_stdlib.String.print)
+        (Misc.Stdlib.Option.print Misc.Stdlib.String.print)
         var
     | Newtype_declaration name -> fprintf ppf "Newtype_declaration %s" name
     | Constructor_type_parameter (cstr, name) ->
