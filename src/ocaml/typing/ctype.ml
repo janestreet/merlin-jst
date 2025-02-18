@@ -23,8 +23,6 @@ open Errortrace
 open Mode
 open Local_store
 
-module Nonempty_list = Misc_stdlib.Nonempty_list
-
 (*
    Type manipulation after type inference
    ======================================
