@@ -54,7 +54,7 @@ escape characters in string literals, so we use the revert-newlines script.
   type t3 : value = D | E of int
       ^
   With verbosity 0: "type t3 = D | E of int"
-  With verbosity 1: "type t3 = D | E of int"
+  With verbosity 1: "type t3 : immutable_data = D | E of int"
   
   type t4 : immediate64 = A
       ^
@@ -206,7 +206,7 @@ escape characters in string literals, so we use the revert-newlines script.
   let f3 (x : t3) = x
               ^
   With verbosity 0: "type t3 = D | E of int"
-  With verbosity 1: "type t3 = D | E of int"
+  With verbosity 1: "type t3 : immutable_data = D | E of int"
   
   let f4 (x : t4) = x
               ^
@@ -361,7 +361,7 @@ escape characters in string literals, so we use the revert-newlines script.
   type 'a               p1 = A1 of 'a
                        ^
   With verbosity 0: "type 'a p1 = A1 of 'a"
-  With verbosity 1: "type 'a p1 = A1 of 'a"
+  With verbosity 1: "type 'a p1 : immutable_data with 'a = A1 of 'a"
   
   type ('a : immediate) p2 = A2 of 'a [@@unboxed]
                        ^

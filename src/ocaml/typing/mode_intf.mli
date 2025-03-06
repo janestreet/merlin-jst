@@ -28,6 +28,10 @@ module type Lattice = sig
 
   val le : t -> t -> bool
 
+  (** [equal a b] is equivalent to [le a b && le b a], but defined separately for
+      performance reasons *)
+  val equal : t -> t -> bool
+
   val join : t -> t -> t
 
   val meet : t -> t -> t
@@ -229,6 +233,8 @@ module type S = sig
       include Lattice with type t := t
     end
 
+    module Const_op : Lattice with type t = Const.t
+
     type error = Const.t Solver.error
 
     include
@@ -253,6 +259,8 @@ module type S = sig
 
       include Lattice with type t := t
     end
+
+    module Const_op : Lattice with type t = Const.t
 
     type error = Const.t Solver.error
 
@@ -281,10 +289,17 @@ module type S = sig
          and type 'd t = (Const.t, 'd) mode_comonadic
   end
 
-  type 'a comonadic_with = private
-    'a * Linearity.Const.t * Portability.Const.t * Yielding.Const.t
+  type 'a comonadic_with =
+    { areality : 'a;
+      linearity : Linearity.Const.t;
+      portability : Portability.Const.t;
+      yielding : Yielding.Const.t
+    }
 
-  type monadic = private Uniqueness.Const.t * Contention.Const.t
+  type monadic =
+    { uniqueness : Uniqueness.Const.t;
+      contention : Contention.Const.t
+    }
 
   module Axis : sig
     (** ('p, 'r) t represents a projection from a product of type ['p] to an
@@ -298,17 +313,27 @@ module type S = sig
       | Contention : (monadic, Contention.Const.t) t
 
     val print : Format.formatter -> ('p, 'r) t -> unit
+
+    val eq : ('p, 'r0) t -> ('p, 'r1) t -> ('r0, 'r1) Misc_stdlib.eq option
   end
 
   module type Mode := sig
     module Areality : Common
 
     module Monadic : sig
-      module Const : Lattice with type t = monadic
+      module Const : sig
+        include Lattice with type t = monadic
+
+        val max_axis : (t, 'a) Axis.t -> 'a
+
+        val min_axis : (t, 'a) Axis.t -> 'a
+      end
+
+      module Const_op : Lattice with type t = monadic
 
       include Common with module Const := Const
 
-      val imply : Const.t -> ('l * 'r) t -> (disallowed * 'r) t
+      val join_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
     end
 
     module Comonadic : sig
@@ -318,6 +343,10 @@ module type S = sig
         val eq : t -> t -> bool
 
         val print_axis : (t, 'a) Axis.t -> Format.formatter -> 'a -> unit
+
+        val max_axis : (t, 'a) Axis.t -> 'a
+
+        val min_axis : (t, 'a) Axis.t -> 'a
       end
 
       type error = Error : (Const.t, 'a) Axis.t * 'a Solver.error -> error
@@ -336,6 +365,16 @@ module type S = sig
       | Comonadic :
           (Comonadic.Const.t, 'a) Axis.t
           -> (('a, 'd) mode_comonadic, 'a, 'd) axis
+
+    type 'd axis_packed = P : ('m, 'a, 'd) axis -> 'd axis_packed
+
+    val print_axis : Format.formatter -> ('m, 'a, 'd) axis -> unit
+
+    (** Gets the normal lattice for comonadic axes and the "op"ped lattice for
+        monadic ones. *)
+    val lattice_of_axis : ('m, 'a, 'd) axis -> (module Lattice with type t = 'a)
+
+    val all_axes : ('l * 'r) axis_packed list
 
     type ('a, 'b, 'c, 'd, 'e, 'f) modes =
       { areality : 'a;
@@ -376,6 +415,10 @@ module type S = sig
 
         val print : Format.formatter -> t -> unit
       end
+
+      val is_max : ('m, 'a, 'd) axis -> 'a -> bool
+
+      val is_min : ('m, 'a, 'd) axis -> 'a -> bool
 
       val split : t -> (Monadic.Const.t, Comonadic.Const.t) monadic_comonadic
 
@@ -430,6 +473,10 @@ module type S = sig
 
     val imply : Const.t -> ('l * 'r) t -> (disallowed * 'r) t
 
+    val join_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
+
+    val subtract : Const.t -> ('l * 'r) t -> ('l * disallowed) t
+
     (* The following two are about the scenario where we partially apply a
        function [A -> B -> C] to [A] and get back [B -> C]. The mode of the
        three are constrained. *)
@@ -454,6 +501,10 @@ module type S = sig
 
   module Const : sig
     val alloc_as_value : Alloc.Const.t -> Value.Const.t
+
+    module Axis : sig
+      val alloc_as_value : 'd Alloc.axis_packed -> 'd Value.axis_packed
+    end
 
     val locality_as_regionality : Locality.Const.t -> Regionality.Const.t
   end
@@ -493,6 +544,9 @@ module type S = sig
 
     (** Test if the given modality is the identity modality. *)
     val is_id : t -> bool
+
+    (** Test if the given modality is a constant modality. *)
+    val is_constant : t -> bool
 
     (** Printing for debugging *)
     val print : Format.formatter -> t -> unit
@@ -542,12 +596,23 @@ module type S = sig
         val singleton : atom -> t
 
         (** Returns the list of [atom] in the given modality. The list is
-            commutative. *)
+            commutative. Post-condition: each axis is represented in the
+            output list exactly once. *)
         val to_list : t -> atom list
+
+        (** Builds up a modality from a list of [atom], by composing each atom with
+            identity. The modalities are applied left to right. *)
+        val of_list : atom list -> t
+
+        (** Project out the [atom] for the given axis in the given modality. *)
+        val proj : ('m, 'a, 'd) Value.axis -> t -> atom
 
         (** [equate t0 t1] checks that [t0 = t1].
             Definition: [t0 = t1] iff [t0 <= t1] and [t1 <= t0]. *)
         val equate : t -> t -> (unit, equate_error) Result.t
+
+        (** Printing for debugging. *)
+        val print : Format.formatter -> t -> unit
       end
 
       (** A modality that acts on [Value] modes. Conceptually it is a sequnce of

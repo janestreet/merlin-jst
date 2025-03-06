@@ -67,6 +67,68 @@ val is_mutable : mutability -> bool
 
     Note on mutability: TBD.
  *)
+
+(** The mod-bounds of a jkind *)
+module Jkind_mod_bounds : sig
+  module Locality = Mode.Locality.Const
+  module Linearity = Mode.Linearity.Const
+  module Uniqueness = Mode.Uniqueness.Const_op
+  module Portability = Mode.Portability.Const
+  module Contention = Mode.Contention.Const_op
+  module Yielding = Mode.Yielding.Const
+  module Externality = Jkind_axis.Externality
+  module Nullability = Jkind_axis.Nullability
+
+  type t
+
+  val create :
+    locality:Locality.t ->
+    linearity:Linearity.t ->
+    uniqueness:Uniqueness.t ->
+    portability:Portability.t ->
+    contention:Contention.t ->
+    yielding:Yielding.t ->
+    externality:Externality.t ->
+    nullability:Nullability.t ->
+    t
+
+  val locality : t -> Locality.t
+  val linearity : t -> Linearity.t
+  val uniqueness : t -> Uniqueness.t
+  val portability : t -> Portability.t
+  val contention : t -> Contention.t
+  val yielding : t -> Yielding.t
+  val externality : t -> Externality.t
+  val nullability : t -> Nullability.t
+
+  val set_locality : Locality.t -> t -> t
+  val set_linearity : Linearity.t -> t -> t
+  val set_uniqueness : Uniqueness.t -> t -> t
+  val set_portability : Portability.t -> t -> t
+  val set_contention : Contention.t -> t -> t
+  val set_yielding : Yielding.t -> t -> t
+  val set_externality : Externality.t -> t -> t
+  val set_nullability : Nullability.t -> t -> t
+
+  (** [set_max_in_set bounds axes] sets all the axes in [axes] to their [max] within
+      [bounds] *)
+  val set_max_in_set : t -> Jkind_axis.Axis_set.t -> t
+
+  (** [is_max_within_set bounds axes] returns whether or not all the axes in [axes] are
+      [max] within [bounds] *)
+  val is_max_within_set : t -> Jkind_axis.Axis_set.t -> bool
+  val is_max : t -> bool
+
+  val debug_print : Format.formatter -> t -> unit
+end
+
+
+(** Information tracked about an individual type within the with-bounds for a jkind *)
+module With_bounds_type_info : sig
+  (** The axes that the with-bound applies to *)
+  type t = { relevant_axes : Jkind_axis.Axis_set.t } [@@unboxed]
+end
+
 type type_expr
 type row_desc
 type row_field
@@ -229,19 +291,104 @@ and abbrev_memo =
     This is only allowed when the real type is known.
 *)
 
-(** Jkinds classify types. *)
-(* CR layouts v2.8: Say more here. *)
-and 'd jkind = (type_expr, 'd) Jkind_types.t
+
+(**** Jkinds ****)
+
+(** A history of conditions placed on a jkind.
+
+   INVARIANT: at most one sort variable appears in this history.
+   This is a natural consequence of producing this history by comparing
+   jkinds.
+*)
+and jkind_history =
+  | Interact of
+      { reason : Jkind_intf.History.interact_reason;
+        jkind1 : jkind_desc_packed;
+        history1 : jkind_history;
+        jkind2 : jkind_desc_packed;
+        history2 : jkind_history
+      }
+  | Creation of Jkind_intf.History.creation_reason
+
+(** The types within the with-bounds of a jkind *)
+and with_bounds_types
+
+and 'd with_bounds =
+  | No_with_bounds : ('l * 'r) with_bounds
+  | With_bounds
+    : with_bounds_types -> ('l * Allowance.disallowed) with_bounds
+    (** Invariant : there must always be at least one type in this set **)
+
+and ('layout, 'd) layout_and_axes =
+  { layout : 'layout;
+    mod_bounds : Jkind_mod_bounds.t;
+    with_bounds : 'd with_bounds
+  }
+  constraint 'd = 'l * 'r
+
+and 'd jkind_desc = (Jkind_types.Sort.t Jkind_types.Layout.t, 'd) layout_and_axes
+  constraint 'd = 'l * 'r
+
+and jkind_desc_packed = Pack_jkind_desc : ('l * 'r) jkind_desc -> jkind_desc_packed
+
+(** The "quality" of a jkind indicates whether we are able to learn more about the jkind
+    later.
+
+    We can never learn more about a [Best] jkind to make it "lower" (according to
+    [Jkind.sub] / [Jkind.sub_jkind_l]). A [Not_best], jkind, however, might have more
+    information provided about it later that makes it lower.
+
+    Note that only left jkinds can be [Best] (meaning we can never compare less than or
+    equal to a left jkind!)
+*)
+and 'd jkind_quality =
+  | Best : ('l * disallowed) jkind_quality
+  | Not_best : ('l * 'r) jkind_quality
+
+and 'd jkind =
+  { jkind : 'd jkind_desc;
+    annotation : Parsetree.jkind_annotation option;
+    history : jkind_history;
+    has_warned : bool;
+    quality : 'd jkind_quality;
+  }
+  constraint 'd = 'l * 'r
+
 and jkind_l = (allowed * disallowed) jkind  (* the jkind of an actual type *)
 and jkind_r = (disallowed * allowed) jkind  (* the jkind expected of a type *)
 and jkind_lr = (allowed * allowed) jkind    (* the jkind of a variable *)
+and jkind_packed = Pack_jkind : ('l * 'r) jkind -> jkind_packed
 
-(* jkind depends on types defined in this file, but Jkind.equal is required
-   here. When jkind.ml is loaded, it calls set_jkind_equal to fill a ref to the
-   function. *)
-(** INTERNAL USE ONLY
-    jkind.ml should call this with the definition of Jkind.equal *)
-val set_jkind_equal : (jkind_l -> jkind_l -> bool) -> unit
+(* A map from [type_expr] to [With_bounds_type_info.t], specifically defined with a
+   (best-effort) semantic comparison function on types to be used in the with-bounds of a
+   jkind.
+
+   This module is defined internally to be equal (via two uses of [Obj.magic]) to the
+   abstract type [with_bound_types] to break the circular dependency between with-bounds
+   and type_expr. The alternative to this approach would be mutually recursive modules,
+   but this approach creates a smaller diff with upstream and makes rebasing easier.
+*)
+module With_bounds_types : sig
+  (* Note that only the initially needed bits of [Stdlib.Map.S] are exposed here; feel
+     free to expose more functions if you need them! *)
+  type t = with_bounds_types
+  type info := With_bounds_type_info.t
+
+  val empty : t
+  val is_empty : t -> bool
+  val to_seq : t -> (type_expr * info) Seq.t
+  val of_list : (type_expr * info) list -> t
+  val of_seq : (type_expr * info) Seq.t -> t
+  val singleton : type_expr -> info -> t
+  val map : (info -> info) -> t -> t
+  val merge
+    : (type_expr -> info option -> info option -> info option) ->
+    t -> t -> t
+  val update : type_expr -> (info option -> info option) -> t -> t
+  val find_opt : type_expr -> t -> info option
+  val for_all : (type_expr -> info -> bool) -> t -> bool
+  val map_with_key : (type_expr -> info -> type_expr * info) -> t -> t
+end
 
 val is_commu_ok: commutable -> bool
 val commu_ok: commutable
@@ -541,12 +688,23 @@ type type_declaration =
     type_unboxed_default: bool;
     (* true if the unboxed-ness of this type was chosen by a compiler flag *)
     type_uid: Uid.t;
+    type_unboxed_version : type_declaration option;
+    (* stores the unboxed version of that this type introduces: this is [Some]
+       for predefined types with unboxed versions (e.g. [float]) and boxed
+       records, but [None] for aliases of these types
+
+       invariants:
+       1. there are no "twice-unboxed" types: the [type_declaration] stored here
+          itself has [type_unboxed_version = None].
+       2. the Uid of the unboxed version is [Uid.unboxed_version <uid of boxed>]
+    *)
   }
 
 and type_decl_kind = (label_declaration, label_declaration, constructor_declaration) type_kind
 
 and unsafe_mode_crossing =
-  { modal_upper_bounds : Mode.Alloc.Const.t }
+  { modal_upper_bounds : Mode.Alloc.Comonadic.Const.t;
+    modal_lower_bounds : Mode.Alloc.Monadic.Const.t }
 
 and ('lbl, 'lbl_flat, 'cstr) type_kind =
     Type_abstract of type_origin
@@ -964,6 +1122,9 @@ val equal_flat_element : flat_element -> flat_element -> bool
 val compare_flat_element : flat_element -> flat_element -> int
 val flat_element_to_string : flat_element -> string
 val flat_element_to_lowercase_string : flat_element -> string
+
+val equal_unsafe_mode_crossing :
+  unsafe_mode_crossing -> unsafe_mode_crossing -> bool
 
 (**** Utilities for backtracking ****)
 

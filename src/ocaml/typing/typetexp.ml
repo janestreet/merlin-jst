@@ -1446,7 +1446,8 @@ module Style = Misc.Style
 let pp_tag ppf t = Format.fprintf ppf "`%s" t
 
 
-let report_error env ppf = function
+let report_error env ppf =
+  function
   | Unbound_type_variable (name, in_scope_names) ->
     fprintf ppf "The type variable %a is unbound in this type declaration.@ %a"
       Style.inline_code name
@@ -1548,7 +1549,8 @@ let report_error env ppf = function
               match desc.layout with
               | Sort (Var _) -> fprintf ppf "a representable kind"
               | Sort (Base _) | Any | Product _ ->
-                fprintf ppf "kind %a" Jkind.format inferred_jkind)))
+                fprintf ppf "kind %a" Jkind.format
+                  inferred_jkind)))
         inferred_jkind
   | Multiple_constraints_on_type s ->
       fprintf ppf "Multiple constraints for type %a"

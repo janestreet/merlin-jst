@@ -482,8 +482,9 @@ let msig_of_external_type env decl =
     Result.is_error (Ctype.check_decl_jkind env decl
                         (Jkind.Builtin.value_or_null ~why:Separability_check))
   in
+  let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
   let is_external =
-    match Jkind.get_externality_upper_bound decl.type_jkind with
+    match Jkind.get_externality_upper_bound ~jkind_of_type decl.type_jkind with
     | Internal -> false
     | External | External64 -> true
   in
@@ -672,7 +673,7 @@ let property : (prop, unit) Typedecl_properties.property =
   let default decl = best_msig decl in
   let compute env decl () = compute_decl env decl in
   let update_decl decl type_separability = { decl with type_separability } in
-  let check _env _id _decl () = () in (* FIXME run final check? *)
+  let check _env _id _decl _req = () in (* FIXME run final check? *)
   { eq; merge; default; compute; update_decl; check; }
 
 (* Definition using the fixpoint infrastructure. *)
