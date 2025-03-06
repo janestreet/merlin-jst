@@ -20,8 +20,9 @@ val is_function_type :
 val is_base_type : Env.t -> Types.type_expr -> Path.t -> bool
 
 val maybe_pointer_type : Env.t -> Types.type_expr
-  -> Lambda.immediate_or_pointer
-val maybe_pointer : Typedtree.expression -> Lambda.immediate_or_pointer
+  -> Lambda.immediate_or_pointer * Lambda.nullable
+val maybe_pointer : Typedtree.expression
+  -> Lambda.immediate_or_pointer * Lambda.nullable
 
 val array_type_kind :
   elt_sort:(Jkind.Sort.Const.t option)

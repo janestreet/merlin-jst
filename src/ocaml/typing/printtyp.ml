@@ -562,6 +562,8 @@ let rec tree_of_path namespace = function
           Oide_dot (tree_of_path (Some Type) p, s)
       | Pext_ty ->
           tree_of_path None p
+      | Punboxed_ty ->
+          Oide_hash (tree_of_path namespace p)
     end
 
 let tree_of_path namespace = function
@@ -656,7 +658,8 @@ and raw_lid_type_list tl =
     tl
 and raw_type_desc ppf = function
     Tvar { name; jkind } ->
-      fprintf ppf "Tvar (@,%a,@,%a)" print_name name Jkind.format jkind
+      fprintf ppf "Tvar (@,%a,@,%a)"
+        print_name name Jkind.format jkind
   | Tarrow((l,arg,ret),t1,t2,c) ->
       fprintf ppf "@[<hov1>Tarrow((\"%s\",%a,%a),@,%a,@,%a,@,%s)@]"
         (string_of_label l)
@@ -688,7 +691,8 @@ and raw_type_desc ppf = function
   | Tsubst (t, Some t') ->
       fprintf ppf "@[<1>Tsubst@,(%a,@ Some%a)@]" raw_type t raw_type t'
   | Tunivar { name; jkind } ->
-      fprintf ppf "Tunivar (@,%a,@,%a)" print_name name Jkind.format jkind
+      fprintf ppf "Tunivar (@,%a,@,%a)"
+        print_name name Jkind.format jkind
   | Tpoly (t, tl) ->
       fprintf ppf "@[<hov1>Tpoly(@,%a,@,%a)@]"
         raw_type t
@@ -887,7 +891,22 @@ let printer_iter_type_expr f ty =
         f ty1;
       f ty2
   | _ ->
+<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
       Btype.iter_type_expr f ty
+||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
+  | Path.Papply (p1, p2) ->
+      Longident.Lapply (lid_of_path p1, lid_of_path p2)
+  | Path.Pextra_ty (p, Pext_ty) -> lid_of_path p
+=======
+  | Path.Papply (p1, p2) ->
+      Longident.Lapply (lid_of_path p1, lid_of_path p2)
+  | Path.Pextra_ty (p, Pext_ty) -> lid_of_path p
+  | Path.Pextra_ty (p, Punboxed_ty) ->
+    match p with
+    | Pident id -> Longident.Lident (Ident.name id ^ "#")
+    | Pdot (p, s) -> Longident.Ldot (lid_of_path p, s ^ "#")
+    | Papply _ | Pextra_ty _ -> assert false
+>>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 module Internal_names : sig
 
@@ -1627,8 +1646,6 @@ let type_expr ppf ty =
   prepare_for_printing [ty];
   prepared_type_expr ppf ty
 
-let () = Env.print_type_expr := type_expr
-
 (* "Half-prepared" type expression: [ty] should have had its names reserved, but
    should not have had its loops marked. *)
 let type_expr_with_reserved_names ppf ty =
@@ -1652,6 +1669,15 @@ let type_path ppf p =
 let tree_of_type_scheme ty =
   prepare_for_printing [ty];
   tree_of_typexp Type_scheme ty
+
+let () =
+  Env.print_type_expr := type_expr;
+  Jkind.set_outcometree_of_type (fun ty ->
+    prepare_for_printing [ty];
+    tree_of_typexp Type ty);
+  Jkind.set_outcometree_of_modalities_new tree_of_modalities_new;
+  Jkind.set_print_type_expr type_expr;
+  Jkind.set_raw_type_expr raw_type_expr
 
 (* Print one type declaration *)
 
@@ -2371,6 +2397,7 @@ let dummy =
     type_attributes = [];
     type_unboxed_default = false;
     type_uid = Uid.internal_not_actually_unique;
+    type_unboxed_version = None;
   }
 
 (** we hide items being defined from short-path to avoid shortening
