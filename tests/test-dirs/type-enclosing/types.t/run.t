@@ -113,7 +113,7 @@ FIXME: A type with a type param shouldn't equal itself - aliasing a list type
     }
   ]
 
-Same result regardless of verbosity:
+Shows kind with increased verbosity:
 
   $ $MERLIN single type-enclosing -short-paths -position 11:9 -verbosity 1 \
   > -filename ./types.ml < ./types.ml | jq ".value"
@@ -127,7 +127,7 @@ Same result regardless of verbosity:
         "line": 11,
         "col": 19
       },
-      "type": "type 'a l = 'a l",
+      "type": "type 'a l : immutable_data with 'a = 'a l",
       "tail": "no"
     }
   ]

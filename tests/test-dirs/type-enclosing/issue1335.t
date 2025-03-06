@@ -48,7 +48,7 @@ provide better result.
           "line": 4,
           "col": 15
         },
-        "type": "type 'k baz = Foo | Bar of 'k t",
+        "type": "type 'k baz : immutable_data = Foo | Bar of 'k t",
         "tail": "no"
       }
     ],
