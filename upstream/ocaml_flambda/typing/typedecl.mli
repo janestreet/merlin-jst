@@ -183,6 +183,9 @@ type error =
       }
   | Non_abstract_reexport of Path.t
   | Unsafe_mode_crossing_on_invalid_type_kind
+  | Unsafe_mode_crossing_with_with_bounds
+  | Illegal_baggage of jkind_l
+  | No_unboxed_version of Path.t
 
 exception Error of Location.t * error
 

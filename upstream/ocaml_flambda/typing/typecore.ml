@@ -934,14 +934,26 @@ let has_poly_constraint spat =
 (* This is very similar to Ctype.mode_cross_left_alloc. Any bugs here are likely
    bugs there, too. *)
 let mode_cross_left_value env ty mode =
-  let mode =
-    if not (is_principal ty) then mode else
+  if not (is_principal ty) then
+    Value.disallow_right mode
+  else begin
     let jkind = type_jkind_purely env ty in
-    let upper_bounds = Jkind.get_modal_upper_bounds jkind in
+    let jkind_of_type = type_jkind_purely_if_principal env in
+    let Jkind.{ upper_bounds; lower_bounds } =
+      Jkind.get_modal_bounds ~jkind_of_type jkind
+    in
+    let upper_bounds =
+      Alloc.Const.merge
+        { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
+    in
     let upper_bounds = Const.alloc_as_value upper_bounds in
-    Value.meet_const upper_bounds mode
-  in
-  mode |> Value.disallow_right
+    let lower_bounds =
+      Alloc.Const.merge
+        { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
+    in
+    let lower_bounds = Const.alloc_as_value lower_bounds in
+    Value.subtract lower_bounds (Value.meet_const upper_bounds mode)
+  end
 
 let actual_mode_cross_left env ty (actual_mode : Env.actual_mode)
   : Env.actual_mode =
@@ -955,27 +967,45 @@ let alloc_mode_cross_to_max_min env ty { monadic; comonadic } =
   let comonadic = Alloc.Comonadic.disallow_right comonadic in
   if not (is_principal ty) then { monadic; comonadic } else
   let jkind = type_jkind_purely env ty in
-  let upper_bounds = Jkind.get_modal_upper_bounds jkind in
-  let upper_bounds = Alloc.Const.split upper_bounds in
-  let comonadic = Alloc.Comonadic.meet_const upper_bounds.comonadic comonadic in
-  let monadic = Alloc.Monadic.imply upper_bounds.monadic monadic in
+  let jkind_of_type = type_jkind_purely_if_principal env in
+  let Jkind.{ upper_bounds; lower_bounds } =
+    Jkind.get_modal_bounds ~jkind_of_type jkind
+  in
+  let comonadic = Alloc.Comonadic.meet_const upper_bounds comonadic in
+  let monadic = Alloc.Monadic.join_const lower_bounds monadic in
   { monadic; comonadic }
 
 (** Mode cross a right mode *)
 (* This is very similar to Ctype.mode_cross_right. Any bugs here are likely bugs
    there, too. *)
-let expect_mode_cross_jkind jkind (expected_mode : expected_mode) =
-  let upper_bounds = Jkind.get_modal_upper_bounds jkind in
+let expect_mode_cross_jkind env jkind (expected_mode : expected_mode) =
+  let jkind_of_type = type_jkind_purely_if_principal env in
+  let Jkind.{ upper_bounds; lower_bounds } =
+    Jkind.get_modal_bounds ~jkind_of_type jkind
+  in
+  let upper_bounds =
+    Alloc.Const.merge
+      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
+  in
   let upper_bounds = Const.alloc_as_value upper_bounds in
-  mode_morph (Value.imply upper_bounds) expected_mode
+  let lower_bounds =
+    Alloc.Const.merge
+      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
+  in
+  let lower_bounds = Const.alloc_as_value lower_bounds in
+  mode_morph
+    (fun m ->
+      Value.imply upper_bounds
+        (Value.join_const lower_bounds m))
+    expected_mode
 
 let expect_mode_cross env ty (expected_mode : expected_mode) =
   if not (is_principal ty) then expected_mode else
   let jkind = type_jkind_purely env ty in
-  expect_mode_cross_jkind jkind expected_mode
+  expect_mode_cross_jkind env jkind expected_mode
 
 (** The expected mode for objects *)
-let mode_object = expect_mode_cross_jkind Jkind.for_object mode_legacy
+let mode_object = expect_mode_cross_jkind Env.empty Jkind.for_object mode_legacy
 
 let mode_annots_from_pat pat =
   let modes =
@@ -6794,11 +6824,17 @@ and type_expect_
       | Texp_record {alloc_mode = Some alloc_mode; _}
       | Texp_array (_, _, _, alloc_mode)
       | Texp_field (_, _, _, Boxing (alloc_mode, _), _) ->
-        begin match Locality.submode Locality.local
-          (Alloc.proj (Comonadic Areality) alloc_mode.mode) with
-        | Ok () -> ()
-        | Error _ -> raise (Error (e.pexp_loc, env,
-            Cannot_stack_allocate alloc_mode.locality_context))
+        begin
+          submode ~loc ~env
+            (Value.min_with (Comonadic Areality) Regionality.local)
+            expected_mode;
+          match
+            Locality.submode Locality.local
+              (Alloc.proj (Comonadic Areality) alloc_mode.mode)
+          with
+          | Ok () -> ()
+          | Error _ -> raise (Error (e.pexp_loc, env,
+              Cannot_stack_allocate alloc_mode.locality_context))
         end
       | Texp_list_comprehension _ -> unsupported List_comprehension
       | Texp_array_comprehension _ -> unsupported Array_comprehension
@@ -6812,12 +6848,13 @@ and type_expect_
           (* [stack_ (prim foo)] will be checked by [transl_primitive_application]. *)
           (* CR zqian: Move/Copy [Lambda.primitive_may_allocate] to [typing], then we can
           check primitive allocation here, and also improve the logic in [type_ident]. *)
-          -> ()
+          ->
+          submode ~loc ~env
+            (Value.min_with (Comonadic Areality) Regionality.local)
+            expected_mode;
       | _ ->
         raise (Error (exp.exp_loc, env, Not_allocation))
       end;
-      submode ~loc ~env (Value.min_with (Comonadic Areality) Regionality.local)
-        expected_mode;
       let exp_extra = (Texp_stack, loc, []) :: exp.exp_extra in
       {exp with exp_extra}
   | Pexp_comprehension comp ->
@@ -9164,7 +9201,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
       List.iter
         (fun pv ->
           Ctype.check_and_update_generalized_ty_jkind
-            ~name:pv.pv_id ~loc:pv.pv_loc pv.pv_type)
+            ~name:pv.pv_id ~loc:pv.pv_loc env pv.pv_type)
         pvs;
       List.iter2
         (fun (_, _, expected_ty) (exp, vars) ->
@@ -9193,7 +9230,7 @@ and type_let ?check ?check_strict ?(force_toplevel = false)
           | Tpat_alias(_, id, _, _, _, _) -> Some id
           | _ -> None in
         Ctype.check_and_update_generalized_ty_jkind
-          ?name:pat_name ~loc:exp.exp_loc exp.exp_type
+          ?name:pat_name ~loc:exp.exp_loc env exp.exp_type
       in
       List.iter2 update_exp_jkind mode_pat_typ_list exp_list;
     end
@@ -10284,7 +10321,8 @@ let report_too_many_arg_error ~funct ~func_ty ~previous_arg_loc
      @ It is applied to too many arguments@]"
     report_this_function funct Printtyp.type_expr func_ty
 
-let report_error ~loc env = function
+let report_error ~loc env =
+  function
   | Constructor_arity_mismatch(lid, expected, provided) ->
       Location.errorf ~loc
        "@[The constructor %a@ expects %i argument(s),@ \
@@ -10511,8 +10549,8 @@ let report_error ~loc env = function
   | Non_value_let_rec (err, ty) ->
     Location.error_of_printer ~loc (fun ppf () ->
       fprintf ppf "Variables bound in a \"let rec\" must have layout value.@ %a"
-        (Jkind.Violation.report_with_offender
-           ~offender:(fun ppf -> Printtyp.type_expr ppf ty)) err)
+        (fun v -> Jkind.Violation.report_with_offender
+           ~offender:(fun ppf -> Printtyp.type_expr ppf ty) v) err)
       ()
   | Undefined_method (ty, me, valid_methods) ->
       Location.error_of_printer ~loc (fun ppf () ->

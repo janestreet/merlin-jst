@@ -48,6 +48,7 @@ module TypeHash = struct
   include TransientTypeHash
   let mem hash = wrap_repr (mem hash)
   let add hash = wrap_repr (add hash)
+  let replace hash = wrap_repr (replace hash)
   let remove hash = wrap_repr (remove hash)
   let find hash = wrap_repr (find hash)
   let find_opt hash = wrap_repr (find_opt hash)
@@ -368,6 +369,7 @@ let type_iterators =
   and it_type_declaration it td =
     List.iter (it.it_type_expr it) td.type_params;
     Option.iter (it.it_type_expr it) td.type_manifest;
+    Option.iter (it.it_type_declaration it) td.type_unboxed_version;
     it.it_type_kind it td.type_kind
   and it_extension_constructor it td =
     it.it_path td.ext_type_path;
