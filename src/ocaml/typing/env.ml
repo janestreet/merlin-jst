@@ -2520,18 +2520,8 @@ and store_type ~check ~long_path ~predef id info shape env =
   if check then
     check_usage loc id info.type_uid
       (fun s -> Warnings.Unused_type_declaration s)
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
       type_declarations;
-  let descrs, env =
-    let path = Pident id in
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-      !type_declarations;
-  let descrs, env =
-    let path = Pident id in
-=======
-      !type_declarations;
   let store_decl path info env =
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
     match info.type_kind with
     | Type_variant (_,repr,umc) ->
         let constructors = Datarepr.constructors_of_type path info
@@ -3100,13 +3090,6 @@ let mark_value_used uid =
   | mark -> mark ()
   | exception Not_found -> ()
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-let mark_type_used uid =
-  match Stamped_hashtable.find type_declarations uid with
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-let mark_type_used uid =
-  match Types.Uid.Tbl.find !type_declarations uid with
-=======
 let mark_type_used (uid : Uid.t) =
   let uid =
     (* Using the unboxed version of a type counts as using the boxed version *)
@@ -3114,8 +3097,7 @@ let mark_type_used (uid : Uid.t) =
     | Unboxed_version uid -> uid
     | _ -> uid
   in
-  match Types.Uid.Tbl.find !type_declarations uid with
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
+  match Stamped_hashtable.find type_declarations uid with
   | mark -> mark ()
   | exception Not_found -> ()
 

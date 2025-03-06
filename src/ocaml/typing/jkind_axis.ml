@@ -12,33 +12,13 @@
 (*                                                                        *)
 (**************************************************************************)
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
 (* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
   include Misc_stdlib
 end
 
-module type Axis_s = sig
-  type t
-
-  val max : t
-
-  val min : t
-
-  val equal : t -> t -> bool
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-module type Axis_s = sig
-  type t
-
-  val max : t
-
-  val min : t
-
-  val equal : t -> t -> bool
-=======
 module type Axis_ops = sig
   include Mode_intf.Lattice
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
   val less_or_equal : t -> t -> Misc.Le_result.t
 

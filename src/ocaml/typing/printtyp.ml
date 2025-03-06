@@ -891,22 +891,7 @@ let printer_iter_type_expr f ty =
         f ty1;
       f ty2
   | _ ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
       Btype.iter_type_expr f ty
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-  | Path.Papply (p1, p2) ->
-      Longident.Lapply (lid_of_path p1, lid_of_path p2)
-  | Path.Pextra_ty (p, Pext_ty) -> lid_of_path p
-=======
-  | Path.Papply (p1, p2) ->
-      Longident.Lapply (lid_of_path p1, lid_of_path p2)
-  | Path.Pextra_ty (p, Pext_ty) -> lid_of_path p
-  | Path.Pextra_ty (p, Punboxed_ty) ->
-    match p with
-    | Pident id -> Longident.Lident (Ident.name id ^ "#")
-    | Pdot (p, s) -> Longident.Ldot (lid_of_path p, s ^ "#")
-    | Papply _ | Pextra_ty _ -> assert false
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 module Internal_names : sig
 

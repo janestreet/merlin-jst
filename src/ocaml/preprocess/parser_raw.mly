@@ -1234,17 +1234,8 @@ The precedences must be listed from low to high.
 /* Finally, the first tokens of simple_expr are above everything else. */
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT HASH_FLOAT INT HASH_INT OBJECT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LBRACKETCOLON LIDENT LPAREN
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
           NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
-          LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLBRACE HASHLPAREN
-          DOTLESS DOTTILDE GREATERDOT
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-          NEW PREFIXOP STRING TRUE UIDENT
-          LBRACKETPERCENT QUOTED_STRING_EXPR STACK HASHLBRACE HASHLPAREN
-=======
-          NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT QUOTED_STRING_EXPR HASHLBRACE HASHLPAREN
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 
 /* Entry points */
@@ -3059,21 +3050,7 @@ fun_:
       { mkexp ~loc:$sloc (mkinfix e1 op e2) }
 ;
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-%inline constructor_app:
-  | mkrhs(constr_longident) simple_expr
-    { mkexp ~loc:$sloc (Pexp_construct($1, Some $2)) }
-
 %public simple_expr:
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-%inline constructor_app:
-  | mkrhs(constr_longident) simple_expr
-    { mkexp ~loc:$sloc (Pexp_construct($1, Some $2)) }
-
-simple_expr:
-=======
-simple_expr:
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
   | LPAREN seq_expr RPAREN
       { reloc_exp ~loc:$sloc $2 }
   (*

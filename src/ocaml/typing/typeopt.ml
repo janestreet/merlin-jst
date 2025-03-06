@@ -84,13 +84,6 @@ let is_always_gc_ignorable env ty =
 
 let maybe_pointer_type env ty =
   let ty = scrape_ty env ty in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-  if is_always_gc_ignorable env ty then Immediate else Pointer
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-  if is_always_gc_ignorable env ty then Immediate else Pointer
-
-let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
-=======
   let immediate_or_pointer =
     match is_always_gc_ignorable env ty with
     | true -> Immediate
@@ -104,15 +97,12 @@ let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
   immediate_or_pointer, nullable
 
 let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 (* CR layouts v2.8: Calling [type_sort] in [typeopt] is not ideal and
     this function should be removed at some point. To do that, there
     needs to be a way to store sort vars on [Tconstr]s. That means
     either introducing a [Tpoly_constr], allow type parameters with
     sort info, or do something else. *)
-
-let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
 
 (* CR layouts v2.8: Calling [type_legacy_sort] in [typeopt] is not ideal
    and this function should be removed at some point. To do that, there
@@ -208,44 +198,13 @@ let array_kind_of_elt ~elt_sort env loc ty =
       Jkind.Sort.default_for_transl_and_get
         (type_legacy_sort ~why:Array_element env loc ty)
   in
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-  let classify_product ty _sorts =
-    if Language_extension.(is_at_least Layouts Beta) then
-      if is_always_gc_ignorable env ty then
-        Pgcignorableproductarray ()
-      else
-        Pgcscannableproductarray ()
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-  let classify_product ty sorts =
-    if Language_extension.(is_at_least Layouts Beta) then
-      if is_always_gc_ignorable env ty then
-        Pgcignorableproductarray (ignorable_product_array_kind loc sorts)
-      else
-        Pgcscannableproductarray (scannable_product_array_kind loc sorts)
-=======
   let classify_product ty sorts =
     if is_always_gc_ignorable env ty then
-      Pgcignorableproductarray (ignorable_product_array_kind loc sorts)
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
+      Pgcignorableproductarray ()
     else
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-      let sort = Jkind.Sort.of_const (Jkind.Sort.Const.Product sorts) in
-      raise (Error (loc, Sort_without_extension (sort, Alpha, Some ty)))
+      Pgcscannableproductarray ()
   in
   match classify ~classify_product env loc ty elt_sort with
-  | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
-=======
-      Pgcscannableproductarray (scannable_product_array_kind loc sorts)
-  in
-  match classify ~classify_product env loc ty elt_sort with
-  | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
-      (* let sort = Jkind.Sort.of_const (Jkind.Sort.Const.Product sorts) in
-      raise (Error (loc, Sort_without_extension (sort, Alpha, Some ty))) *)
-      Misc.fatal_error "merlin-jst: language extension not enabled for non-value sort"
-  in
-  match classify ~classify_product env ty elt_sort with
   | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
   | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
   | Addr | Lazy -> Paddrarray

@@ -2466,16 +2466,8 @@ let constrain_type_jkind ~fixed env ty jkind =
              let num_components = List.length tys in
              let recur ty's_jkinds jkinds =
                let results =
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
                  Misc_stdlib.List.map3
-                   (loop ~fuel ~expanded:false) tys ty's_jkinds jkinds
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-                 Misc.Stdlib.List.map3
-                   (loop ~fuel ~expanded:false) tys ty's_jkinds jkinds
-=======
-                 Misc.Stdlib.List.map3
                    (loop ~fuel ~expanded:false ~is_open) tys ty's_jkinds jkinds
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
                in
                if List.for_all Result.is_ok results
                then Ok ()

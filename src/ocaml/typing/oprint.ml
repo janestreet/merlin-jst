@@ -344,98 +344,6 @@ let pr_var = Pprintast.tyvar
 let ty_var ~non_gen ppf s =
   pr_var ppf (if non_gen then "_" ^ s else s)
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-let print_out_jkind_const ppf ojkind =
-  let rec pp_element ~nested ppf (ojkind : Outcometree.out_jkind_const) =
-    match ojkind with
-    | Ojkind_const_default -> fprintf ppf "_"
-    | Ojkind_const_abbreviation abbrev -> fprintf ppf "%s" abbrev
-    | Ojkind_const_mod (base, modes) ->
-      Misc_stdlib.pp_parens_if nested (fun ppf (base, modes) ->
-        fprintf ppf "%a mod @[%a@]" (pp_element ~nested:true) base
-          (pp_print_list
-              ~pp_sep:(fun ppf () -> fprintf ppf "@ ")
-              (fun ppf -> fprintf ppf "%s"))
-          modes
-      ) ppf (base, modes)
-    | Ojkind_const_product ts ->
-      let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
-    | Ojkind_const_with _ | Ojkind_const_kind_of _ ->
-      failwith "XXX unimplemented jkind syntax"
-  in
-  pp_element ~nested:false ppf ojkind
-
-let print_out_jkind ppf ojkind =
-  let rec pp_element ~nested ppf ojkind =
-    match ojkind with
-    | Ojkind_var v -> fprintf ppf "%s" v
-    | Ojkind_const jkind -> print_out_jkind_const ppf jkind
-    | Ojkind_product ts ->
-      let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
-  in
-  pp_element ~nested:false ppf ojkind
-
-let print_out_jkind_annot ppf = function
-  | None -> ()
-  | Some lay -> fprintf ppf "@ : %a" print_out_jkind lay
-
-let pr_var_jkind ppf (v, l) = match l with
-    | None -> pr_var ppf v
-    | Some lay -> fprintf ppf "(%a : %a)"
-                    pr_var v
-                    print_out_jkind lay
-
-let pr_var_jkinds =
-  print_list pr_var_jkind (fun ppf -> fprintf ppf "@ ")
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-let print_out_jkind_const ppf ojkind =
-  let rec pp_element ~nested ppf (ojkind : Outcometree.out_jkind_const) =
-    match ojkind with
-    | Ojkind_const_default -> fprintf ppf "_"
-    | Ojkind_const_abbreviation abbrev -> fprintf ppf "%s" abbrev
-    | Ojkind_const_mod (base, modes) ->
-      Misc.pp_parens_if nested (fun ppf (base, modes) ->
-        fprintf ppf "%a mod @[%a@]" (pp_element ~nested:true) base
-          (pp_print_list
-              ~pp_sep:(fun ppf () -> fprintf ppf "@ ")
-              (fun ppf -> fprintf ppf "%s"))
-          modes
-      ) ppf (base, modes)
-    | Ojkind_const_product ts ->
-      let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
-    | Ojkind_const_with _ | Ojkind_const_kind_of _ ->
-      failwith "XXX unimplemented jkind syntax"
-  in
-  pp_element ~nested:false ppf ojkind
-
-let print_out_jkind ppf ojkind =
-  let rec pp_element ~nested ppf ojkind =
-    match ojkind with
-    | Ojkind_var v -> fprintf ppf "%s" v
-    | Ojkind_const jkind -> print_out_jkind_const ppf jkind
-    | Ojkind_product ts ->
-      let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
-  in
-  pp_element ~nested:false ppf ojkind
-
-let print_out_jkind_annot ppf = function
-  | None -> ()
-  | Some lay -> fprintf ppf "@ : %a" print_out_jkind lay
-
-let pr_var_jkind ppf (v, l) = match l with
-    | None -> pr_var ppf v
-    | Some lay -> fprintf ppf "(%a : %a)"
-                    pr_var v
-                    print_out_jkind lay
-
-let pr_var_jkinds =
-  print_list pr_var_jkind (fun ppf -> fprintf ppf "@ ")
-=======
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 (* NON-LEGACY MODES
   Here, we are printing mode annotations even if the mode extension is
@@ -741,7 +649,7 @@ and print_out_jkind_const ppf ojkind =
         | Some base -> fprintf ppf "%a " (pp_element ~nested:true) base
         | None -> ()
       in
-      Misc.pp_parens_if nested (fun ppf (base, modes) ->
+      Misc_stdlib.pp_parens_if nested (fun ppf (base, modes) ->
         fprintf ppf "%amod @[%a@]" pp_base base
           (pp_print_list
               ~pp_sep:(fun ppf () -> fprintf ppf "@ ")
@@ -750,7 +658,7 @@ and print_out_jkind_const ppf ojkind =
       ) ppf (base, modes)
     | Ojkind_const_product ts ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
     | Ojkind_const_with _ -> failwith "XXX unreachable (stripped off earlier)"
     | Ojkind_const_kind_of _ ->
       failwith "XXX unimplemented jkind syntax");
@@ -776,7 +684,7 @@ and print_out_jkind ppf ojkind =
     | Ojkind_const jkind -> print_out_jkind_const ppf jkind
     | Ojkind_product ts ->
       let pp_sep ppf () = Format.fprintf ppf "@ & " in
-      Misc.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
+      Misc_stdlib.pp_nested_list ~nested ~pp_element ~pp_sep ppf ts
   in
   pp_element ~nested:false ppf ojkind
 

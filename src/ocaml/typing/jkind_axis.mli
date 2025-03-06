@@ -68,53 +68,6 @@ module Axis : sig
   val is_modal : _ t -> bool
 end
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-(** A collection with one item for each jkind axis.
-    [T] parametizes what element is being held for each axis. *)
-module Axis_collection (T : Misc_stdlib.T1) : sig
-  type t =
-    { locality : Mode.Locality.Const.t T.t;
-      linearity : Mode.Linearity.Const.t T.t;
-      uniqueness : Mode.Uniqueness.Const.t T.t;
-      portability : Mode.Portability.Const.t T.t;
-      contention : Mode.Contention.Const.t T.t;
-      yielding : Mode.Yielding.Const.t T.t;
-      externality : Externality.t T.t;
-      nullability : Nullability.t T.t
-    }
-
-  val get : axis:'a Axis.t -> t -> 'a T.t
-
-  val set : axis:'a Axis.t -> t -> 'a T.t -> t
-
-  module Create_f : sig
-    (** This record type is used to pass a polymorphic function to [create] *)
-    type t = { f : 'a. axis:'a Axis.t -> 'a T.t }
-  end
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-(** A collection with one item for each jkind axis.
-    [T] parametizes what element is being held for each axis. *)
-module Axis_collection (T : Misc.T1) : sig
-  type t =
-    { locality : Mode.Locality.Const.t T.t;
-      linearity : Mode.Linearity.Const.t T.t;
-      uniqueness : Mode.Uniqueness.Const.t T.t;
-      portability : Mode.Portability.Const.t T.t;
-      contention : Mode.Contention.Const.t T.t;
-      yielding : Mode.Yielding.Const.t T.t;
-      externality : Externality.t T.t;
-      nullability : Nullability.t T.t
-    }
-
-  val get : axis:'a Axis.t -> t -> 'a T.t
-
-  val set : axis:'a Axis.t -> t -> 'a T.t -> t
-
-  module Create_f : sig
-    (** This record type is used to pass a polymorphic function to [create] *)
-    type t = { f : 'a. axis:'a Axis.t -> 'a T.t }
-  end
-=======
 module Axis_set : sig
   (** A set of [Axis.t], represented as a bitfield for efficiency. *)
   type t [@@immediate]
@@ -122,7 +75,6 @@ module Axis_set : sig
   val empty : t
 
   val singleton : _ Axis.t -> t
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
   val is_empty : t -> bool
 

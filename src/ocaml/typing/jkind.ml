@@ -20,19 +20,12 @@ module Misc = struct
   include Misc
   module Stdlib = Misc_stdlib
   include Misc_stdlib
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
 end
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-
-open Mode
-open Jkind_types
-=======
 
 open Mode
 open Jkind_types
 open Jkind_axis
 open Types
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 [@@@warning "+9"]
 

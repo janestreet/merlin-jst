@@ -7063,19 +7063,6 @@ and type_expect_
       | Texp_record {alloc_mode = Some alloc_mode; _}
       | Texp_array (_, _, _, alloc_mode)
       | Texp_field (_, _, _, Boxing (alloc_mode, _), _) ->
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-        begin match Locality.submode Locality.local
-          (Alloc.proj (Comonadic Areality) alloc_mode.mode) with
-        | Ok () -> ()
-        | Error _ -> raise (error (e.pexp_loc, env,
-            Cannot_stack_allocate alloc_mode.locality_context))
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-        begin match Locality.submode Locality.local
-          (Alloc.proj (Comonadic Areality) alloc_mode.mode) with
-        | Ok () -> ()
-        | Error _ -> raise (Error (e.pexp_loc, env,
-            Cannot_stack_allocate alloc_mode.locality_context))
-=======
         begin
           submode ~loc ~env
             (Value.min_with (Comonadic Areality) Regionality.local)
@@ -7085,9 +7072,8 @@ and type_expect_
               (Alloc.proj (Comonadic Areality) alloc_mode.mode)
           with
           | Ok () -> ()
-          | Error _ -> raise (Error (e.pexp_loc, env,
+          | Error _ -> raise (error (e.pexp_loc, env,
               Cannot_stack_allocate alloc_mode.locality_context))
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
         end
       | Texp_list_comprehension _ -> unsupported List_comprehension
       | Texp_array_comprehension _ -> unsupported Array_comprehension
@@ -7909,7 +7895,7 @@ and type_label_access
     let arg_kind, _ =
       Jkind.of_new_sort_var ~why:Record_projection
     in
-    let make_fake_label (type rep) (record_form : rep record_form) : rep gen_label_description = 
+    let make_fake_label (type rep) (record_form : rep record_form) : rep gen_label_description =
       {
         lbl_name = "";
         lbl_res = ty_exp;

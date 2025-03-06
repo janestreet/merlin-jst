@@ -314,7 +314,7 @@ module type S = sig
 
     val print : Format.formatter -> ('p, 'r) t -> unit
 
-    val eq : ('p, 'r0) t -> ('p, 'r1) t -> ('r0, 'r1) Misc.eq option
+    val eq : ('p, 'r0) t -> ('p, 'r1) t -> ('r0, 'r1) Misc_stdlib.eq option
   end
 
   module type Mode := sig

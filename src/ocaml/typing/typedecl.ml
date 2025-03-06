@@ -2593,19 +2593,6 @@ let check_redefined_unit (td: Parsetree.type_declaration) =
   | _ ->
       ()
 
-<<<<<<< janestreet/merlin-jst:merge-5.2.0minus-8
-let add_types_to_env decls shapes env =
-  List.fold_right2
-    (fun (id, decl) shape env ->
-      add_type ~long_path:false ~check:true ~shape id decl env)
-    decls shapes env
-||||||| ocaml-flambda/flambda-backend:9af08951c69b6ab8be73ee9c53b8b29a1a6e5c66
-let add_types_to_env decls shapes env =
-  List.fold_right2
-    (fun (id, decl) shape env ->
-      add_type ~check:true ~shape id decl env)
-    decls shapes env
-=======
 
 (* Note [Quality of jkinds during inference]
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2723,7 +2710,6 @@ let normalize_decl_jkinds env shapes decls =
     env
     decls
     shapes
->>>>>>> ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
 
 (* Translate a set of type declarations, mutually recursive or not *)
 let transl_type_decl env rec_flag sdecl_list =
