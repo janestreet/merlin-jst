@@ -12,9 +12,6 @@
 (*                                                                        *)
 (**************************************************************************)
 
-open Mode
-open Jkind_types
-
 (* Merlin-specific: change some module paths to match the compiler *)
 module Misc = struct
   include Misc

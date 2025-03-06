@@ -72,9 +72,10 @@ let uid_and_loc_of_node env node =
     Some (val_val.val_uid, val_name.loc)
   | _ -> None
 
-let comp_unit_of_uid = function
+let rec comp_unit_of_uid = function
   | Shape.Uid.Compilation_unit comp_unit | Item { comp_unit; _ } ->
     Some comp_unit
+  | Unboxed_version uid -> comp_unit_of_uid uid
   | Internal | Predef _ -> None
 
 module Stat_check : sig

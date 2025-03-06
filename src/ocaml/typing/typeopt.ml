@@ -198,13 +198,13 @@ let array_kind_of_elt ~elt_sort env loc ty =
       Jkind.Sort.default_for_transl_and_get
         (type_legacy_sort ~why:Array_element env loc ty)
   in
-  let classify_product ty sorts =
+  let classify_product ty _sorts =
     if is_always_gc_ignorable env ty then
       Pgcignorableproductarray ()
     else
       Pgcscannableproductarray ()
   in
-  match classify ~classify_product env loc ty elt_sort with
+  match classify ~classify_product env ty elt_sort with
   | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
   | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
   | Addr | Lazy -> Paddrarray

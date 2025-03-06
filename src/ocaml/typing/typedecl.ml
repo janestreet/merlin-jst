@@ -13,6 +13,13 @@
 (*                                                                        *)
 (**************************************************************************)
 
+(* Merlin-only: change some module paths to match the compiler *)
+module Misc = struct
+  include Misc
+  module Stdlib = Misc_stdlib
+  module Nonempty_list = Misc_stdlib.Nonempty_list
+end
+
 (**** Typing of type definitions ****)
 
 open Misc
@@ -1709,7 +1716,7 @@ let update_constructor_representation
 let add_types_to_env decls shapes env =
   List.fold_right2
     (fun (id, decl) shape env ->
-      add_type ~check:true ~shape id decl env)
+      add_type ~long_path:false ~check:true ~shape id decl env)
     decls shapes env
 
 (* This function updates jkind stored in kinds with more accurate jkinds.
@@ -2692,7 +2699,7 @@ let normalize_decl_jkinds env shapes decls =
   let env =
     List.fold_right2
       (fun (id, _, _, decl) shape env ->
-         add_type ~check:true ~shape id decl env)
+         add_type ~long_path:false ~check:true ~shape id decl env)
       decls shapes env
   in
   Misc.Stdlib.List.fold_left_map2
@@ -2704,7 +2711,7 @@ let normalize_decl_jkinds env shapes decls =
       (* Add the decl with the normalized kind back to the environment, so that later
         kinds don't have to normalize this kind if they mention this type in their
         with-bounds *)
-      let env = add_type ~check:false ~shape:shape id decl env in
+      let env = add_type ~long_path:false ~check:false ~shape:shape id decl env in
       env, (id, decl)
     )
     env

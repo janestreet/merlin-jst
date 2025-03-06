@@ -902,11 +902,16 @@ let from_path ~config ~env ~local_defs ~decl path =
   in
   (* Step 2:  Uid => Location *)
   let loc =
-    match uid with
-    | Predef s -> `Builtin (uid, s)
-    | Internal -> `Builtin (uid, "<internal>")
-    | Item { comp_unit; _ } -> find_loc_of_uid ~config ~local_defs uid comp_unit
-    | Compilation_unit comp_unit -> find_loc_of_comp_unit ~config uid comp_unit
+    let rec get_location : Shape.Uid.t -> _ = function
+      | Predef s -> `Builtin (uid, s)
+      | Internal -> `Builtin (uid, "<internal>")
+      | Item { comp_unit; _ } ->
+        find_loc_of_uid ~config ~local_defs uid comp_unit
+      | Compilation_unit comp_unit ->
+        find_loc_of_comp_unit ~config uid comp_unit
+      | Unboxed_version uid -> get_location uid
+    in
+    get_location uid
   in
   let loc =
     match loc with

@@ -13,6 +13,13 @@
 (*                                                                        *)
 (**************************************************************************)
 
+(* Merlin-only: change some module paths to match the compiler *)
+module Misc = struct
+  include Misc
+  module Stdlib = Misc_stdlib
+  module Nonempty_list = Misc_stdlib.Nonempty_list
+end
+
 (* Operations on core types *)
 
 open Misc
