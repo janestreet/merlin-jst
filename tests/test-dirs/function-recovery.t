@@ -20,7 +20,7 @@
                 <def>
                   pattern (test.ml[2,79+6]..test.ml[2,79+13])
                     Tpat_var \"problem/280\"
-                    value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,contended .. unique,uncontended])
+                    value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);imply(unique,uncontended)(modevar#1[aliased,contended .. unique,uncontended])
                   expression (test.ml[2,79+16]..test.ml[2,79+24])
                     Texp_variant \"Problem\"
                     None
@@ -69,7 +69,7 @@
         <def>
           pattern (type.ml[1,0+4]..type.ml[1,0+5])
             Tpat_var \"f/280\"
-            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);imply(unique,uncontended)(modevar#1[aliased,contended .. unique,uncontended])
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
               Texp_newtype  t
@@ -89,7 +89,7 @@
                           []
                       ]
                   Tpat_var \"foo/283\"
-                  value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable,unyielding .. local,once,nonportable,yielding]);join(aliased,contended)(modevar#5[aliased,contended .. unique,uncontended])
+                  value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable,unyielding .. local,once,nonportable,yielding]);imply(unique,uncontended)(modevar#5[aliased,contended .. unique,uncontended])
             ]
             Tfunction_body
               expression (type.ml[1,0+39]..type.ml[1,0+61])
@@ -193,7 +193,7 @@
                     "attrs": [],
                     "kind": "pattern (test.ml[1,0+4]..test.ml[1,0+5])
     Tpat_var \"f/280\"
-    value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,contended .. unique,uncontended])
+    value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);imply(unique,uncontended)(modevar#1[aliased,contended .. unique,uncontended])
   ",
                     "children": []
                   },
@@ -225,7 +225,7 @@
                         "attrs": [],
                         "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
     Tpat_var \"x/282\"
-    value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable,unyielding .. local,once,nonportable,yielding]);join(aliased,contended)(modevar#5[aliased,contended .. unique,uncontended])
+    value_mode map_comonadic(local_to_regional)(modevar#4[global,many,portable,unyielding .. local,once,nonportable,yielding]);imply(unique,uncontended)(modevar#5[aliased,contended .. unique,uncontended])
   ",
                         "children": []
                       },

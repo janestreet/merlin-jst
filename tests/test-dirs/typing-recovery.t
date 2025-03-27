@@ -94,7 +94,7 @@
         <def>
           pattern (test.ml[2,15+4]..test.ml[2,15+5])
             Tpat_var \"f/283\"
-            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);imply(unique,uncontended)(modevar#1[aliased,contended .. unique,uncontended])
           expression (test.ml[2,15+6]..test.ml[6,69+12]) ghost
             Texp_function
             alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable,unyielding .. global,many,nonportable,unyielding]);id(modevar#3[aliased,contended .. unique,uncontended])
@@ -254,7 +254,7 @@
         <def>
           pattern (test2.ml[2,15+4]..test2.ml[2,15+5])
             Tpat_var \"f/283\"
-            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#1[aliased,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#0[global,many,portable,unyielding .. global,many,nonportable,unyielding]);imply(unique,uncontended)(modevar#1[aliased,contended .. unique,uncontended])
           expression (test2.ml[2,15+6]..test2.ml[2,15+24]) ghost
             Texp_function
             alloc_mode map_comonadic(regional_to_global)(modevar#2[global,many,portable,unyielding .. global,many,nonportable,unyielding]);id(modevar#3[aliased,contended .. unique,uncontended])
@@ -592,7 +592,7 @@ make sure we also handle that correctly in structures:
                     None
                 ]
             Tpat_var \"foo2/281\"
-            value_mode meet(local,once,nonportable,yielding)(modevar#5[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#6[aliased,contended .. unique,uncontended])
+            value_mode meet(local,once,nonportable,yielding)(modevar#5[global,many,portable,unyielding .. global,many,nonportable,unyielding]);imply(unique,uncontended)(modevar#6[aliased,contended .. unique,uncontended])
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_mode
@@ -641,7 +641,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Tpat_var \"foo3/282\"
-            value_mode meet(local,once,nonportable,yielding)(modevar#a[global,many,portable,unyielding .. global,many,nonportable,unyielding]);join(aliased,contended)(modevar#b[aliased,contended .. unique,uncontended])
+            value_mode global,many,portable,unyielding;imply(unique,contended)(modevar#b[aliased,contended .. unique,uncontended])
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_mode
@@ -660,7 +660,7 @@ make sure we also handle that correctly in structures:
                     []
                 ]
             Texp_tuple
-            alloc_mode meet(local,once,nonportable,yielding,map_comonadic(regional_to_global)(modevar#a[global,many,portable,unyielding .. global,many,nonportable,unyielding]));unique,uncontended
+            alloc_mode global,once,nonportable,yielding;unique,contended
             [
               Label: None
                 expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+24])
