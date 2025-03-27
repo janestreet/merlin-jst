@@ -1370,7 +1370,7 @@ let equal_unsafe_mode_crossing
       ~type_equal
       { unsafe_mod_bounds = mc1; unsafe_with_bounds = wb2 }
       umc2 =
-  Misc.Le_result.equal ~le:Mode.Crossing.le mc1 umc2.unsafe_mod_bounds
+  Misc_stdlib.Le_result.equal ~le:Mode.Crossing.le mc1 umc2.unsafe_mod_bounds
   && (match wb2, umc2.unsafe_with_bounds with
     | No_with_bounds, No_with_bounds -> true
     | No_with_bounds, With_bounds _ | With_bounds _, No_with_bounds -> false
