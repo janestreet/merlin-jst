@@ -931,21 +931,7 @@ let compare_mixed_block_element e1 e2 =
   | _, Vec128 -> 1
 
 let equal_mixed_product_shape r1 r2 = r1 == r2 ||
-<<<<<<< janestreet/merlin-jst:rae/minus9
-  (* Warning 9 alerts us if we add another field *)
-  let[@warning "+9"] { value_prefix_len = l1; flat_suffix = s1 } = r1
-  and                { value_prefix_len = l2; flat_suffix = s2 } = r2
-  in
-  l1 = l2 && array_equal equal_flat_element s1 s2
-||||||| ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
-  (* Warning 9 alerts us if we add another field *)
-  let[@warning "+9"] { value_prefix_len = l1; flat_suffix = s1 } = r1
-  and                { value_prefix_len = l2; flat_suffix = s2 } = r2
-  in
-  l1 = l2 && Misc.Stdlib.Array.equal equal_flat_element s1 s2
-=======
-  Misc.Stdlib.Array.equal equal_mixed_block_element r1 r2
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
+  array_equal equal_mixed_block_element r1 r2
 
 let equal_constructor_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Constructor_uniform_value, Constructor_uniform_value -> true

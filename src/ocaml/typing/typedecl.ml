@@ -2623,27 +2623,6 @@ let normalize_decl_jkinds env shapes decls =
   in
   Misc.Stdlib.List.fold_left_map2
     (fun env (id, original_decl, allow_any_crossing, decl) shape ->
-<<<<<<< janestreet/merlin-jst:rae/minus9
-      let decl =
-        normalize_decl_jkind env original_decl allow_any_crossing decl
-          (Pident id)
-      in
-      (* Add the decl with the normalized kind back to the environment, so that later
-        kinds don't have to normalize this kind if they mention this type in their
-        with-bounds *)
-      let env = add_type ~long_path:false ~check:false ~shape:shape id decl env in
-      env, (id, decl)
-||||||| ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
-      let decl =
-        normalize_decl_jkind env original_decl allow_any_crossing decl
-          (Pident id)
-      in
-      (* Add the decl with the normalized kind back to the environment, so that later
-        kinds don't have to normalize this kind if they mention this type in their
-        with-bounds *)
-      let env = add_type ~check:false ~shape:shape id decl env in
-      env, (id, decl)
-=======
        let decl =
          normalize_decl_jkind env original_decl allow_any_crossing decl
            (Pident id)
@@ -2651,9 +2630,8 @@ let normalize_decl_jkinds env shapes decls =
        (* Add the decl with the normalized kind back to the environment, so that later
           kinds don't have to normalize this kind if they mention this type in their
           with-bounds *)
-       let env = add_type ~check:false ~shape:shape id decl env in
+      let env = add_type ~long_path:false ~check:false ~shape:shape id decl env in
        env, (id, decl)
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
     )
     env
     decls
