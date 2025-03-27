@@ -40,6 +40,10 @@ let to_string_of_print print =
 module List = struct
   include List (* for references to Stdlib.List later in this file *)
 
+  let is_empty = function
+    | [] -> true
+    | _ :: _ -> false
+
   let map_option f l =
     let rec aux l acc =
       match l with
@@ -413,6 +417,14 @@ module Le_result = struct
   let is_equal = function
     | Equal -> true
     | Less | Not_le -> false
+
+  let less_or_equal ~le a b =
+    match le a b, le b a with
+    | true, true -> Equal
+    | true, false -> Less
+    | false, _ -> Not_le
+
+  let equal ~le a b = le a b && le b a
 end
 
 (*********************************************)

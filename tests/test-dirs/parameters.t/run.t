@@ -71,8 +71,14 @@ The following test is broken. It asks about [P] itself:
     val frob : t -> t
     val to_string : t -> string
   end"
-  "\"P\" is a builtin, no documentation is available"
-  "\"<internal>\" is a builtin, and it is therefore impossible to jump to its definition"
+  "A parameter module."
+  {
+    "file": "$TESTCASE_ROOT/p.mli",
+    "pos": {
+      "line": 1,
+      "col": 0
+    }
+  }
 
 But this one works. It asks for [P.t]:
 

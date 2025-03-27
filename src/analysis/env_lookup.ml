@@ -141,7 +141,9 @@ let by_longident (nss : Namespace.inferred list) ident env =
                 Namespace.packed_label_description =
               (* Try looking up in boxed namespace, and then fallback to unboxed if that
                  fails *)
-              try P (Env.find_label_by_name Legacy ident env)
+              try
+                (P (Env.find_label_by_name Legacy ident env)
+                  : Namespace.packed_label_description)
               with Not_found ->
                 P (Env.find_label_by_name Unboxed_product ident env)
             in

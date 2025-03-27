@@ -43,6 +43,10 @@ val to_string_of_print :
     return embedded newlines. *)
 
 module List : sig
+  val is_empty : 'a list -> bool
+  (** [is_empty l] is true if and only if [l] has no elements. It is equivalent to
+      [compare_length_with l 0 = 0].  *)
+
   val map_option : ('a -> 'b option) -> 'a list -> 'b list option
   val map3 : ('a -> 'b -> 'c -> 'd) -> 'a list -> 'b list -> 'c list -> 'd list
   val some_if_all_elements_are_some : 'a option list -> 'a list option
@@ -261,6 +265,10 @@ module Le_result : sig
 
   val is_le : t -> bool
   val is_equal : t -> bool
+
+  (* adaptors for structures that can only compare less-or-equal *)
+  val less_or_equal : le:('a -> 'a -> bool) -> 'a -> 'a -> t
+  val equal : le:('a -> 'a -> bool) -> 'a -> 'a -> bool
 end
 
 type (_, _) eq = Refl : ('a, 'a) eq

@@ -111,10 +111,23 @@ module Layout : sig
   end
 end
 
+module Mod_bounds : sig
+  type t = Types.Jkind_mod_bounds.t
+
+  val to_mode_crossing : t -> Mode.Crossing.t
+end
+
 module With_bounds : sig
   val debug_print_types : Format.formatter -> Types.with_bounds_types -> unit
 
   val debug_print : Format.formatter -> ('l * 'r) Types.with_bounds -> unit
+
+  val map_type_expr :
+    (Types.type_expr -> Types.type_expr) ->
+    ('l * 'r) Types.with_bounds ->
+    ('l * 'r) Types.with_bounds
+
+  val format : Format.formatter -> ('l * 'r) Types.with_bounds -> unit
 end
 
 (** A [jkind] is a full description of the runtime representation of values
@@ -335,8 +348,7 @@ module Builtin : sig
     why:History.immediate_or_null_creation_reason -> 'd Types.jkind
 
   (** Build a jkind of unboxed products, from a list of types with
-      their layouts. Errors if zero inputs are given. If only one input
-      is given, returns the result of calling [jkind_of_first_type].
+      their layouts. Errors if zero inputs are given.
 
       Precondition: both input lists are the same length.
 
@@ -346,7 +358,6 @@ module Builtin : sig
       The resulting jkind has quality [Best], because all the components of the product
       are represented in the with-bounds. *)
   val product :
-    jkind_of_first_type:(unit -> Types.jkind_l) ->
     why:History.product_creation_reason ->
     (Types.type_expr * Mode.Modality.Value.Const.t) list ->
     Sort.t Layout.t list ->
@@ -362,12 +373,9 @@ end
 (** Take an existing [t] and add an ability to cross across the nullability axis. *)
 val add_nullability_crossing : 'd Types.jkind -> 'd Types.jkind
 
-(** Forcibly change the mod-bounds of a [t] based on the mod-bounds of
-    [from].
-
-    Returns [Error ()] if [from] contains with-bounds. *)
-val unsafely_set_mod_bounds :
-  from:'d Types.jkind -> 'd Types.jkind -> ('d Types.jkind, unit) Result.t
+(** Forcibly change the mod- and with-bounds of a [t] based on the mod- and with-bounds of [from]. *)
+val unsafely_set_bounds :
+  from:'d Types.jkind -> 'd Types.jkind -> 'd Types.jkind
 
 (** Take an existing [jkind_l] and add some with-bounds. *)
 val add_with_bounds :
@@ -466,16 +474,14 @@ val of_type_decl_default :
 (** Choose an appropriate jkind for a boxed record type *)
 val for_boxed_record : Types.label_declaration list -> Types.jkind_l
 
-(** Choose an appropriate jkind for an unboxed record type. Uses
-    [jkind_of_first_type] only in the singleton case, where the jkind of the
-    unboxed record must match that of the single field. *)
-val for_unboxed_record :
-  jkind_of_first_type:(unit -> Types.jkind_l) ->
-  Types.label_declaration list ->
-  Types.jkind_l
+(** Choose an appropriate jkind for an unboxed record type. *)
+val for_unboxed_record : Types.label_declaration list -> Types.jkind_l
 
 (** Choose an appropriate jkind for a boxed variant type. *)
 val for_boxed_variant : Types.constructor_declaration list -> Types.jkind_l
+
+(** Choose an appropriate jkind for a boxed tuple type. *)
+val for_boxed_tuple : (string option * Types.type_expr) list -> Types.jkind_l
 
 (** The jkind of an arrow type. *)
 val for_arrow : Types.jkind_l
@@ -531,19 +537,13 @@ val get_layout : 'd Types.jkind -> Layout.Const.t option
 (** Gets the layout of a jkind, without looking through sort variables. *)
 val extract_layout : 'd Types.jkind -> Sort.t Layout.t
 
-(** This could be [Mode.monadic_comonadic], but redefining here makes the
-    upper-bound/lower-bound distinction more obvious. *)
-type modal_bounds =
-  { upper_bounds : Mode.Alloc.Comonadic.Const.t;
-    lower_bounds : Mode.Alloc.Monadic.Const.t
-  }
-
-(** Gets the maximum comonadic modes and the minimum monadic modes for types
-    of this jkind. *)
-val get_modal_bounds :
+(** Gets the mode crossing for types of this jkind. *)
+val get_mode_crossing :
   jkind_of_type:(Types.type_expr -> Types.jkind_l option) ->
   'd Types.jkind ->
-  modal_bounds
+  Mode.Crossing.t
+
+val to_unsafe_mode_crossing : Types.jkind_l -> Types.unsafe_mode_crossing
 
 val get_externality_upper_bound :
   jkind_of_type:(Types.type_expr -> Types.jkind_l option) ->
@@ -555,17 +555,32 @@ val get_externality_upper_bound :
 val set_externality_upper_bound :
   Types.jkind_r -> Jkind_axis.Externality.t -> Types.jkind_r
 
-val set_nullability_upper_bound :
-  Types.jkind_r -> Jkind_axis.Nullability.t -> Types.jkind_r
-
 (** Gets the nullability from a jkind. *)
 val get_nullability :
   jkind_of_type:(Types.type_expr -> Types.jkind_l option) ->
   'd Types.jkind ->
   Jkind_axis.Nullability.t
 
+(** Computes a jkind that is the same as the input but with an updated maximum
+    mode for the externality axis *)
+val set_nullability_upper_bound :
+  Types.jkind_r -> Jkind_axis.Nullability.t -> Types.jkind_r
+
 (** Sets the layout in a jkind. *)
 val set_layout : 'd Types.jkind -> Sort.t Layout.t -> 'd Types.jkind
+
+(** Change a jkind to be appropriate for a type that appears under a
+    modality. This means that the jkind will definitely cross the axes
+    modified by the modality, by setting the mod-bounds appropriately
+    and propagating the modality into any with-bounds. *)
+val apply_modality_l :
+  Mode.Modality.Value.Const.t -> (allowed * 'r) Types.jkind -> Types.jkind_l
+
+(** Change a jkind to be appropriate for an expectation of a type under
+    a modality. This means that the jkind's axes affected by the modality
+    will all be top. The with-bounds are left unchanged. *)
+val apply_modality_r :
+  Mode.Modality.Value.Const.t -> ('l * allowed) Types.jkind -> Types.jkind_r
 
 (** Extract out component jkinds from the product. Because there are no product
     jkinds, this is a bit of a lie: instead, this decomposes the layout but just

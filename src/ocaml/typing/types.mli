@@ -114,6 +114,10 @@ module Jkind_mod_bounds : sig
       [bounds] *)
   val set_max_in_set : t -> Jkind_axis.Axis_set.t -> t
 
+  (** [set_min_in_set bounds axes] sets all the axes in [axes] to their [min] within
+      [bounds] *)
+  val set_min_in_set : t -> Jkind_axis.Axis_set.t -> t
+
   (** [is_max_within_set bounds axes] returns whether or not all the axes in [axes] are
       [max] within [bounds] *)
   val is_max_within_set : t -> Jkind_axis.Axis_set.t -> bool
@@ -703,8 +707,9 @@ type type_declaration =
 and type_decl_kind = (label_declaration, label_declaration, constructor_declaration) type_kind
 
 and unsafe_mode_crossing =
-  { modal_upper_bounds : Mode.Alloc.Comonadic.Const.t;
-    modal_lower_bounds : Mode.Alloc.Monadic.Const.t }
+  { unsafe_mod_bounds : Mode.Crossing.t
+  ; unsafe_with_bounds : (allowed * disallowed) with_bounds
+  }
 
 and ('lbl, 'lbl_flat, 'cstr) type_kind =
     Type_abstract of type_origin
@@ -734,10 +739,11 @@ and tag = Ordinary of {src_index: int;  (* Unique name (per type) *)
 
 (* A mixed product contains a possibly-empty prefix of values followed by a
    non-empty suffix of "flat" elements. Intuitively, a flat element is one that
-   need not be scanned by the garbage collector.
-*)
-and flat_element =
-  | Imm
+   need not be scanned by the garbage collector. The front-end allows elements
+   to appear in any order in a record, and later stages of the compiler
+   re-arrange the block. *)
+and mixed_block_element =
+  | Value
   | Float_boxed
   (* A [Float_boxed] is a float that's stored flat but boxed upon projection. *)
   | Float64
@@ -747,11 +753,7 @@ and flat_element =
   | Vec128
   | Word
 
-and mixed_product_shape =
-  { value_prefix_len : int;
-    (* We use an array just so we can index into the middle. *)
-    flat_suffix : flat_element array;
-  }
+and mixed_product_shape = mixed_block_element array
 
 and type_origin =
     Definition
@@ -846,8 +848,8 @@ and constructor_arguments =
 
 val tys_of_constr_args : constructor_arguments -> type_expr list
 
-(* Returns the inner type, if unboxed. *)
-val find_unboxed_type : type_declaration -> type_expr option
+(* Returns the inner type and its modalities, if unboxed. *)
+val find_unboxed_type : type_declaration -> (type_expr * Mode.Modality.Value.Const.t) option
 
 type extension_constructor =
   {
@@ -1111,20 +1113,15 @@ val bound_value_identifiers: signature -> Ident.t list
 
 val signature_item_id : signature_item -> Ident.t
 
-type mixed_product_element =
-  | Value_prefix
-  | Flat_suffix of flat_element
-
-(** Raises if the int is out of bounds. *)
-val get_mixed_product_element :
-  mixed_product_shape -> int -> mixed_product_element
-
-val equal_flat_element : flat_element -> flat_element -> bool
-val compare_flat_element : flat_element -> flat_element -> int
-val flat_element_to_string : flat_element -> string
-val flat_element_to_lowercase_string : flat_element -> string
+val equal_mixed_block_element :
+  mixed_block_element -> mixed_block_element -> bool
+val compare_mixed_block_element :
+  mixed_block_element -> mixed_block_element -> int
+val mixed_block_element_to_string : mixed_block_element -> string
+val mixed_block_element_to_lowercase_string : mixed_block_element -> string
 
 val equal_unsafe_mode_crossing :
+  type_equal:(type_expr -> type_expr -> bool) ->
   unsafe_mode_crossing -> unsafe_mode_crossing -> bool
 
 (**** Utilities for backtracking ****)

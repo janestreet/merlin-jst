@@ -121,9 +121,12 @@ let may_map f x = Option.map ~f x
 
 let remove_file filename =
   try
-    if Sys.is_regular_file filename
+    (* merge5: Partial revert of upstream PR 11412, to allow building
+       with OCaml 4.14 (which does not have is_regular_file *)
+    if Sys.file_exists filename
     then Sys.remove filename
-  with Sys_error _msg -> ()
+  with Sys_error _msg ->
+    ()
 
 let rec split_path_and_prepend path acc =
   match Filename.dirname path with

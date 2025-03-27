@@ -200,12 +200,12 @@
       {
         "file": "stdlib/either.mli",
         "start": {
-          "line": 88,
+          "line": 98,
           "col": 0
         },
         "end": {
-          "line": 89,
-          "col": 73
+          "line": 100,
+          "col": 75
         },
         "name": "Either.map",
         "type": "left:('a1 -> 'a2) ->

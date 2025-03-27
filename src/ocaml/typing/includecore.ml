@@ -56,20 +56,8 @@ type mmodes =
    there, too. *)
 let right_mode_cross_jkind env jkind mode =
   let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
-  let Jkind.{ upper_bounds; lower_bounds } =
-    Jkind.get_modal_bounds ~jkind_of_type jkind
-  in
-  let upper_bounds =
-    Alloc.Const.merge
-      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
-  in
-  let upper_bounds = Const.alloc_as_value upper_bounds in
-  let lower_bounds =
-    Alloc.Const.merge
-      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
-  in
-  let lower_bounds = Const.alloc_as_value lower_bounds in
-  Value.imply upper_bounds (Value.join_const lower_bounds mode)
+  let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
+  Crossing.apply_right crossing mode
 
 let right_mode_cross env ty mode =
   if not (Ctype.is_principal ty) then mode else
@@ -78,20 +66,8 @@ let right_mode_cross env ty mode =
 
 let left_mode_cross_jkind env jkind mode =
   let jkind_of_type = Ctype.type_jkind_purely_if_principal env in
-  let Jkind.{ upper_bounds; lower_bounds } =
-    Jkind.get_modal_bounds ~jkind_of_type jkind
-  in
-  let upper_bounds =
-    Alloc.Const.merge
-      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
-  in
-  let upper_bounds = Const.alloc_as_value upper_bounds in
-  let lower_bounds =
-    Alloc.Const.merge
-      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
-  in
-  let lower_bounds = Const.alloc_as_value lower_bounds in
-  Value.subtract lower_bounds (Value.meet_const upper_bounds mode)
+  let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
+  Crossing.apply_left crossing mode
 
 let left_mode_cross env ty mode=
   if not (Ctype.is_principal ty) then mode else
@@ -338,8 +314,7 @@ type variant_change =
 
 type unsafe_mode_crossing_mismatch =
   | Mode_crossing_only_on of position
-  | Mode_crossing_not_equal of unsafe_mode_crossing * unsafe_mode_crossing
-
+  | Bounds_not_equal of unsafe_mode_crossing * unsafe_mode_crossing
 
 type type_mismatch =
   | Arity
@@ -642,6 +617,11 @@ let report_kind_mismatch first second ppf (kind1, kind2) =
     second
     (kind_to_string kind2)
 
+let print_unsafe_mode_crossing ppf umc =
+  Format.fprintf ppf "mod %a@ %a"
+    Mode.Crossing.print umc.unsafe_mod_bounds
+    Jkind.With_bounds.format umc.unsafe_with_bounds
+
 let report_unsafe_mode_crossing_mismatch first second ppf e =
   let pr fmt = Format.fprintf ppf fmt in
   match e with
@@ -649,37 +629,15 @@ let report_unsafe_mode_crossing_mismatch first second ppf e =
     pr "%s has [%@%@unsafe_allow_any_mode_crossing], but %s does not"
       (choose ord first second)
       (choose_other ord first second)
-  | Mode_crossing_not_equal (first_mb, second_mb) ->
+  | Bounds_not_equal (first_umc, second_umc) ->
     (* CR layouts v2.8: It'd be nice to specifically highlight the offending axis,
        rather than printing all axes here. *)
-    let umc_to_mod_bound_list
-          { modal_upper_bounds = { areality; linearity; portability; yielding };
-            modal_lower_bounds = { uniqueness; contention } }
-      =
-      let value_for_axis (type a) (module Ax : Mode_intf.Lattice with type t = a) (ax : a) =
-        if Ax.equal Ax.max ax
-        then None
-        else Some (Format.asprintf "%a" Ax.print ax)
-      in
-      List.filter_map Fun.id
-        [ value_for_axis (module Mode.Locality.Const) areality
-        ; value_for_axis (module Mode.Linearity.Const) linearity
-        ; value_for_axis (module Mode.Portability.Const) portability
-        ; value_for_axis (module Mode.Yielding.Const) yielding
-        ; value_for_axis (module Mode.Uniqueness.Const) uniqueness
-        ; value_for_axis (module Mode.Contention.Const) contention
-        ]
-    in
     pr "Both specify [%@%@unsafe_allow_any_mode_crossing], but their \
-        mod-bounds are not equal:@ \
-        %s has mod-bounds:@ @[<h 4>%a@]@ \
-        but %s has mod-bounds:@ @[<h 4>%a@]"
-      first
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space Format.pp_print_string)
-      (umc_to_mod_bound_list first_mb)
-      second
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space Format.pp_print_string)
-      (umc_to_mod_bound_list second_mb)
+        bounds are not equal@,\
+        @[%s has:@ %a@]@ \
+        @[but %s has:@ %a@]"
+      first print_unsafe_mode_crossing first_umc
+      second print_unsafe_mode_crossing second_umc
 
 let report_type_mismatch first second decl env ppf err =
   let pr fmt = Format.fprintf ppf fmt in
@@ -731,23 +689,25 @@ let report_type_mismatch first second decl env ppf err =
   | Jkind v ->
       Jkind.Violation.report_with_name ~name:first ppf v
   | Unsafe_mode_crossing mismatch ->
-    pr "They have different unsafe mode crossing behavior:@,@[<hov 2>%a@]"
+    pr "They have different unsafe mode crossing behavior:@,@[<v 2>%a@]"
       (fun ppf (first, second, mismatch) ->
          report_unsafe_mode_crossing_mismatch first second ppf mismatch)
       (first, second, mismatch)
 
-let compare_unsafe_mode_crossing umc1 umc2 =
+let compare_unsafe_mode_crossing ~env umc1 umc2 =
   match umc1, umc2 with
   | None, None -> None
   | Some _, None -> Some (Unsafe_mode_crossing (Mode_crossing_only_on First))
   | None, Some _ -> Some (Unsafe_mode_crossing (Mode_crossing_only_on Second))
   | Some umc1, Some umc2 ->
-    if equal_unsafe_mode_crossing umc1 umc2
+    if equal_unsafe_mode_crossing
+         ~type_equal:(Ctype.type_equal env)
+         umc1 umc2
     then None
     else
       Some (
         Unsafe_mode_crossing (
-          Mode_crossing_not_equal (umc1, umc2)))
+          Bounds_not_equal (umc1, umc2)))
 
 module Record_diffing = struct
 
@@ -878,10 +838,9 @@ module Record_diffing = struct
       Some (diffing loc env params1 params2 l r)
 
   let find_mismatch_in_mixed_record_representations
-      ({ value_prefix_len = v1; flat_suffix = s1 } : mixed_product_shape)
-      ({ value_prefix_len = v2; flat_suffix = s2 } : mixed_product_shape)
+      (s1 : mixed_product_shape) (s2 : mixed_product_shape)
     =
-    if v1 = v2 then None
+    if s1 = s2 then None
     else
       let has_float_boxed_on_read fields =
         Array.exists (function
@@ -1491,18 +1450,18 @@ let type_declarations ?(equality = false) ~loc env ~mark name
               cstrs2
               rep1
               rep2)
-          (fun () -> compare_unsafe_mode_crossing umc1 umc2)
+          (fun () -> compare_unsafe_mode_crossing ~env umc1 umc2)
       end
     | (Type_record(labels1,rep1,umc1), Type_record(labels2,rep2,umc2)) -> begin
         Misc_stdlib.Option.first_some
           (mark_and_compare_records Legacy labels1 rep1 labels2 rep2)
-          (fun () -> compare_unsafe_mode_crossing umc1 umc2)
+          (fun () -> compare_unsafe_mode_crossing ~env umc1 umc2)
       end
     | (Type_record_unboxed_product(labels1,rep1,umc1),
        Type_record_unboxed_product(labels2,rep2,umc2)) -> begin
         Misc_stdlib.Option.first_some
           (mark_and_compare_records Unboxed_product labels1 rep1 labels2 rep2)
-          (fun () -> compare_unsafe_mode_crossing umc1 umc2)
+          (fun () -> compare_unsafe_mode_crossing ~env umc1 umc2)
       end
     | (Type_open, Type_open) -> None
     | (_, _) -> Some (Kind (of_kind decl1.type_kind, of_kind decl2.type_kind))
