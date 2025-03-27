@@ -142,6 +142,61 @@ module Jkind_mod_bounds = struct
       nullability;
     }
 
+  let[@inline] set_min_in_set t min_axes =
+    let open Jkind_axis.Axis_set in
+    (* a little optimization *)
+    if is_empty min_axes then t else
+    let locality =
+      if mem min_axes (Modal (Comonadic Areality))
+      then Locality.min
+      else t.locality
+    in
+    let linearity =
+      if mem min_axes (Modal (Comonadic Linearity))
+      then Linearity.min
+      else t.linearity
+    in
+    let uniqueness =
+      if mem min_axes (Modal (Monadic Uniqueness))
+      then Uniqueness.min
+      else t.uniqueness
+    in
+    let portability =
+      if mem min_axes (Modal (Comonadic Portability))
+      then Portability.min
+      else t.portability
+    in
+    let contention =
+      if mem min_axes (Modal (Monadic Contention))
+      then Contention.min
+      else t.contention
+    in
+    let yielding =
+      if mem min_axes (Modal (Comonadic Yielding))
+      then Yielding.min
+      else t.yielding
+    in
+    let externality =
+      if mem min_axes (Nonmodal Externality)
+      then Externality.min
+      else t.externality
+    in
+    let nullability =
+      if mem min_axes (Nonmodal Nullability)
+      then Nullability.min
+      else t.nullability
+    in
+    {
+      locality;
+      linearity;
+      uniqueness;
+      portability;
+      contention;
+      yielding;
+      externality;
+      nullability;
+    }
+
   let[@inline] is_max_within_set t axes =
     let open Jkind_axis.Axis_set in
     (not (mem axes (Modal (Comonadic Areality))) ||
@@ -482,8 +537,9 @@ and type_decl_kind =
   (label_declaration, label_declaration, constructor_declaration) type_kind
 
 and unsafe_mode_crossing =
-  { modal_upper_bounds : Mode.Alloc.Comonadic.Const.t;
-    modal_lower_bounds : Mode.Alloc.Monadic.Const.t }
+  { unsafe_mod_bounds : Mode.Crossing.t
+  ; unsafe_with_bounds : (allowed * disallowed) with_bounds
+  }
 
 and ('lbl, 'lbl_flat, 'cstr) type_kind =
     Type_abstract of type_origin
@@ -505,9 +561,8 @@ and type_origin =
   | Rec_check_regularity
   | Existential of string
 
-
-and flat_element =
-  | Imm
+and mixed_block_element =
+  | Value
   | Float_boxed
   | Float64
   | Float32
@@ -516,10 +571,7 @@ and flat_element =
   | Vec128
   | Word
 
-and mixed_product_shape =
-  { value_prefix_len : int;
-    flat_suffix : flat_element array;
-  }
+and mixed_product_shape = mixed_block_element array
 
 and record_representation =
   | Record_unboxed
@@ -850,21 +902,21 @@ let compare_tag t1 t2 =
   | Extension _, Null -> -1
   | Null, Extension _ -> 1
 
-let equal_flat_element e1 e2 =
+let equal_mixed_block_element e1 e2 =
   match e1, e2 with
-  | Imm, Imm | Float64, Float64 | Float32, Float32 | Float_boxed, Float_boxed
+  | Value, Value | Float64, Float64 | Float32, Float32 | Float_boxed, Float_boxed
   | Word, Word | Bits32, Bits32 | Bits64, Bits64 | Vec128, Vec128
     -> true
-  | (Imm | Float64 | Float32 | Float_boxed | Word | Bits32 | Bits64 | Vec128), _
+  | (Value | Float64 | Float32 | Float_boxed | Word | Bits32 | Bits64 | Vec128), _
     -> false
 
-let compare_flat_element e1 e2 =
+let compare_mixed_block_element e1 e2 =
   match e1, e2 with
-  | Imm, Imm | Float_boxed, Float_boxed | Float64, Float64 | Float32, Float32
+  | Value, Value | Float_boxed, Float_boxed | Float64, Float64 | Float32, Float32
   | Word, Word | Bits32, Bits32 | Bits64, Bits64 | Vec128, Vec128
     -> 0
-  | Imm, _ -> -1
-  | _, Imm -> 1
+  | Value, _ -> -1
+  | _, Value -> 1
   | Float_boxed, _ -> -1
   | _, Float_boxed -> 1
   | Float64, _ -> -1
@@ -879,11 +931,21 @@ let compare_flat_element e1 e2 =
   | _, Vec128 -> 1
 
 let equal_mixed_product_shape r1 r2 = r1 == r2 ||
+<<<<<<< janestreet/merlin-jst:rae/minus9
   (* Warning 9 alerts us if we add another field *)
   let[@warning "+9"] { value_prefix_len = l1; flat_suffix = s1 } = r1
   and                { value_prefix_len = l2; flat_suffix = s2 } = r2
   in
   l1 = l2 && array_equal equal_flat_element s1 s2
+||||||| ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
+  (* Warning 9 alerts us if we add another field *)
+  let[@warning "+9"] { value_prefix_len = l1; flat_suffix = s1 } = r1
+  and                { value_prefix_len = l2; flat_suffix = s2 } = r2
+  in
+  l1 = l2 && Misc.Stdlib.Array.equal equal_flat_element s1 s2
+=======
+  Misc.Stdlib.Array.equal equal_mixed_block_element r1 r2
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
 
 let equal_constructor_representation r1 r2 = r1 == r2 || match r1, r2 with
   | Constructor_uniform_value, Constructor_uniform_value -> true
@@ -975,13 +1037,14 @@ let record_form_to_string (type rep) (record_form : rep record_form) =
 
 let find_unboxed_type decl =
   match decl.type_kind with
-    Type_record ([{ld_type = arg; _}], Record_unboxed, _)
-  | Type_record ([{ld_type = arg; _}], Record_inlined (_, _, Variant_unboxed), _)
+    Type_record ([{ld_type = arg; ld_modalities = ms; _}], Record_unboxed, _)
+  | Type_record
+      ([{ld_type = arg; ld_modalities = ms; _ }], Record_inlined (_, _, Variant_unboxed), _)
   | Type_record_unboxed_product
-                ([{ld_type = arg; _}], Record_unboxed_product, _)
-  | Type_variant ([{cd_args = Cstr_tuple [{ca_type = arg; _}]; _}], Variant_unboxed, _)
-  | Type_variant ([{cd_args = Cstr_record [{ld_type = arg; _}]; _}], Variant_unboxed, _) ->
-    Some arg
+      ([{ld_type = arg; ld_modalities = ms; _ }], Record_unboxed_product, _)
+  | Type_variant ([{cd_args = Cstr_tuple [{ca_type = arg; ca_modalities = ms; _}]; _}], Variant_unboxed, _)
+  | Type_variant ([{cd_args = Cstr_record [{ld_type = arg; ld_modalities = ms; _}]; _}], Variant_unboxed, _) ->
+    Some (arg, ms)
   | Type_record (_, ( Record_inlined _ | Record_unboxed
                     | Record_boxed _ | Record_float | Record_ufloat
                     | Record_mixed _), _)
@@ -1022,17 +1085,8 @@ let signature_item_id = function
   | Sig_class_type (id, _, _, _)
     -> id
 
-type mixed_product_element =
-  | Value_prefix
-  | Flat_suffix of flat_element
-
-let get_mixed_product_element { value_prefix_len; flat_suffix } i =
-  if i < 0 then Misc.fatal_errorf "Negative index: %d" i;
-  if i < value_prefix_len then Value_prefix
-  else Flat_suffix flat_suffix.(i - value_prefix_len)
-
-let flat_element_to_string = function
-  | Imm -> "Imm"
+let mixed_block_element_to_string = function
+  | Value -> "Value"
   | Float_boxed -> "Float_boxed"
   | Float32 -> "Float32"
   | Float64 -> "Float64"
@@ -1041,8 +1095,8 @@ let flat_element_to_string = function
   | Vec128 -> "Vec128"
   | Word -> "Word"
 
-let flat_element_to_lowercase_string = function
-  | Imm -> "imm"
+let mixed_block_element_to_lowercase_string = function
+  | Value -> "value"
   | Float_boxed -> "float"
   | Float32 -> "float32"
   | Float64 -> "float64"
@@ -1050,16 +1104,6 @@ let flat_element_to_lowercase_string = function
   | Bits64 -> "bits64"
   | Vec128 -> "vec128"
   | Word -> "word"
-
-let equal_unsafe_mode_crossing umc1 umc2 =
-    let { modal_upper_bounds = mub1;
-          modal_lower_bounds = mlb1 } = umc1 in
-    let { modal_upper_bounds = mub2;
-          modal_lower_bounds = mlb2 } = umc2 in
-    Mode.Alloc.Comonadic.Const.le mub1 mub2
-    && Mode.Alloc.Comonadic.Const.le mub2 mub1
-    && Mode.Alloc.Monadic.Const.le mlb1 mlb2
-    && Mode.Alloc.Monadic.Const.le mlb2 mlb1
 
 (**** Definitions for backtracking ****)
 
@@ -1296,8 +1340,16 @@ module With_bounds_types : sig
   val update : type_expr -> (info option -> info option) -> t -> t
   val find_opt : type_expr -> t -> info option
   val for_all : (type_expr -> info -> bool) -> t -> bool
+  val exists : (type_expr -> info -> bool) -> t -> bool
 end = struct
   module M = Map.Make(struct
+      (* CR layouts v2.8: A [Map] with mutable values (of which [type_expr] is one) as
+         keys is deeply problematic. And in fact we never actually use this map structure
+         for anything other than deduplication (indeed we can't, because of its
+         best-effort nature). Instead of this structure, we should store the types inside
+         of with-bounds as a (morally immutable) array, and write a [deduplicate]
+         function, private to [Jkind], which uses this map structure to deduplicate the
+         with-bounds, but only during construction and after normalization. *)
       type t = type_expr
 
       let compare = best_effort_compare_type_expr
@@ -1321,11 +1373,37 @@ end = struct
   let update te f t = update te f (to_map t) |> of_map
   let find_opt te t = find_opt te (to_map t)
   let for_all f t = for_all f (to_map t)
+  let exists f t = exists f (to_map t)
   let map_with_key f t =
     fold (fun key value acc ->
       let key, value = f key value in
       M.add key value acc) (to_map t) M.empty |> of_map
 end
+
+let equal_unsafe_mode_crossing
+      ~type_equal
+      { unsafe_mod_bounds = mc1; unsafe_with_bounds = wb2 }
+      umc2 =
+  Misc.Le_result.equal ~le:Mode.Crossing.le mc1 umc2.unsafe_mod_bounds
+  && (match wb2, umc2.unsafe_with_bounds with
+    | No_with_bounds, No_with_bounds -> true
+    | No_with_bounds, With_bounds _ | With_bounds _, No_with_bounds -> false
+    | With_bounds wb1, With_bounds wb2 ->
+      (* It's tough (impossible?) to do better than a double subset check here because of
+         the fact that these maps are best-effort. But in practice these will usually not
+         be huge, and the attribute triggering this check is (hopefully) rare. *)
+      With_bounds_types.for_all
+        (fun ty1 _info ->
+           With_bounds_types.exists
+             (fun ty2 _info -> type_equal ty1 ty2)
+             wb2)
+        wb1
+      && With_bounds_types.for_all
+        (fun ty2 _info ->
+           With_bounds_types.exists
+             (fun ty1 _info -> type_equal ty1 ty2)
+             wb1)
+        wb2)
 
 (* Constructor and accessors for [row_desc] *)
 

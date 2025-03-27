@@ -71,14 +71,6 @@ type mixed_product_violation =
         max_value_prefix_len : int;
         mixed_product_kind : Mixed_product_kind.t;
       }
-  | Flat_field_expected of
-      { boxed_lbl : Ident.t;
-        non_value_lbl : Ident.t;
-      }
-  | Flat_constructor_arg_expected of
-      { boxed_arg : type_expr;
-        non_value_arg : type_expr;
-      }
   | Insufficient_level of
       { required_layouts_level : Language_extension.maturity;
         mixed_product_kind : Mixed_product_kind.t;
@@ -154,7 +146,6 @@ type error =
       }
   | Non_abstract_reexport of Path.t
   | Unsafe_mode_crossing_on_invalid_type_kind
-  | Unsafe_mode_crossing_with_with_bounds
   | Illegal_baggage of jkind_l
   | No_unboxed_version of Path.t
 
@@ -1596,7 +1587,7 @@ module Element_repr = struct
       | Vec128, _ -> Unboxed_element Vec128
       | Void, _ -> Element_without_runtime_component { loc; ty }
 
-  let unboxed_to_flat : unboxed_element -> flat_element = function
+  let unboxed_to_flat : unboxed_element -> mixed_block_element = function
     | Float64 -> Float64
     | Float32 -> Float32
     | Bits32 -> Bits32
@@ -1604,61 +1595,32 @@ module Element_repr = struct
     | Vec128 -> Vec128
     | Word -> Word
 
-  let to_flat : _ -> flat_element option = function
-    | Imm_element -> Some Imm
-    | Unboxed_element unboxed -> Some (unboxed_to_flat unboxed)
-    (* CR layouts v7: Supporting void with mixed blocks will require
-       updating some assumptions in lambda, e.g. the translation
-       of [value_prefix_len]. *)
-    | Element_without_runtime_component { loc; ty } ->
-        raise (Error (loc, Invalid_jkind_in_block (ty, Base Void,
-                                                   Mixed_product)))
-    | Float_element | Value_element -> None
-
-  (* Compute the [flat_suffix] field of a mixed block record kind. *)
-  let mixed_product_flat_suffix ts ~on_flat_field_expected =
-    let rec find_flat_suffix ts =
-      match ts with
-      | [] -> None
-      | (t1, t1_extra) :: ts ->
-          match t1 with
-          | Float_element | Imm_element | Value_element -> find_flat_suffix ts
-          | Unboxed_element unboxed ->
-              let suffix =
-                List.map (fun (t2, t2_extra) ->
-                    match to_flat t2 with
-                    | Some flat -> flat
-                    | None ->
-                        on_flat_field_expected
-                          ~non_value:t1_extra
-                          ~boxed:t2_extra)
-                  ts
-              in
-              Some (unboxed_to_flat unboxed :: suffix)
-          (* CR layouts v7: Supporting void with mixed blocks will require
-             updating some assumptions in lambda, e.g. the translation
-             of [value_prefix_len]. *)
-          | Element_without_runtime_component { loc; ty } -> begin
-              match find_flat_suffix ts with
-              | None -> None
-              | Some _ ->
-                  raise (Error (loc,
-                    Invalid_jkind_in_block (ty, Base Void,
-                                            Mixed_product)))
-            end
+  let mixed_product_shape loc ts kind =
+    let to_shape_element (t,ty) : mixed_block_element =
+      match t with
+      | Unboxed_element unboxed -> unboxed_to_flat unboxed
+      | Float_element | Imm_element | Value_element -> Value
+      | Element_without_runtime_component _ ->
+        (* CR layouts v7: Supporting void with mixed blocks will require
+           updating some assumptions in lambda, e.g. the translation of
+           [value_prefix_len]. *)
+        raise (Error (loc,
+                      Invalid_jkind_in_block (ty, Base Void,
+                                              Mixed_product)))
     in
-    match find_flat_suffix ts with
-    | None -> None
-    | Some flat_suffix -> Some (Array.of_list flat_suffix)
-
-  let mixed_product_shape loc ts kind ~on_flat_field_expected =
-    let flat_suffix = mixed_product_flat_suffix ts ~on_flat_field_expected in
-    match flat_suffix with
-    | None -> None
-    | Some flat_suffix ->
-        let value_prefix_len = List.length ts - Array.length flat_suffix in
-        assert_mixed_product_support loc kind ~value_prefix_len;
-        Some { value_prefix_len; flat_suffix }
+    let unboxed_elements =
+      List.fold_left (fun acc (t,_) ->
+        match t with
+        | Unboxed_element _ -> acc+1
+        | Element_without_runtime_component _
+        | Float_element | Imm_element | Value_element -> acc) 0 ts
+    in
+    let mixed = unboxed_elements >= 1 in
+    if not mixed then None else begin
+      assert_mixed_product_support loc kind
+        ~value_prefix_len:(List.length ts - unboxed_elements);
+      Some (List.map to_shape_element ts |> Array.of_list)
+    end
 end
 
 let update_constructor_representation
@@ -1675,32 +1637,15 @@ let update_constructor_representation
             arg_types_and_modes arg_jkinds
         in
         Element_repr.mixed_product_shape loc arg_reprs Cstr_tuple
-          ~on_flat_field_expected:(fun ~non_value ~boxed ->
-              let violation =
-                Flat_constructor_arg_expected
-                  { non_value_arg = non_value;
-                    boxed_arg = boxed;
-                  }
-              in
-              raise (Error (loc, Illegal_mixed_product violation)))
     | Cstr_record fields ->
         let arg_reprs =
           List.map2 (fun ld arg_jkind ->
               let kloc = Inlined_record { unboxed = false } in
               Element_repr.classify env loc kloc ld.Types.ld_type arg_jkind,
-              ld)
+              ld.Types.ld_type)
             fields arg_jkinds
         in
         Element_repr.mixed_product_shape loc arg_reprs Cstr_record
-          ~on_flat_field_expected:(fun ~non_value ~boxed ->
-            let violation =
-              Flat_field_expected
-                { non_value_lbl = non_value.Types.ld_id;
-                  boxed_lbl = boxed.Types.ld_id;
-                }
-            in
-            raise (Error (non_value.Types.ld_loc,
-                          Illegal_mixed_product violation)))
   in
   match flat_suffix with
   | None -> Constructor_uniform_value
@@ -1754,7 +1699,10 @@ let rec update_decl_jkind env dpath decl =
   let update_record_kind loc lbls rep =
     match lbls, rep with
     | [Types.{ld_type} as lbl], Record_unboxed ->
-      let jkind = Ctype.type_jkind env ld_type in
+      let jkind =
+        Ctype.type_jkind env ld_type |>
+        Jkind.apply_modality_l lbl.ld_modalities
+      in
       (* This next line is guaranteed to be OK because of a call to
          [check_representable] *)
       let sort = Jkind.sort_of_jkind jkind in
@@ -1770,7 +1718,7 @@ let rec update_decl_jkind env dpath decl =
           (fun lbl jkind ->
              let kloc = Record { unboxed = false } in
              Element_repr.classify env loc kloc lbl.Types.ld_type jkind,
-             lbl)
+             lbl.Types.ld_type)
           lbls jkinds
       in
       let repr_summary =
@@ -1797,7 +1745,7 @@ let rec update_decl_jkind env dpath decl =
         | { values = false; imms = false; floats = true;
             float64s = true; non_float64_unboxed_fields = false; }
           [@warning "+9"] ->
-            let flat_suffix =
+            let shape =
               List.map
                 (fun ((repr : Element_repr.t), _lbl) ->
                   match repr with
@@ -1813,7 +1761,7 @@ let rec update_decl_jkind env dpath decl =
               |> Array.of_list
             in
             assert_mixed_product_support loc Record ~value_prefix_len:0;
-            Record_mixed { value_prefix_len = 0; flat_suffix }
+            Record_mixed shape
         (* For other mixed blocks, float fields are stored as flat
            only when they're unboxed.
         *)
@@ -1822,15 +1770,6 @@ let rec update_decl_jkind env dpath decl =
         | { non_float64_unboxed_fields = true } ->
             let shape =
               Element_repr.mixed_product_shape loc reprs Record
-                ~on_flat_field_expected:(fun ~non_value ~boxed ->
-                  let violation =
-                    Flat_field_expected
-                      { non_value_lbl = non_value.Types.ld_id;
-                        boxed_lbl = boxed.Types.ld_id;
-                      }
-                  in
-                  raise (Error (boxed.Types.ld_loc,
-                                Illegal_mixed_product violation)))
             in
             let shape =
               match shape with
@@ -1973,16 +1912,7 @@ let rec update_decl_jkind env dpath decl =
               {lbl with ld_sort}
             ) lbls
           in
-          let type_jkind =
-            Jkind.for_unboxed_record
-              ~jkind_of_first_type:(fun () ->
-                match lbls with
-                | [lbl] -> Ctype.type_jkind env lbl.ld_type
-                | [] | _ :: _ :: _ -> Misc.fatal_error
-                         "[for_unboxed_record] called [jkind_of_first_type] \
-                         for non-singleton record.")
-              lbls
-          in
+          let type_jkind = Jkind.for_unboxed_record lbls in
           (* See Note [Quality of jkinds during inference] for more information about when we
              mark jkinds as best *)
           let type_jkind = Jkind.mark_best type_jkind in
@@ -2637,16 +2567,16 @@ let normalize_decl_jkinds env shapes decls =
       (* If the jkind has changed, check that it is a subjkind of the original jkind
         that we computed, either from a user-written annotation or as a dummy jkind.
 
-        (see Note [Default jkinds in transl_declaration]) *)
+         (see Note [Default jkinds in transl_declaration]) *)
       (* CR layouts v2.8: it almost definitely has changed, but also we probably trust
-        the new jkind (we really only want this check here to check against the
-        user-written annotation). We might be able to do a better job here and save
-        some work. *)
+         the new jkind (we really only want this check here to check against the
+         user-written annotation). We might be able to do a better job here and save
+         some work. *)
       let jkind_of_type ty = Some (Ctype.type_jkind_purely env ty) in
       let type_equal = Ctype.type_equal env in
       match
         (* CR layouts v2.8: Consider making a function that doesn't compute
-          histories for this use-case, which doesn't need it. *)
+           histories for this use-case, which doesn't need it. *)
         Jkind.sub_jkind_l
           ~type_equal
           ~jkind_of_type
@@ -2656,26 +2586,15 @@ let normalize_decl_jkinds env shapes decls =
       with
       | Ok _ ->
         if allow_any_crossing then
-          (* If the user is asking us to allow any crossing, we use the modal bounds from
-              the annotation rather than the modal bounds inferred from the type_kind.
-              However, we /only/ take the modal bounds, not the layout - because we still
-              want to be able to eg locally use a type declared as layout [any] as [value]
-              if that's its actual layout! *)
+          (* If the user is asking us to allow any crossing, we use the mod- and
+             with-bounds from the annotation rather than the modal bounds inferred from
+             the type_kind. However, we /only/ take the bounds, not the layout - because
+             we still want to be able to eg locally use a type declared as layout [any] as
+             [value] if that's its actual layout! *)
           let type_jkind =
-            match
-              Jkind.unsafely_set_mod_bounds
-                ~from:original_decl.type_jkind
-                decl.type_jkind
-            with
-            | Ok jkind -> jkind
-            | Error () ->
-              raise(Error(decl.type_loc, Unsafe_mode_crossing_with_with_bounds))
+            Jkind.unsafely_set_bounds ~from:original_decl.type_jkind decl.type_jkind
           in
-          let bounds = Jkind.get_modal_bounds ~jkind_of_type type_jkind in
-          let umc =
-            Some { modal_upper_bounds = bounds.upper_bounds
-                  ; modal_lower_bounds = bounds.lower_bounds }
-          in
+          let umc = Some (Jkind.to_unsafe_mode_crossing type_jkind) in
           let type_kind =
             match decl.type_kind with
             | Type_abstract _ | Type_open -> assert false (* Checked above *)
@@ -2704,6 +2623,7 @@ let normalize_decl_jkinds env shapes decls =
   in
   Misc.Stdlib.List.fold_left_map2
     (fun env (id, original_decl, allow_any_crossing, decl) shape ->
+<<<<<<< janestreet/merlin-jst:rae/minus9
       let decl =
         normalize_decl_jkind env original_decl allow_any_crossing decl
           (Pident id)
@@ -2713,6 +2633,27 @@ let normalize_decl_jkinds env shapes decls =
         with-bounds *)
       let env = add_type ~long_path:false ~check:false ~shape:shape id decl env in
       env, (id, decl)
+||||||| ocaml-flambda/flambda-backend:dc108ccc92da9f9ded43ff047d8dc27a42e2079f
+      let decl =
+        normalize_decl_jkind env original_decl allow_any_crossing decl
+          (Pident id)
+      in
+      (* Add the decl with the normalized kind back to the environment, so that later
+        kinds don't have to normalize this kind if they mention this type in their
+        with-bounds *)
+      let env = add_type ~check:false ~shape:shape id decl env in
+      env, (id, decl)
+=======
+       let decl =
+         normalize_decl_jkind env original_decl allow_any_crossing decl
+           (Pident id)
+       in
+       (* Add the decl with the normalized kind back to the environment, so that later
+          kinds don't have to normalize this kind if they mention this type in their
+          with-bounds *)
+       let env = add_type ~check:false ~shape:shape id decl env in
+       env, (id, decl)
+>>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
     )
     env
     decls
@@ -4557,25 +4498,13 @@ let report_error ppf = function
       struct_desc
   | Illegal_mixed_product error -> begin
       match error with
-      | Flat_field_expected { boxed_lbl; non_value_lbl } ->
-          fprintf ppf
-            "@[Expected all flat fields after non-value field, %a,@]@,@ \
-             @[but found boxed field, %a.@]"
-            Style.inline_code (Ident.name non_value_lbl)
-            Style.inline_code (Ident.name boxed_lbl)
-      | Flat_constructor_arg_expected { boxed_arg; non_value_arg } ->
-          fprintf ppf
-            "@[Expected all flat constructor arguments after non-value \
-             argument, %a,@]@,@ @[but found boxed argument, %a.@]"
-            (Style.as_inline_code Printtyp.type_expr) non_value_arg
-            (Style.as_inline_code Printtyp.type_expr) boxed_arg
       | Runtime_support_not_enabled mixed_product_kind ->
           fprintf ppf
             "@[This OCaml runtime doesn't support mixed %s.@]"
             (Mixed_product_kind.to_plural_string mixed_product_kind)
       | Extension_constructor ->
           fprintf ppf
-            "@[Extensible types can't have fields of unboxed type. Consider \
+            "@[Extensible types can't have fields of unboxed type.@ Consider \
              wrapping the unboxed fields in a record.@]"
       | Value_prefix_too_long
           { value_prefix_len; max_value_prefix_len; mixed_product_kind } ->
@@ -4682,10 +4611,6 @@ let report_error ppf = function
       "@[[%@%@unsafe_allow_any_mode_crossing] is not allowed on this kind of \
        type declaration.@ Only records, unboxed products, and variants are \
        supported.@]"
-  | Unsafe_mode_crossing_with_with_bounds ->
-    fprintf ppf
-      "@[[%@%@unsafe_allow_any_mode_crossing] is not allowed with a kind \
-       annotation containing with-bounds.@]"
   | Illegal_baggage jkind ->
     fprintf ppf
       "@[Illegal %a in kind annotation of an abbreviation:@ %a@]"
