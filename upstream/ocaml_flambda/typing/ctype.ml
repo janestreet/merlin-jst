@@ -1473,6 +1473,9 @@ let instance_parameterized_kind args jkind =
     (ty_args, jkind)
   )
 
+let map_unsafe_mode_crossing f umc =
+  { umc with unsafe_with_bounds = Jkind.With_bounds.map_type_expr f umc.unsafe_with_bounds }
+
 (* [map_kind f kind] maps [f] over all the types in [kind]. [f] must preserve jkinds *)
 let map_kind f = function
   | (Type_abstract _ | Type_open) as k -> k
@@ -1484,19 +1487,19 @@ let map_kind f = function
               cd_args = map_type_expr_cstr_args f c.cd_args;
               cd_res = Option.map f c.cd_res
              })
-          cl, rep, mc)
+          cl, rep, Option.map (map_unsafe_mode_crossing f) mc)
   | Type_record (fl, rr, mc) ->
       Type_record (
         List.map
           (fun l ->
              {l with ld_type = f l.ld_type}
-          ) fl, rr, mc)
+          ) fl, rr, Option.map (map_unsafe_mode_crossing f) mc)
   | Type_record_unboxed_product (fl, rr, mc) ->
       Type_record_unboxed_product (
         List.map
           (fun l ->
              {l with ld_type = f l.ld_type}
-          ) fl, rr, mc)
+          ) fl, rr, Option.map (map_unsafe_mode_crossing f) mc)
 
 
 let instance_declaration decl =
@@ -1843,6 +1846,11 @@ let subst env level priv abbrev oty params args body =
     raise Cannot_subst
 
 let jkind_subst env level params args jkind =
+  (* CR layouts v2.8: This function is used a lot, but there is a better way.
+     In the vastly common case, the params are a list of distinct Tvars. In that
+     scenario, we can likely build a copy_scope that will just perform the
+     substitution during the copy, avoiding copying the params and then unifying
+     them. Though we should measure, this should be a nice little speedup. *)
   if List.length params <> List.length args then raise Cannot_subst;
   let old_level = !current_level in
   current_level := level;
@@ -1851,6 +1859,10 @@ let jkind_subst env level params args jkind =
   try
     List.iter2 (!unify_var' uenv) params' args;
     current_level := old_level;
+    (* CR layouts v2.8: It's plausibly worth immediately calling [Jkind.normalize
+       ~mode:Require_best] on this jkind, so that if we do multiple things with it down
+       the road we don't have to normalize each time. But doing so in a way that avoids
+       looping (when normalize calls [jkind_subst] itself) is nontrivial. *)
     jkind'
   with Unify _ ->
     current_level := old_level;
@@ -2107,16 +2119,19 @@ let expand_head_opt env ty =
 let is_principal ty =
   not !Clflags.principal || get_level ty = generic_level
 
-type open_type_expr = { ty : type_expr; is_open : bool }
+type unwrapped_type_expr =
+  { ty : type_expr
+  ; is_open : bool
+  ; modality : Mode.Modality.Value.Const.t }
 
-let mk_open_type_expr ty vars =
-  { ty; is_open = List.compare_length_with vars 0 <> 0 }
+let mk_unwrapped_type_expr ty =
+  { ty; is_open = false; modality = Mode.Modality.Value.Const.id }
 
 type unbox_result =
   (* unboxing process made a step: either an unboxing or removal of a [Tpoly] *)
-  | Stepped of open_type_expr
+  | Stepped of unwrapped_type_expr
   (* unboxing process unboxed a product. Invariant: length >= 2 *)
-  | Stepped_record_unboxed_product of type_expr list
+  | Stepped_record_unboxed_product of unwrapped_type_expr list
   (* no step to make; we're all done here *)
   | Final_result
   (* definition not in environment: missing cmi *)
@@ -2130,7 +2145,7 @@ let unbox_once env ty =
     | decl ->
       let apply ty2 = apply env decl.type_params ty2 args in
       begin match find_unboxed_type decl with
-      | Some ty2 ->
+      | Some (ty2, modality) ->
         let ty2 = match get_desc ty2 with Tpoly (t, _) -> t | _ -> ty2 in
         let existentials =
           match Env.find_type_descrs p env with
@@ -2141,7 +2156,9 @@ let unbox_once env ty =
           | Type_record_unboxed_product _ | Type_open -> []
           | exception Not_found -> (* but we found it earlier! *) assert false
         in
-        Stepped (mk_open_type_expr (apply ty2) existentials)
+        Stepped { ty = apply ty2;
+                  is_open = not (Misc.Stdlib.List.is_empty existentials);
+                  modality }
       | None -> begin match decl.type_kind with
         | Type_record_unboxed_product ([_], Record_unboxed_product, _) ->
           (* [find_unboxed_type] would have returned [Some] *)
@@ -2149,7 +2166,9 @@ let unbox_once env ty =
         | Type_record_unboxed_product
             ((_::_::_ as lbls), Record_unboxed_product, _) ->
           Stepped_record_unboxed_product
-            (List.map (fun ld -> apply ld.ld_type) lbls)
+            (List.map (fun ld -> { ty = apply ld.ld_type;
+                                   is_open = false;
+                                   modality = ld.ld_modalities }) lbls)
         | Type_record_unboxed_product ([], _, _) ->
           Misc.fatal_error "Ctype.unboxed_once: fieldless record"
         | Type_abstract _ | Type_record _ | Type_variant _ | Type_open ->
@@ -2157,15 +2176,19 @@ let unbox_once env ty =
         end
       end
     end
-  | Tpoly (ty, bound_vars) -> Stepped (mk_open_type_expr ty bound_vars)
+  | Tpoly (ty, bound_vars) ->
+    Stepped { ty;
+              is_open = not (Misc.Stdlib.List.is_empty bound_vars);
+              modality = Mode.Modality.Value.Const.id }
   | _ -> Final_result
 
 let contained_without_boxing env ty =
   match get_desc ty with
   | Tconstr _ ->
     begin match unbox_once env ty with
-    | Stepped { ty; _ } -> [ty]
-    | Stepped_record_unboxed_product tys -> tys
+    | Stepped { ty; is_open = _; modality = _ } -> [ty]
+    | Stepped_record_unboxed_product tys ->
+      List.map (fun { ty; _ } -> ty) tys
     | Final_result | Missing _ -> []
     end
   | Tunboxed_tuple labeled_tys ->
@@ -2177,25 +2200,29 @@ let contained_without_boxing env ty =
 (* We use ty_prev to track the last type for which we found a definition,
    allowing us to return a type for which a definition was found even if
    we eventually bottom out at a missing cmi file, or otherwise. *)
-let rec get_unboxed_type_representation env ty_prev ty fuel =
-  if fuel < 0 then Error { ty; is_open = false } else
+let rec get_unboxed_type_representation
+          ~is_open ~modality env ty_prev ty fuel =
+  if fuel < 0 then Error { ty; is_open; modality }
+  else
     (* We use expand_head_opt version of expand_head to get access
        to the manifest type of private abbreviations. *)
     let ty = expand_head_opt env ty in
     match unbox_once env ty with
-    | Stepped { ty = ty2; is_open = open1 } ->
-      begin match get_unboxed_type_representation env ty ty2 (fuel - 1) with
-      | Ok { ty = result; is_open = open2 } ->
-        Ok { ty = result; is_open = open1 || open2 }
-      | Error _ as err -> err
-      end
+    | Stepped { ty = ty2; is_open = is_open2; modality = modality2 } ->
+      let is_open = is_open || is_open2 in
+      let modality =
+        Mode.Modality.Value.Const.concat modality ~then_:modality2
+      in
+      get_unboxed_type_representation
+        ~is_open ~modality env ty ty2 (fuel - 1)
     | Stepped_record_unboxed_product _ | Final_result ->
-      Ok { ty; is_open = false }
-    | Missing _ -> Ok { ty = ty_prev; is_open = false }
+      Ok { ty; is_open; modality }
+    | Missing _ -> Ok { ty = ty_prev; is_open; modality }
 
 let get_unboxed_type_representation env ty =
   (* Do not give too much fuel: PR#7424 *)
-  get_unboxed_type_representation env ty ty 100
+  get_unboxed_type_representation
+    ~is_open:false ~modality:Mode.Modality.Value.Const.id env ty ty 100
 
 let get_unboxed_type_approximation env ty =
   match get_unboxed_type_representation env ty with
@@ -2220,33 +2247,28 @@ let type_jkind_purely_if_principal' =
 (* We parameterize [estimate_type_jkind] by a function
    [expand_component] because some callers want expansion of types and others
    don't. *)
-let rec estimate_type_jkind ~(expand_component : type_expr -> open_type_expr) env ty =
+let rec estimate_type_jkind ~expand_component env ty =
   match get_desc ty with
   | Tvar { jkind } -> Jkind.disallow_right jkind
   | Tarrow _ -> Jkind.for_arrow
-  | Ttuple _ -> Jkind.Builtin.value ~why:Tuple
+  | Ttuple elts -> Jkind.for_boxed_tuple elts
   | Tunboxed_tuple ltys ->
      let is_open, tys_modalities =
        List.fold_left_map
          (fun is_open1 (_lbl, ty) ->
-            let { ty; is_open = is_open2 } = expand_component ty in
-            (is_open1 || is_open2), (ty, Mode.Modality.Value.Const.id))
+            let { ty; is_open = is_open2; modality } = expand_component ty in
+            (is_open1 || is_open2), (ty, modality))
          false ltys
      in
      (* CR layouts v2.8: This pretty ridiculous use of [estimate_type_jkind]
         just to throw most of it away will go away once we get [layout_of]. *)
-     let jkinds =
-       List.map (fun (ty, _) -> estimate_type_jkind ~expand_component env ty)
+     let layouts =
+       List.map (fun (ty, _modality (* ignore; we just care about layout *)) ->
+         estimate_type_jkind ~expand_component env ty |>
+         Jkind.extract_layout)
          tys_modalities
      in
-     let layouts = List.map Jkind.extract_layout jkinds in
      Jkind.Builtin.product
-       ~jkind_of_first_type:(fun () ->
-       match jkinds with
-         | first_jkind :: _ -> first_jkind
-         | _ -> Misc.fatal_error
-                  "Ctype.estimate_type_jkind: use of jkind_of_first_type \
-                   with more than 1 type")
        ~why:Unboxed_tuple tys_modalities layouts |>
      close_open_jkind ~expand_component ~is_open env
   | Tconstr (p, args, _) -> begin try
@@ -2304,14 +2326,17 @@ and close_open_jkind ~expand_component ~is_open env jkind =
     Jkind.round_up ~jkind_of_type jkind |> Jkind.disallow_right
   else jkind
 
-let estimate_type_jkind_open ~expand_component env { ty; is_open } =
+let estimate_type_jkind_unwrapped
+      ~expand_component env { ty; is_open; modality } =
   estimate_type_jkind ~expand_component env ty |>
-  close_open_jkind ~expand_component ~is_open env
+  close_open_jkind ~expand_component ~is_open env |>
+  Jkind.apply_modality_l modality
+
 
 let type_jkind env ty =
-  estimate_type_jkind_open
+  get_unboxed_type_approximation env ty |>
+  estimate_type_jkind_unwrapped
     ~expand_component:(get_unboxed_type_approximation env) env
-    (get_unboxed_type_approximation env ty)
 
 (* CR layouts v2.8: This function is quite suspect. See Jane Street internal
    gdoc titled "Let's kill type_jkind_purely". *)
@@ -2335,12 +2360,7 @@ let type_jkind_purely_if_principal env ty =
 let () = type_jkind_purely_if_principal' := type_jkind_purely_if_principal
 
 let estimate_type_jkind =
-  let expand_component ty = { ty; is_open = false } in
-  estimate_type_jkind ~expand_component
-
-let estimate_type_jkind_open =
-  let expand_component ty = { ty; is_open = false } in
-  estimate_type_jkind_open ~expand_component
+  estimate_type_jkind ~expand_component:mk_unwrapped_type_expr
 
 (**** checking jkind relationships ****)
 
@@ -2368,8 +2388,14 @@ let constrain_type_jkind ~fixed env ty jkind =
      later).
 
      As this unboxes types, it might unbox an existential type. We thus keep
-     track of whether [ty] [is_open].
-  *)
+     track of whether [ty] [is_open]. EDIT: This is actually pointless and
+     could be removed: #3684.
+
+     As this unboxed types, it might also encounter modalities. These modalities
+     are accommodated by changing [jkind], the expected jkind of the type.
+     Trying to apply the modality to the jkind extracted from [ty] would be
+     wrong, as it would incorrectly change the jkind on a [Tvar] to mode-cross
+     more than necessary.  *)
   let rec loop ~fuel ~expanded ty ~is_open ty's_jkind jkind =
     (* Just succeed if we're comparing against [any] *)
     if Jkind.is_obviously_max jkind then Ok () else
@@ -2412,9 +2438,7 @@ let constrain_type_jkind ~fixed env ty jkind =
     (* Handle the [Tpoly] case out here so [Tvar]s wrapped in [Tpoly]s can get
        the treatment above. *)
     | Tpoly (t, bound_vars) ->
-      let is_open =
-        is_open || match bound_vars with | [] -> false | _ :: _ -> true
-      in
+      let is_open = is_open || not (Misc.Stdlib.List.is_empty bound_vars) in
       loop ~fuel ~expanded:false t ~is_open ty's_jkind jkind
 
     | _ ->
@@ -2440,7 +2464,12 @@ let constrain_type_jkind ~fixed env ty jkind =
              let recur ty's_jkinds jkinds =
                let results =
                  Misc.Stdlib.List.map3
-                   (loop ~fuel ~expanded:false ~is_open) tys ty's_jkinds jkinds
+                   (fun { ty; is_open = _; modality } ty's_jkind jkind ->
+                      let jkind =
+                        Jkind.apply_modality_r modality jkind
+                      in
+                      loop ~fuel ~expanded:false ~is_open ty ty's_jkind jkind)
+                   tys ty's_jkinds jkinds
                in
                if List.for_all Result.is_ok results
                then Ok ()
@@ -2473,7 +2502,7 @@ let constrain_type_jkind ~fixed env ty jkind =
              then
                let ty = expand_head_opt env ty in
                loop ~fuel ~expanded:true ty ~is_open
-                 (estimate_type_jkind_open env { ty; is_open }) jkind
+                 (estimate_type_jkind env ty) jkind
              else
                begin match unbox_once env ty with
                | Missing path -> Error (Jkind.Violation.of_
@@ -2484,25 +2513,27 @@ let constrain_type_jkind ~fixed env ty jkind =
                  Error
                    (Jkind.Violation.of_ ~jkind_of_type
                       (Not_a_subjkind (ty's_jkind, jkind, sub_failure_reasons)))
-               | Stepped { ty; is_open = is_open2 } ->
+               | Stepped { ty; is_open = is_open2; modality } ->
                  let is_open = is_open || is_open2 in
+                 let jkind = Jkind.apply_modality_r modality jkind in
                  loop ~fuel:(fuel - 1) ~expanded:false ty ~is_open
-                   (estimate_type_jkind_open env { ty; is_open }) jkind
-               | Stepped_record_unboxed_product tys ->
-                 product ~fuel:(fuel - 1) tys
+                   (estimate_type_jkind env ty) jkind
+               | Stepped_record_unboxed_product tys_modalities ->
+                 product ~fuel:(fuel - 1) tys_modalities
                end
           | Tunboxed_tuple ltys ->
             (* Note: here we "duplicate" the fuel, which may seem like cheating.
                Fuel counts expansions, and its purpose is to guard against
                infinitely expanding a recursive type. In a wide tuple, we many
                need to expand many types shallowly, and that's fine. *)
-            product ~fuel (List.map snd ltys)
+            product ~fuel (List.map (fun (_, ty) ->
+              mk_unwrapped_type_expr ty) ltys)
           | _ ->
             Error (Jkind.Violation.of_ ~jkind_of_type
                 (Not_a_subjkind (ty's_jkind, jkind, sub_failure_reasons)))
   in
   loop ~fuel:100 ~expanded:false ty ~is_open:false
-    (estimate_type_jkind env ty) jkind
+    (estimate_type_jkind env ty) (Jkind.disallow_left jkind)
 
 let type_sort ~why ~fixed env ty =
   let jkind, sort = Jkind.of_new_sort_var ~why in
@@ -2527,11 +2558,10 @@ let check_type_externality env ty ext =
   | Ok () -> true
   | Error _ -> false
 
-let check_type_nullability env ty nullability =
+let check_type_nullability env ty null =
   let upper_bound =
-    Jkind.set_nullability_upper_bound (Jkind.Builtin.any ~why:Dummy_jkind) nullability
+    Jkind.set_nullability_upper_bound (Jkind.Builtin.any ~why:Dummy_jkind) null
   in
-  (* CR layouts v2.8: We should have a better way to check the upper bound of a jkind along a particular relevant axis than this (also for [check_type_externality], above) *)
   match check_type_jkind env ty upper_bound with
   | Ok () -> true
   | Error _ -> false
@@ -3362,13 +3392,19 @@ and mcomp_row type_pairs env row1 row2 =
       | _ -> ())
     pairs
 
-and mcomp_unsafe_mode_crossing umc1 umc2 =
+and mcomp_unsafe_mode_crossing type_pairs env umc1 umc2 =
   match umc1, umc2 with
   | None, None -> ()
   | Some _, None -> raise Incompatible
   | None, Some _ -> raise Incompatible
   | Some umc1, Some umc2 ->
-      if equal_unsafe_mode_crossing umc1 umc2
+    if
+      equal_unsafe_mode_crossing
+        ~type_equal:(fun ty1 ty2 ->
+          match mcomp type_pairs env ty1 ty2 with
+          | () -> true
+          | exception Incompatible -> false)
+        umc1 umc2
       then ()
       else raise Incompatible
 
@@ -3396,18 +3432,18 @@ and mcomp_type_decl type_pairs env p1 p2 tl1 tl2 =
         when equal_record_representation r r' ->
           mcomp_list type_pairs env tl1 tl2;
           mcomp_record_description type_pairs env lst lst';
-          mcomp_unsafe_mode_crossing umc umc'
+          mcomp_unsafe_mode_crossing type_pairs env umc umc'
       | Type_record_unboxed_product (lst,r,umc),
         Type_record_unboxed_product (lst',r',umc')
         when equal_record_unboxed_product_representation r r' ->
           mcomp_list type_pairs env tl1 tl2;
           mcomp_record_description type_pairs env lst lst';
-          mcomp_unsafe_mode_crossing umc umc'
+          mcomp_unsafe_mode_crossing type_pairs env umc umc'
       | Type_variant (v1,r,umc), Type_variant (v2,r',umc')
         when equal_variant_representation r r' ->
           mcomp_list type_pairs env tl1 tl2;
           mcomp_variant_description type_pairs env v1 v2;
-          mcomp_unsafe_mode_crossing umc umc'
+          mcomp_unsafe_mode_crossing type_pairs env umc umc'
       | Type_open, Type_open ->
           mcomp_list type_pairs env tl1 tl2
       | Type_abstract _, Type_abstract _ -> check_jkinds ()
@@ -4947,18 +4983,10 @@ let mode_cross_left_alloc env ty mode =
   if not (is_principal ty) then Alloc.disallow_right mode else begin
     let jkind = type_jkind_purely env ty in
     let jkind_of_type = type_jkind_purely_if_principal env in
-    let Jkind.{ upper_bounds; lower_bounds } =
-      Jkind.get_modal_bounds ~jkind_of_type jkind
-    in
-    let upper_bounds =
-      Alloc.Const.merge
-        { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
-    in
-    let lower_bounds =
-      Alloc.Const.merge
-        { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
-    in
-    Alloc.subtract lower_bounds (Alloc.meet_const upper_bounds mode)
+    let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
+    mode
+    |> Alloc.disallow_right
+    |> Crossing.apply_left_alloc crossing
   end
 
 (* This is very similar to Typecore.expect_mode_cross. Any bugs here
@@ -4967,18 +4995,10 @@ let mode_cross_right env ty mode =
   if not (is_principal ty) then Alloc.disallow_left mode else
   let jkind = type_jkind_purely env ty in
   let jkind_of_type = type_jkind_purely_if_principal env in
-  let Jkind.{ upper_bounds; lower_bounds } =
-    Jkind.get_modal_bounds ~jkind_of_type jkind
-  in
-  let upper_bounds =
-    Alloc.Const.merge
-      { comonadic = upper_bounds; monadic = Alloc.Monadic.Const.max }
-  in
-  let lower_bounds =
-    Alloc.Const.merge
-      { comonadic = Alloc.Comonadic.Const.min; monadic = lower_bounds }
-  in
-  Alloc.imply upper_bounds (Alloc.join_const lower_bounds mode)
+  let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
+  mode
+  |> Alloc.disallow_left
+  |> Crossing.apply_right_alloc crossing
 
 let submode_with_cross env ~is_ret ty l r =
   let r' = mode_cross_right env ty r in
