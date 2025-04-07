@@ -89,7 +89,7 @@ jobs:
       working-directory: merlin-jst
       run: |
         opam depext conf-jq --yes # opam depext bug
-        opam pin menhirLib 20210419 --no-action
+        opam pin menhirLib 20231231 --no-action
         opam install --yes ppx_string ppx_compare ocamlformat.0.26.2
         opam install . --deps-only --with-test --yes
 
@@ -102,4 +102,14 @@ jobs:
       working-directory: merlin-jst
       run: |
         export MERLIN_TEST_OCAML_PATH=$GITHUB_WORKSPACE/flambda-backend/_install
+        opam exec -- dune build
         opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,merlin,ocaml-index
+        if ! git diff --quiet ; then
+          echo "The following files were modified by dune:" >&2
+          git diff --name-only >&2
+          echo "" >&2
+          echo "Hint: If this check fails, the likely culprit is
+        that you compiled with the wrong menhir version. Cross-check your opam switch's
+        menhir version with the one in merlin-lib.opam" >&2
+          exit 1
+        fi
