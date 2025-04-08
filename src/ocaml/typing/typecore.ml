@@ -652,7 +652,9 @@ let mode_coerce mode expected_mode =
 
 let mode_lazy expected_mode =
   let expected_mode =
-    mode_coerce (Value.max_with (Comonadic Areality) Regionality.global)
+    mode_coerce (
+      Value.max_with (Comonadic Areality) Regionality.global
+      |> Value.meet_with (Comonadic Yielding) Yielding.Const.Unyielding)
       expected_mode
   in
   let closure_mode =
@@ -761,6 +763,7 @@ let tuple_pat_mode mode tuple_modes =
 let global_pat_mode {mode; _}=
   let mode =
     Value.meet_with (Comonadic Areality) Regionality.Const.Global mode
+    |> Value.meet_with (Comonadic Yielding) Yielding.Const.Unyielding
   in
   simple_pat_mode mode
 
@@ -1039,27 +1042,9 @@ let has_poly_constraint spat =
     end
   | _ -> false
 
-(** Cross a left mode according to a type wrapped in modalities. *)
-let mode_cross_left_value env ty ?modalities mode =
-  if not (is_principal ty) then
-    Value.disallow_right mode
-  else begin
-    let jkind = type_jkind_purely env ty in
-    let jkind_of_type = type_jkind_purely_if_principal env in
-    let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
-    let crossing =
-      match modalities with
-      | None -> crossing
-      | Some m -> Crossing.modality m crossing
-    in
-    mode
-    |> Value.disallow_right
-    |> Crossing.apply_left crossing
-  end
-
 let actual_mode_cross_left env ty (actual_mode : Env.actual_mode)
   : Env.actual_mode =
-  let mode = mode_cross_left_value env ty actual_mode.mode in
+  let mode = cross_left env ty actual_mode.mode in
   {actual_mode with mode}
 
 (** Mode cross a mode whose monadic fragment is a right mode, and whose comonadic
@@ -1067,24 +1052,19 @@ let actual_mode_cross_left env ty (actual_mode : Env.actual_mode)
 let alloc_mode_cross_to_max_min env ty { monadic; comonadic } =
   let monadic = Alloc.Monadic.disallow_left monadic in
   let comonadic = Alloc.Comonadic.disallow_right comonadic in
-  if not (is_principal ty) then { monadic; comonadic } else
-  let jkind = type_jkind_purely env ty in
-  let jkind_of_type = type_jkind_purely_if_principal env in
-  let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
+  let crossing = crossing_of_ty env ty in
   Crossing.apply_left_right_alloc crossing { monadic; comonadic }
 
 (** Mode cross a right mode *)
 (* This is very similar to Ctype.mode_cross_right. Any bugs here are likely bugs
    there, too. *)
 let expect_mode_cross_jkind env jkind (expected_mode : expected_mode) =
-  let jkind_of_type = type_jkind_purely_if_principal env in
-  let crossing = Jkind.get_mode_crossing ~jkind_of_type jkind in
+  let crossing = crossing_of_jkind env jkind in
   mode_morph (Crossing.apply_right crossing) expected_mode
 
 let expect_mode_cross env ty (expected_mode : expected_mode) =
-  if not (is_principal ty) then expected_mode else
-  let jkind = type_jkind_purely env ty in
-  expect_mode_cross_jkind env jkind expected_mode
+  let crossing = crossing_of_ty env ty in
+  mode_morph (Crossing.apply_right crossing) expected_mode
 
 (** The expected mode for objects *)
 let mode_object = expect_mode_cross_jkind Env.empty Jkind.for_object mode_legacy
@@ -1127,7 +1107,7 @@ let check_construct_mutability ~loc ~env mutability ty ?modalities block_mode =
   | Immutable -> ()
   | Mutable m0 ->
       let m0 = mutable_mode m0 in
-      let m0 = mode_cross_left_value env ty ?modalities m0 in
+      let m0 = cross_left env ty ?modalities m0 in
       submode ~loc ~env m0 block_mode
 
 (** The [expected_mode] of the record when projecting a mutable field. *)
@@ -2950,7 +2930,7 @@ and type_pat_aux
   | Ppat_var name ->
       let ty = instance expected_ty in
       let alloc_mode =
-        mode_cross_left_value !!penv expected_ty alloc_mode.mode
+        cross_left !!penv expected_ty alloc_mode.mode
       in
       let id, uid =
         enter_variable tps loc name alloc_mode ty sp.ppat_attributes
@@ -2993,7 +2973,7 @@ and type_pat_aux
   | Ppat_alias(sq, name) ->
       let q = type_pat tps Value sq expected_ty in
       let ty_var, mode = solve_Ppat_alias ~mode:alloc_mode.mode !!penv q in
-      let mode = mode_cross_left_value !!penv expected_ty mode in
+      let mode = cross_left !!penv expected_ty mode in
       let id, uid =
         enter_variable ~is_as_variable:true tps name.loc name mode
           ty_var sp.ppat_attributes
@@ -4296,7 +4276,7 @@ let rec is_nonexpansive exp =
                lbl.lbl_mut = Immutable && is_nonexpansive exp
            | Kept _ -> true)
         fields
-      && is_nonexpansive_opt (Option.map fst extended_expression)
+      && is_nonexpansive_opt (Option.map Misc.fst3 extended_expression)
   | Texp_record_unboxed_product { fields; extended_expression } ->
       Array.for_all
         (fun (lbl, definition) ->
@@ -4306,7 +4286,7 @@ let rec is_nonexpansive exp =
            | Kept _ -> true)
         fields
       && is_nonexpansive_opt (Option.map fst extended_expression)
-  | Texp_field(exp, _, _, _, _) -> is_nonexpansive exp
+  | Texp_field(exp, _, _, _, _, _) -> is_nonexpansive exp
   | Texp_unboxed_field(exp, _, _, _, _) -> is_nonexpansive exp
   | Texp_ifthenelse(_cond, ifso, ifnot) ->
       is_nonexpansive ifso && is_nonexpansive_opt ifnot
@@ -5748,7 +5728,16 @@ and type_expect_
               Array.map (unify_kept loc exp.exp_loc ty_exp mode) lbl.lbl_all
             in
             let ubr = Unique_barrier.not_computed () in
-            Some ({exp with exp_type = ty_exp}, ubr), label_definitions
+            let sort =
+              match
+                Ctype.type_sort ~why:Record_functional_update ~fixed:false
+                  env exp.exp_type
+              with
+              | Ok sort -> sort
+              | Error err ->
+                raise (Error (loc, env, Record_not_rep(ty_expected, err)))
+            in
+            Some ({exp with exp_type = ty_exp}, sort, ubr), label_definitions
       in
       let num_fields =
         match lbl_exp_list with [] -> assert false
@@ -5775,16 +5764,7 @@ and type_expect_
         | Unboxed_product ->
           let opt_exp = match opt_exp with
             | None -> None
-            | Some (exp, _) ->
-              let sort =
-                Ctype.type_sort ~why:Record_functional_update ~fixed:false
-                  env exp.exp_type
-              in
-              match sort with
-              | Ok sort -> Some (exp, sort)
-              | Error err ->
-                raise
-                  (error (loc, env, Record_not_rep(ty_expected, err)))
+            | Some (exp, sort, _) -> Some (exp, sort)
           in
           Texp_record_unboxed_product {
             fields; representation;
@@ -6225,7 +6205,7 @@ and type_expect_
       Language_extension.assert_enabled ~loc Layouts Language_extension.Stable;
       type_expect_record ~overwrite Unboxed_product lid_sexp_list opt_sexp
   | Pexp_field(srecord, lid) ->
-      let (record, rmode, label, _) =
+      let (record, record_sort, rmode, label, _) =
         type_label_access Legacy env srecord Env.Projection lid
       in
       let ty_arg =
@@ -6255,27 +6235,29 @@ and type_expect_
         match is_float_boxing with
         | true ->
           let alloc_mode, argument_mode = register_allocation expected_mode in
-          let mode = mode_cross_left_value env Predef.type_unboxed_float mode in
+          let mode = cross_left env Predef.type_unboxed_float mode in
           submode ~loc ~env mode argument_mode;
           let uu =
             unique_use ~loc ~env mode (as_single_mode argument_mode)
           in
           Boxing (alloc_mode, uu)
         | false ->
-          let mode = mode_cross_left_value env ty_arg mode in
+          let mode = cross_left env ty_arg mode in
           submode ~loc ~env mode expected_mode;
           let uu = unique_use ~loc ~env mode (as_single_mode expected_mode) in
           Non_boxing uu
       in
       rue {
-        exp_desc = Texp_field(record, lid, label, boxing, Unique_barrier.not_computed ());
+        exp_desc =
+          Texp_field(record, record_sort, lid, label, boxing,
+                     Unique_barrier.not_computed ());
         exp_loc = loc; exp_extra = [];
         exp_type = ty_arg;
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_unboxed_field(srecord, lid) ->
       Language_extension.assert_enabled ~loc Layouts Language_extension.Stable;
-      let (record, rmode, label, _) =
+      let (record, record_sort, rmode, label, _) =
         type_label_access Unboxed_product env srecord Env.Projection lid
       in
       let ty_arg =
@@ -6291,17 +6273,8 @@ and type_expect_
       if Types.is_mutable label.lbl_mut then
         fatal_error
           "Typecore.type_expect_: unboxed record labels are never mutable";
-      let record_sort =
-        Ctype.type_sort ~why:Record_projection ~fixed:false env record.exp_type
-      in
-      let record_sort = match record_sort with
-        | Ok sort -> sort
-        | Error err ->
-          raise
-            (Error (loc, env, Record_projection_not_rep(record.exp_type, err)))
-      in
       let mode = Modality.Value.Const.apply label.lbl_modalities rmode in
-      let mode = mode_cross_left_value env ty_arg mode in
+      let mode = cross_left env ty_arg mode in
       submode ~loc ~env mode expected_mode;
       let uu = unique_use ~loc ~env mode (as_single_mode expected_mode) in
       rue {
@@ -6311,7 +6284,7 @@ and type_expect_
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_setfield(srecord, lid, snewval) ->
-      let (record, rmode, label, expected_type) =
+      let (record, _, rmode, label, expected_type) =
         type_label_access Legacy env srecord Env.Mutation lid in
       let ty_record =
         if expected_type = None
@@ -7040,7 +7013,7 @@ and type_expect_
       | Texp_variant (_, Some (_, alloc_mode))
       | Texp_record {alloc_mode = Some alloc_mode; _}
       | Texp_array (_, _, _, alloc_mode)
-      | Texp_field (_, _, _, Boxing (alloc_mode, _), _) ->
+      | Texp_field (_, _, _, _, Boxing (alloc_mode, _), _) ->
         begin
           submode ~loc ~env
             (Value.min_with (Comonadic Areality) Regionality.local)
@@ -7100,13 +7073,19 @@ and type_expect_
         mk_expected (newvar (Jkind.Builtin.value ~why:Boxed_record))
       in
       let exp1 = type_expect ~recarg env (mode_default cell_mode) exp1 cell_type in
-      let exp2 =
+      let new_fields_mode =
         (* The newly-written fields have to be global to avoid heap-to-stack pointers.
            We enforce that here, by asking the allocation to be global.
            This makes the block alloc_heap, but we ignore that information anyway. *)
+        (* CR uniqueness: this shouldn't mention yielding *)
+        { Value.Const.max with
+          areality = Regionality.Const.Global
+        ; yielding = Yielding.Const.Unyielding }
+      in
+      let exp2 =
         let exp2_mode =
           mode_coerce
-            (Value.max_with (Comonadic Areality) Regionality.global)
+            (Value.(meet_const new_fields_mode max |> disallow_left))
             expected_mode
         in
         (* When typing holes, we will enforce: fields_mode <= expected_mode.
@@ -7117,7 +7096,7 @@ and type_expect_
            And we have also checked above that for regionality cell_mode <= expected_mode.
            Therefore, we can safely ignore regionality when checking the mode of holes. *)
         let fields_mode =
-          Value.meet_with (Comonadic Areality) Regionality.Const.Global cell_mode
+          Value.meet_const new_fields_mode cell_mode
             |> Value.disallow_right
         in
         let overwrite =
@@ -7298,7 +7277,7 @@ and type_ident env ?(recarg=Rejected) lid =
 
   Therefore, we need to cross modes upon look-up. Ideally that should be done in
   [Env], but that is difficult due to cyclic dependency between jkind and env. *)
-  let mode = mode_cross_left_value env desc.val_type mode in
+  let mode = cross_left env desc.val_type mode in
   (* There can be locks between the definition and a use of a value. For
   example, if a function closes over a value, there will be Closure_lock between
   the value's definition and the value's use in the function. Walking the locks
@@ -7351,7 +7330,7 @@ and type_ident env ?(recarg=Rejected) lid =
   let val_type, kind =
     match desc.val_kind with
     | Val_prim prim ->
-       let ty, mode, sort = instance_prim prim desc.val_type in
+       let ty, mode, _, sort = instance_prim prim desc.val_type in
        let ty = instance ty in
        begin match prim.prim_native_repr_res, mode with
        (* if the locality of returned value of the primitive is poly
@@ -7841,12 +7820,15 @@ and type_function_
 
 and type_label_access
   : 'rep . 'rep record_form -> _ -> _ -> _ -> _ ->
-    _ * _ * 'rep gen_label_description * _
+    _ * _ * _ * 'rep gen_label_description * _
   = fun record_form env srecord usage lid ->
   let mode = Value.newvar () in
+  let record_jkind, record_sort = Jkind.of_new_sort_var ~why:Record_projection in
   let record =
     with_local_level_if_principal ~post:generalize_structure_exp
-      (fun () -> type_exp ~recarg:Allowed env (mode_default mode) srecord)
+      (fun () ->
+         type_expect ~recarg:Allowed env (mode_default mode) srecord
+           (mk_expected (newvar record_jkind)))
   in
   let ty_exp = record.exp_type in
   let expected_type =
@@ -7867,7 +7849,7 @@ and type_label_access
   let label =
     wrap_disambiguate "This expression has" (mk_expected ty_exp)
       (label_disambiguate record_form usage lid env expected_type) labels in
-  (record, mode, label, expected_type)
+  (record, record_sort, Mode.Value.disallow_right mode, label, expected_type)
   with exn ->
     raise_error exn;
     let arg_kind, _ =
@@ -7894,7 +7876,8 @@ and type_label_access
         lbl_sort = Jkind.Sort.Const.value;
       }
     in
-    (record, mode, make_fake_label record_form, expected_type)
+    (record, record_sort, Mode.Value.disallow_right mode,
+      make_fake_label record_form, expected_type)
 
 (* Typing format strings for printing or reading.
    These formats are used by functions in modules Printf, Format, and Scanf.
@@ -8560,15 +8543,16 @@ and type_application env app_loc expected_mode position_and_mode
           filter_arrow_mono env (instance funct.exp_type) Nolabel
         ) ~post:(fun {ty_ret; _} -> generalize_structure ty_ret)
       in
+      let ret_mode = Alloc.disallow_right ret_mode in
       let type_sort ~why ty =
         match Ctype.type_sort ~why ~fixed:false env ty with
         | Ok sort -> sort
         | Error err -> raise (error (app_loc, env, Function_type_not_rep (ty, err)))
       in
       let arg_sort = type_sort ~why:Function_argument ty_arg in
-      let ap_mode = Locality.disallow_right (Alloc.proj (Comonadic Areality) ret_mode) in
+      let ap_mode = Alloc.proj (Comonadic Areality) ret_mode in
       let mode_res =
-        mode_cross_left_value env ty_ret (alloc_as_value ret_mode)
+        cross_left env ty_ret (alloc_as_value ret_mode)
       in
       submode ~loc:app_loc ~env ~reason:Other
         mode_res expected_mode;
@@ -8626,9 +8610,10 @@ and type_application env app_loc expected_mode position_and_mode
           ty_ret, mode_ret, args, position_and_mode
         end ~post:(fun (ty_ret, _, _, _) -> generalize_structure ty_ret)
       in
-      let ap_mode = Locality.disallow_right (Alloc.proj (Comonadic Areality) mode_ret) in
+      let mode_ret = Alloc.disallow_right mode_ret in
+      let ap_mode = Alloc.proj (Comonadic Areality) mode_ret in
       let mode_ret =
-        mode_cross_left_value env ty_ret (alloc_as_value mode_ret)
+        cross_left env ty_ret (alloc_as_value mode_ret)
       in
       let () =
         try submode ~loc:app_loc ~env ~reason:(Application ty_ret)
@@ -10242,7 +10227,14 @@ and type_comprehension_iterator
       in
       Texp_comp_range { ident; pattern; start; stop; direction }
   | Pcomp_in seq ->
-      let item_ty = newvar (Jkind.Builtin.any ~why:Dummy_jkind) in
+      let value_reason =
+        match (comprehension_type : comprehension_type) with
+        | Array_comprehension _ ->
+          Jkind.History.Array_comprehension_iterator_element
+        | List_comprehension ->
+          Jkind.History.List_comprehension_iterator_element
+      in
+      let item_ty = newvar (Jkind.Builtin.value ~why:value_reason) in
       let seq_ty = container_type item_ty in
       let sequence =
         (* To understand why we can currently only iterate over [mode_global]
