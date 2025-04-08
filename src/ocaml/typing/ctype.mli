@@ -231,7 +231,8 @@ val prim_mode :
         -> (Mode.allowed * 'r) Mode.Locality.t
 val instance_prim:
         Primitive.description -> type_expr ->
-        type_expr * Mode.Locality.lr option * Jkind.Sort.t option
+        type_expr * Mode.Locality.lr option
+        * Mode.Yielding.lr option * Jkind.Sort.t option
 
 (** Given (a @ m1 -> b -> c) @ m0, where [m0] and [m1] are modes expressed by
     user-syntax, [curry_mode m0 m1] gives the mode we implicitly interpret b->c
@@ -725,3 +726,48 @@ val is_principal : type_expr -> bool
 type global_state
 val global_state : global_state
 val print_global_state : Format.formatter -> global_state -> unit
+
+(** Get the crossing of a jkind  *)
+val crossing_of_jkind : Env.t -> 'd Types.jkind -> Mode.Crossing.t
+
+(** Get the crossing of a type wrapped in modalities. Non-principal types get
+    trivial crossing. *)
+val crossing_of_ty :
+  Env.t ->
+  ?modalities:Mode.Modality.Value.Const.t ->
+  Types.type_expr ->
+  Mode.Crossing.t
+
+(** Cross a right mode according to a type wrapped in modalities. Non-principal
+    types don't cross. *)
+val cross_right :
+  Env.t ->
+  ?modalities:Mode.Modality.Value.Const.t ->
+  Types.type_expr ->
+  Mode.Value.r ->
+  Mode.Value.r
+
+(** Cross a left mode according to a type wrapped in modalities. Non-principal
+    types don't cross. *)
+val cross_left :
+  Env.t ->
+  ?modalities:Mode.Modality.Value.Const.t ->
+  Types.type_expr ->
+  Mode.Value.l ->
+  Mode.Value.l
+
+(** Similar to [cross_right] but for [Mode.Alloc]  *)
+val cross_right_alloc :
+  Env.t ->
+  ?modalities:Mode.Modality.Value.Const.t ->
+  Types.type_expr ->
+  Mode.Alloc.r ->
+  Mode.Alloc.r
+
+(** Similar to [cross_left] but for [Mode.Alloc]  *)
+val cross_left_alloc :
+  Env.t ->
+  ?modalities:Mode.Modality.Value.Const.t ->
+  Types.type_expr ->
+  Mode.Alloc.l ->
+  Mode.Alloc.l

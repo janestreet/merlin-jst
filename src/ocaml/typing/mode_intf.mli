@@ -287,6 +287,10 @@ module type S = sig
         with module Const := Const
          and type error := error
          and type 'd t = (Const.t, 'd) mode_comonadic
+
+    val yielding : lr
+
+    val unyielding : lr
   end
 
   type 'a comonadic_with =
@@ -471,9 +475,9 @@ module type S = sig
 
     val meet_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
 
-    val imply : Const.t -> ('l * 'r) t -> (disallowed * 'r) t
-
     val join_const : Const.t -> ('l * 'r) t -> ('l * 'r) t
+
+    val imply : Const.t -> ('l * 'r) t -> (disallowed * 'r) t
 
     val subtract : Const.t -> ('l * 'r) t -> ('l * disallowed) t
 
@@ -659,8 +663,9 @@ module type S = sig
             abitrary zappings of some [m], even after further mutations to [m].
             Essentially that means [c0 = c1].
 
-         NB: zapping an inferred modality will zap both [md_mode] and [mode] that
-         it contains. The caller is reponsible for correct zapping order.
+         NB: zapping an inferred modality will mutate both [md_mode] and [mode]
+         to the degree sufficient to fix the modality, but the modes could
+         remain unfixed.
       *)
 
       (** Zap an inferred modality towards identity modality. *)
@@ -732,6 +737,12 @@ module type S = sig
 
     (** [le t0 t1] returns [true] if [t0] allows more mode crossing than [t1]. *)
     val le : t -> t -> bool
+
+    (** The trivial mode crossing that crosses nothing. *)
+    val top : t
+
+    (** The mode crossing that crosses everything. *)
+    val bot : t
 
     (** Print the mode crossing by axis. Omit axes that do not cross. *)
     val print : Format.formatter -> t -> unit

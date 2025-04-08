@@ -27,6 +27,7 @@ module Axis_pair = struct
   type 'm t =
     | Modal_axis_pair : ('m, 'a, 'd) Mode.Alloc.axis * 'a -> modal t
     | Any_axis_pair : 'a Axis.t * 'a -> maybe_nonmodal t
+    | Everything_but_nullability : maybe_nonmodal t
 
   let of_string s =
     let open Mode in
@@ -62,6 +63,7 @@ module Axis_pair = struct
       Any_axis_pair (Modal (Comonadic Yielding), Yielding.Const.Yielding)
     | "unyielding" ->
       Any_axis_pair (Modal (Comonadic Yielding), Yielding.Const.Unyielding)
+    | "everything" -> Everything_but_nullability
     | _ -> raise Not_found
 end
 
@@ -73,8 +75,9 @@ let transl_annot (type m) ~(annot_type : m annot_type) ~required_mode_maturity
     required_mode_maturity;
   let pair : m Axis_pair.t =
     match Axis_pair.of_string annot.txt, annot_type with
-    | Any_axis_pair (Nonmodal _, _), (Mode | Modality) | (exception Not_found)
-      ->
+    | Any_axis_pair (Nonmodal _, _), (Mode | Modality)
+    | Everything_but_nullability, (Mode | Modality)
+    | (exception Not_found) ->
       raise (Error (annot.loc, Unrecognized_modifier (annot_type, annot.txt)))
     | Any_axis_pair (Modal axis, mode), Mode -> Modal_axis_pair (axis, mode)
     | Any_axis_pair (Modal axis, mode), Modality -> Modal_axis_pair (axis, mode)
@@ -133,27 +136,61 @@ end
 
 let transl_modifier_annots annots =
   let step modifiers_so_far annot =
-    let { txt = Any_axis_pair (type a) ((axis, mode) : a Axis.t * a); loc } =
+    match
       transl_annot ~annot_type:Modifier ~required_mode_maturity:None
       @@ unpack_mode_annot annot
-    in
-    let (module A) = Axis.get axis in
-    let is_top = A.le A.max mode in
-    if is_top
-    then
-      (* CR layouts v2.8: This warning is disabled for now because transl_type_decl
-         results in 3 calls to transl_annots per user-written annotation. This results
-         in the warning being reported 3 times. *)
-      (* Location.prerr_warning new_raw.loc (Warnings.Mod_by_top new_raw.txt) *)
-      ();
-    let is_dup =
-      Option.is_some (Transled_modifiers.get ~axis modifiers_so_far)
-    in
-    if is_dup then raise (Error (annot.loc, Duplicated_axis axis));
-    Transled_modifiers.set ~axis modifiers_so_far (Some { txt = mode; loc })
+    with
+    | { txt = Any_axis_pair (type a) ((axis, mode) : a Axis.t * a); loc } ->
+      let (module A) = Axis.get axis in
+      let is_top = A.le A.max mode in
+      if is_top
+      then
+        (* CR layouts v2.8: This warning is disabled for now because transl_type_decl
+           results in 3 calls to transl_annots per user-written annotation. This results
+           in the warning being reported 3 times. *)
+        (* Location.prerr_warning new_raw.loc (Warnings.Mod_by_top new_raw.txt) *)
+        ();
+      let is_dup =
+        Option.is_some (Transled_modifiers.get ~axis modifiers_so_far)
+      in
+      if is_dup then raise (Error (annot.loc, Duplicated_axis axis));
+      Transled_modifiers.set ~axis modifiers_so_far (Some { txt = mode; loc })
+    | { txt = Everything_but_nullability; loc } ->
+      Transled_modifiers.
+        { locality = Some { txt = Locality.Const.min; loc };
+          linearity = Some { txt = Linearity.Const.min; loc };
+          uniqueness = Some { txt = Uniqueness.Const_op.min; loc };
+          portability = Some { txt = Portability.Const.min; loc };
+          contention = Some { txt = Contention.Const_op.min; loc };
+          yielding = Some { txt = Yielding.Const.min; loc };
+          externality = Some { txt = Externality.min; loc };
+          nullability =
+            Transled_modifiers.get ~axis:(Nonmodal Nullability) modifiers_so_far
+        }
   in
   let empty_modifiers = Transled_modifiers.empty in
-  List.fold_left step empty_modifiers annots
+  let modifiers = List.fold_left step empty_modifiers annots in
+  (* Since [yielding] is the default mode in presence of [local],
+     the [global] modifier must also apply [unyielding] unless specified. *)
+  match
+    ( Transled_modifiers.get ~axis:(Modal (Comonadic Yielding)) modifiers,
+      Transled_modifiers.get ~axis:(Modal (Comonadic Areality)) modifiers )
+  with
+  | None, Some { txt = Locality.Const.Global; _ } ->
+    Transled_modifiers.set ~axis:(Modal (Comonadic Yielding)) modifiers
+      (Some { txt = Yielding.Const.Unyielding; loc = Location.none })
+  | _, _ -> modifiers
+
+let default_mode_annots (annots : Alloc.Const.Option.t) =
+  (* Unlike all other modes, [yielding] has a different default
+     depending on whether [areality] is [Global] or [Local]. *)
+  let yielding =
+    match annots.yielding, annots.areality with
+    | (Some _ as y), _ | y, None -> y
+    | None, Some Locality.Const.Global -> Some Yielding.Const.Unyielding
+    | None, Some Locality.Const.Local -> Some Yielding.Const.Yielding
+  in
+  { annots with yielding }
 
 let transl_mode_annots annots : Alloc.Const.Option.t =
   let step modifiers_so_far annot =
@@ -172,13 +209,14 @@ let transl_mode_annots annots : Alloc.Const.Option.t =
   in
   let empty_modifiers = Transled_modifiers.empty in
   let modes = List.fold_left step empty_modifiers annots in
-  { areality = Option.map get_txt modes.locality;
-    linearity = Option.map get_txt modes.linearity;
-    uniqueness = Option.map get_txt modes.uniqueness;
-    portability = Option.map get_txt modes.portability;
-    contention = Option.map get_txt modes.contention;
-    yielding = Option.map get_txt modes.yielding
-  }
+  default_mode_annots
+    { areality = Option.map get_txt modes.locality;
+      linearity = Option.map get_txt modes.linearity;
+      uniqueness = Option.map get_txt modes.uniqueness;
+      portability = Option.map get_txt modes.portability;
+      contention = Option.map get_txt modes.contention;
+      yielding = Option.map get_txt modes.yielding
+    }
 
 let untransl_mode_annots ~loc (modes : Mode.Alloc.Const.Option.t) =
   let print_to_string_opt print a = Option.map (Format.asprintf "%a" print) a in
@@ -195,7 +233,15 @@ let untransl_mode_annots ~loc (modes : Mode.Alloc.Const.Option.t) =
   let contention =
     print_to_string_opt Mode.Contention.Const.print modes.contention
   in
-  let yielding = print_to_string_opt Mode.Yielding.Const.print modes.yielding in
+  let yielding =
+    (* Since [yielding] has non-standard defaults, we special-case
+       whether we want to print it here. *)
+    match modes.yielding, modes.areality with
+    | Some Yielding.Const.Yielding, Some Locality.Const.Local
+    | Some Yielding.Const.Unyielding, Some Locality.Const.Global ->
+      None
+    | _, _ -> print_to_string_opt Mode.Yielding.Const.print modes.yielding
+  in
   List.filter_map
     (fun x -> Option.map (fun s -> { txt = Parsetree.Mode s; loc }) x)
     [areality; uniqueness; linearity; portability; contention; yielding]
@@ -269,9 +315,37 @@ let mutable_implied_modalities (mut : Types.mutability) attrs =
     then monadic
     else monadic @ comonadic
 
+(* Since [yielding] is the default mode in presence of [local],
+   the [global] modality must also apply [unyielding] unless specified. *)
+let default_modalities (modalities : Modality.t list) =
+  let areality =
+    List.find_map
+      (function
+        | Modality.Atom (Comonadic Areality, Meet_with a) ->
+          Some (a : Regionality.Const.t)
+        | _ -> None)
+      modalities
+  in
+  let yielding =
+    List.find_map
+      (function
+        | Modality.Atom (Comonadic Yielding, Meet_with y) ->
+          Some (y : Yielding.Const.t)
+        | _ -> None)
+      modalities
+  in
+  let extra =
+    match areality, yielding with
+    | Some Global, None ->
+      [Modality.Atom (Comonadic Yielding, Meet_with Yielding.Const.Unyielding)]
+    | _, _ -> []
+  in
+  modalities @ extra
+
 let transl_modalities ~maturity mut attrs modalities =
   let mut_modalities = mutable_implied_modalities mut attrs in
   let modalities = List.map (transl_modality ~maturity) modalities in
+  let modalities = default_modalities modalities in
   (* mut_modalities is applied before explicit modalities *)
   Modality.Value.Const.id
   |> List.fold_right
@@ -285,9 +359,39 @@ let transl_modalities ~maturity mut attrs modalities =
        (fun atom m -> Modality.Value.Const.compose ~then_:atom m)
        modalities
 
+let untransl_yielding l =
+  let areality =
+    List.find_map
+      (function
+        | Modality.Atom (Comonadic Areality, Meet_with a) ->
+          Some (a : Regionality.Const.t)
+        | _ -> None)
+      l
+  in
+  let yielding =
+    List.find_map
+      (function
+        | Modality.Atom (Comonadic Yielding, Meet_with y) ->
+          Some (y : Yielding.Const.t)
+        | _ -> None)
+      l
+  in
+  match areality, yielding with
+  | Some Global, Some Unyielding | Some Local, Some Yielding -> None
+  | _, Some yld -> Some (Modality.Atom (Comonadic Yielding, Meet_with yld))
+  | _, None -> None
+
 let untransl_modalities mut attrs t =
   let l = Modality.Value.Const.to_list t in
-  let l = List.filter (fun a -> not @@ Modality.is_id a) l in
+  let l =
+    (* [filter_map] instead of [filter] + [append] to preserve order. *)
+    List.filter_map
+      (function
+        | Modality.Atom (Comonadic Yielding, _) -> untransl_yielding l
+        | a when Modality.is_id a -> None
+        | a -> Some a)
+      l
+  in
   let mut_modalities = mutable_implied_modalities mut attrs in
   (* polymorphic equality suffices for now. *)
   let l = List.filter (fun x -> not @@ List.mem x mut_modalities) l in
