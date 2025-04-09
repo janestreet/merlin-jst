@@ -145,3 +145,6 @@ val iter_on_occurrences :
     Longident.t Location.loc ->
     unit)
   -> Tast_iterator.iterator
+
+val get_declaration_dependencies :
+  unit -> (dependency_kind * Uid.t * Uid.t) list
