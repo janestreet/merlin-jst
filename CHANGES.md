@@ -4,6 +4,7 @@ unreleased
   + merlin binary
     - Fix occurrences not working when the definition comes from a hidden source
       file (#1865)
+    - Perform less merges in the indexer (#1881)
 
 merlin 5.2
 ==========
