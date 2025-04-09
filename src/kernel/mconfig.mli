@@ -139,3 +139,5 @@ val global_modules : ?include_current:bool -> t -> string list
 val filename : t -> string
 
 val unitname : t -> string
+
+val unit_info : t -> Compilation_unit.t * Compilation_unit.intf_or_impl

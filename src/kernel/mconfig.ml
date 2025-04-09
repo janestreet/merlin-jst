@@ -1050,3 +1050,14 @@ let unitname t =
         |> Option.map ~f:Misc.unitname
         |> Option.value ~default:basename
     end
+
+let intf_or_impl t =
+  let extension = Filename.extension t.query.filename in
+  try
+    List.find_map t.merlin.suffixes ~f:(fun (impl, intf) ->
+        if String.equal extension impl then Some Compilation_unit.Impl
+        else if String.equal extension intf then Some Compilation_unit.Intf
+        else None)
+  with Not_found -> Compilation_unit.Impl
+
+let unit_info t = (Compilation_unit.of_string (unitname t), intf_or_impl t)
