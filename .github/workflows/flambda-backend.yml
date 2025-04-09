@@ -54,7 +54,7 @@ jobs:
       uses: actions/checkout@master
       if: steps.cache.outputs.cache-hit != 'true'
       with:
-        repository: 'ocaml-flambda/flambda-backend'
+        repository: 'voodoos/flambda-backend'
         path: 'flambda-backend'
 
     - name: Check out the flambda-backend repo to the specified hash
