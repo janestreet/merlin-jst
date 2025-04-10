@@ -5,7 +5,7 @@
     "ast_impl_magic_number": "Caml1999M559",
     "cmt_magic_number": "Caml1999T559",
     "cms_magic_number": "Caml1999S559",
-    "index_magic_number": "Merl2023I559"
+    "index_magic_number": "Merl2023I560"
   }
 
   $ ocaml-index magic-numbers | jq
@@ -15,7 +15,7 @@
     "ast_impl_magic_number": "Caml1999M559",
     "cmt_magic_number": "Caml1999T559",
     "cms_magic_number": "Caml1999S559",
-    "index_magic_number": "Merl2023I559"
+    "index_magic_number": "Merl2023I560"
   }
 
 Verify there is no difference between Merlin and Ocaml-index

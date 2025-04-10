@@ -62,6 +62,6 @@ let parse_identifier (config, source) pos =
 
 let is_current_unit comp_unit =
   match Env.get_unit_name () with
-  | Some current_unit ->
+  | Some (current_unit, _) ->
     String.equal (Compilation_unit.name_as_string current_unit) comp_unit
   | None -> false

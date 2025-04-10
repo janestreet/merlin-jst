@@ -1135,6 +1135,7 @@ let fresh_jkind jkind ~annotation ~why =
     annotation;
     history = Creation why;
     has_warned = false;
+    ran_out_of_fuel_during_normalize = false;
     quality = Not_best
   }
   |> allow_left |> allow_right
@@ -1145,6 +1146,7 @@ let fresh_jkind_poly jkind ~annotation ~why =
     annotation;
     history = Creation why;
     has_warned = false;
+    ran_out_of_fuel_during_normalize = false;
     quality = Not_best
   }
 
@@ -1229,15 +1231,31 @@ module Const = struct
         name = "any"
       }
 
+    let any_mod_everything =
+      { jkind = mk_jkind Any ~mode_crossing:true ~nullability:Maybe_null;
+        name = "any mod everything"
+      }
+
     let any_non_null =
       { jkind = mk_jkind Any ~mode_crossing:false ~nullability:Non_null;
         name = "any_non_null"
+      }
+
+    let any_non_null_mod_everything =
+      { jkind = mk_jkind Any ~mode_crossing:true ~nullability:Non_null;
+        name = "any_non_null mod everything"
       }
 
     let value_or_null =
       { jkind =
           mk_jkind (Base Value) ~mode_crossing:false ~nullability:Maybe_null;
         name = "value_or_null"
+      }
+
+    let value_or_null_mod_everything =
+      { jkind =
+          mk_jkind (Base Value) ~mode_crossing:true ~nullability:Maybe_null;
+        name = "value_or_null mod everything"
       }
 
     let value =
@@ -1335,45 +1353,89 @@ module Const = struct
     (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
     let float64 =
       { jkind =
-          mk_jkind (Base Float64) ~mode_crossing:true ~nullability:Non_null;
+          mk_jkind (Base Float64) ~mode_crossing:false ~nullability:Non_null;
         name = "float64"
+      }
+
+    (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
+    let kind_of_unboxed_float =
+      { jkind =
+          mk_jkind (Base Float64) ~mode_crossing:true ~nullability:Non_null;
+        name = "float64 mod everything"
       }
 
     (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
     let float32 =
       { jkind =
-          mk_jkind (Base Float32) ~mode_crossing:true ~nullability:Non_null;
+          mk_jkind (Base Float32) ~mode_crossing:false ~nullability:Non_null;
         name = "float32"
       }
 
     (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
+    let kind_of_unboxed_float32 =
+      { jkind =
+          mk_jkind (Base Float32) ~mode_crossing:true ~nullability:Non_null;
+        name = "float32 mod everything"
+      }
+
+    (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
     let word =
-      { jkind = mk_jkind (Base Word) ~mode_crossing:true ~nullability:Non_null;
+      { jkind = mk_jkind (Base Word) ~mode_crossing:false ~nullability:Non_null;
         name = "word"
       }
 
     (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
+    let kind_of_unboxed_nativeint =
+      { jkind = mk_jkind (Base Word) ~mode_crossing:true ~nullability:Non_null;
+        name = "word mod everything"
+      }
+
+    (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
     let bits32 =
-      { jkind = mk_jkind (Base Bits32) ~mode_crossing:true ~nullability:Non_null;
+      { jkind =
+          mk_jkind (Base Bits32) ~mode_crossing:false ~nullability:Non_null;
         name = "bits32"
       }
 
     (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
+    let kind_of_unboxed_int32 =
+      { jkind = mk_jkind (Base Bits32) ~mode_crossing:true ~nullability:Non_null;
+        name = "bits32 mod everything"
+      }
+
+    (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
     let bits64 =
-      { jkind = mk_jkind (Base Bits64) ~mode_crossing:true ~nullability:Non_null;
+      { jkind =
+          mk_jkind (Base Bits64) ~mode_crossing:false ~nullability:Non_null;
         name = "bits64"
       }
 
     (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
+    let kind_of_unboxed_int64 =
+      { jkind = mk_jkind (Base Bits64) ~mode_crossing:true ~nullability:Non_null;
+        name = "bits64 mod everything"
+      }
+
+    (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
     let vec128 =
-      { jkind = mk_jkind (Base Vec128) ~mode_crossing:true ~nullability:Non_null;
+      { jkind =
+          mk_jkind (Base Vec128) ~mode_crossing:false ~nullability:Non_null;
         name = "vec128"
+      }
+
+    (* CR layouts v3: change to [Maybe_null] when separability is implemented. *)
+    let kind_of_unboxed_128bit_vectors =
+      { jkind = mk_jkind (Base Vec128) ~mode_crossing:true ~nullability:Non_null;
+        name = "vec128 mod everything"
       }
 
     let all =
       [ any;
+        any_mod_everything;
         any_non_null;
+        any_non_null_mod_everything;
         value_or_null;
+        value_or_null_mod_everything;
         value;
         immutable_data;
         mutable_data;
@@ -1382,11 +1444,17 @@ module Const = struct
         immediate_or_null;
         immediate64;
         float64;
+        kind_of_unboxed_float;
         float32;
+        kind_of_unboxed_float32;
         word;
+        kind_of_unboxed_nativeint;
         bits32;
+        kind_of_unboxed_int32;
         bits64;
-        vec128 ]
+        kind_of_unboxed_int64;
+        vec128;
+        kind_of_unboxed_128bit_vectors ]
 
     let of_attribute : Builtin_attributes.jkind_attribute -> t = function
       | Immediate -> immediate
@@ -1439,6 +1507,18 @@ module Const = struct
              | acc, `Valid None -> acc
              | Some acc, `Valid (Some mode) -> Some (mode :: acc))
            (Some [])
+      |> function
+      | None -> None
+      | Some modes -> (
+        match List.mem "global" modes, List.mem "unyielding" modes with
+        | true, true ->
+          (* We default [mod global] to [mod global unyielding],
+             so we don't want to print the latter. *)
+          Some (List.filter (fun m -> m <> "unyielding") modes)
+        | true, false ->
+          (* Otherwise, print [mod global yielding] to indicate [yielding]. *)
+          Some (modes @ ["yielding"])
+        | _, _ -> Some modes)
 
     let modality_to_ignore_axes axes_to_ignore =
       (* The modality is constant along axes to ignore and id along others *)
@@ -1868,6 +1948,7 @@ module Builtin = struct
       (* this should never get printed: it's a dummy *)
       history = Creation (Any_creation Dummy_jkind);
       has_warned = false;
+      ran_out_of_fuel_during_normalize = false;
       quality = Not_best
     }
 
@@ -1886,6 +1967,7 @@ module Builtin = struct
       annotation = mk_annot "value";
       history = Creation (Value_or_null_creation V1_safety_check);
       has_warned = false;
+      ran_out_of_fuel_during_normalize = false;
       quality = Not_best
     }
 
@@ -1988,6 +2070,7 @@ let of_const (type l r) ~annotation ~why ~(quality : (l * r) jkind_quality)
     annotation;
     history = Creation why;
     has_warned = false;
+    ran_out_of_fuel_during_normalize = false;
     quality
   }
 
@@ -2194,7 +2277,11 @@ let[@inline] normalize ~mode ~jkind_of_type t =
     quality =
       (match t.quality, fuel_result with
       | Not_best, _ | _, Ran_out_of_fuel -> Not_best
-      | Best, Sufficient_fuel -> Best)
+      | Best, Sufficient_fuel -> Best);
+    ran_out_of_fuel_during_normalize =
+      (match fuel_result with
+      | Ran_out_of_fuel -> true
+      | _ -> t.ran_out_of_fuel_during_normalize)
   }
 
 let get_layout_defaulting_to_value { jkind = { layout; _ }; _ } =
@@ -2602,6 +2689,14 @@ module Format_history = struct
       fprintf ppf "it's an unannotated existential type variable"
     | Array_comprehension_element ->
       fprintf ppf "it's the element type of array comprehension"
+    | List_comprehension_iterator_element ->
+      fprintf ppf
+        "it's the element type of a list that is iterated over in a \
+         comprehension"
+    | Array_comprehension_iterator_element ->
+      fprintf ppf
+        "it's the element type of an array that is iterated over in a \
+         comprehension"
     | Lazy_expression -> fprintf ppf "it's the type of a lazy expression"
     | Class_type_argument ->
       fprintf ppf "it's a type argument to a class constructor"
@@ -2847,6 +2942,23 @@ module Violation = struct
                  pp_bound sub.jkind pp_bound super.jkind))
     | No_intersection _ -> ()
 
+  let report_fuel ppf violation =
+    let report_fuel_for_type which =
+      fprintf ppf
+        "@;\
+         @[Note: I gave up trying to find the simplest kind for the %s,@,\
+         as it is very large or deeply recursive.@]" which
+    in
+    let first_ran_out, second_ran_out =
+      match violation with
+      | Not_a_subjkind (k1, k2, _) ->
+        k1.ran_out_of_fuel_during_normalize, k2.ran_out_of_fuel_during_normalize
+      | No_intersection (k1, k2) ->
+        k1.ran_out_of_fuel_during_normalize, k2.ran_out_of_fuel_during_normalize
+    in
+    if first_ran_out then report_fuel_for_type "first";
+    if second_ran_out then report_fuel_for_type "second"
+
   let report_general preamble pp_former former ppf t =
     let mismatch_type =
       match t.violation with
@@ -2935,7 +3047,8 @@ module Violation = struct
       fprintf ppf "@[<hov 2>%s%a has %t,@ which %t.@]" preamble pp_former former
         fmt_k1 fmt_k2;
     report_missing_cmi ppf missing_cmi_option;
-    report_reason ppf t.violation
+    report_reason ppf t.violation;
+    report_fuel ppf t.violation
 
   let pp_t ppf x = fprintf ppf "%t" x
 
@@ -2951,9 +3064,20 @@ end
 (* relations *)
 
 let equate_or_equal ~allow_mutation
-    { jkind = jkind1; annotation = _; history = _; has_warned = _; quality = _ }
-    { jkind = jkind2; annotation = _; history = _; has_warned = _; quality = _ }
-    =
+    { jkind = jkind1;
+      annotation = _;
+      history = _;
+      has_warned = _;
+      ran_out_of_fuel_during_normalize = _;
+      quality = _
+    }
+    { jkind = jkind2;
+      annotation = _;
+      history = _;
+      has_warned = _;
+      ran_out_of_fuel_during_normalize = _;
+      quality = _
+    } =
   Jkind_desc.equate_or_equal ~allow_mutation jkind1 jkind2
 
 (* CR layouts v2.8: Switch this back to ~allow_mutation:false *)
@@ -3023,6 +3147,9 @@ let intersection_or_error ~type_equal ~jkind_of_type ~reason t1 t2 =
           combine_histories ~type_equal ~jkind_of_type reason (Pack_jkind t1)
             (Pack_jkind t2);
         has_warned = t1.has_warned || t2.has_warned;
+        ran_out_of_fuel_during_normalize =
+          t1.ran_out_of_fuel_during_normalize
+          || t2.ran_out_of_fuel_during_normalize;
         quality =
           Not_best (* As required by the fact that this is a [jkind_r] *)
       }
@@ -3315,6 +3442,10 @@ module Debug_printers = struct
     | Default_type_jkind -> fprintf ppf "Default_type_jkind"
     | Existential_type_variable -> fprintf ppf "Existential_type_variable"
     | Array_comprehension_element -> fprintf ppf "Array_comprehension_element"
+    | List_comprehension_iterator_element ->
+      fprintf ppf "List_comprehension_iterator_element"
+    | Array_comprehension_iterator_element ->
+      fprintf ppf "Array_comprehension_iterator_element"
     | Lazy_expression -> fprintf ppf "Lazy_expression"
     | Class_type_argument -> fprintf ppf "Class_type_argument"
     | Class_term_argument -> fprintf ppf "Class_term_argument"
@@ -3386,16 +3517,23 @@ module Debug_printers = struct
     | Creation c -> fprintf ppf "Creation (%a)" creation_reason c
 
   let t (type l r) ppf
-      ({ jkind; annotation = a; history = h; has_warned = _; quality = q } :
+      ({ jkind;
+         annotation = a;
+         history = h;
+         has_warned = _;
+         ran_out_of_fuel_during_normalize = roofdn;
+         quality = q
+       } :
         (l * r) jkind) : unit =
     fprintf ppf
       "@[<v 2>{ jkind = %a@,\
        ; annotation = %a@,\
        ; history = %a@,\
+       ; ran_out_of_fuel_during_normalize = %a@,\
        ; quality = %s@,\
       \ }@]" Jkind_desc.Debug_printers.t jkind
       (pp_print_option Pprintast.jkind_annotation)
-      a history h
+      a history h pp_print_bool roofdn
       (match q with Best -> "Best" | Not_best -> "Not_best")
 
   module Const = struct

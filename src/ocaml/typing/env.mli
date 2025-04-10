@@ -169,7 +169,7 @@ val mark_extension_used:
 type label_usage =
     Projection | Mutation | Construct | Exported_private | Exported
 val mark_label_used:
-    _ record_form -> label_usage -> label_declaration -> unit
+    label_usage -> label_declaration -> unit
 
 (* Lookup by long identifiers *)
 
@@ -516,8 +516,8 @@ val reset_cache: preserve_persistent_env:bool -> unit
 val reset_cache_toplevel: unit -> unit
 
 (* Remember the name of the current compilation unit. *)
-val set_unit_name: Compilation_unit.t option -> unit
-val get_unit_name: unit -> Compilation_unit.t option
+val set_unit_name: (Compilation_unit.with_kind) option -> unit
+val get_unit_name: unit -> (Compilation_unit.with_kind) option
 
 (* Read, save a signature to/from a file. *)
 val read_signature:
@@ -551,6 +551,9 @@ val import_crcs: source:string -> Import_info.t array -> unit
 (* Return the set of imports represented as runtime parameters (see
    [Persistent_env.runtime_parameter_bindings] for details) *)
 val runtime_parameter_bindings: unit -> (Global_module.t * Ident.t) list
+
+(* Return whether an ident appears in [runtime_parameter_bindings] *)
+val is_bound_to_runtime_parameter: Ident.t -> bool
 
 (* Return the list of parameters specified for the current unit, in
    alphabetical order *)
