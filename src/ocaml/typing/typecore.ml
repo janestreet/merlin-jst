@@ -7871,7 +7871,8 @@ and type_label_access
         lbl_sort = Jkind.Sort.Const.value;
       }
     in
-    (record, mode, make_fake_label record_form, expected_type)
+    (record, Mode.Value.disallow_right mode,
+     make_fake_label record_form, expected_type)
 
 (* Typing format strings for printing or reading.
    These formats are used by functions in modules Printf, Format, and Scanf.
