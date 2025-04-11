@@ -7844,19 +7844,7 @@ and type_label_access
   let label =
     wrap_disambiguate "This expression has" (mk_expected ty_exp)
       (label_disambiguate record_form usage lid env expected_type) labels in
-<<<<<<< janestreet/merlin-jst:rae/minus9-redux
-  (record, mode, label, expected_type)
-||||||| ocaml-flambda/flambda-backend:c3c58afb390da493c81e6a59c440a5ca98c65205
-  (record, mode, label, expected_type)
-
-(* Typing format strings for printing or reading.
-   These formats are used by functions in modules Printf, Format, and Scanf.
-=======
   (record, Mode.Value.disallow_right mode, label, expected_type)
-
-(* Typing format strings for printing or reading.
-   These formats are used by functions in modules Printf, Format, and Scanf.
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
   with exn ->
     raise_error exn;
     let arg_kind, _ =

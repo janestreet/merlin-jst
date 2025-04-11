@@ -885,16 +885,8 @@ type 'a sig_reader =
 (* Add a persistent structure to the hash table and bind it in the [Env].
    Checks that OCaml source is allowed to refer to this module. *)
 
-<<<<<<< janestreet/merlin-jst:rae/minus9-redux
 let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig short_path_comps =
-  let {persistent_structures; _} = penv in
-||||||| ocaml-flambda/flambda-backend:c3c58afb390da493c81e6a59c440a5ca98c65205
-let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig =
-  let {persistent_structures; _} = penv in
-=======
-let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig =
   let {persistent_structures; locals_bound_to_runtime_parameters; _} = penv in
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
   let import = pers_name.pn_import in
   let global = pers_name.pn_global in
   let sign = pers_name.pn_sign in
@@ -933,15 +925,11 @@ let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig =
     }
   in
   Hashtbl.add persistent_structures modname ps;
-<<<<<<< janestreet/merlin-jst:rae/minus9-redux
   register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
-||||||| ocaml-flambda/flambda-backend:c3c58afb390da493c81e6a59c440a5ca98c65205
-=======
   begin match binding with
   | Runtime_parameter id -> Ident.Tbl.add locals_bound_to_runtime_parameters id ()
   | Constant _ -> ()
   end;
->>>>>>> ocaml-flambda/flambda-backend:5.2.0minus-9
   ps
 
 let acknowledge_pers_struct penv modname pers_name val_of_pers_sig short_path_comps =
