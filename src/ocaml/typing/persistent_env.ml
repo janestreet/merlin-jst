@@ -155,6 +155,7 @@ type 'a t = {
   persistent_names : (Global_module.Name.t, pers_name) Hashtbl.t;
   persistent_structures :
     (Global_module.Name.t, 'a pers_struct_info) Hashtbl.t;
+  locals_bound_to_runtime_parameters : unit Ident.Tbl.t;
   imported_units: CU.Name.Set.t ref;
   imported_opaque_units: CU.Name.Set.t ref;
   param_imports : Param_set.t ref;
@@ -168,6 +169,7 @@ let empty () = {
   imports = Hashtbl.create 17;
   persistent_names = Hashtbl.create 17;
   persistent_structures = Hashtbl.create 17;
+  locals_bound_to_runtime_parameters = Ident.Tbl.create 17;
   imported_units = ref CU.Name.Set.empty;
   imported_opaque_units = ref CU.Name.Set.empty;
   param_imports = ref Param_set.empty;
@@ -182,6 +184,7 @@ let clear penv =
     imports;
     persistent_names;
     persistent_structures;
+    locals_bound_to_runtime_parameters;
     imported_units;
     imported_opaque_units;
     param_imports;
@@ -193,6 +196,7 @@ let clear penv =
   Hashtbl.clear imports;
   Hashtbl.clear persistent_names;
   Hashtbl.clear persistent_structures;
+  Ident.Tbl.clear locals_bound_to_runtime_parameters;
   imported_units := CU.Name.Set.empty;
   imported_opaque_units := CU.Name.Set.empty;
   param_imports := Param_set.empty;
@@ -882,7 +886,7 @@ type 'a sig_reader =
    Checks that OCaml source is allowed to refer to this module. *)
 
 let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig short_path_comps =
-  let {persistent_structures; _} = penv in
+  let {persistent_structures; locals_bound_to_runtime_parameters; _} = penv in
   let import = pers_name.pn_import in
   let global = pers_name.pn_global in
   let sign = pers_name.pn_sign in
@@ -922,6 +926,10 @@ let acknowledge_new_pers_struct penv modname pers_name val_of_pers_sig short_pat
   in
   Hashtbl.add persistent_structures modname ps;
   register_pers_for_short_paths penv modname ps (short_path_comps modname pm);
+  begin match binding with
+  | Runtime_parameter id -> Ident.Tbl.add locals_bound_to_runtime_parameters id ()
+  | Constant _ -> ()
+  end;
   ps
 
 let acknowledge_pers_struct penv modname pers_name val_of_pers_sig short_path_comps =
@@ -1088,6 +1096,9 @@ let runtime_parameter_bindings {persistent_structures; _} =
                  None
            | Constant _ -> None)
   |> List.of_seq
+
+let is_bound_to_runtime_parameter {locals_bound_to_runtime_parameters; _} id =
+  Ident.Tbl.mem locals_bound_to_runtime_parameters id
 
 let parameters {param_imports; _} =
   Param_set.elements !param_imports
