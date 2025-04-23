@@ -128,7 +128,9 @@ end
 let get_buffer_locs result uid =
   Stamped_hashtable.fold
     (fun (uid', loc) () acc ->
-      if Shape.Uid.equal uid uid' then Lid_set.add loc acc else acc)
+      if Shape.Uid.equal uid uid' then
+        Lid_set.add (Index_format.Lid.of_lid loc) acc
+      else acc)
     (Mtyper.get_index result) Lid_set.empty
 
 let is_in_interface (config : Mconfig.t) (loc : Warnings.loc) =
@@ -166,7 +168,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
         | _ -> scope
       in
       (node_uid_loc, scope)
-    | `Found { uid; location; approximated = false; _ } ->
+    | `Found { uid; location; approximated = false; _ }
+    | `File_not_found { uid; location; approximated = false; _ } ->
       log ~title:"locs_of" "Found definition uid using locate: %a " Logger.fmt
         (fun fmt -> Shape.Uid.print fmt uid);
       (* There is no way to distinguish uids from interfaces from uids of
@@ -176,7 +179,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
          are actually linked. *)
       let scope = if is_in_interface config location then `Buffer else scope in
       (Some (uid, location), scope)
-    | `Found { decl_uid; location; approximated = true; _ } ->
+    | `Found { decl_uid; location; approximated = true; _ }
+    | `File_not_found { decl_uid; location; approximated = true; _ } ->
       log ~title:"locs_of" "Approx. definition: %a " Logger.fmt (fun fmt ->
           Shape.Uid.print fmt decl_uid);
       (Some (decl_uid, location), `Buffer)
@@ -214,7 +218,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
             Option.map external_locs ~f:(fun (index, locs) ->
                 let stats = Stat_check.create ~cache_size:128 index in
                 ( Lid_set.filter
-                    (fun ({ loc; _ } as lid) ->
+                    (fun lid ->
+                      let ({ Location.loc; _ } as lid) = Index_format.Lid.to_lid lid in
                       let is_current_buffer =
                         (* We filter external results that concern the current buffer *)
                         let file = loc.Location.loc_start.Lexing.pos_fname in
@@ -254,19 +259,20 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let locs = Lid_set.union buffer_locs external_locs in
     (* Some of the paths may have redundant `.`s or `..`s in them. Although canonicalizing
        is not necessary for correctness, it makes the output a bit nicer. *)
-    let canonicalize_file_in_loc ({ txt; loc } : 'a Location.loc) :
-        'a Location.loc =
+    let canonicalize_file_in_loc lid =
+      let ({ txt; loc } : 'a Location.loc) = Index_format.Lid.to_lid lid in
       let file =
         Misc.canonicalize_filename ?cwd:config.merlin.source_root
           loc.loc_start.pos_fname
       in
-      { txt; loc = set_fname ~file loc }
+      Index_format.Lid.of_lid { txt; loc = set_fname ~file loc }
     in
     let locs = Lid_set.map canonicalize_file_in_loc locs in
     let locs =
       log ~title:"occurrences" "Found %i locs" (Lid_set.cardinal locs);
       Lid_set.elements locs
-      |> List.filter_map ~f:(fun { Location.txt; loc } ->
+      |> List.filter_map ~f:(fun lid ->
+             let { Location.txt; loc } = Index_format.Lid.to_lid lid in
              let lid = try Longident.head txt with _ -> "not flat lid" in
              log ~title:"occurrences" "Found occ: %s %a" lid Logger.fmt
                (Fun.flip Location.print_loc loc);

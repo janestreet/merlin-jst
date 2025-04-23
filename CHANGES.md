@@ -1,3 +1,13 @@
+unreleased
+==========
+
+  + merlin binary
+    - Fix occurrences not working when the definition comes from a hidden source
+      file (#1865)
+    - Perform less merges in the indexer (#1881)
+  + ocaml-index
+    - Bump magic number after index file format change. Index can now be read lazily (#1886)
+
 merlin 5.2
 ==========
 Thu Sep 26 18:48:42 CEST 2024
